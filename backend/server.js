@@ -2,6 +2,7 @@ const express = require("express");
 const connectDB = require("./config/db"); // Import the MongoDB connection function
 require("dotenv").config();
 const cors = require("cors");
+const passport = require("./config/passport");
 
 // Import route files
 const userRoutes = require("./routes/userRoutes");
@@ -18,6 +19,9 @@ connectDB();
 // Middleware
 app.use(express.json()); // Parses incoming JSON requests
 app.use(cors()); // Enables communication between frontend and backend
+app.use(passport.initialize());
+app.use(passport.session()); // Required for OAuth authentication
+
 
 // Test Route
 app.get("/", (req, res) => {
