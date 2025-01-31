@@ -6,7 +6,7 @@ require("dotenv").config();
 
 const router = express.Router();
 
-// REGISTER (Signup for non spotify registering useres)
+// REGISTER (Signup for non spotify registering users)
 router.post("/register", async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -33,7 +33,16 @@ router.post("/register", async (req, res) => {
         // Generate JWT token
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-        res.json({ token, user });
+        // Below ensures the hashed password is not passed to frontend
+        const userResponse = {
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+            profilePicture: user.profilePicture,
+            createdAt: user.createdAt,
+        };
+
+        res.json({ token, userResponse });
     } catch (error) {
         res.status(500).json({ message: "Server Error" });
     }
@@ -59,7 +68,15 @@ router.post("/login", async (req, res) => {
         // Generate JWT token
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-        res.json({ token, user });
+        const userResponse = {
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+            profilePicture: user.profilePicture,
+            createdAt: user.createdAt
+        };
+
+        res.json({ token, userResponse });
     } catch (error) {
         res.status(500).json({ message: "Server Error" });
     }
