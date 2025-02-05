@@ -1,0 +1,58 @@
+<nav class="bg-gray-800 bg-opacity-90 backdrop-blur-lg text-white px-6 py-4 flex justify-between items-center fixed w-full top-0 left-0 shadow-lg z-50">
+    <!-- Logo and Name -->
+    <div class="flex items-center gap-3">
+        <img src="../assets/music.png" alt="Logo" class="h-8">
+        <span class="text-xl font-semibold">SoundCheck</span>
+    </div>
+  
+    <!-- Navigation Links (Desktop) -->
+    <div class="hidden md:flex gap-6">
+        <a routerLink="/" routerLinkActive="active-link" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+            Search
+        </a>
+        <a routerLink="/favorites" routerLinkActive="active-link" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+            Favorites
+        </a>
+        <a routerLink="/profile" routerLinkActive="active-link" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+            Profile
+        </a>
+    </div>
+  
+    <!-- User Profile & Logout (Desktop) -->
+    <div class="hidden md:flex items-center gap-4 relative">
+        <!-- Profile Dropdown -->
+        <div class="relative">
+            <button (click)="toggleProfileMenu()" class="flex items-center rounded-full focus:outline-none">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
+                     alt="User Profile" class="h-10 w-10 rounded-full border-2 border-gray-700 shadow-md">
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div *ngIf="isProfileMenuOpen" class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-md shadow-lg py-2 z-50">
+                <a routerLink="/profile" class="block px-4 py-2 text-sm hover:bg-gray-100">Your Profile</a>
+                <a routerLink="/settings" class="block px-4 py-2 text-sm hover:bg-gray-100">Settings</a>
+                <button (click)="logout()" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+    <button (click)="toggleMenu()" class="md:hidden">
+        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h16M4 12h16m-7 6h7"></path>
+        </svg>
+    </button>
+</nav>
+
+<!-- Mobile Navigation -->
+<div *ngIf="isMenuOpen" class="fixed inset-0 bg-gray-800 bg-opacity-95 backdrop-blur-lg flex flex-col items-center justify-center space-y-6 text-white md:hidden z-50">
+    <a routerLink="/" (click)="toggleMenu()" class="text-xl text-gray-300 hover:text-white transition">Search</a>
+    <a routerLink="/favorites" (click)="toggleMenu()" class="text-xl text-gray-300 hover:text-white transition">Favorites</a>
+    <a routerLink="/profile" (click)="toggleMenu()" class="text-xl text-gray-300 hover:text-white transition">Profile</a>
+    <button (click)="logout()" class="bg-red-500 px-6 py-2 rounded-md text-white hover:brightness-110 transition">
+        Logout
+    </button>
+    <button (click)="toggleMenu()" class="absolute top-6 right-6 text-2xl text-white">&times;</button>
+</div>

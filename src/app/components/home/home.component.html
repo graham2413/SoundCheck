@@ -1,0 +1,165 @@
+<app-navbar></app-navbar>
+
+<div
+  class="flex flex-col items-center justify-center min-h-screen text-center px-6 bg-gray-900 text-white pt-16"
+>
+  <h1 class="mt-10 text-5xl font-extrabold tracking-tight text-white">
+    Explore Your Favorite Music
+  </h1>
+  <p class="mt-4 text-lg text-gray-300">
+    Find and review songs, albums, and artists you love
+  </p>
+
+  <!-- Search Bar -->
+  <div class="relative mt-8 w-full max-w-lg">
+    <input
+      type="text"
+      [(ngModel)]="query"
+      (keyup.enter)="onSearch()"
+      placeholder="Search for songs, albums, or artists..."
+      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg"
+    />
+
+    <button
+      (click)="onSearch()"
+      class="absolute inset-y-0 right-3 flex items-center"
+    >
+      <svg
+        class="h-6 w-6 text-indigo-500 hover:text-indigo-400 transition"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M21 21l-5.2-5.2m2.2-6a7 7 0 11-14 0 7 7 0 0114 0z"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="mt-4 text-gray-300 text-lg">Loading...</div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="mt-4 text-red-500 text-lg">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Toggle Buttons -->
+  <div *ngIf="results && results.songs?.length > 0" class="mt-6 flex gap-4">
+    <button
+      (click)="setActiveTab('songs')"
+      [class.bg-indigo-600]="activeTab === 'songs'"
+      [class.text-white]="activeTab === 'songs'"
+      [class.text-indigo-400]="activeTab !== 'songs'"
+      class="px-4 py-2 rounded-md hover:bg-indigo-500 hover:text-white transition"
+    >
+      Songs
+    </button>
+
+    <button
+      *ngIf="results.albums?.length > 0"
+      (click)="setActiveTab('albums')"
+      [class.bg-indigo-600]="activeTab === 'albums'"
+      [class.text-white]="activeTab === 'albums'"
+      [class.text-indigo-400]="activeTab !== 'albums'"
+      class="px-4 py-2 rounded-md hover:bg-indigo-500 hover:text-white transition"
+    >
+      Albums
+    </button>
+
+    <button
+      *ngIf="results.artists?.length > 0"
+      (click)="setActiveTab('artists')"
+      [class.bg-indigo-600]="activeTab === 'artists'"
+      [class.text-white]="activeTab === 'artists'"
+      [class.text-indigo-400]="activeTab !== 'artists'"
+      class="px-4 py-2 rounded-md hover:bg-indigo-500 hover:text-white transition"
+    >
+      Artists
+    </button>
+  </div>
+
+  <!-- Search Results -->
+  <div *ngIf="results" class="mt-6 w-full max-w-2xl">
+    <!-- Songs -->
+    <div *ngIf="activeTab === 'songs'">
+      <h2 class="text-2xl font-bold text-white mb-4">Songs</h2>
+      <ul class="mt-2 space-y-2">
+        <li
+          *ngFor="let song of results.songs"
+          class="flex items-center gap-4 bg-gray-800 p-3 rounded-md transform transition-transform hover:scale-105 hover:shadow-lg"
+        >
+          <img
+            [src]="song.cover"
+            alt="Cover"
+            class="h-12 w-12 rounded-md object-cover"
+          />
+
+          <div class="flex flex-col flex-grow">
+            <p class="font-semibold text-left">{{ song.title }}</p>
+            <p class="text-sm text-gray-400 text-left">{{ song.artist }}</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Albums -->
+    <div *ngIf="activeTab === 'albums'" class="mt-6 w-full max-w-5xl mx-auto">
+      <h2 class="text-2xl font-bold text-white mb-6 text-center">Albums</h2>
+
+      <ul
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 justify-center"
+      >
+        <li
+          *ngFor="let album of results.albums"
+          class="flex flex-col items-center p-3 rounded-md transition-transform hover:scale-105 hover:shadow-lg"
+        >
+          <img
+            [src]="album.cover"
+            alt="Album Cover"
+            class="h-28 w-28 md:h-32 md:w-32 lg:h-36 lg:w-36 rounded-md object-cover shadow-md border-2 border-gray-700"
+          />
+
+          <p
+            class="mt-2 text-sm md:text-base text-white text-center font-semibold w-32 md:w-36 truncate"
+          >
+            {{ album.title }}
+          </p>
+          <p class="text-xs text-gray-400 text-center w-32 md:w-36 truncate">
+            {{ album.artist }}
+          </p>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Artists -->
+    <div *ngIf="activeTab === 'artists'" class="mt-6 w-full max-w-5xl mx-auto">
+      <h2 class="text-2xl font-bold text-white mb-6 text-center">Artists</h2>
+
+      <ul
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 justify-center"
+      >
+        <li
+          *ngFor="let artist of results.artists"
+          class="flex flex-col items-center p-4 rounded-md transition-transform hover:scale-110 hover:shadow-lg"
+        >
+          <img
+            [src]="artist.picture"
+            alt="Artist"
+            class="w-24 md:w-32 lg:w-36 aspect-square rounded-full object-cover shadow-md border-2 border-gray-700"
+          />
+
+          <p
+            class="mt-2 text-base md:text-lg text-white text-center truncate w-32 md:w-36"
+          >
+            {{ artist.name }}
+          </p>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

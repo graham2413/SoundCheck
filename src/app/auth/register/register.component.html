@@ -1,0 +1,67 @@
+<div class="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8 bg-gray-100">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+    <img class="mx-auto h-16 w-16" src="../assets/music.png" alt="SoundCheck Logo">
+    <h2 class="mt-6 text-center text-2xl font-bold text-gray-900">Create your account</h2>
+  </div>
+
+  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+    <div class="bg-white py-8 px-6 shadow-md rounded-lg sm:px-10">
+      <form class="space-y-6" (ngSubmit)="onSubmit()">
+        
+        <!-- Full Name -->
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+          <input 
+            type="text" id="name" [(ngModel)]="name" name="name" 
+            [ngClass]="{'border-red-500': errorMessages.name}" 
+            class="mt-2 block w-full rounded-md border px-3 py-2 text-gray-900 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+          <p *ngIf="errorMessages.name" class="text-red-500 text-sm mt-1">{{ errorMessages.name }}</p>
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+          <input 
+            type="email" id="email" [(ngModel)]="email" name="email"
+            [ngClass]="{'border-red-500': errorMessages.email}" 
+            class="mt-2 block w-full rounded-md border px-3 py-2 text-gray-900 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+          <p *ngIf="errorMessages.email" class="text-red-500 text-sm mt-1">{{ errorMessages.email }}</p>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+          <input 
+            type="password" id="password" [(ngModel)]="password" name="password"
+            [ngClass]="{'border-red-500': errorMessages.password}" 
+            class="mt-2 block w-full rounded-md border px-3 py-2 text-gray-900 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          >
+          <p *ngIf="errorMessages.password" class="text-red-500 text-sm mt-1">{{ errorMessages.password }}</p>
+        </div>
+
+        <!-- Submit Button -->
+        <div>
+          <button 
+            type="submit" [disabled]="isLoading"
+            class="w-full flex justify-center items-center rounded-md bg-indigo-600 px-4 py-2 text-white font-semibold shadow-sm hover:bg-indigo-500 transition duration-200 disabled:bg-gray-400"
+          >
+            <svg *ngIf="isLoading" class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 018 8h-4l3 3 3-3h-4a8 8 0 01-8 8v-4l-3 3 3 3v-4a8 8 0 01-8-8h4l-3-3-3 3h4z"></path>
+            </svg>
+            <span *ngIf="isLoading">Signing up...</span>
+            <span *ngIf="!isLoading">Sign up</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Login Redirect -->
+      <p class="mt-6 text-center text-sm text-gray-500">
+        Already have an account? 
+        <a routerLink="/login" class="text-indigo-600 hover:text-indigo-500 font-medium">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>

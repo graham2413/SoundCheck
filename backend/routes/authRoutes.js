@@ -1,85 +1,22 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-require("dotenv").config();
-
 const router = express.Router();
+const authController = require("../controllers/authController");
+const passport = require("passport");
 
-// REGISTER (Signup for non spotify registering users)
-router.post("/register", async (req, res) => {
-    try {
-        const { username, email, password } = req.body;
+// Authentication Routes
+router.post("/register", authController.registerUser);
+router.post("/login", authController.loginUser);
+router.post("/logout", authController.logoutUser);
+router.get("/spotify/logout", authController.logoutSpotify);
 
-        // Check if user already exists
-        let user = await User.findOne({ email });
-        if (user) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-
-        // Hash password before saving
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Create new user
-        user = new User({
-            username,
-            email,
-            password: hashedPassword,
-        });
-
-        await user.save();
-
-        // Generate JWT token
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-        // Below ensures the hashed password is not passed to frontend
-        const userResponse = {
-            _id: user._id,
-            username: user.username,
-            email: user.email,
-            profilePicture: user.profilePicture,
-            createdAt: user.createdAt,
-        };
-
-        res.json({ token, userResponse });
-    } catch (error) {
-        res.status(500).json({ message: "Server Error" });
-    }
+// Spotify Authentication Route
+router.get("/spotify", (req, res, next) => {
+    passport.authenticate("spotify", { scope: ["user-read-email", "playlist-read-private"] })(req, res, next);
 });
 
-// LOGIN
-router.post("/login", async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        // Check if user exists
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
-
-        // Validate password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
-
-        // Generate JWT token
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-        const userResponse = {
-            _id: user._id,
-            username: user.username,
-            email: user.email,
-            profilePicture: user.profilePicture,
-            createdAt: user.createdAt
-        };
-
-        res.json({ token, userResponse });
-    } catch (error) {
-        res.status(500).json({ message: "Server Error" });
-    }
-});
+// Spotify OAuth Callback Route
+router.get("/spotify/callback", (req, res, next) => {
+    next();
+}, passport.authenticate("spotify", { failureRedirect: "/" }), authController.spotifyCallback);
 
 module.exports = router;

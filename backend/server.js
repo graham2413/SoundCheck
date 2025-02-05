@@ -2,16 +2,17 @@ const express = require("express");
 const connectDB = require("./config/db");
 require("dotenv").config();
 const cors = require("cors");
-const session = require("express-session"); // ⬅️ Import express-session
+const session = require("express-session");
 const passport = require("./config/passport");
 
 // Import route files
 const userRoutes = require("./routes/userRoutes");
 const artistRoutes = require("./routes/artistRoutes");
 const albumRoutes = require("./routes/albumRoutes");
-const songRoutes = require("./routes/songRoutes");
+const mainSearchRoutes = require("./routes/mainSearchRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const authRoutes = require("./routes/authRoutes");
+const playlistRoutes = require("./routes/playlistRoutes");
 
 const app = express();
 
@@ -22,7 +23,7 @@ connectDB();
 app.use(express.json()); // Parses incoming JSON requests
 app.use(cors()); // Enables communication between frontend and backend
 
-// 🔹 Add express-session (BEFORE passport.initialize())
+// Add express-session (BEFORE passport.initialize())
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -42,9 +43,10 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use("/api/artists", artistRoutes);
 app.use("/api/albums", albumRoutes);
-app.use("/api/songs", songRoutes);
+app.use("/api/search", mainSearchRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/playlists", playlistRoutes);
 
 // Start the Server
 const PORT = process.env.PORT || 5000;

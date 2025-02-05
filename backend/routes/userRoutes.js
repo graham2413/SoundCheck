@@ -9,4 +9,7 @@ router.get("/profile", authenticateUser, userController.getAuthenticatedUserProf
 // Get a specific user by ID (Public Route)
 router.get("/:id", userController.getUserProfile);
 
+// Allow users to update their own profile (Protected Route)
+router.put("/profile", authenticateUser, userController.updateUserProfile);
+
 module.exports = router;
