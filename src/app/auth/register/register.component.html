@@ -10,9 +10,9 @@
       <!-- Full Name -->
       <div>
         <label class="block text-gray-300 text-sm font-semibold mb-1">Full Name</label>
-        <input type="text" [(ngModel)]="name" name="fullName"
+        <input type="text" [(ngModel)]="username" name="fullName"
           class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        <p *ngIf="errorMessages.name" class="text-red-500 text-sm mt-1">{{ errorMessages.name }}</p>
+        <p *ngIf="errorMessages.username" class="text-red-500 text-sm mt-1">{{ errorMessages.username }}</p>
       </div>
 
       <!-- Email -->

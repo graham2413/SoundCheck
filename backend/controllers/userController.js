@@ -1,4 +1,6 @@
 const User = require("../models/User");
+const cloudinary = require("../config/cloudinaryConfig");
+const bcrypt = require("bcryptjs");
 
 // Public - Get a specific user's profile by ID
 exports.getUserProfile = async (req, res) => {
@@ -31,17 +33,41 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
-
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Fields to update
-        user.username = req.body.username || user.username;
-        user.profilePicture = req.body.profilePicture || user.profilePicture;
+        // Handle Profile Picture Update (If a new image is provided)
+        let profilePictureUrl = user.profilePicture;
+        if (req.body.profilePicture && req.body.profilePicture.startsWith("data:image")) {
+            const uploadedImage = await cloudinary.uploader.upload(req.body.profilePicture, {
+                folder: "profile_pictures",
+                transformation: [{ width: 300, height: 300, crop: "fill" }]
+            });
+            profilePictureUrl = uploadedImage.secure_url;
+        }
 
+        // Handle Password Update (If a new password is provided)
+        if (req.body.newPassword && req.body.newPassword.trim() !== "") {
+            // Compare new password with the current one
+            const isSamePassword = await bcrypt.compare(req.body.newPassword, user.password);
+            if (isSamePassword) {
+                return res.status(400).json({ message: "New password must be different from the current password." });
+            }
+
+            // Hash and save the new password
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(req.body.newPassword, salt);
+        }
+
+        // Update user fields
+        user.username = req.body.username || user.username;
+        user.profilePicture = profilePictureUrl;
+
+        // Save updated user data
         const updatedUser = await user.save();
 
+        // Return updated user profile (excluding sensitive data)
         res.json({
             _id: updatedUser._id,
             username: updatedUser.username,
@@ -49,7 +75,9 @@ exports.updateUserProfile = async (req, res) => {
             profilePicture: updatedUser.profilePicture,
             createdAt: updatedUser.createdAt,
         });
+
     } catch (error) {
+        console.error("Error updating profile:", error);
         res.status(500).json({ message: "Server Error" });
     }
 };

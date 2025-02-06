@@ -26,7 +26,7 @@ exports.searchMusic = async (req, res) => {
 
         // Process Albums → Filter albums to include only those with the search term in the title
         const albums = albumsResponse.data.data
-            .filter(album => album.title.toLowerCase().includes(query.toLowerCase())) // 🎯 Keep only matching titles
+            .filter(album => album.title.toLowerCase().includes(query.toLowerCase())) // Keep only matching titles
             .map(album => ({
                 id: album.id,
                 title: album.title,

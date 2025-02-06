@@ -1,15 +1,27 @@
-@keyframes scroll {
-  0%   { transform: translateX(0%); }
-  100% { transform: translateX(-50%); }
+.marquee-container {
+  position: relative;
+  padding: 1rem 0;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    #1f2937 0%,
+    #2d3748 100%
+  );
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center; 
+  justify-content: flex-start; 
 }
 
-.marquee {
-  animation: scroll 10s linear infinite;
-  width: 200%;          /* 2x the normal width for two halves */
-  display: flex;        /* horizontal layout */
+.marquee-track {
+  position: static;
+  display: inline-flex;
+  white-space: nowrap;
 }
 
-.half {
-  width: 50%;           /* each half is 50% of container */
-  display: flex;        /* horizontal layout of images */
+.marquee-track img {
+  object-fit: cover;
+  margin-right: 1rem;
+  border-radius: 0.25rem;
 }

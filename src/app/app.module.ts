@@ -32,7 +32,7 @@ import { ToastrModule } from 'ngx-toastr';
     BrowserAnimationsModule,
     ToastrModule.forRoot({
       timeOut: 3000, // Auto dismiss after 3 seconds
-      positionClass: 'toast-top-center', // Position of the toast
+      positionClass: 'toast-bottom-center', // Position of the toast
       preventDuplicates: true, // Prevent multiple toasts of the same type
       progressBar: true // Shows progress bar for timeout
     }),

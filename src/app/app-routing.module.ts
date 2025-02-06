@@ -7,10 +7,10 @@ import { AuthGuard } from './guards/auth.guard';
 import { ProfileComponent } from './components/profile/profile.component';
 
 const routes: Routes = [
-  { path: '', component: HomeComponent, canActivate: [AuthGuard] },
-  { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},
-  { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
+  { path: '', component: HomeComponent, canActivate: [AuthGuard], data: { animation: 'Home' } },
+  { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard], data: { animation: 'Profile' } },
+  { path: 'login', component: LoginComponent, data: { animation: 'Login' } },
+  { path: 'register', component: RegisterComponent, data: { animation: 'Register' } },
   { path: '**', redirectTo: '/' } // Redirect unknown routes to home
 ];
 

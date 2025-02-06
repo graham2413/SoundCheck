@@ -9,11 +9,11 @@ import { AuthService } from 'src/app/services/auth.service';
   styleUrls: ['./register.component.css']
 })
 export class RegisterComponent {
-  name: string = '';
+  username: string = '';
   email: string = '';
   password: string = '';
   confirmPassword: string = '';
-  errorMessages: { name?: string; email?: string; password?: string; confirmPassword?: string} = {};
+  errorMessages: { username?: string; email?: string; password?: string; confirmPassword?: string} = {};
   isLoading: boolean = false;
 
   constructor(private authService: AuthService, private router: Router, private toastr: ToastrService) {}
@@ -21,8 +21,8 @@ export class RegisterComponent {
   validateInputs(): boolean {
     this.errorMessages = {};
 
-    if (!this.name.trim()) {
-      this.errorMessages.name = 'Name is required.';
+    if (!this.username.trim()) {
+      this.errorMessages.username = 'Name is required.';
     }
     if (!this.email.trim()) {
       this.errorMessages.email = 'Email is required.';
@@ -49,7 +49,7 @@ export class RegisterComponent {
 
     this.isLoading = true;
 
-    const userData = { name: this.name, email: this.email, password: this.password };
+    const userData = { username: this.username, email: this.email, password: this.password };
 
     this.authService.register(userData).subscribe({
       next: (response) => {
