@@ -1,31 +1,65 @@
 <app-navbar></app-navbar>
 
-<div
-  class="flex flex-col items-center justify-center min-h-screen text-center px-6 bg-gray-900 text-white pt-16"
->
-  <h1 class="mt-10 text-5xl font-extrabold tracking-tight text-white">
-    Explore Your Favorite Music
-  </h1>
-  <p class="mt-4 text-lg text-gray-300">
-    Find and review songs, albums, and artists you love
-  </p>
+<div class="bg-gray-900 text-white pb-8">
+
+  <!-- Marquee container -->
+  <div class="w-full overflow-hidden bg-gray-800 py-4 mt-24">
+    <!-- Add .marquee to match CSS; total 200% width. -->
+    <div class="marquee">
+      <!-- FIRST HALF: w-1/2, flex layout. Add space-x-4 for image spacing. -->
+      <div class="half space-x-4">
+        <img src="assets/album1.jpg" alt="Album 1" 
+             class="w-40 h-40 object-cover flex-shrink-0" />
+        <img src="assets/album2.jpg" alt="Album 2" 
+             class="w-40 h-40 object-cover flex-shrink-0" />
+        <img src="assets/album3.jpg" alt="Album 3" 
+             class="w-40 h-40 object-cover flex-shrink-0" />
+        <img src="assets/album4.jpg" alt="Album 4" 
+             class="w-40 h-40 object-cover flex-shrink-0" />
+        <img src="assets/album5.jpg" alt="Album 5" 
+             class="w-40 h-40 object-cover flex-shrink-0" />
+      </div>
+
+      <!-- SECOND HALF: identical images for a seamless loop -->
+      <div class="half space-x-4">
+        <img src="assets/album1.jpg" alt="Album 1" 
+             class="w-40 h-40 object-cover flex-shrink-0" />
+        <img src="assets/album2.jpg" alt="Album 2" 
+             class="w-40 h-40 object-cover flex-shrink-0" />
+        <img src="assets/album3.jpg" alt="Album 3" 
+             class="w-40 h-40 object-cover flex-shrink-0" />
+        <img src="assets/album4.jpg" alt="Album 4" 
+             class="w-40 h-40 object-cover flex-shrink-0" />
+        <img src="assets/album5.jpg" alt="Album 5" 
+             class="w-40 h-40 object-cover flex-shrink-0" />
+        <!-- Identical set so the scroll is seamless -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Heading -->
+  <div class="text-center max-w-5xl mx-auto mt-12 px-4">
+    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">
+      Explore Your Favorite Music
+    </h1>
+    <p class="mt-2 text-lg text-gray-300">
+      Find and review songs, albums, and artists you love
+    </p>
+  </div>
 
   <!-- Search Bar -->
-  <div class="relative mt-8 w-full max-w-lg">
+  <div class="relative mt-8 max-w-lg mx-auto">
     <input
       type="text"
       [(ngModel)]="query"
       (keyup.enter)="onSearch()"
       placeholder="Search for songs, albums, or artists..."
-      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg"
+      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12
+             focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg"
     />
-
-    <button
-      (click)="onSearch()"
-      class="absolute inset-y-0 right-3 flex items-center"
-    >
+    <button (click)="onSearch()" class="absolute inset-y-0 right-3 flex items-center">
       <svg
-        class="h-6 w-6 text-indigo-500 hover:text-indigo-400 transition"
+        class="h-6 w-6 text-indigo-500 hover:text-white transition"
         fill="currentColor"
         viewBox="0 0 24 24"
       >
@@ -41,95 +75,133 @@
   </div>
 
   <!-- Loading Indicator -->
-  <div *ngIf="isLoading" class="mt-4 text-gray-300 text-lg">Loading...</div>
+  <div *ngIf="isLoading" class="mt-6 w-full max-w-3xl mx-auto flex justify-center">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"></div>
+  </div>
 
-  <!-- Error Message -->
-  <div *ngIf="errorMessage" class="mt-4 text-red-500 text-lg">
-    {{ errorMessage }}
+  <!-- Skeleton Loader -->
+  <div *ngIf="isLoading" class="mt-6 w-full max-w-3xl mx-auto">
+    <div class="animate-pulse space-y-4">
+      <div class="h-6 bg-gray-700 rounded w-1/4 mx-auto"></div>
+      <div class="h-6 bg-gray-700 rounded w-3/4 mx-auto"></div>
+
+      <!-- Skeleton Loader for Songs -->
+      <div class="mt-4 space-y-4">
+        <div
+          *ngFor="let i of [1, 2, 3, 4, 5]"
+          class="flex items-center bg-gray-800 p-4 rounded-lg"
+        >
+          <div class="h-24 w-24 md:h-28 md:w-28 bg-gray-700 rounded-md"></div>
+          <div class="flex flex-col justify-center flex-grow pl-4 space-y-2">
+            <div class="h-5 bg-gray-700 rounded w-1/2"></div>
+            <div class="h-4 bg-gray-600 rounded w-1/3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Toggle Buttons -->
-  <div *ngIf="results && results.songs?.length > 0" class="mt-6 flex gap-4">
+  <div
+    *ngIf="results && (results.songs?.length > 0 || results.albums?.length > 0 || results.artists?.length > 0)"
+    class="mt-6 flex gap-4 justify-center"
+  >
     <button
       (click)="setActiveTab('songs')"
       [class.bg-indigo-600]="activeTab === 'songs'"
-      [class.text-white]="activeTab === 'songs'"
-      [class.text-indigo-400]="activeTab !== 'songs'"
-      class="px-4 py-2 rounded-md hover:bg-indigo-500 hover:text-white transition"
+      class="px-4 py-2 rounded-md hover:bg-indigo-500 transition"
     >
       Songs
     </button>
-
     <button
       *ngIf="results.albums?.length > 0"
       (click)="setActiveTab('albums')"
       [class.bg-indigo-600]="activeTab === 'albums'"
-      [class.text-white]="activeTab === 'albums'"
-      [class.text-indigo-400]="activeTab !== 'albums'"
-      class="px-4 py-2 rounded-md hover:bg-indigo-500 hover:text-white transition"
+      class="px-4 py-2 rounded-md hover:bg-indigo-500 transition"
     >
       Albums
     </button>
-
     <button
       *ngIf="results.artists?.length > 0"
       (click)="setActiveTab('artists')"
       [class.bg-indigo-600]="activeTab === 'artists'"
-      [class.text-white]="activeTab === 'artists'"
-      [class.text-indigo-400]="activeTab !== 'artists'"
-      class="px-4 py-2 rounded-md hover:bg-indigo-500 hover:text-white transition"
+      class="px-4 py-2 rounded-md hover:bg-indigo-500 transition"
     >
       Artists
     </button>
   </div>
 
   <!-- Search Results -->
-  <div *ngIf="results" class="mt-6 w-full max-w-2xl">
+  <div *ngIf="results" class="mt-6 w-full max-w-2xl mx-auto">
     <!-- Songs -->
-    <div *ngIf="activeTab === 'songs'">
-      <h2 class="text-2xl font-bold text-white mb-4">Songs</h2>
-      <ul class="mt-2 space-y-2">
+    <div
+      *ngIf="activeTab === 'songs'"
+      class="mt-6 w-full max-w-3xl mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg"
+    >
+      <h2 class="text-2xl font-bold text-white mb-6 text-center">Songs</h2>
+      <ul class="mt-2 space-y-4">
         <li
           *ngFor="let song of results.songs"
-          class="flex items-center gap-4 bg-gray-800 p-3 rounded-md transform transition-transform hover:scale-105 hover:shadow-lg"
+          class="flex items-center bg-gray-700 p-4 rounded-lg transition-transform
+                 hover:scale-[1.05] hover:shadow-lg hover:shadow-indigo-500/50 hover:bg-gray-700/50"
         >
           <img
             [src]="song.cover"
             alt="Cover"
-            class="h-12 w-12 rounded-md object-cover"
+            class="h-28 w-28 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-600"
           />
-
-          <div class="flex flex-col flex-grow">
-            <p class="font-semibold text-left">{{ song.title }}</p>
-            <p class="text-sm text-gray-400 text-left">{{ song.artist }}</p>
+          <div class="flex flex-col justify-center flex-grow pl-4">
+            <p
+              class="text-lg md:text-xl font-semibold text-white leading-tight
+                     max-w-full overflow-hidden text-ellipsis whitespace-nowrap"
+            >
+              {{ song.title }}
+            </p>
+            <p
+              class="text-sm md:text-base text-gray-400 max-w-full overflow-hidden
+                     text-ellipsis whitespace-nowrap"
+            >
+              {{ song.artist }}
+            </p>
           </div>
         </li>
       </ul>
     </div>
 
     <!-- Albums -->
-    <div *ngIf="activeTab === 'albums'" class="mt-6 w-full max-w-5xl mx-auto">
+    <div
+      *ngIf="activeTab === 'albums'"
+      class="mt-6 w-full max-w-5xl mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg"
+    >
       <h2 class="text-2xl font-bold text-white mb-6 text-center">Albums</h2>
-
-      <ul
-        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 justify-center"
-      >
+      <ul class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-6 justify-center">
         <li
           *ngFor="let album of results.albums"
-          class="flex flex-col items-center p-3 rounded-md transition-transform hover:scale-105 hover:shadow-lg"
+          class="group flex flex-col items-center p-4 rounded-md
+                 transition-transform hover:scale-[1.05] hover:shadow-lg
+                 hover:shadow-indigo-500/50 hover:bg-gray-700/50"
         >
           <img
             [src]="album.cover"
             alt="Album Cover"
-            class="h-28 w-28 md:h-32 md:w-32 lg:h-36 lg:w-36 rounded-md object-cover shadow-md border-2 border-gray-700"
+            class="h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36
+                   lg:h-40 lg:w-40 xl:h-44 xl:w-44 rounded-md object-cover
+                   shadow-md border-2 border-gray-600"
           />
-
           <p
-            class="mt-2 text-sm md:text-base text-white text-center font-semibold w-32 md:w-36 truncate"
+            class="mt-2 text-sm md:text-base text-white text-center font-semibold
+                   max-w-full overflow-hidden text-ellipsis whitespace-nowrap
+                   group-hover:whitespace-normal group-hover:overflow-visible
+                   group-hover:max-w-none"
           >
             {{ album.title }}
           </p>
-          <p class="text-xs text-gray-400 text-center w-32 md:w-36 truncate">
+          <p
+            class="text-xs text-gray-400 text-center max-w-full overflow-hidden
+                   text-ellipsis whitespace-nowrap
+                   group-hover:whitespace-normal group-hover:overflow-visible
+                   group-hover:max-w-none"
+          >
             {{ album.artist }}
           </p>
         </li>
@@ -137,24 +209,29 @@
     </div>
 
     <!-- Artists -->
-    <div *ngIf="activeTab === 'artists'" class="mt-6 w-full max-w-5xl mx-auto">
+    <div
+      *ngIf="activeTab === 'artists'"
+      class="mt-6 w-full max-w-5xl mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg"
+    >
       <h2 class="text-2xl font-bold text-white mb-6 text-center">Artists</h2>
-
-      <ul
-        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 justify-center"
-      >
+      <ul class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-6 justify-center">
         <li
           *ngFor="let artist of results.artists"
-          class="flex flex-col items-center p-4 rounded-md transition-transform hover:scale-110 hover:shadow-lg"
+          class="group flex flex-col items-center p-4 rounded-md
+                 transition-transform hover:scale-[1.05] hover:shadow-lg
+                 hover:shadow-indigo-500/50 hover:bg-gray-700/50"
         >
           <img
             [src]="artist.picture"
             alt="Artist"
-            class="w-24 md:w-32 lg:w-36 aspect-square rounded-full object-cover shadow-md border-2 border-gray-700"
+            class="w-24 sm:w-28 md:w-32 lg:w-36 xl:w-40 aspect-square
+                   rounded-full object-cover shadow-md border-2 border-gray-600"
           />
-
           <p
-            class="mt-2 text-base md:text-lg text-white text-center truncate w-32 md:w-36"
+            class="mt-2 text-base md:text-lg text-white text-center
+                   max-w-full overflow-hidden text-ellipsis whitespace-nowrap
+                   group-hover:whitespace-normal group-hover:overflow-visible
+                   group-hover:max-w-none"
           >
             {{ artist.name }}
           </p>

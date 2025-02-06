@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
@@ -11,10 +12,11 @@ export class RegisterComponent {
   name: string = '';
   email: string = '';
   password: string = '';
-  errorMessages: { name?: string; email?: string; password?: string } = {};
+  confirmPassword: string = '';
+  errorMessages: { name?: string; email?: string; password?: string; confirmPassword?: string} = {};
   isLoading: boolean = false;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router, private toastr: ToastrService) {}
 
   validateInputs(): boolean {
     this.errorMessages = {};
@@ -33,6 +35,10 @@ export class RegisterComponent {
       this.errorMessages.password = 'Password must be at least 6 characters.';
     }
 
+    if (this.password !== this.confirmPassword) {
+      this.errorMessages.confirmPassword = "Passwords do not match!";
+    }
+
     return Object.keys(this.errorMessages).length === 0;
   }
 
@@ -41,21 +47,50 @@ export class RegisterComponent {
       return;
     }
 
-    this.isLoading = true; // 🔥 Start loading
+    this.isLoading = true;
 
     const userData = { name: this.name, email: this.email, password: this.password };
 
     this.authService.register(userData).subscribe({
       next: (response) => {
+        this.toastr.success('Account created successfully!', 'Success');
         localStorage.setItem('token', response.token);
         this.router.navigate(['/login']);
       },
       error: (error) => {
+        this.isLoading = false;
+        this.toastr.error('Registration failed! Try again.', 'Error');
         this.errorMessages.email = error.error.message || 'Registration failed.';
       },
       complete: () => {
-        this.isLoading = false; // 🔥 Stop loading
+        this.isLoading = false;
       }
     });
   }
+
+  // loginWithGoogle() {
+  //   this.authService.loginWithGoogle().subscribe({
+  //     next: (response) => {
+  //       if (response.isNewUser) {
+  //         // Automatically register the user if it's their first time
+  //         this.authService.registerWithGoogle(response.name, response.email, response.profilePicture).subscribe({
+  //           next: () => {
+  //             localStorage.setItem('profilePicture', response.profilePicture || 'assets/user.png');
+  //             this.router.navigate(['/']);
+  //           },
+  //           error: (error) => {
+  //             console.error('Google registration failed', error);
+  //           }
+  //         });
+  //       } else {
+  //         // If user already exists, just log them in
+  //         localStorage.setItem('profilePicture', response.profilePicture || 'assets/user.png');
+  //         this.router.navigate(['/']);
+  //       }
+  //     },
+  //     error: (error) => {
+  //       console.error('Google login failed', error);
+  //     }
+  //   });
+  // }
 }

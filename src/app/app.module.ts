@@ -11,6 +11,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { HomeComponent } from './components/home/home.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { SearchService } from './services/search.service';
+import { ProfileComponent } from './components/profile/profile.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations'; // Required for animations
+import { ToastrModule } from 'ngx-toastr';
 
 @NgModule({
   declarations: [
@@ -18,13 +21,21 @@ import { SearchService } from './services/search.service';
     LoginComponent,
     RegisterComponent,
     HomeComponent,
-    NavbarComponent
+    NavbarComponent,
+    ProfileComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-    RouterModule
+    RouterModule,
+    BrowserAnimationsModule,
+    ToastrModule.forRoot({
+      timeOut: 3000, // Auto dismiss after 3 seconds
+      positionClass: 'toast-top-center', // Position of the toast
+      preventDuplicates: true, // Prevent multiple toasts of the same type
+      progressBar: true // Shows progress bar for timeout
+    }),
   ],
   providers: [AuthService,
     SearchService,

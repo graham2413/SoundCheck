@@ -1,0 +1,15 @@
+@keyframes scroll {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee {
+  animation: scroll 10s linear infinite;
+  width: 200%;          /* 2x the normal width for two halves */
+  display: flex;        /* horizontal layout */
+}
+
+.half {
+  width: 50%;           /* each half is 50% of container */
+  display: flex;        /* horizontal layout of images */
+}

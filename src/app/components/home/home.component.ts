@@ -4,6 +4,7 @@ import { SearchService } from 'src/app/services/search.service';
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
+  styleUrls: ['./home.component.css']
 })
 export class HomeComponent {
   query: string = '';
@@ -36,5 +37,4 @@ export class HomeComponent {
   setActiveTab(tab: 'songs' | 'albums' | 'artists') {
     this.activeTab = tab;
   }
-
 }
