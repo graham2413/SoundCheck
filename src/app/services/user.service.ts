@@ -24,16 +24,20 @@ export class UserService {
   }
 
     // Update authenticated user profile
-    updateUserProfile(data: any): Observable<any> {
+    updateUserProfile(formData: FormData): Observable<any> {
       const token = localStorage.getItem('token');
-  
+    
       if (!token) {
         console.error("No authentication token found");
         return new Observable();
       }
-  
-      const headers = { Authorization: `Bearer ${token}` };
-      return this.http.put<any>(`${this.apiUrl}/profile`, data, { headers });
+    
+      return this.http.put<any>(`${this.apiUrl}/profile`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
     }
+    
   
 }

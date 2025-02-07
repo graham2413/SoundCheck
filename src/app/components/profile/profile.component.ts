@@ -7,10 +7,10 @@ import { UserService } from 'src/app/services/user.service';
   templateUrl: './profile.component.html',
 })
 export class ProfileComponent implements OnInit {
-  userProfile: any = {}; // Holds profile data
+  userProfile: any = {};
   newPassword: string = '';
   showDeleteConfirm: boolean = false;
-  selectedImageBase64: string | null = null; // Stores the Base64 image
+  selectedFile: File | null = null;  // Store file instead of Base64
   passwordError: string = '';
 
   constructor(private userService: UserService, private toastr: ToastrService) {}
@@ -25,6 +25,8 @@ export class ProfileComponent implements OnInit {
         this.userProfile = data || {};
         if (!this.userProfile.profilePicture || this.userProfile.profilePicture.trim() === '') {
           this.userProfile.profilePicture = 'assets/user.png';
+        } else {
+          this.userProfile.profilePicture += `?t=${new Date().getTime()}`; // Prevent caching
         }
       },
       error: (err) => {
@@ -32,15 +34,17 @@ export class ProfileComponent implements OnInit {
       }
     });
   }
+  
 
   onProfilePictureChange(event: any) {
     const file = event.target.files[0];
 
     if (file) {
+      this.selectedFile = file;
+      
       const reader = new FileReader();
       reader.onload = (e) => {
-        this.selectedImageBase64 = e.target?.result as string;
-        this.userProfile.profilePicture = this.selectedImageBase64; // Update UI instantly
+        this.userProfile.profilePicture = e.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -49,16 +53,24 @@ export class ProfileComponent implements OnInit {
   saveProfile() {
     this.passwordError = '';
   
-    const updatedData = {
-      username: this.userProfile.username,
-      profilePicture: this.selectedImageBase64 || this.userProfile.profilePicture,
-      newPassword: this.newPassword ? this.newPassword : undefined,
-    };
+    const formData = new FormData();
+    formData.append('username', this.userProfile.username);
   
-    this.userService.updateUserProfile(updatedData).subscribe({
+    if (this.selectedFile) {
+      formData.append('profilePicture', this.selectedFile);
+    }
+  
+    if (this.newPassword) {
+      formData.append('newPassword', this.newPassword);
+    }
+  
+    this.userService.updateUserProfile(formData).subscribe({
       next: (response) => {
         this.toastr.success('Profile updated!', 'Success');
         this.newPassword = '';
+  
+        // Refresh user profile to show new image
+        this.getProfileData();
       },
       error: (err) => {
         console.error('Error updating profile:', err);
@@ -68,6 +80,7 @@ export class ProfileComponent implements OnInit {
       },
     });
   }
+  
 
   confirmDeleteAccount() {
     this.showDeleteConfirm = true;
@@ -78,8 +91,6 @@ export class ProfileComponent implements OnInit {
   }
 
   deleteAccount() {
-    console.log('Account Deleted');
-    alert('Your account has been deleted.');
-    this.showDeleteConfirm = false;
+    // add delete account logic here
   }
 }

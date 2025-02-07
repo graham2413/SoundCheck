@@ -1,5 +1,5 @@
 const User = require("../models/User");
-const cloudinary = require("../config/cloudinaryConfig");
+const { cloudinary, upload } = require("../config/cloudinaryConfig");
 const bcrypt = require("bcryptjs");
 
 // Public - Get a specific user's profile by ID
@@ -32,24 +32,28 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
 // Protected - Allow users to update their own profile
 exports.updateUserProfile = async (req, res) => {
     try {
+        
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({ message: "Unauthorized. User not found in request." });
+        }
+
         const user = await User.findById(req.user._id);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Handle Profile Picture Update (If a new image is provided)
+        // Handle Profile Picture Upload (Using Multer)
         let profilePictureUrl = user.profilePicture;
-        if (req.body.profilePicture && req.body.profilePicture.startsWith("data:image")) {
-            const uploadedImage = await cloudinary.uploader.upload(req.body.profilePicture, {
+        if (req.file) {
+            const uploadedImage = await cloudinary.uploader.upload(req.file.path, {
                 folder: "profile_pictures",
-                transformation: [{ width: 300, height: 300, crop: "fill" }]
+                transformation: [{ width: 300, height: 300, crop: "fill" }],
             });
             profilePictureUrl = uploadedImage.secure_url;
         }
 
         // Handle Password Update (If a new password is provided)
         if (req.body.newPassword && req.body.newPassword.trim() !== "") {
-            // Compare new password with the current one
             const isSamePassword = await bcrypt.compare(req.body.newPassword, user.password);
             if (isSamePassword) {
                 return res.status(400).json({ message: "New password must be different from the current password." });
@@ -67,7 +71,6 @@ exports.updateUserProfile = async (req, res) => {
         // Save updated user data
         const updatedUser = await user.save();
 
-        // Return updated user profile (excluding sensitive data)
         res.json({
             _id: updatedUser._id,
             username: updatedUser.username,
