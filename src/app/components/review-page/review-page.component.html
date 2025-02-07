@@ -1,0 +1,24 @@
+<!-- Fullscreen Modal Overlay -->
+<div class="modal-header">
+  <h2 class="text-xl font-bold">{{ record?.name }}</h2>
+  <button type="button" class="close text-white text-lg" (click)="close()">&times;</button>
+</div>
+
+<div class="modal-body">
+  <p class="text-gray-400">{{ record?.artist }} - {{ record?.type }}</p>
+  <div class="mt-4">
+    <p class="text-yellow-400">⭐ Rating: {{ record?.rating }} / 5</p>
+    <h3 class="text-xl font-semibold mt-3 text-white">Reviews:</h3>
+    <ul class="mt-2">
+      <li *ngFor="let review of record?.reviews" class="border-b border-gray-700 py-2">
+        <p class="text-sm text-gray-300">"{{ review.text }}" - <em>{{ review.user }}</em></p>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="modal-footer">
+  <button (click)="close()" class="mt-4 bg-red-500 px-4 py-2 rounded text-white hover:bg-red-600">
+    Close
+  </button>
+</div>

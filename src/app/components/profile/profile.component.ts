@@ -10,32 +10,26 @@ export class ProfileComponent implements OnInit {
   userProfile: any = {};
   newPassword: string = '';
   showDeleteConfirm: boolean = false;
-  selectedFile: File | null = null;  // Store file instead of Base64
+  selectedFile: File | null = null;
   passwordError: string = '';
+  isSaving: boolean = false;
 
   constructor(private userService: UserService, private toastr: ToastrService) {}
 
   ngOnInit(): void {
-    this.getProfileData();
-  }
-
-  getProfileData() {
-    this.userService.getAuthenticatedUserProfile().subscribe({
-      next: (data) => {
-        this.userProfile = data || {};
-        if (!this.userProfile.profilePicture || this.userProfile.profilePicture.trim() === '') {
-          this.userProfile.profilePicture = 'assets/user.png';
-        } else {
-          this.userProfile.profilePicture += `?t=${new Date().getTime()}`; // Prevent caching
-        }
-      },
-      error: (err) => {
-        console.error("Error fetching user profile:", err);
+    // Subscribe to the global profile state
+    this.userService.userProfile$.subscribe(profile => {
+      if (profile) {
+        this.userProfile = profile;
       }
     });
+
+    // If the profile hasn't been fetched yet, fetch it once
+    if (!this.userProfile || !this.userProfile.username) {
+      this.userService.getAuthenticatedUserProfile().subscribe();
+    }
   }
   
-
   onProfilePictureChange(event: any) {
     const file = event.target.files[0];
 
@@ -52,6 +46,7 @@ export class ProfileComponent implements OnInit {
 
   saveProfile() {
     this.passwordError = '';
+    this.isSaving = true;
   
     const formData = new FormData();
     formData.append('username', this.userProfile.username);
@@ -70,10 +65,12 @@ export class ProfileComponent implements OnInit {
         this.newPassword = '';
   
         // Refresh user profile to show new image
-        this.getProfileData();
+        this.userService.setUserProfile(response);
+        this.isSaving = false;
       },
       error: (err) => {
         console.error('Error updating profile:', err);
+        this.isSaving = false;
         if (err.error && err.error.message) {
           this.passwordError = err.error.message;
         }

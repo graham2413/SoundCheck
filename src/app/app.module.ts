@@ -8,24 +8,28 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AuthService } from './services/auth.service';
 import { provideHttpClient } from '@angular/common/http';
-import { HomeComponent } from './components/home/home.component';
+import { MainSearchComponent } from './components/main-search/main-search.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { SearchService } from './services/search.service';
 import { ProfileComponent } from './components/profile/profile.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'; // Required for animations
 import { ToastrModule } from 'ngx-toastr';
+import { ReviewPageComponent } from './components/review-page/review-page.component';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
     AppComponent,
     LoginComponent,
     RegisterComponent,
-    HomeComponent,
+    MainSearchComponent,
     NavbarComponent,
-    ProfileComponent
+    ProfileComponent,
+    ReviewPageComponent
   ],
   imports: [
     BrowserModule,
+    NgbModule,
     AppRoutingModule,
     FormsModule,
     RouterModule,
@@ -37,7 +41,8 @@ import { ToastrModule } from 'ngx-toastr';
       progressBar: true // Shows progress bar for timeout
     }),
   ],
-  providers: [AuthService,
+  providers: [
+    AuthService,
     SearchService,
     provideHttpClient()
   ],

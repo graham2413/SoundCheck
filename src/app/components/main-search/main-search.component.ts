@@ -1,12 +1,14 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
+import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { SearchService } from 'src/app/services/search.service';
+import { ReviewPageComponent } from '../review-page/review-page.component';
 
 @Component({
-  selector: 'app-home',
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.css']
+  selector: 'app-main-search',
+  templateUrl: './main-search.component.html',
+  styleUrls: ['./main-search.component.css']
 })
-export class HomeComponent {
+export class MainSearchComponent {
   @ViewChild('marqueeContainer') marqueeContainer!: ElementRef<HTMLDivElement>;
   @ViewChild('marqueeTrack') marqueeTrack!: ElementRef<HTMLDivElement>;
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
@@ -18,8 +20,10 @@ export class HomeComponent {
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
   private trackX = 0;
   private speed = 0.5; 
+  isModalOpen = false;
+  selectedRecord: any = null;
 
-  constructor(private searchService: SearchService) {}
+  constructor(private searchService: SearchService, public modal: NgbModal) {}
 
   ngAfterViewInit(): void {
     this.initializeMarquee();
@@ -82,7 +86,7 @@ export class HomeComponent {
     setTimeout(() => {
       const searchBarEl = this.searchBar.nativeElement;
       const elementTop = searchBarEl.getBoundingClientRect().top + window.pageYOffset;
-      const offset = elementTop - 80;
+      const offset = elementTop - 110;
        window.scrollTo({ top: offset, behavior: 'smooth' });
     }, 0);
 
@@ -105,5 +109,23 @@ export class HomeComponent {
 
   setActiveTab(tab: 'songs' | 'albums' | 'artists') {
     this.activeTab = tab;
+  }
+
+  openModal(record: any) {
+    const modalOptions: NgbModalOptions = {
+      backdrop: 'static', // Prevents closing on outside click
+      keyboard: true, // Allows closing with ESC key
+      centered: true, // Centers the modal
+    };
+
+    console.log("Opening modal with record:", record);
+    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+    modalRef.componentInstance.record = record;
+  }
+  
+
+  closeModal() {
+    this.isModalOpen = false;
+    this.selectedRecord = null;
   }
 }

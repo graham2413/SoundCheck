@@ -1,13 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { env } from '../../env';
+import { tap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UserService {
   private apiUrl = env.userUrl;
+  private userProfileSubject = new BehaviorSubject<any>(null);
+  userProfile$ = this.userProfileSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
@@ -18,9 +21,19 @@ export class UserService {
       console.error("No authentication token found");
       return new Observable();
     }
-  
+
     const headers = { Authorization: `Bearer ${token}` };
-    return this.http.get<any>(`${this.apiUrl}/profile`, { headers });
+
+    return this.http.get<any>(`${this.apiUrl}/profile`, { headers }).pipe(
+      tap((profile) => {
+        if (profile) {
+          profile.profilePicture = profile.profilePicture?.trim() ? 
+            `${profile.profilePicture}?t=${new Date().getTime()}` : 
+            'assets/user.png';
+
+          this.userProfileSubject.next(profile); // Store in BehaviorSubject
+        }
+      }));
   }
 
     // Update authenticated user profile
@@ -38,6 +51,8 @@ export class UserService {
         }
       });
     }
-    
-  
+
+    setUserProfile(profile: any) {
+      this.userProfileSubject.next(profile);
+    }
 }

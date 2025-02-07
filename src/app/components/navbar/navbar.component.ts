@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
@@ -9,47 +9,58 @@ import { UserService } from 'src/app/services/user.service';
 })
 export class NavbarComponent implements OnInit {
   isMenuOpen: boolean = false;
-  isProfileMenuOpen = false;
+  isProfileMenuOpen: boolean = false;
   profilePicture: string = '';
   userProfile: any = {};
 
-  ngOnInit(): void {
-    this.getProfilePicture();
-  }
+  constructor(
+    private authService: AuthService,
+    private toastr: ToastrService,
+    private userService: UserService,
+    private eRef: ElementRef
+  ) {}
 
-  constructor(private authService: AuthService, private toastr: ToastrService, private userService: UserService) {}
+  ngOnInit(): void {
+    this.userService.userProfile$.subscribe(profile => {
+      if (profile) {
+        this.userProfile = profile;
+      }
+    });
+
+    if (!this.userProfile || !this.userProfile.username) {
+      this.userService.getAuthenticatedUserProfile().subscribe();
+    }
+  }
 
   toggleMenu() {
     this.isMenuOpen = !this.isMenuOpen;
   }
 
-  toggleProfileMenu() {
+  toggleProfileMenu(event: Event) {
+    event.stopPropagation();
     this.isProfileMenuOpen = !this.isProfileMenuOpen;
   }
 
-  getProfilePicture() {
-    this.userService.getAuthenticatedUserProfile().subscribe({
-      next: (data) => {
-        this.userProfile = data || {};
-        if (!this.userProfile.profilePicture || this.userProfile.profilePicture.trim() === '') {
-          this.userProfile.profilePicture = 'assets/user.png';
-        } else {
-          this.userProfile.profilePicture += `?t=${new Date().getTime()}`; // Prevent caching
-        }
-      },
-      error: (err) => {
-        console.error("Error fetching user profile:", err);
-      }
-    });
+  closeProfileMenu() {
+    this.isProfileMenuOpen = false;
   }
 
   logout() {
     this.authService.logout();
     this.isMenuOpen = false;
+    this.isProfileMenuOpen = false;
     this.toastr.success('Logged out successfully');
   }
 
   isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
+  }
+
+  // Detects clicks outside the profile dropdown and closes it
+  @HostListener('document:click', ['$event'])
+  closeProfileMenuOnOutsideClick(event: Event) {
+    if (!this.eRef.nativeElement.contains(event.target)) {
+      this.isProfileMenuOpen = false;
+    }
   }
 }
