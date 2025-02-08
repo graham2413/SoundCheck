@@ -6,7 +6,7 @@ import { ReviewPageComponent } from '../review-page/review-page.component';
 @Component({
   selector: 'app-main-search',
   templateUrl: './main-search.component.html',
-  styleUrls: ['./main-search.component.css']
+  styleUrls: ['./main-search.component.css'],
 })
 export class MainSearchComponent {
   @ViewChild('marqueeContainer') marqueeContainer!: ElementRef<HTMLDivElement>;
@@ -19,7 +19,7 @@ export class MainSearchComponent {
   errorMessage: string = '';
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
   private trackX = 0;
-  private speed = 0.5; 
+  private speed = 0.5;
   isModalOpen = false;
   selectedRecord: any = null;
 
@@ -33,11 +33,11 @@ export class MainSearchComponent {
   private initializeMarquee() {
     const containerEl = this.marqueeContainer.nativeElement;
     const trackEl = this.marqueeTrack.nativeElement;
-    
+
     // Original images
     const originalImages = Array.from(trackEl.children) as HTMLImageElement[];
 
-    const getTrackWidth = () => trackEl.scrollWidth; 
+    const getTrackWidth = () => trackEl.scrollWidth;
     const getContainerWidth = () => containerEl.offsetWidth;
 
     // Keep duplicating until track is >= 2x container width
@@ -58,7 +58,8 @@ export class MainSearchComponent {
     // Check if the first child is fully off-screen
     const firstImg = trackEl.firstElementChild as HTMLImageElement | null;
     if (firstImg) {
-      const firstImgWidth = firstImg.offsetWidth + this.getMarginRight(firstImg);
+      const firstImgWidth =
+        firstImg.offsetWidth + this.getMarginRight(firstImg);
       if (Math.abs(this.trackX) >= firstImgWidth) {
         // remove from the front
         trackEl.removeChild(firstImg);
@@ -85,9 +86,10 @@ export class MainSearchComponent {
     // Scroll the search bar into view
     setTimeout(() => {
       const searchBarEl = this.searchBar.nativeElement;
-      const elementTop = searchBarEl.getBoundingClientRect().top + window.pageYOffset;
+      const elementTop =
+        searchBarEl.getBoundingClientRect().top + window.pageYOffset;
       const offset = elementTop - 110;
-       window.scrollTo({ top: offset, behavior: 'smooth' });
+      window.scrollTo({ top: offset, behavior: 'smooth' });
     }, 0);
 
     this.isLoading = true;
@@ -103,7 +105,7 @@ export class MainSearchComponent {
         this.errorMessage = 'Failed to fetch results. Try again.';
         console.error('Search Error:', error);
         this.isLoading = false;
-      }
+      },
     });
   }
 
@@ -111,18 +113,18 @@ export class MainSearchComponent {
     this.activeTab = tab;
   }
 
-  openModal(record: any) {
+  openModal(record: any, type: string) {
     const modalOptions: NgbModalOptions = {
-      backdrop: 'static', // Prevents closing on outside click
-      keyboard: true, // Allows closing with ESC key
-      centered: true, // Centers the modal
+      backdrop: 'static',
+      keyboard: true,
+      centered: true,
+      scrollable: true,
     };
 
-    console.log("Opening modal with record:", record);
     const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
     modalRef.componentInstance.record = record;
+    modalRef.componentInstance.type = type;
   }
-  
 
   closeModal() {
     this.isModalOpen = false;

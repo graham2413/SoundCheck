@@ -1,0 +1,12 @@
+.modal.show .modal-dialog {
+    transform: none !important;
+    width: 90vw !important;
+    min-width: 90vw !important;
+    max-width: 90vw !important;
+  }
+  .modal {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+  

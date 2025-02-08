@@ -1,24 +1,57 @@
-<!-- Fullscreen Modal Overlay -->
-<div class="modal-header">
-  <h2 class="text-xl font-bold">{{ record?.name }}</h2>
-  <button type="button" class="close text-white text-lg" (click)="close()">&times;</button>
-</div>
+<!-- Bootstrap Modal Structure -->
+<div class="modal show d-block" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered max-w-screen-lg w-full">
+    <div class="modal-content bg-[#1E1E1E] text-white rounded-2xl shadow-xl p-6">
+      
+      <!-- Modal Header -->
+      <div class="modal-header border-b border-gray-700 pb-3 w-full flex items-center justify-between">
+        <h2 class="text-3xl font-semibold tracking-wide">{{ record?.name || record?.title }}</h2>
+        <p class="text-yellow-400 text-xl font-semibold">
+          ⭐ {{ record?.rating ? record?.rating + " / 10" : "No ratings" }}
+        </p>
+      </div>
 
-<div class="modal-body">
-  <p class="text-gray-400">{{ record?.artist }} - {{ record?.type }}</p>
-  <div class="mt-4">
-    <p class="text-yellow-400">⭐ Rating: {{ record?.rating }} / 5</p>
-    <h3 class="text-xl font-semibold mt-3 text-white">Reviews:</h3>
-    <ul class="mt-2">
-      <li *ngFor="let review of record?.reviews" class="border-b border-gray-700 py-2">
-        <p class="text-sm text-gray-300">"{{ review.text }}" - <em>{{ review.user }}</em></p>
-      </li>
-    </ul>
+      <!-- Modal Body (Grid Layout) -->
+      <div class="modal-body grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+
+        <!-- Left Side: Image & Audio Player -->
+        <div class="flex flex-col items-center">
+          <img [src]="record?.cover" alt="{{ record?.title }}" class="w-48 h-48 rounded-lg shadow-md">
+          <p class="text-gray-300 text-lg mt-4 font-medium">{{ record?.title }} - <span class="text-gray-400">{{ record?.artist }}</span></p>
+          
+          <audio *ngIf="record?.preview" controls class="mt-4 w-3/4 outline-none bg-transparent">
+            <source [src]="record?.preview" type="audio/mpeg">
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+
+        <!-- Right Side: Reviews Section -->
+        <div class="bg-[#252525] p-6 rounded-xl shadow-md w-full">
+          <h3 class="text-xl font-semibold mb-4">Reviews</h3>
+          
+          <ng-container *ngIf="record?.reviews?.length; else noReviews">
+            <ul class="space-y-3">
+              <li *ngFor="let review of record?.reviews" class="p-4 bg-[#333] rounded-lg shadow">
+                <p class="text-gray-300">{{ review }}</p>
+              </li>
+            </ul>
+          </ng-container>
+
+          <!-- No Reviews Message -->
+          <ng-template #noReviews>
+            <p class="text-gray-400 italic">No reviews available.</p>
+          </ng-template>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer flex justify-end w-full mt-6">
+        <button (click)="close()" class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-xl text-lg font-medium shadow-md transition duration-200">
+          Close
+        </button>
+      </div>
+
+    </div>
   </div>
-</div>
-
-<div class="modal-footer">
-  <button (click)="close()" class="mt-4 bg-red-500 px-4 py-2 rounded text-white hover:bg-red-600">
-    Close
-  </button>
 </div>
