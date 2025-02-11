@@ -1,18 +1,19 @@
 <nav
-  class="bg-gray-800 bg-opacity-90 backdrop-blur-lg text-white px-6 py-4 flex items-center justify-between fixed w-full top-0 left-0 shadow-lg z-50"
-  (click)="closeProfileMenuOnOutsideClick($event)" 
+  class="bg-gray-700 bg-opacity-90 backdrop-blur-lg text-white px-6 py-6 flex items-center justify-between fixed w-full top-0 left-0 shadow-lg z-50 h-24"
+  (click)="closeProfileMenuOnOutsideClick($event)"
 >
-  <!-- Logo and Name (Left) -->
   <div class="flex items-center gap-3">
-    <img src="../assets/music.png" alt="Logo" class="h-10" />
+    <div class="h-12 w-12 relative">
+      <img src="../assets/music.png" alt="Logo" class="absolute inset-0 h-full w-full object-contain" />
+    </div>
     <span class="text-2xl font-semibold">SoundCheck</span>
   </div>
 
-  <!-- Navigation Links (Larger Text) -->
   <div class="hidden md:flex absolute left-1/2 transform -translate-x-1/2 gap-10">
     <a
       routerLink="/"
       routerLinkActive="active-link"
+      [routerLinkActiveOptions]="{ exact: true }"
       class="rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
       (click)="closeProfileMenu()"
     >
@@ -28,22 +29,20 @@
     </a>
   </div>
 
-  <!-- User Profile & Logout (Larger Text & Image) -->
   <div class="hidden md:flex items-center gap-4 relative">
-    <!-- Profile Dropdown -->
     <div class="relative">
       <button
         (click)="toggleProfileMenu($event)"
         class="flex items-center rounded-full focus:outline-none"
       >
-        <img
-          [src]="userProfile.profilePicture"
-          alt="User Profile"
-          class="h-12 w-12 rounded-full border-2 border-gray-700 shadow-md"
-        />
+        <div class="h-16 w-16 relative">  <img
+            [src]="userProfile.profilePicture"
+            alt="User Profile"
+            class="absolute inset-0 h-full w-full rounded-full border-2 border-gray-700 shadow-md object-cover"
+          />
+        </div>
       </button>
 
-      <!-- Dropdown Menu with Larger Text -->
       <div
         *ngIf="isProfileMenuOpen"
         class="absolute right-0 mt-2 w-56 bg-gray-800 text-gray-300 rounded-md shadow-lg py-2 z-50 border border-gray-700"
@@ -72,7 +71,6 @@
     </div>
   </div>
 
-  <!-- Mobile Menu Toggle -->
   <button (click)="toggleMenu()" class="md:hidden">
     <svg
       class="h-8 w-8 text-white"
@@ -88,7 +86,6 @@
   </button>
 </nav>
 
-<!-- Mobile Navigation (Larger Text) -->
 <div
   *ngIf="isMenuOpen"
   class="fixed inset-0 bg-gray-800 bg-opacity-95 backdrop-blur-lg flex flex-col items-center justify-center space-y-6 text-white md:hidden z-50"

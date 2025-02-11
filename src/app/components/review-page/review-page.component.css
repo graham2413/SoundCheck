@@ -1,12 +1,35 @@
+.modal {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+  padding: 2rem !important;
+  transition: none !important;
+  animation: none !important;
+}
+
 .modal.show .modal-dialog {
-    transform: none !important;
-    width: 90vw !important;
-    min-width: 90vw !important;
-    max-width: 90vw !important;
-  }
-  .modal {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-  }
-  
+  transform: translateY(-50%) !important;
+  width: 90vw !important;
+  min-width: 90vw !important;
+  max-width: 90vw !important;
+  min-height: 85vh !important;
+  max-height: 85vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+.modal-content {
+  flex-grow: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}

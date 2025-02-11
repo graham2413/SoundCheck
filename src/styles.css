@@ -12,3 +12,10 @@ html, body {
   
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+.modal,
+.modal.fade .modal-dialog,
+.modal-backdrop {
+  transition: none !important;
+  animation: none !important;
+}
