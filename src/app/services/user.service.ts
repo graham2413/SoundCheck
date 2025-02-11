@@ -31,7 +31,7 @@ export class UserService {
             `${profile.profilePicture}?t=${new Date().getTime()}` : 
             'assets/user.png';
 
-          this.userProfileSubject.next(profile); // Store in BehaviorSubject
+          this.userProfileSubject.next(profile);
         }
       }));
   }

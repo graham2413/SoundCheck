@@ -82,7 +82,7 @@ export class MainSearchComponent {
 
   onSearch() {
     if (!this.query.trim()) return;
-
+  
     // Scroll the search bar into view
     setTimeout(() => {
       const searchBarEl = this.searchBar.nativeElement;
@@ -91,13 +91,29 @@ export class MainSearchComponent {
       const offset = elementTop - 110;
       window.scrollTo({ top: offset, behavior: 'smooth' });
     }, 0);
-
+  
     this.isLoading = true;
     this.errorMessage = '';
-
+  
     this.searchService.searchMusic(this.query).subscribe({
       next: (data) => {
-        this.results = data;
+        // Enhance images for better quality before storing results
+        this.results = {
+          ...data,
+          songs: data.songs.map((song: { cover: string }) => ({
+            ...song,
+            cover: this.getHighQualityImage(song.cover)
+          })),
+          albums: data.albums.map((album: { cover: string }) => ({
+            ...album,
+            cover: this.getHighQualityImage(album.cover)
+          })),
+          artists: data.artists.map((artist: { picture: string }) => ({
+            ...artist,
+            picture: this.getHighQualityImage(artist.picture)
+          }))
+        };
+
         this.setActiveTab('songs');
         this.isLoading = false;
       },
@@ -108,6 +124,7 @@ export class MainSearchComponent {
       },
     });
   }
+  
 
   setActiveTab(tab: 'songs' | 'albums' | 'artists') {
     this.activeTab = tab;
@@ -125,6 +142,23 @@ export class MainSearchComponent {
     modalRef.componentInstance.record = record;
     modalRef.componentInstance.type = type;
   }
+  
+
+  getHighQualityImage(imageUrl: string): string {
+    if (!imageUrl) return '';
+  
+    // Ensure we're requesting the highest resolution available
+    if (imageUrl.includes('api.deezer.com')) {
+      return `${imageUrl}?size=xl`;
+    }
+  
+    return imageUrl;
+  }
+  
+  
+  
+  
+  
 
   closeModal() {
     this.isModalOpen = false;

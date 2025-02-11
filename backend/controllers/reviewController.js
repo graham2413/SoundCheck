@@ -3,48 +3,64 @@ const Review = require("../models/Review");
 // Create a new review
 exports.createReview = async (req, res) => {
     try {
-        const { albumOrSongId, type, rating, reviewText } = req.body;
+        const { albumSongOrArtistId, type, rating, reviewText } = req.body;
 
-        if (!albumOrSongId || !type) {
+        if (!albumSongOrArtistId || !type) {
             return res.status(400).json({ message: "Album or song ID and type are required." });
         }
 
         const newReview = new Review({
             user: req.user._id,
-            albumOrSongId,
+            albumSongOrArtistId,
             type,
             rating,
             reviewText
         });
 
+        // Save the new review
         await newReview.save();
-        res.status(201).json({ message: "Review created successfully!", review: newReview });
+
+        // Populate the user details for the created review
+        await newReview.populate('user', 'username');
+
+        res.status(201).json({
+            message: "Review created successfully!",
+            review: newReview
+        });
     } catch (error) {
         res.status(400).json({ message: error.message || "Error creating review." });
     }
 };
 
-// Get all reviews for an album/song
-exports.getReviewsByAlbumOrSong = async (req, res) => {
+
+// Get all reviews for an album/song as well as the current user's review
+exports.getReviewsWithUserReview = async (req, res) => {
     try {
         const { id } = req.params;
-        const reviews = await Review.find({ albumOrSongId: id }).populate("user", "username");
+        const { type } = req.query;
+        const user = req.user.id;
 
-        // Only count non-null ratings
-        const validRatings = reviews.filter(r => r.rating !== null).map(r => r.rating);
-        const averageRating = validRatings.length > 0 
-            ? (validRatings.reduce((sum, rating) => sum + rating, 0) / validRatings.length).toFixed(1)
-            : null;
+        // Check if type is provided and is valid
+        if (!type || !['song', 'album', 'artist'].includes(type)) {
+            return res.status(400).json({ message: "Type (song, album, artist) is required and must be valid." });
+        }
 
-        res.json({
-            averageRating,
-            totalReviews: reviews.length,
-            reviews
+        // Get all reviews for the song/album/artist (filter by both ID and type)
+        const reviews = await Review.find({ albumSongOrArtistId: id, type: type }).populate("user", "username");
+
+        // Get the current user's review (if it exists) for the specific type
+        const userReview = await Review.findOne({ albumSongOrArtistId: id, user, type: type }).populate("user", "username");
+
+        return res.status(200).json({
+            reviews,        // List of all reviews
+            userReview      // Current user's review (if it exists)
         });
     } catch (error) {
-        res.status(500).json({ message: "Server Error" });
+        console.error(error);
+        return res.status(500).json({ message: "An error occurred while fetching reviews." });
     }
 };
+
 
 // Edit a review (Only the review owner)
 exports.editReview = async (req, res) => {

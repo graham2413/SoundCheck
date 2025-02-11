@@ -35,14 +35,15 @@
     #searchBar
     class="relative mt-8 w-full max-w-md sm:max-w-lg mx-auto px-4"
   >
-    <input
-      type="text"
-      autofocus
-      [(ngModel)]="query"
-      (keyup.enter)="onSearch()"
-      placeholder="Search for songs, albums, or artists..."
-      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg"
-    />
+  <input
+  type="text"
+  autofocus
+  [(ngModel)]="query"
+  (keyup.enter)="onSearch()"
+  placeholder="Search for songs, albums, or artists..."
+  class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg sm:text-base text-sm sm:text-base text-base sm:text-lg"
+  />
+
     <button
       (click)="onSearch()"
       class="absolute inset-y-0 right-10 flex items-center"

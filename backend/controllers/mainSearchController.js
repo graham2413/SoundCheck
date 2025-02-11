@@ -35,7 +35,7 @@ exports.searchMusic = async (req, res) => {
                 release_date: album.release_date
             }));
 
-        // 🎤 Process Artists (No Duplicates)
+        // Process Artists (No Duplicates)
         const artists = artistsResponse.data.data.map(artist => ({
             id: artist.id,
             name: artist.name,

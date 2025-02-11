@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from 'src/app/services/auth.service';
+import { UserService } from 'src/app/services/user.service';
 
 @Component({
   selector: 'app-login',
@@ -14,7 +15,7 @@ export class LoginComponent {
   errorMessages: { email?: string; password?: string; general?: string } = {};
   isLoading: boolean = false;
 
-  constructor(private authService: AuthService, private router: Router, private toastr: ToastrService) {}
+  constructor(private authService: AuthService, private router: Router, private toastr: ToastrService, private userService: UserService) {}
 
   validateInputs(): boolean {
     this.errorMessages = {};
@@ -44,11 +45,12 @@ export class LoginComponent {
       next: (response) => {
         localStorage.setItem('token', response.token);
 
-      const profilePicture = response.profilePicture && response.profilePicture !== 'undefined'
+        const profilePicture = response.profilePicture && response.profilePicture.trim() !== 'undefined'
         ? response.profilePicture
         : 'assets/user.png';
 
-      localStorage.setItem('profilePicture', profilePicture);        
+      localStorage.setItem('profilePicture', profilePicture);    
+      this.userService.setUserProfile(response);    
       this.router.navigate(['/']);
       },
       error: (error) => {
