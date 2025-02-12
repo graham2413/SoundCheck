@@ -5,34 +5,80 @@
     class="modal-dialog modal-xl modal-dialog-centered w-screen sm:max-w-screen-lg h-screen sm:h-auto flex flex-col"
   >
     <div
-      class="modal-content bg-[#1E1E1E] text-white rounded-none sm:rounded-2xl shadow-xl p-4 sm:p-6 flex flex-col h-full sm:h-auto w-full overflow-hidden"
+      class="modal-content bg-[#1E1E1E] text-white sm:rounded-2xl shadow-xl p-4 sm:p-6 flex flex-col h-full sm:h-auto w-full overflow-hidden justify-between"
     >
-      <!-- Modal Header -->
-      <div
-        class="modal-header border-b border-gray-700 pb-3 flex items-center justify-between text-lg sm:text-2xl"
+      <!-- Floating Exit Button (Top-Right) -->
+      <button
+        (click)="close()"
+        class="absolute top-3 right-3 bg-gray-800 hover:bg-gray-700 text-white w-12 h-12 rounded-full flex items-center justify-center transition"
       >
-        <h2 class="font-semibold tracking-wide">
-          {{ record?.name || record?.title }}
-        </h2>
-        <p
-          *ngIf="!filteredReviews?.length"
-          class="text-yellow-400 font-semibold"
-        >
-          No ratings
-        </p>
+        <i class="fas fa-times text-lg sm:text-xl"></i>
+      </button>
 
-        <div *ngIf="(filteredReviews || []).length > 0" class="relative inline-block w-10 h-5">
+      <!-- Rating Circle Positioned at the Top Center -->
+      <div class="flex justify-center w-full mt-3 mb-3">
+        <ng-container *ngIf="!isRatingLoaded; else ratingContent">
+          <!-- Skeleton Loader -->
           <div
-            class="absolute inset-0 overflow-hidden"
-            [style.width.%]="(getAverageRating() / 10) * 100"
+            class="animate-pulse bg-gray-600 rounded-full w-20 h-20 flex items-center justify-center"
           >
-            <i class="fas fa-star text-yellow-400"></i>
+            <i class="fas fa-spinner fa-spin text-gray-400 text-3xl"></i>
           </div>
-          <i class="fas fa-star text-gray-600"></i>
-          <span class="ml-2 text-yellow-400 font-semibold"
-            >{{ getAverageRating() | number : "1.1-1" }} / 10</span
-          >
-        </div>
+        </ng-container>
+
+        <ng-template #ratingContent>
+          <div class="relative w-24 h-24 flex items-center justify-center">
+            <svg
+              width="100"
+              height="100"
+              viewBox="0 0 42 42"
+              class="circular-chart absolute"
+            >
+              <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop
+                    offset="0%"
+                    style="stop-color: #facc15; stop-opacity: 1"
+                  />
+                  <stop
+                    offset="100%"
+                    style="stop-color: #f59e0b; stop-opacity: 1"
+                  />
+                </linearGradient>
+              </defs>
+
+              <circle
+                class="circle-bg"
+                cx="21"
+                cy="21"
+                r="18"
+                stroke-width="4"
+              />
+              <circle
+                class="circle"
+                cx="21"
+                cy="21"
+                r="18"
+                [attr.stroke-dasharray]="
+                  (getAverageRating() > 0 ? getAverageRating() * 10 : 1) +
+                  ', 100'
+                "
+                stroke="url(#gradient)"
+                stroke-width="4"
+                [attr.style]="
+                  getAverageRating() === 0 ? 'stroke-opacity: 0;' : ''
+                "
+              />
+            </svg>
+
+            <!-- Centering the Rating Text -->
+            <span
+              class="absolute inset-0 flex items-center justify-center text-white font-bold text-3xl drop-shadow-lg"
+            >
+              {{ getAverageRating() | number : "1.1-1" }}
+            </span>
+          </div>
+        </ng-template>
       </div>
 
       <!-- Modal Body (Scrollable Content) -->
@@ -42,19 +88,35 @@
         <!-- Left Side: Image & Audio Player -->
         <div class="flex flex-col items-center w-full">
           <div
-            class="relative bg-[#2A2A2A] p-2 sm:p-4 md:p-6 rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl flex flex-col items-center"
+            class="relative bg-[#2A2A2A] rounded-xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl flex flex-col items-center p-2"
           >
-            <img
-              [src]="record?.cover ? record.cover : record.picture"
-              alt="{{ record?.title }}"
-              class="w-full max-w-[180px] sm:max-w-[250px] md:max-w-[300px] lg:max-w-[350px] xl:max-w-[400px] h-auto rounded-lg shadow-md"
-            />
+            <div
+              class="relative w-full max-w-[180px] sm:max-w-[250px] md:max-w-[300px] lg:max-w-[350px] xl:max-w-[400px] h-[250px] sm:h-[300px] md:h-[350px] lg:h-[400px] flex flex-col items-center p-2"
+            >
+              <!-- Skeleton Loader -->
+              <div
+                *ngIf="!isImageLoaded"
+                class="absolute inset-0 bg-gray-700 rounded-lg skeleton-wave flex items-center justify-center"
+                style="width: 100%; height: 100%;"
+                >
+              </div>
 
-            <div class="text-center mt-2 sm:mt-3">
+              <!-- Image -->
+              <img
+                *ngIf="isImageLoaded"
+                [src]="record?.cover ? record.cover : record.picture"
+                alt="{{ record?.title }}"
+                class="w-full h-full rounded-lg shadow-md object-cover"
+                />
+            </div>
+
+            <!-- Text below image -->
+            <div class="text-center">
               <p
-                class="text-gray-200 text-base sm:text-lg md:text-xl font-semibold"
+                class="title-text text-gray-200 text-base sm:text-lg md:text-xl font-semibold"
               >
-                {{ record?.title }}
+                <span *ngIf="type != 'artist'"> {{ record?.title }}</span>
+                <span *ngIf="type == 'artist'">{{ record?.name }}</span>
               </p>
               <p class="text-gray-400 text-sm sm:text-base md:text-lg">
                 {{ record?.artist }}
@@ -62,10 +124,7 @@
             </div>
           </div>
 
-          <!-- SCROLL INDICATOR
-          <div class="scroll-indicator text-gray-400 mt-2 animate-bounce">↓ Scroll Down</div> -->
-
-          <div class="mt-3 sm:mt-4 w-full max-w-xs p-2 rounded-lg">
+          <div class="w-full max-w-xs p-2 rounded-lg mt-3">
             <audio
               *ngIf="record?.preview"
               controls
@@ -78,14 +137,16 @@
           </div>
         </div>
 
-        <!-- Right Side: Reviews Section -->
+        <!-- Reviews Section Container (Always Present) -->
         <div class="bg-[#252525] p-4 sm:p-6 rounded-xl shadow-md w-full">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h3 class="text-lg sm:text-xl font-semibold">Reviews</h3>
-            <div *ngIf="!existingUserReview && !isAddingReview">
+            <div
+              *ngIf="!existingUserReview && !isAddingReview && isReviewsLoaded"
+            >
               <button
                 (click)="toggleReviewForm()"
-                class="flex items-center gap-1 sm:gap-2 bg-yellow-500 hover:bg-yellow-600 text-black px-3 sm:px-4 py-1 sm:py-2 rounded-lg font-medium transition text-sm sm:text-base"
+                class="flex items-center gap-1 sm:gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg font-medium transition text-sm sm:text-base"
               >
                 <i class="fas fa-plus-circle text-base sm:text-xl"></i>
                 <span>Add Review</span>
@@ -93,92 +154,103 @@
             </div>
           </div>
 
-          <div
-            *ngIf="isAddingReview"
-            class="mt-3 sm:mt-4 p-4 bg-[#333] rounded-lg"
-          >
-            <label class="block text-sm sm:text-base text-gray-300"
-              >Rating:
-              <span class="text-yellow-400 font-bold text-lg">{{
-                newRating
-              }}</span>
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="10"
-              step="0.1"
-              [(ngModel)]="newRating"
-              class="w-full my-2"
-            />
-
-            <textarea
-              class="w-full p-3 bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500"
-              placeholder="Write your review here..."
-              rows="3"
-              [(ngModel)]="newReview"
-            ></textarea>
-
-            <div class="flex justify-between mt-2">
-              <button
-                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                (click)="submitReview()"
-                class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-lg text-black"
-              >
-                Submit
-              </button>
+          <!-- Loading Indicator for Reviews -->
+          <ng-container *ngIf="!isReviewsLoaded; else reviewsContent">
+            <div class="space-y-3 mt-3">
+              <div class="animate-pulse bg-gray-700 p-4 rounded-lg h-20"></div>
+              <div class="animate-pulse bg-gray-700 p-4 rounded-lg h-20"></div>
+              <div class="animate-pulse bg-gray-700 p-4 rounded-lg h-20"></div>
             </div>
-          </div>
-
-          <div *ngIf="existingUserReview" class="mt-3 sm:mt-4">
-            <ul class="space-y-2 sm:space-y-3">
-              <li
-                class="p-3 sm:p-4 bg-[#333] rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"
-              >
-                <div class="flex-1">
-                  <p class="text-gray-300 text-sm sm:text-base break-words">
-                    {{ existingUserReview.reviewText }}
-                  </p>
-                  <p class="text-gray-400 text-xs sm:text-sm">
-                    - {{ existingUserReview.user.username }} (Your Review)
-                  </p>
-                </div>
-                <p
-                  class="text-yellow-400 font-semibold flex items-center gap-1 text-sm sm:text-base"
-                >
-                  <i class="fas fa-star"></i> {{ existingUserReview.rating }} /
-                  10
-                </p>
-              </li>
-            </ul>
-          </div>
-
-          <ng-container *ngIf="filteredReviews?.length; else noReviews">
-            <ul class="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
-              <li
-                *ngFor="let review of filteredReviews"
-                class="p-3 sm:p-4 bg-[#333] rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"
-              >
-                <div class="flex-1">
-                  <p class="text-gray-300 text-sm sm:text-base break-words">
-                    {{ review.reviewText }}
-                  </p>
-                  <p class="text-gray-400 text-xs sm:text-sm">
-                    - {{ review.user.username }}
-                  </p>
-                </div>
-                <p
-                  class="text-yellow-400 font-semibold flex items-center gap-1 text-sm sm:text-base"
-                >
-                  <i class="fas fa-star"></i> {{ review.rating }} / 10
-                </p>
-              </li>
-            </ul>
           </ng-container>
+
+          <!-- ng-template wraps only review content, not the whole section -->
+          <ng-template #reviewsContent>
+            <div
+              *ngIf="isAddingReview"
+              class="mt-3 sm:mt-4 p-4 bg-[#333] rounded-lg"
+            >
+              <label class="block text-sm sm:text-base text-gray-300">
+                Rating:
+                <span class="text-yellow-400 font-bold text-lg">{{
+                  newRating
+                }}</span>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.1"
+                [(ngModel)]="newRating"
+                class="w-full my-2"
+              />
+              <textarea
+                class="w-full p-3 bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500"
+                placeholder="Write your review here..."
+                rows="3"
+                [(ngModel)]="newReview"
+              ></textarea>
+              <div class="flex justify-between mt-2">
+                <button
+                  class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+                  (click)="cancelReview()"
+                  >
+                  Cancel
+                </button>
+                <button
+                  (click)="submitReview()"
+                  class="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg text-white"
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="existingUserReview" class="mt-3 sm:mt-4">
+              <ul class="space-y-2 sm:space-y-3">
+                <li
+                  class="p-3 sm:p-4 bg-[#333] rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"
+                >
+                  <div class="flex-1">
+                    <p class="text-gray-300 text-sm sm:text-base break-words">
+                      {{ existingUserReview.reviewText }}
+                    </p>
+                    <p class="text-gray-400 text-xs sm:text-sm mt-2">
+                      - {{ existingUserReview.user.username }} (Your Review)
+                    </p>
+                  </div>
+                  <p
+                    class="text-yellow-400 font-semibold flex items-center gap-1 text-sm sm:text-base"
+                  >
+                    <i class="fas fa-star"></i>
+                    {{ existingUserReview.rating }} / 10
+                  </p>
+                </li>
+              </ul>
+            </div>
+
+            <ng-container *ngIf="filteredReviews?.length; else noReviews">
+              <ul class="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
+                <li
+                  *ngFor="let review of filteredReviews"
+                  class="p-3 sm:p-4 bg-[#333] rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"
+                >
+                  <div class="flex-1">
+                    <p class="text-gray-300 text-sm sm:text-base break-words">
+                      {{ review.reviewText }}
+                    </p>
+                    <p class="text-gray-400 text-xs sm:text-sm mt-2">
+                      - {{ review.user.username }}
+                    </p>
+                  </div>
+                  <p
+                    class="text-yellow-400 font-semibold flex items-center gap-1 text-sm sm:text-base"
+                  >
+                    <i class="fas fa-star"></i> {{ review.rating }} / 10
+                  </p>
+                </li>
+              </ul>
+            </ng-container>
+          </ng-template>
 
           <ng-template #noReviews>
             <p class="text-gray-400 italic mt-3 text-sm sm:text-base">
@@ -186,18 +258,6 @@
             </p>
           </ng-template>
         </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div
-        class="modal-footer mt-auto flex justify-end w-full pt-3 sm:pt-4 border-t border-gray-700"
-      >
-        <button
-          (click)="close()"
-          class="bg-red-500 hover:bg-red-600 px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-lg font-medium"
-        >
-          Close
-        </button>
       </div>
     </div>
   </div>

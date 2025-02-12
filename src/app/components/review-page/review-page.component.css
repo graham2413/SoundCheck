@@ -48,19 +48,35 @@
   height: 30px;
   background: linear-gradient(to top, rgba(30, 30, 30, 0.9), rgba(30, 30, 30, 0));
   pointer-events: none;
+  display: none !important;
 }
 
-/* .scroll-indicator {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #aaa;
-  font-size: 14px;
-  animation: fadeOut 3s ease-in-out forwards;
+
+.circular-chart {
+  transform: rotate(-90deg);
+  stroke-width: 4; /* Slightly thicker for visibility */
 }
 
-@keyframes fadeOut {
-  0% { opacity: 1; }
-  100% { opacity: 0; }
-} */
+.circle-bg {
+  fill: none;
+  stroke: #2a2a2a; /* Darker background */
+  stroke-width: 4;
+}
+
+.circle {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.5s ease-in-out;
+}
+
+@keyframes skeletonWave {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-wave {
+  background: linear-gradient(90deg, rgba(55, 65, 81, 0.2) 25%, rgba(107, 114, 128, 0.4) 50%, rgba(55, 65, 81, 0.2) 75%);
+  background-size: 200% 100%;
+  animation: skeletonWave 1.5s infinite linear;
+}

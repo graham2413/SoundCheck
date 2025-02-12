@@ -114,8 +114,11 @@ export class MainSearchComponent {
           }))
         };
 
-        this.setActiveTab('songs');
-        this.isLoading = false;
+        // Allow images to load
+        setTimeout(() => {
+          this.setActiveTab('songs');
+          this.isLoading = false;
+        }, 250);
       },
       error: (error) => {
         this.errorMessage = 'Failed to fetch results. Try again.';
@@ -154,11 +157,6 @@ export class MainSearchComponent {
   
     return imageUrl;
   }
-  
-  
-  
-  
-  
 
   closeModal() {
     this.isModalOpen = false;
