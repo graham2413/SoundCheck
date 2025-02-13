@@ -80,3 +80,8 @@
   background-size: 200% 100%;
   animation: skeletonWave 1.5s infinite linear;
 }
+
+.ten-rating {
+  box-shadow: 0px 0px 12px rgba(139, 92, 246, 0.8); /* Purple Glow */
+  border: 2px solid #9333EA; /* Strong Border */
+}

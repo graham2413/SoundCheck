@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import {
@@ -26,6 +26,7 @@ export class ReviewPageComponent implements OnInit {
   isRatingLoaded = false;
   isReviewsLoaded = false;
   isImageLoaded = false;
+  isCreateLoading = false;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -97,6 +98,7 @@ export class ReviewPageComponent implements OnInit {
   }
 
   submitReview() {
+    this.isCreateLoading = true;
     this.reviewService
       .createReview(this.record.id, this.type, this.newRating, this.newReview)
       .subscribe({
@@ -106,12 +108,34 @@ export class ReviewPageComponent implements OnInit {
             (review) => review.user._id !== this.existingUserReview?.user._id
           );
           this.isAddingReview = false;
+          this.isCreateLoading = false;
+          this.toastr.error('Review created successfully.', 'Success');
         },
         error: (error) => {
-          // this.errorMessage = 'Failed to create review. Try again.';
-          // this.isLoading = false;
+          this.toastr.error('Error occurred while creating review.', 'Error');
+          this.isCreateLoading = false;
         },
       });
+  }
+
+  getRatingGradient(rating: number): string {
+    if (rating < 5) {
+      return 'linear-gradient(to right, #ef4444, #dc2626)'; // Red - Very Poor
+    } else if (rating >= 5 && rating < 6) {
+      return 'linear-gradient(to right, #f97316, #f59e0b)'; // Orange - Poor
+    } else if (rating >= 6 && rating < 7) {
+      return 'linear-gradient(to right, #facc15, #eab308)'; // Yellow - Below Average
+    } else if (rating >= 7 && rating < 8) {
+      return 'linear-gradient(to right, #22c55e, #16a34a)'; // Green - Average
+    } else if (rating >= 8 && rating < 9) {
+      return 'linear-gradient(to right, #14b8a6, #0d9488)'; // Teal - Good
+    } else if (rating >= 9 && rating < 10) {
+      return 'linear-gradient(to right, #3b82f6, #2563eb)'; // Blue - Excellent
+    } else if (rating === 10) {
+      return 'linear-gradient(45deg, #8B5CF6, #9333EA, #6B21A8)'; // Purple Special for 10
+    } else {
+      return ''; // Default (optional)
+    }
   }
 
   getAverageRating(): number {
