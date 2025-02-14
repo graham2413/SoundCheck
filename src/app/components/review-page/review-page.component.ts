@@ -151,7 +151,11 @@ export class ReviewPageComponent implements OnInit {
         .subscribe({
           next: (data: CreatedReviewResponse) => {
             this.existingUserReview = data.review;
-            this.reviews = [...this.reviews, data.review]
+
+            this.reviews = this.reviews.map((review) =>
+              review._id === data.review._id ? data.review : review
+            );            
+            
             this.isEditingReview = false;
             this.isEditLoading = false;
             this.toastr.success('Review edited successfully.', 'Success');
