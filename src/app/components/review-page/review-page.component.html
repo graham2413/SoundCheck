@@ -80,7 +80,7 @@
 
             <!-- Responsive Text -->
             <span
-              class="absolute inset-0 flex flex-col items-center justify-center text-white font-bold text-2xl md:text-3xl lg:text-4xl"
+              class="absolute inset-0 flex flex-col items-center justify-center text-white font-bold text-2xl md:text-3xl lg:text-4xl sm:translate-y-0.5 md:translate-y-1.0 lg:translate-y-1.0"
             >
               {{ getAverageRating() | number : "1.1-1" }}
               <span class="text-xs md:text-sm font-medium text-gray-300"
@@ -98,46 +98,62 @@
         <!-- Left Side: Image & Audio Player -->
         <div class="flex flex-col items-center w-full">
           <div
-          class="relative bg-[#2A2A2A] rounded-xl shadow-lg w-full max-w-[220px] sm:max-w-[250px] md:max-w-[280px] lg:max-w-[340px] xl:max-w-[400px] flex flex-col items-center p-4 mb-2"
-        >
-          <div
-            class="relative w-full flex justify-center items-center bg-gray-900 rounded-lg overflow-hidden"
+            class="relative bg-[#2A2A2A] rounded-xl shadow-lg w-full max-w-[220px] sm:max-w-[250px] md:max-w-[280px] lg:max-w-[340px] xl:max-w-[400px] flex flex-col items-center p-4 mb-2"
           >
+            <div
+              class="relative w-full flex justify-center items-center bg-gray-900 rounded-lg overflow-hidden"
+            >
+              <div
+                *ngIf="!isImageLoaded"
+                class="absolute inset-0 bg-gray-700 rounded-lg skeleton-wave flex items-center justify-center w-full h-full"
+              ></div>
+
+              <img
+                *ngIf="isImageLoaded"
+                [src]="record?.cover ? record.cover : record.picture"
+                alt="{{ record?.title }}"
+                class="w-full h-auto rounded-lg shadow-md object-cover sm:max-h-[320px]"
+              />
+            </div>
+
+            <div
+              *ngIf="!record"
+              class="animate-pulse bg-gray-700 rounded-b-xl w-full mt-2 p-4"
+            >
+              <div class="h-8 bg-gray-600 rounded mb-2"></div>
+              <div class="h-6 bg-gray-600 rounded"></div>
+              <div class="mt-4">
+                <app-audio-player [record]="record"></app-audio-player>
+              </div>
+            </div>
+
+            <div
+              *ngIf="record"
+              class="text-center w-full mt-2 bg-[#2A2A2A] p-2 rounded-b-lg"
+            >
+              <p
+                class="title-text text-gray-200 text-base sm:text-lg md:text-xl font-semibold"
+              >
+                <span *ngIf="type != 'artist'"> {{ record?.title }}</span>
+                <span *ngIf="type == 'artist'">{{ record?.name }}</span>
+              </p>
+              <p class="text-gray-400 text-sm sm:text-base md:text-lg">
+                {{ record?.artist }}
+              </p>
+
+              <app-audio-player [record]="record"></app-audio-player>
+            </div>
             <!-- Skeleton Loader -->
             <div
               *ngIf="!isImageLoaded"
               class="absolute inset-0 bg-gray-700 rounded-lg skeleton-wave flex items-center justify-center w-full h-full"
             ></div>
-        
-            <!-- Image -->
-            <img
-              *ngIf="isImageLoaded"
-              [src]="record?.cover ? record.cover : record.picture"
-              alt="{{ record?.title }}"
-              class="w-full h-auto rounded-lg shadow-md object-cover sm:max-h-[320px]"
-            />
           </div>
-        
-          <!-- Text Section -->
-          <div class="text-center w-full mt-2 bg-[#2A2A2A] p-2 rounded-b-lg">
-            <p class="title-text text-gray-200 text-base sm:text-lg md:text-xl font-semibold">
-              <span *ngIf="type != 'artist'"> {{ record?.title }}</span>
-              <span *ngIf="type == 'artist'">{{ record?.name }}</span>
-            </p>
-            <p class="text-gray-400 text-sm sm:text-base md:text-lg">
-              {{ record?.artist }}
-            </p>
-          </div>
-        
-          <!-- Audio Player -->
-          <app-audio-player [record]="record"></app-audio-player>          
-          
         </div>
-        
-        </div>
-
-<!-- Reviews Section Container (Scrollable) -->
-<div class="bg-[#252525] p-4 sm:p-6 rounded-xl shadow-md w-full custom-review-container custom-scrollbar">
+        <!-- Reviews Section Container (Scrollable) -->
+        <div
+          class="bg-[#252525] p-4 sm:p-6 rounded-xl shadow-md w-full custom-review-container custom-scrollbar"
+        >
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h3 class="text-lg sm:text-xl font-semibold">Reviews</h3>
             <div
@@ -163,24 +179,26 @@
           </ng-container>
 
           <ng-template #reviewsContent>
-            <div
-              *ngIf="isAddingReview"
-              class="mt-3 sm:mt-4 p-4 bg-[#333] rounded-lg"
-            >
-              <label class="block text-sm sm:text-base text-gray-300">
-                Rating:
-                <span class="text-yellow-400 font-bold text-lg">{{
-                  newRating
-                }}</span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="10"
-                step="0.1"
-                [(ngModel)]="newRating"
-                class="w-full my-2"
-              />
+            <div *ngIf="isAddingReview" class="mt-3 sm:mt-4 p-4 bg-[#2F2F2F] rounded-lg">
+              <!-- Rating Section -->
+              <div class="w-full text-center mb-2">
+                <p class="text-white font-medium text-lg mb-2">
+                  Rating:
+                  <span class="font-bold text-2xl text-yellow-400 glow">
+                    {{ newRating.toFixed(1) }}
+                  </span>
+                </p>
+          
+                <!-- Updated Slider -->
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  step="0.1"
+                  [(ngModel)]="newRating"
+                  class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
+                />
+              </div>
               <textarea
                 class="w-full p-3 bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500"
                 placeholder="Write your review here..."
@@ -207,91 +225,98 @@
               </div>
             </div>
             <!-- Exisitng user review section -->
-            <div
-              *ngIf="existingUserReview && !isEditingReview"
-              class="mt-3 sm:mt-4"
-            >
+            <div *ngIf="existingUserReview" class="mt-3 sm:mt-4">
               <ul class="space-y-2 sm:space-y-3">
-                <li
-                  class="review-card p-3 sm:p-4 rounded-lg flex flex-col gap-3 relative"
+              <li class="review-card p-3 sm:p-4 rounded-lg flex flex-col gap-3 relative bg-gray-900">
+                
+                <!-- Edit & Delete Icons (Hidden when editing) -->
+                <button
+                *ngIf="!isEditingReview"
+                (click)="toggleEditReview(existingUserReview)"
+                class="absolute top-2 left-3 text-gray-400 hover:text-indigo-400 transition"
                 >
-                  <!-- Edit & Delete Icons -->
-                  <button
-                    (click)="toggleEditReview(existingUserReview)"
-                    class="absolute top-2 left-3 text-gray-400 hover:text-indigo-400 transition"
-                  >
-                    <i class="fas fa-edit text-sm sm:text-base"></i>
-                  </button>
-
-                  <button
-                    (click)="deleteReview(existingUserReview)"
-                    class="absolute top-2 right-3 text-gray-400 hover:text-red-500 transition"
-                  >
-                    <i class="fas fa-trash text-sm sm:text-base"></i>
-                  </button>
-
-                  <!-- Display Normal Review -->
-                  <p
-                    [ngStyle]="{
-                      background: getRatingGradient(existingUserReview.rating)
-                    }"
-                    class="rating-bubble mx-auto text-white"
-                  >
-                    <i class="fas fa-star"></i>
-                    {{ existingUserReview.rating }} / 10
-                  </p>
-
-                  <div class="text-left">
-                    <p class="text-gray-300 text-sm sm:text-base break-words">
-                      {{ existingUserReview.reviewText }}
-                    </p>
-                    <p class="text-gray-400 text-xs sm:text-sm mt-2">
-                      - {{ existingUserReview.user.username }} (Your Review)
-                    </p>
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            <!-- Edit Review Form (Only shown when isEditingReview is true) -->
-            <ng-container *ngIf="isEditingReview">
-              <div class="edit-review-container mt-2">
-                <label class="block text-sm sm:text-base text-gray-300">
-                  Rating:
-                  <span class="text-yellow-400 font-bold text-lg sm:text-base">
-                    {{ editedRating }}
-                  </span>
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="10"
+                <i class="fas fa-edit text-sm sm:text-base"></i>
+                </button>
+            
+                <button
+                *ngIf="!isEditingReview"
+                (click)="deleteReview(existingUserReview)"
+                class="absolute top-2 right-3 text-gray-400 hover:text-red-500 transition"
+                >
+                <i class="fas fa-trash text-sm sm:text-base"></i>
+                </button>
+            
+                <!-- Rating Section (Modernized) -->
+                <div *ngIf="isEditingReview" class="w-full text-center mb-2">
+                <p class="text-white font-medium text-lg mb-2">
+                  Rating: <span class="text-yellow-400 font-bold text-2xl glow">{{ editedRating }}</span>
+                </p>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="10" 
                   step="0.1"
                   [(ngModel)]="editedRating"
-                  class="w-full my-1 edit-review-rating"
+                  class="w-full h-3 rounded-full bg-gray-700 appearance-none cursor-pointer transition-all slider-modern"
                 />
-                <textarea
-                  class="w-full p-2 sm:p-3 bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 edit-review-text"
-                  placeholder="Edit your review..."
-                  rows="3"
-                  [(ngModel)]="editedReviewText"
-                ></textarea>
-                <div class="flex justify-between mt-2 edit-review-buttons">
-                  <button
-                    class="bg-red-500 hover:bg-red-600 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-sm sm:text-base"
-                    (click)="cancelEditReview()"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    (click)="submitEditReview()"
-                    class="bg-indigo-500 hover:bg-indigo-600 px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-white text-sm sm:text-base"
-                  >
-                    Submit
-                  </button>
                 </div>
-              </div>
-            </ng-container>
+            
+                <!-- Rating Bubble (Hidden when editing) -->
+                <p
+                *ngIf="!isEditingReview"
+                [ngStyle]="{ background: getRatingGradient(existingUserReview.rating) }"
+                class="rating-bubble mx-auto text-white"
+                >
+                <i class="fas fa-star"></i>
+                {{ existingUserReview.rating }} / 10
+                </p>
+            
+                <div class="text-left w-full">
+                <!-- Editable TextArea when Editing -->
+                <textarea
+                  *ngIf="isEditingReview"
+                  [(ngModel)]="editedReviewText"
+                  class="text-gray-300 text-sm sm:text-base break-words w-full bg-gray-800 rounded p-2 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                  placeholder="Write your review here..."
+                ></textarea>
+            
+                <!-- Normal Review Display -->
+                <p *ngIf="!isEditingReview" class="text-gray-300 text-sm sm:text-base break-words">
+                  {{ existingUserReview.reviewText }}
+                </p>
+            
+                <!-- Hide Username when Editing -->
+                <p *ngIf="!isEditingReview" class="text-gray-400 text-xs sm:text-sm mt-2">
+                  - {{ existingUserReview.user.username }} (Your Review)
+                </p>
+                </div>
+            
+                <!-- Submit & Cancel Buttons (Swapped) -->
+                <div *ngIf="isEditingReview" class="flex justify-between mt-3">
+                <button
+                  (click)="cancelEditReview()"
+                  [disabled]="isEditLoading"
+                  class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
+                >
+                  Cancel
+                </button>
+            
+                <button
+                  (click)="submitEditReview()"
+                  [disabled]="isEditLoading"
+                  class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition flex items-center"
+                >
+                  <span *ngIf="!isEditLoading">Save</span>
+                  <span *ngIf="isEditLoading" class="flex items-center gap-2">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  Saving
+                  </span>
+                </button>
+                </div>
+              </li>
+              </ul>
+            </div>
 
             <!-- All Reviews Section -->
             <ng-container *ngIf="filteredReviews?.length; else noReviews">

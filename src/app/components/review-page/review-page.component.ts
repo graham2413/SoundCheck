@@ -17,15 +17,19 @@ export class ReviewPageComponent implements OnInit {
   @Input() record: any;
   @Input() type: string = '';
 
-  isAddingReview = false;
-  newReview: string = '';
-  newRating: number = 5.0;
   existingUserReview: Review | null = null;
   reviews: Review[] = [];
+
   isRatingLoaded = false;
   isReviewsLoaded = false;
   isImageLoaded = false;
+
+  isAddingReview = false;
   isCreateLoading = false;
+  newReview: string = '';
+  newRating: number = 5.0;
+  
+  isEditLoading = false;
   isEditingReview = false;
   editedRating = 0;
   editedReviewText: string = '';
@@ -136,6 +140,7 @@ export class ReviewPageComponent implements OnInit {
   }
 
   submitEditReview() {
+    this.isEditLoading = true;
     if (this.existingUserReview && this.existingUserReview._id) {
       this.reviewService
         .editReview(
@@ -148,9 +153,11 @@ export class ReviewPageComponent implements OnInit {
             this.existingUserReview = data.review;
             this.reviews = [...this.reviews, data.review]
             this.isEditingReview = false;
+            this.isEditLoading = false;
             this.toastr.success('Review edited successfully.', 'Success');
           },
           error: (error) => {
+            this.isEditLoading = false;
             this.toastr.error('Error occurred while editing review.', 'Error');
           },
         });
