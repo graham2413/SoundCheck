@@ -10,7 +10,7 @@ router.get("/:id/reviews", authenticateUser, reviewController.getReviewsWithUser
 router.post("/", authenticateUser, reviewController.createReview);
 
 // Protected - Edit a review (Only the review owner)
-router.put("/:id", authenticateUser, reviewController.editReview);
+router.patch("/:id", authenticateUser, reviewController.editReview);
 
 // Protected - Delete a review (Only the review owner)
 router.delete("/:id", authenticateUser, reviewController.deleteReview);

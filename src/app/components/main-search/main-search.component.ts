@@ -14,7 +14,7 @@ export class MainSearchComponent {
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
   query: string = '';
-  results: any = null;
+  results: any = { songs: [], albums: [], artists: [] };
   isLoading: boolean = false;
   errorMessage: string = '';
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
@@ -156,6 +156,10 @@ export class MainSearchComponent {
     }
   
     return imageUrl;
+  }
+
+  resultsHasValues() {
+    return !!this.results && (this.results.songs?.length > 0 || this.results.artists?.length > 0 || this.results.albums?.length > 0);
   }
 
   closeModal() {

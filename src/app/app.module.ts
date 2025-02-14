@@ -16,6 +16,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations'; 
 import { ToastrModule } from 'ngx-toastr';
 import { ReviewPageComponent } from './components/review-page/review-page.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { AudioPlayerComponent } from './components/audio-player/audio-player.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +26,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
     MainSearchComponent,
     NavbarComponent,
     ProfileComponent,
-    ReviewPageComponent
+    ReviewPageComponent,
+    AudioPlayerComponent
   ],
   imports: [
     BrowserModule,

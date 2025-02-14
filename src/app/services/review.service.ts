@@ -35,13 +35,29 @@ export class ReviewService {
     const headers = { Authorization: `Bearer ${token}` };
     const body = {
       albumSongOrArtistId: id,
-      type: type,         // Song, album, or artist
+      type: type,
       rating: rating,
       reviewText: reviewText,
     };
   
-    // Correct API endpoint (creating reviews, POST request)
     return this.http.post<any>(`${this.apiUrl}`, body, { headers });
+  } 
+  
+  editReview(reviewId: string, rating: number, reviewText: string): Observable<CreatedReviewResponse> {
+    const token = localStorage.getItem('token');
+  
+    if (!token) {
+      console.error("No authentication token found");
+      return new Observable();
+    }
+  
+    const headers = { Authorization: `Bearer ${token}` };
+    const body = {
+      rating: rating,
+      reviewText: reviewText,
+    };
+  
+    return this.http.patch<any>(`${this.apiUrl}/${reviewId}`, body, { headers });
   }  
   
 }

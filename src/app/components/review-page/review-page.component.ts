@@ -18,7 +18,6 @@ export class ReviewPageComponent implements OnInit {
   @Input() type: string = '';
 
   isAddingReview = false;
-
   newReview: string = '';
   newRating: number = 5.0;
   existingUserReview: Review | null = null;
@@ -27,6 +26,9 @@ export class ReviewPageComponent implements OnInit {
   isReviewsLoaded = false;
   isImageLoaded = false;
   isCreateLoading = false;
+  isEditingReview = false;
+  editedRating = 0;
+  editedReviewText: string = '';
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -86,9 +88,16 @@ export class ReviewPageComponent implements OnInit {
   }
 
   get filteredReviews() {
-    return this.reviews?.filter(
-      (review) => review.user._id !== this.existingUserReview?.user._id
-    );
+    if (!this.reviews) {
+      return [];
+    }
+  
+    return this.reviews.filter(review => {
+      if (!this.existingUserReview || !this.existingUserReview.user) {
+        return true;
+      }
+      return review.user._id !== this.existingUserReview.user._id;
+    });
   }
 
   cancelReview() {
@@ -104,12 +113,10 @@ export class ReviewPageComponent implements OnInit {
       .subscribe({
         next: (data: CreatedReviewResponse) => {
           this.existingUserReview = data.review;
-          this.reviews = this.reviews.filter(
-            (review) => review.user._id !== this.existingUserReview?.user._id
-          );
+          this.reviews = [...this.reviews, data.review]
           this.isAddingReview = false;
           this.isCreateLoading = false;
-          this.toastr.error('Review created successfully.', 'Success');
+          this.toastr.success('Review created successfully.', 'Success');
         },
         error: (error) => {
           this.toastr.error('Error occurred while creating review.', 'Error');
@@ -118,23 +125,57 @@ export class ReviewPageComponent implements OnInit {
       });
   }
 
+  toggleEditReview(review: Review) {
+    this.isEditingReview = true;
+    this.editedRating = review.rating;
+    this.editedReviewText = review.reviewText;
+  }
+
+  cancelEditReview() {
+    this.isEditingReview = false;
+  }
+
+  submitEditReview() {
+    if (this.existingUserReview && this.existingUserReview._id) {
+      this.reviewService
+        .editReview(
+          this.existingUserReview?._id,
+          this.editedRating,
+          this.editedReviewText
+        )
+        .subscribe({
+          next: (data: CreatedReviewResponse) => {
+            this.existingUserReview = data.review;
+            this.reviews = [...this.reviews, data.review]
+            this.isEditingReview = false;
+            this.toastr.success('Review edited successfully.', 'Success');
+          },
+          error: (error) => {
+            this.toastr.error('Error occurred while editing review.', 'Error');
+          },
+        });
+    }
+  }
+
+  deleteReview(review: Review) {}
+
   getRatingGradient(rating: number): string {
     if (rating < 5) {
-      return 'linear-gradient(to right, #ef4444, #dc2626)'; // Red - Very Poor
+      return 'linear-gradient(to right, #FF6B6B, #E63946)'; // Red - Very Poor
     } else if (rating >= 5 && rating < 6) {
-      return 'linear-gradient(to right, #f97316, #f59e0b)'; // Orange - Poor
+      return 'linear-gradient(to right, #FF9F1C, #FF7F11)'; // Orange - Below Average
     } else if (rating >= 6 && rating < 7) {
-      return 'linear-gradient(to right, #facc15, #eab308)'; // Yellow - Below Average
+      return 'linear-gradient(to right, #FFD166, #FFC300)'; // Yellow - Average
     } else if (rating >= 7 && rating < 8) {
-      return 'linear-gradient(to right, #22c55e, #16a34a)'; // Green - Average
+      return 'linear-gradient(to right, #06D6A0, #05A676)'; // Green - Good
     } else if (rating >= 8 && rating < 9) {
-      return 'linear-gradient(to right, #14b8a6, #0d9488)'; // Teal - Good
+      return 'linear-gradient(to right, #118AB2, #0E7490)'; // Teal - Very Good
     } else if (rating >= 9 && rating < 10) {
-      return 'linear-gradient(to right, #3b82f6, #2563eb)'; // Blue - Excellent
+      return 'linear-gradient(to right, #3A86FF, #1E40AF)'; // Blue - Excellent
     } else if (rating === 10) {
-      return 'linear-gradient(45deg, #8B5CF6, #9333EA, #6B21A8)'; // Purple Special for 10
+      return 'linear-gradient(45deg, #9B5DE5, #F15BB5, #FEE440)'; // Special for 10/10
     } else {
-      return ''; // Default (optional)
+      return '';
     }
   }
 
@@ -144,5 +185,9 @@ export class ReviewPageComponent implements OnInit {
     }
     const total = this.reviews.reduce((sum, review) => sum + review.rating, 0);
     return total / this.reviews.length;
+  }
+
+  trackById(index: number, item: Review) {
+    return item._id;
   }
 }

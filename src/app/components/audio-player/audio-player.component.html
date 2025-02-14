@@ -1,0 +1,31 @@
+<div class="w-full flex justify-center">
+  <div class="audio-container px-2 sm:px-3 rounded-lg mt-2 sm:mt-3">
+    <div class="custom-audio-player w-full rounded-lg flex items-center gap-3 p-3">
+      
+      <!-- Play/Pause Button -->
+      <button (click)="togglePlay()" class="play-pause-button">
+        <i class="{{ isPlaying ? 'fas fa-pause' : 'fas fa-play' }}"></i>
+      </button>
+
+      <!-- Audio Controls -->
+      <div class="audio-controls">
+        <!-- Timestamp Centered Above -->
+        <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(audioDuration) }}</span>
+
+        <!-- Progress Bar Below -->
+        <input
+          type="range"
+          min="0"
+          [max]="audioDuration"
+          [(ngModel)]="currentTime"
+          (input)="seekAudio()"
+          class="progress-bar"
+        />
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Audio Element -->
+<audio #myAudio [src]="record?.preview" style="display: none;"></audio>
