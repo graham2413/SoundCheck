@@ -4,12 +4,18 @@
 >
   <div class="flex items-center gap-3">
     <div class="h-12 w-12 relative">
-      <img src="../assets/music.png" alt="Logo" class="absolute inset-0 h-full w-full object-contain" />
+      <img
+        src="../assets/music.png"
+        alt="Logo"
+        class="absolute inset-0 h-full w-full object-contain"
+      />
     </div>
     <span class="text-2xl font-semibold">SoundCheck</span>
   </div>
 
-  <div class="hidden md:flex absolute left-1/2 transform -translate-x-1/2 gap-10">
+  <div
+    class="hidden md:flex absolute left-1/2 transform -translate-x-1/2 gap-10"
+  >
     <a
       routerLink="/"
       routerLinkActive="active-link"
@@ -18,6 +24,15 @@
       (click)="closeProfileMenu()"
     >
       Search
+    </a>
+
+    <a
+      routerLink="/friends"
+      routerLinkActive="active-link"
+      class="rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+      (click)="closeProfileMenu()"
+    >
+      Following
     </a>
     <a
       routerLink="/profile"
@@ -35,7 +50,8 @@
         (click)="toggleProfileMenu($event)"
         class="flex items-center rounded-full focus:outline-none"
       >
-        <div class="h-16 w-16 relative">  <img
+        <div class="h-16 w-16 relative">
+          <img
             [src]="userProfile.profilePicture"
             alt="User Profile"
             class="absolute inset-0 h-full w-full rounded-full border-2 border-gray-700 shadow-md object-cover"
@@ -52,14 +68,14 @@
           class="block px-5 py-3 text-lg hover:bg-gray-700 hover:text-white rounded-md"
           (click)="closeProfileMenu()"
         >
-          Your Profile
+          My Profile
         </a>
         <a
-          routerLink="/settings"
+          routerLink="/friends"
           class="block px-5 py-3 text-lg hover:bg-gray-700 hover:text-white rounded-md"
           (click)="closeProfileMenu()"
         >
-          Settings
+          Following
         </a>
         <button
           (click)="logout()"
@@ -96,6 +112,14 @@
     class="text-2xl text-gray-300 hover:text-white transition"
   >
     Search
+  </a>
+
+  <a
+    routerLink="/friends"
+    (click)="toggleMenu()"
+    class="text-2xl text-gray-300 hover:text-white transition"
+  >
+    Friends
   </a>
   <a
     routerLink="/profile"

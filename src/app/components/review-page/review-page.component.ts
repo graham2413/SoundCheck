@@ -3,7 +3,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import {
   Review,
-  CreatedReviewResponse,
+  NewReviewResponse,
   Reviews,
 } from 'src/app/models/responses/review-responses';
 import { ReviewService } from 'src/app/services/review.service';
@@ -33,6 +33,8 @@ export class ReviewPageComponent implements OnInit {
   isEditingReview = false;
   editedRating = 0;
   editedReviewText: string = '';
+
+  isDeleteLoading = false;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -115,9 +117,9 @@ export class ReviewPageComponent implements OnInit {
     this.reviewService
       .createReview(this.record.id, this.type, this.newRating, this.newReview)
       .subscribe({
-        next: (data: CreatedReviewResponse) => {
+        next: (data: NewReviewResponse) => {
           this.existingUserReview = data.review;
-          this.reviews = [...this.reviews, data.review]
+          this.reviews = [...this.reviews, data.review];
           this.isAddingReview = false;
           this.isCreateLoading = false;
           this.toastr.success('Review created successfully.', 'Success');
@@ -149,7 +151,7 @@ export class ReviewPageComponent implements OnInit {
           this.editedReviewText
         )
         .subscribe({
-          next: (data: CreatedReviewResponse) => {
+          next: (data: NewReviewResponse) => {
             this.existingUserReview = data.review;
 
             this.reviews = this.reviews.map((review) =>
@@ -168,7 +170,27 @@ export class ReviewPageComponent implements OnInit {
     }
   }
 
-  deleteReview(review: Review) {}
+  deleteReview(review: Review) {
+    this.isDeleteLoading = true;
+    if (this.existingUserReview && this.existingUserReview._id) {
+      this.reviewService
+        .deleteReview(
+          review._id
+        )
+        .subscribe({
+          next: () => {
+            this.reviews = this.reviews.filter(r => r._id !== review._id);
+            this.existingUserReview = null;
+            this.isDeleteLoading = false;
+            this.toastr.success('Review deleted successfully.', 'Success');
+          },
+          error: (error) => {
+            this.isDeleteLoading = false;
+            this.toastr.error('Error occurred while deleting review.', 'Error');
+          },
+        });
+      }
+  }
 
   getRatingGradient(rating: number): string {
     if (rating < 5) {

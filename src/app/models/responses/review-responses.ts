@@ -11,7 +11,7 @@ export interface Review {
   __v: number;
 }
 
-export interface CreatedReviewResponse {
+export interface NewReviewResponse {
   message: string;
   review: Review;
 }

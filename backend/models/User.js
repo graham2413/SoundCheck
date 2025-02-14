@@ -1,14 +1,24 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema({
+const Schema = mongoose.Schema;
+
+const userSchema = new Schema({
     username: { type: String, unique: true, sparse: true },
-    email: { type: String, unique: true, sparse: true }, // Optional for Spotify users
-    password: { type: String }, // Only required for regular users
+    email: { type: String, unique: true, sparse: true },
+    password: { type: String },
     profilePicture: { type: String, default: "" }, // Profile picture URL
-    spotifyId: { type: String, unique: true, sparse: true }, // Only for Spotify users
-    displayName: { type: String }, // Can be used for both regular & Spotify users
+    displayName: { type: String },
+
+    // Friends & Friend Requests
+    friends: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }], // Users they are friends with
+    friendRequestsReceived: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }], // Incoming requests
+    friendRequestsSent: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }], // Outgoing requests
+
+    // Spotify/ Spotify Authentication
     spotifyAccessToken: { type: String }, // Spotify token (expires periodically)
     spotifyRefreshToken: { type: String }, // Token to refresh Spotify access
+    spotifyId: { type: String, unique: true, sparse: true }, // Spotify user ID
+
     createdAt: { type: Date, default: Date.now }
 });
 

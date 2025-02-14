@@ -17,6 +17,7 @@ import { ToastrModule } from 'ngx-toastr';
 import { ReviewPageComponent } from './components/review-page/review-page.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AudioPlayerComponent } from './components/audio-player/audio-player.component';
+import { FriendsComponent } from './components/friends/friends.component';
 
 @NgModule({
   declarations: [
@@ -27,7 +28,8 @@ import { AudioPlayerComponent } from './components/audio-player/audio-player.com
     NavbarComponent,
     ProfileComponent,
     ReviewPageComponent,
-    AudioPlayerComponent
+    AudioPlayerComponent,
+    FriendsComponent
   ],
   imports: [
     BrowserModule,

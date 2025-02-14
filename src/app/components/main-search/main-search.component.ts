@@ -2,6 +2,7 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { SearchService } from 'src/app/services/search.service';
 import { ReviewPageComponent } from '../review-page/review-page.component';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-main-search',
@@ -16,14 +17,16 @@ export class MainSearchComponent {
   query: string = '';
   results: any = { songs: [], albums: [], artists: [] };
   isLoading: boolean = false;
-  errorMessage: string = '';
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
   private trackX = 0;
   private speed = 0.5;
   isModalOpen = false;
   selectedRecord: any = null;
+  searchAttempted = false;
 
-  constructor(private searchService: SearchService, public modal: NgbModal) {}
+  constructor(private searchService: SearchService, private modal: NgbModal, 
+    private toastr: ToastrService
+  ) {}
 
   ngAfterViewInit(): void {
     this.initializeMarquee();
@@ -93,8 +96,8 @@ export class MainSearchComponent {
     }, 0);
   
     this.isLoading = true;
-    this.errorMessage = '';
-  
+    this.searchAttempted = true;
+
     this.searchService.searchMusic(this.query).subscribe({
       next: (data) => {
         // Enhance images for better quality before storing results
@@ -121,8 +124,7 @@ export class MainSearchComponent {
         }, 250);
       },
       error: (error) => {
-        this.errorMessage = 'Failed to fetch results. Try again.';
-        console.error('Search Error:', error);
+        this.toastr.error(`Error occurred while searching for "${this.query}"`, 'Error');
         this.isLoading = false;
       },
     });

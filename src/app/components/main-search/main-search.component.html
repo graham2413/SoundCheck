@@ -101,7 +101,7 @@
       [(ngModel)]="query"
       (keyup.enter)="onSearch()"
       placeholder="Search for songs, albums, or artists..."
-      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg sm:text-base text-sm sm:text-base text-base sm:text-lg"
+      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-base sm:text-lg"
     />
 
     <button
@@ -154,6 +154,15 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- No Results Found -->
+  <div
+    *ngIf="searchAttempted && !isLoading && !resultsHasValues()"
+    class="mt-12 text-center text-gray-400 text-lg"
+  >
+    <i class="fas fa-search-minus text-4xl mb-2"></i>
+    <p>No results found. Try searching for something else.</p>
   </div>
 
   <!-- Toggle Buttons -->

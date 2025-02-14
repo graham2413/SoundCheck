@@ -7,8 +7,6 @@ const passport = require("./config/passport");
 
 // Import route files
 const userRoutes = require("./routes/userRoutes");
-const artistRoutes = require("./routes/artistRoutes");
-const albumRoutes = require("./routes/albumRoutes");
 const mainSearchRoutes = require("./routes/mainSearchRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -41,8 +39,6 @@ app.get("/", (req, res) => {
 
 // Use API routes
 app.use("/api/users", userRoutes);
-app.use("/api/artists", artistRoutes);
-app.use("/api/albums", albumRoutes);
 app.use("/api/search", mainSearchRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/auth", authRoutes);
