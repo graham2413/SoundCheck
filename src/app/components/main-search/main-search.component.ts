@@ -3,11 +3,15 @@ import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { SearchService } from 'src/app/services/search.service';
 import { ReviewPageComponent } from '../review-page/review-page.component';
 import { ToastrService } from 'ngx-toastr';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-main-search',
   templateUrl: './main-search.component.html',
   styleUrls: ['./main-search.component.css'],
+  standalone: true,
+  imports: [CommonModule, FormsModule]
 })
 export class MainSearchComponent {
   @ViewChild('marqueeContainer') marqueeContainer!: ElementRef<HTMLDivElement>;

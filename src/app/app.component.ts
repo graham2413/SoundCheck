@@ -1,12 +1,16 @@
 import { Component } from '@angular/core';
-import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
+import { Router, NavigationEnd, RouterOutlet, RouterModule } from '@angular/router';
 import { trigger, transition, style, animate, query, group } from '@angular/animations';
 import { filter } from 'rxjs/operators';
+import { CommonModule } from '@angular/common';
+import { NavbarComponent } from './components/navbar/navbar.component';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
+  standalone: true,
+  imports: [CommonModule, RouterModule, NavbarComponent],
   animations: [
     trigger('routeAnimations', [
       transition('* <=> *', [

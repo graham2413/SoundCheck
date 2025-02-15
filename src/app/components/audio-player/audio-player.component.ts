@@ -1,9 +1,13 @@
+import { CommonModule } from '@angular/common';
 import { Component, ViewChild, ElementRef, AfterViewInit, Input } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-audio-player',
   templateUrl: './audio-player.component.html',
-  styleUrls: ['./audio-player.component.css']
+  styleUrls: ['./audio-player.component.css'],
+  standalone: true,
+  imports: [CommonModule, FormsModule]
 })
 export class AudioPlayerComponent implements AfterViewInit {
   @ViewChild('myAudio') myAudioRef!: ElementRef<HTMLAudioElement>;

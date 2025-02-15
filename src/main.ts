@@ -1,19 +1,27 @@
-import { enableProdMode } from '@angular/core';
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
-import { AppModule } from './app/app.module';
-import { environment } from './environments/environment';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { AppComponent } from './app/app.component';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideToastr } from 'ngx-toastr';
+import { provideAnimations } from '@angular/platform-browser/animations'; // ✅ Required for route animations
 
-declare const module: any;
 
-if (environment.production) {
-  enableProdMode();
-} else if (module?.hot) { 
-  console.log('%c[HMR] Hot Module Replacement is ENABLED', 'color: #28a745; font-weight: bold;');
-  module.hot.accept();
-} else {
-  console.log('%c[HMR] Hot Module Replacement is NOT enabled.', 'color: #dc3545; font-weight: bold;');
+// Import services
+import { AuthService } from './app/services/auth.service';
+import { SearchService } from './app/services/search.service';
+import { appRoutes } from './app/app-routing.module';
+
+if (import.meta.webpackHot) {
+  import.meta.webpackHot.accept();
 }
 
-platformBrowserDynamic()
-  .bootstrapModule(AppModule)
-  .catch(err => console.error(err));
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideHttpClient(),
+    provideRouter(appRoutes),
+    provideAnimations(),
+    provideToastr(),
+    AuthService,
+    SearchService
+  ]
+}).catch(err => console.error(err));

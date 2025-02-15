@@ -1,4 +1,6 @@
+import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import {
@@ -7,11 +9,14 @@ import {
   Reviews,
 } from 'src/app/models/responses/review-responses';
 import { ReviewService } from 'src/app/services/review.service';
+import { AudioPlayerComponent } from '../audio-player/audio-player.component';
 
 @Component({
   selector: 'app-review-page',
   templateUrl: './review-page.component.html',
   styleUrls: ['./review-page.component.css'],
+  standalone: true,
+  imports: [CommonModule, FormsModule, AudioPlayerComponent]
 })
 export class ReviewPageComponent implements OnInit {
   @Input() record: any;

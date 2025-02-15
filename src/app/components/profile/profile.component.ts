@@ -1,10 +1,14 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { UserService } from 'src/app/services/user.service';
 
 @Component({
   selector: 'app-profile',
   templateUrl: './profile.component.html',
+  standalone: true,
+  imports: [CommonModule, FormsModule]
 })
 export class ProfileComponent implements OnInit {
   userProfile: any = {};

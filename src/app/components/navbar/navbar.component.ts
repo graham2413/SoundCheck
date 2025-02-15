@@ -1,4 +1,7 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
@@ -7,6 +10,8 @@ import { UserService } from 'src/app/services/user.service';
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css'],
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule]
 })
 export class NavbarComponent implements OnInit {
   isMenuOpen: boolean = false;

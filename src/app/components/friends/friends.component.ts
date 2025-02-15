@@ -1,4 +1,6 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { User } from 'src/app/models/responses/user.response';
 import { UserService } from 'src/app/services/user.service';
@@ -7,6 +9,8 @@ import { UserService } from 'src/app/services/user.service';
   selector: 'app-following',
   templateUrl: './friends.component.html',
   styleUrls: ['./friends.component.css'],
+  standalone: true,
+  imports: [CommonModule, FormsModule]
 })
 export class FriendsComponent {
   activeTab: string = 'myFriends';
