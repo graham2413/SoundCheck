@@ -6,12 +6,15 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "start:hmr": "ng serve --configuration hmr"
   },
   "private": true,
   "dependencies": {
+    "@angular-devkit/build-angular": "^19.1.7",
     "@angular/animations": "^18.2.13",
     "@angular/cdk": "^18.2.14",
+    "@angular/cli": "^19.1.7",
     "@angular/common": "^18.2.13",
     "@angular/compiler": "^18.2.13",
     "@angular/core": "^18.2.13",
@@ -32,9 +35,8 @@
     "zone.js": "~0.14.10"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^18.2.14",
-    "@angular/cli": "~18.2.14",
-    "@angular/compiler-cli": "^18.2.13",
+    "@angular/compiler-cli": "^19.1.6",
+    "@angularclass/hmr": "^3.0.0",
     "@types/jasmine": "~4.3.0",
     "autoprefixer": "^10.4.20",
     "jasmine-core": "~4.5.0",

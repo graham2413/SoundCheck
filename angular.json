@@ -13,9 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": {
-              "base": "dist/sound-check"
-            },
+            "outputPath": "dist/sound-check",
             "index": "src/index.html",
             "polyfills": [
               "zone.js",
@@ -37,6 +35,12 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",
@@ -52,6 +56,12 @@
               "outputHashing": "all"
             },
             "development": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.ts"
+                }
+              ],
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,
@@ -69,6 +79,13 @@
             "development": {
               "buildTarget": "SoundCheck:build:development"
             }
+          },
+          "options": {
+            "hmr": true,
+            "hmrOptions": {
+              "path": "hmr"
+            },
+            "browserTarget": "SoundCheck:build:development"
           },
           "defaultConfiguration": "development"
         },
@@ -94,7 +111,7 @@
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "@angular/material/prebuilt-themes/azure-blue.css",
               "src/styles.css"
-                        ],
+            ],
             "scripts": []
           }
         }

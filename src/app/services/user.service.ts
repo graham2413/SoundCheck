@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { env } from '../../env';
 import { tap } from 'rxjs/operators';
+import { User } from '../models/responses/user.response';
 
 @Injectable({
   providedIn: 'root',
@@ -55,4 +56,17 @@ export class UserService {
     setUserProfile(profile: any) {
       this.userProfileSubject.next(profile);
     }
+
+    searchUsers(query: string): Observable<User[]> {
+      const token = localStorage.getItem('token');
+    
+      if (!token) {
+        console.error("No authentication token found");
+        return new Observable();
+      }
+      const headers = { Authorization: `Bearer ${token}` };
+
+      return this.http.get<User[]>(`${this.apiUrl}/friends/search?q=${query}`,  { headers });
+    }
+    
 }

@@ -1,4 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
+import { User } from 'src/app/models/responses/user.response';
+import { UserService } from 'src/app/services/user.service';
 
 @Component({
   selector: 'app-following',
@@ -8,12 +11,16 @@ import { Component } from '@angular/core';
 export class FriendsComponent {
   activeTab: string = 'myFriends';
   searchQuery: string = '';
-
-  // Mock data for now (replace with actual API data)
-  usersToAdd = [
-    { id: '1', name: 'Alice', avatar: 'https://randomuser.me/api/portraits/women/1.jpg' },
-    { id: '2', name: 'Bob', avatar: 'https://randomuser.me/api/portraits/men/2.jpg' }
-  ];
+  @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
+  
+  
+  usersToAdd: User[] = [];
+  addFriendsSearchInitiated = false;
+  addFriendsSearchLoading = false;
+  
+  constructor(private userService: UserService,
+              private toastrService: ToastrService
+  ) {}
 
   myFriends = [
     { id: '3', name: 'Charlie', avatar: 'https://randomuser.me/api/portraits/men/3.jpg' }
@@ -37,11 +44,6 @@ export class FriendsComponent {
     }
   }
 
-  // Filtered lists for search functionality
-  filteredUsersToAdd() {
-    return this.usersToAdd.filter(user => user.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
-  }
-
   filteredFriends() {
     return this.myFriends.filter(friend => friend.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
   }
@@ -50,13 +52,45 @@ export class FriendsComponent {
     return this.friendRequests.filter(request => request.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
   }
 
+
+  searchUsers(){
+    if (!this.searchQuery.trim() || this.activeTab === 'myFriends') return;
+  
+    // Scroll the search bar into view
+    setTimeout(() => {
+      const searchBarEl = this.searchBar.nativeElement;
+      const elementTop =
+        searchBarEl.getBoundingClientRect().top + window.pageYOffset;
+      const offset = elementTop - 110;
+      window.scrollTo({ top: offset, behavior: 'smooth' });
+    }, 0);
+
+    this.addFriendsSearchLoading = true;
+    this.addFriendsSearchInitiated = true;
+
+    this.userService.searchUsers(this.searchQuery).subscribe({
+      next: (users: User[]) => {
+      this.usersToAdd = users.filter((user: any) => {
+        return !this.myFriends.some(friend => friend.id === user.id) &&
+               !this.friendRequests.some(request => request.id === user.id);
+      });
+      this.addFriendsSearchLoading = false;
+      },
+      error: (error) => {
+        this.addFriendsSearchLoading = false;
+        this.toastrService.error('Error occurred while searching users.', 'Error');
+      }
+    });
+
+  }
+
   // Mock implementation of sending a friend request
   sendFriendRequest(user: any) {
     console.log(`Sending friend request to ${user.name}`);
     // Simulate API call
     setTimeout(() => {
       this.friendRequests.push(user);
-      this.usersToAdd = this.usersToAdd.filter(u => u.id !== user.id);
+      this.usersToAdd = this.usersToAdd.filter(u => u._id !== user.id);
     }, 1000);
   }
 

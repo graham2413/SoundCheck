@@ -282,3 +282,24 @@ exports.getFriendsList = async (req, res) => {
     }
   };
   
+exports.searchUsers = async (req, res) => {
+  try {
+    const searchQuery = req.query.q;
+    if (!searchQuery) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    // Search users by name (excluding the logged-in user)
+    const users = await User.find({
+      $or: [
+        { username: { $regex: searchQuery, $options: "i" } }, // Case-insensitive search
+      ],
+      _id: { $ne: req.user.id } // Exclude the logged-in user
+    }).select("username email profilePicture");
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error searching for users:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

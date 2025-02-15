@@ -38,4 +38,7 @@ router.get("/friends/requests/received", authenticateUser, userController.getRec
 // Get Sent Friend Requests (Protected)
 router.get("/friends/requests/sent", authenticateUser, userController.getSentFriendRequests);
 
+// Search for Users to Add (Protected)
+router.get("/friends/search", authenticateUser, userController.searchUsers);
+
 module.exports = router;
