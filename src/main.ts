@@ -3,10 +3,7 @@ import { AppComponent } from './app/app.component';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideToastr } from 'ngx-toastr';
-import { provideAnimations } from '@angular/platform-browser/animations'; // ✅ Required for route animations
-
-
-// Import services
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { AuthService } from './app/services/auth.service';
 import { SearchService } from './app/services/search.service';
 import { appRoutes } from './app/app-routing.module';
@@ -20,7 +17,14 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(),
     provideRouter(appRoutes),
     provideAnimations(),
-    provideToastr(),
+    provideToastr({
+      positionClass: 'toast-bottom-center',
+      preventDuplicates: true,
+      timeOut: 3000,
+      closeButton: true, 
+      progressBar: true,
+      progressAnimation:'increasing'
+    }),
     AuthService,
     SearchService
   ]

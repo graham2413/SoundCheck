@@ -4,14 +4,14 @@
   <!-- Left Sidebar (Navigation Options) -->
 <!-- Bottom Navigation for Mobile -->
 <div
-class="bg-gray-800 p-4 md:p-6 shadow-lg flex md:flex-col fixed bottom-0 w-full md:w-1/4 z-10 md:static md:space-y-4 justify-around items-center h-20 md:h-auto"
+class="bg-gray-800 p-4 shadow-lg flex md:flex-col fixed bottom-0 w-full md:w-1/4 z-10 md:static md:space-y-4 justify-around items-center h-20 md:h-auto"
 >
   <!-- My Friends Button -->
   <button
     (click)="setActiveTab('myFriends')"
     [class.bg-indigo-600]="activeTab === 'myFriends'"
     [class.hover:bg-indigo-700]="activeTab !== 'myFriends'"
-    class="flex flex-col items-center justify-center p-2 rounded-md text-white text-xs md:text-lg transition transform hover:scale-105 relative"
+    class="flex flex-col items-center justify-center p-3 rounded-md text-white text-xs md:text-lg transition transform hover:scale-105 relative"
   >
     <i class="fas fa-users text-2xl"></i>
     <span class="hidden md:inline mt-1">My Friends</span>
@@ -22,7 +22,7 @@ class="bg-gray-800 p-4 md:p-6 shadow-lg flex md:flex-col fixed bottom-0 w-full m
     (click)="setActiveTab('addFriends')"
     [class.bg-indigo-600]="activeTab === 'addFriends'"
     [class.hover:bg-indigo-700]="activeTab !== 'addFriends'"
-    class="flex flex-col items-center justify-center p-2 rounded-md text-white text-xs md:text-lg transition transform hover:scale-105"
+    class="flex flex-col items-center justify-center p-3 rounded-md text-white text-xs md:text-lg transition transform hover:scale-105"
   >
     <i class="fas fa-user-plus text-2xl"></i>
     <span class="hidden md:inline mt-1">Add Friends</span>
@@ -33,21 +33,21 @@ class="bg-gray-800 p-4 md:p-6 shadow-lg flex md:flex-col fixed bottom-0 w-full m
     (click)="setActiveTab('friendRequests')"
     [class.bg-indigo-600]="activeTab === 'friendRequests'"
     [class.hover:bg-indigo-700]="activeTab !== 'friendRequests'"
-    class="flex flex-col items-center justify-center p-2 rounded-md text-white text-xs md:text-lg transition transform hover:scale-105 relative"
+    class="flex flex-col items-center justify-center p-3 rounded-md text-white text-xs md:text-lg transition transform hover:scale-105 relative"
   >
     <i class="fas fa-envelope text-2xl"></i>
     <span class="hidden md:inline mt-1">Requests</span>
     <span
-      *ngIf="filteredFriendRequests().length"
+      *ngIf="userProfile.friendRequestsReceived.length"
       class="absolute -top-1 right-0 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full"
     >
-      {{ filteredFriendRequests().length }}
+      {{ userProfile.friendRequestsReceived.length }}
     </span>
   </button>
 </div>
 
   <!-- Right Content Area (Changes Dynamically) -->
-  <div class="flex-1 p-6">
+  <div class="flex-1 p-6 overflow-y-auto min-h-[calc(100vh-80px)] pb-24">
 
     <!-- My Friends Section -->
     <div *ngIf="activeTab === 'myFriends'">
@@ -79,13 +79,13 @@ class="bg-gray-800 p-4 md:p-6 shadow-lg flex md:flex-col fixed bottom-0 w-full m
             >
               <div class="flex justify-center">
                 <img
-                  [src]="friend.avatar"
+                  [src]="friend.profilePicture || 'assets/user.png'"
                   alt="Profile"
                   class="w-20 h-20 rounded-full object-cover border-2 border-gray-500 shadow-md"
                 />
               </div>
               <span class="text-lg font-medium text-gray-300 mt-2">{{
-                friend.name
+                friend.username
               }}</span>
               <div class="flex flex-wrap justify-center gap-2 w-full mt-3">
                 <button
@@ -109,18 +109,12 @@ class="bg-gray-800 p-4 md:p-6 shadow-lg flex md:flex-col fixed bottom-0 w-full m
             You have no friends yet.
           </p>
         </ng-template>
-
-        <ng-template #noFriends>
-          <p class="text-gray-400 text-center text-lg">
-            You have no friends yet.
-          </p>
-        </ng-template>
       </div>
     </div>
 
 <!-- Add Friends Section -->
 <div *ngIf="activeTab === 'addFriends'">
-  <h2 class="text-2xl font-semibold mb-4">Add Friends</h2>
+  <h2 class="text-2xl font-semibold mb-6">Add Friends</h2>
 
   <!-- Search Bar -->
   <div #searchBar class="relative max-w-lg mb-6">
@@ -139,8 +133,7 @@ class="bg-gray-800 p-4 md:p-6 shadow-lg flex md:flex-col fixed bottom-0 w-full m
 
   <!-- Scrollable User List -->
   <div *ngIf="addFriendsSearchInitiated"
-       class="bg-gray-800 p-6 rounded-xl shadow-lg max-w-4xl mx-auto overflow-y-auto max-h-[400px]">
-
+        class="bg-gray-800 p-6 rounded-xl shadow-lg max-w-4xl mx-auto overflow-y-auto h-full">
     <!-- Show Skeleton Loader While Searching -->
     <div *ngIf="addFriendsSearchLoading" class="space-y-4 animate-pulse">
       <div class="flex flex-col items-center bg-gray-700 p-4 rounded-lg shadow-md text-center">
@@ -157,13 +150,13 @@ class="bg-gray-800 p-4 md:p-6 shadow-lg flex md:flex-col fixed bottom-0 w-full m
     <div *ngIf="usersToAdd.length > 0 && !addFriendsSearchLoading">
       <ul class="space-y-4">
         <li *ngFor="let user of usersToAdd"
-            class="flex flex-col items-center bg-gray-800 p-5 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700">
+            class="flex flex-col items-center bg-gray-800 p-3 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700">
           
           <!-- Profile Image -->
           <div class="flex justify-center">
-            <img [src]="user.profilePicture" 
+            <img [src]="user.profilePicture || 'assets/user.png'" 
                  alt="Profile" 
-                 class="w-24 h-24 rounded-full object-cover border-4 border-gray-600 shadow-md transition-transform hover:scale-105" />
+                 class="w-20 h-20 rounded-full object-cover border-4 border-gray-600 shadow-md transition-transform hover:scale-105" />
           </div>
           
           <!-- Username -->
@@ -175,17 +168,19 @@ class="bg-gray-800 p-4 md:p-6 shadow-lg flex md:flex-col fixed bottom-0 w-full m
           <div class="flex justify-center gap-2 mt-3">
             <button
               (click)="viewProfile(user)"
-              class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
+              class="px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
             >
               View Profile
             </button>
             
             <button
-              (click)="sendFriendRequest(user)"
-              class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-            >
-              Add Friend
-            </button>
+            (click)="sendFriendRequest(user)"
+            [disabled]="user.isFriend || user.hasPendingRequest"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ user.isFriend ? "Already Friends" : user.hasPendingRequest ? "Friend Request Pending" : "Add Friend" }}
+          </button>
+          
           </div>
         </li>
       </ul>
@@ -203,21 +198,21 @@ class="bg-gray-800 p-4 md:p-6 shadow-lg flex md:flex-col fixed bottom-0 w-full m
     <div *ngIf="activeTab === 'friendRequests'">
       <h2 class="text-2xl font-semibold mb-4">Friend Requests</h2>
       <div class="bg-gray-800 p-6 rounded-xl shadow-lg max-w-4xl mx-auto custom-font">
-        <div *ngIf="filteredFriendRequests().length; else noRequests">
+        <div *ngIf="userProfile.friendRequestsReceived.length; else noRequests">
           <ul class="space-y-4">
             <li
-              *ngFor="let request of filteredFriendRequests()"
+              *ngFor="let request of userProfile.friendRequestsReceived"
               class="flex flex-col items-center bg-gray-700 p-4 rounded-lg shadow-md text-center"
             >
               <div class="flex justify-center">
                 <img
-                  [src]="request.avatar"
+                  [src]="request.profilePicture || 'assets/user.png'"
                   alt="Profile"
                   class="w-20 h-20 rounded-full object-cover border-2 border-gray-500 shadow-md"
                 />
               </div>
               <span class="text-lg font-medium text-gray-300 mt-2">{{
-                request.name
+                request.username
               }}</span>
               <div class="flex flex-wrap justify-center gap-2 w-full mt-3">
                 <button

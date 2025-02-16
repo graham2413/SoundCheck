@@ -66,7 +66,36 @@ export class UserService {
       }
       const headers = { Authorization: `Bearer ${token}` };
 
-      return this.http.get<User[]>(`${this.apiUrl}/friends/search?q=${query}`,  { headers });
+      return this.http.get<User[]>(`${this.apiUrl}/friends/search?q=${query}`, { headers });
     }
+
+    sendFriendRequest(toUserId: string): Observable<{ message: string }> {
+      const token = localStorage.getItem('token');
     
+      if (!token) {
+        console.error("No authentication token found");
+        return new Observable();
+      }
+      
+      const headers = { Authorization: `Bearer ${token}` };
+
+      return this.http.post<{ message: string }>(`${this.apiUrl}/friends/send/${toUserId}`, {},
+        { headers }
+      );
+    }
+
+    acceptFriendRequest(fromUserId: string): Observable<{ message: string }> {
+      const token = localStorage.getItem('token');
+    
+      if (!token) {
+        console.error("No authentication token found");
+        return new Observable();
+      }
+      
+      const headers = { Authorization: `Bearer ${token}` };
+
+      return this.http.post<{ message: string }>(`${this.apiUrl}/friends/accept/${fromUserId}`, {},
+        { headers }
+      );
+    }
 }

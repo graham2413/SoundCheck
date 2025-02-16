@@ -29,15 +29,6 @@ router.post("/friends/decline/:fromUserId", authenticateUser, userController.dec
 // Unfriend a User (Protected)
 router.post("/friends/unfriend/:friendId", authenticateUser, userController.unfriendUser);
 
-// Get List of Friends (Protected)
-router.get("/friends/list", authenticateUser, userController.getFriendsList);
-
-// Get Received Friend Requests (Protected)
-router.get("/friends/requests/received", authenticateUser, userController.getReceivedFriendRequests);
-
-// Get Sent Friend Requests (Protected)
-router.get("/friends/requests/sent", authenticateUser, userController.getSentFriendRequests);
-
 // Search for Users to Add (Protected)
 router.get("/friends/search", authenticateUser, userController.searchUsers);
 

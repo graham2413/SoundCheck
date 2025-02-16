@@ -16,7 +16,11 @@ exports.getUserProfile = async (req, res) => {
 
 exports.getAuthenticatedUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("-password"); // Exclude password
+    const user = await User.findById(req.user._id).select("-password")
+    .populate("friendRequestsSent", "username profilePicture")
+    .populate("friendRequestsReceived", "username profilePicture")
+    .populate("friends", "username profilePicture");
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -91,7 +95,7 @@ exports.updateUserProfile = async (req, res) => {
 };
 
 exports.sendFriendRequest = async (req, res) => {
-  const { userId } = req.user; // Authenticated user (sender)
+  const userId  = req.user._id; // Authenticated user (sender)
   const { toUserId } = req.params; // Target user (receiver)
 
   // Prevent sending a friend request to yourself
@@ -131,7 +135,7 @@ exports.sendFriendRequest = async (req, res) => {
 };
 
 exports.acceptFriendRequest = async (req, res) => {
-  const { userId } = req.user; // Authenticated user (receiver of the request)
+  const userId = req.user._id; // Authenticated user (receiver of the request)
   const { fromUserId } = req.params; // Sender of the friend request
 
   try {
@@ -233,54 +237,6 @@ exports.unfriendUser = async (req, res) => {
     res.status(500).json({ message: "Error unfriending user.", error });
   }
 };
-
-exports.getFriendsList = async (req, res) => {
-    try {
-      const user = await User.findById(req.user.userId).populate("friends", "username profilePicture");
-  
-      if (!user) {
-        return res.status(404).json({ message: "User not found." });
-      }
-  
-      res.json(user.friends);
-    } catch (error) {
-      res.status(500).json({ message: "Error retrieving friends list.", error });
-    }
-  };
-  
-  exports.getReceivedFriendRequests = async (req, res) => {
-    try {
-      const user = await User.findById(req.user.userId).populate(
-        "friendRequestsReceived",
-        "username profilePicture"
-      );
-  
-      if (!user) {
-        return res.status(404).json({ message: "User not found." });
-      }
-  
-      res.json(user.friendRequestsReceived);
-    } catch (error) {
-      res.status(500).json({ message: "Error retrieving received friend requests.", error });
-    }
-  };
-  
-  exports.getSentFriendRequests = async (req, res) => {
-    try {
-      const user = await User.findById(req.user.userId).populate(
-        "friendRequestsSent",
-        "username profilePicture"
-      );
-  
-      if (!user) {
-        return res.status(404).json({ message: "User not found." });
-      }
-  
-      res.json(user.friendRequestsSent);
-    } catch (error) {
-      res.status(500).json({ message: "Error retrieving sent friend requests.", error });
-    }
-  };
   
 exports.searchUsers = async (req, res) => {
   try {

@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { LoginResponse } from 'src/app/models/responses/login-response';
 import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
 
@@ -41,16 +42,16 @@ export class LoginComponent {
       return;
     }
 
-    this.isLoading = true; // 🔥 Start loading
+    this.isLoading = true;
 
     const userData = { email: this.email, password: this.password };
 
     this.authService.login(userData).subscribe({
-      next: (response) => {
+      next: (response: LoginResponse) => {
         localStorage.setItem('token', response.token);
 
-        const profilePicture = response.profilePicture && response.profilePicture.trim() !== 'undefined'
-        ? response.profilePicture
+        const profilePicture = response.user.profilePicture && response.user.profilePicture.trim() !== 'undefined'
+        ? response.user.profilePicture
         : 'assets/user.png';
 
       localStorage.setItem('profilePicture', profilePicture);    
