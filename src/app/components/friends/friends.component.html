@@ -1,11 +1,11 @@
 <div
   class="bg-gray-900 text-white min-h-screen flex flex-col md:flex-row pt-20"
 >
-  <!-- Left Sidebar (Navigation Options) -->
-<!-- Bottom Navigation for Mobile -->
+<!-- Navigation for Medium to large screens -->
 <div
-class="bg-gray-800 p-4 shadow-lg flex md:flex-col fixed bottom-0 w-full md:w-1/4 z-10 md:static md:space-y-4 justify-around items-center h-20 md:h-auto"
+  class="hidden md:flex bg-gray-800 p-4 shadow-lg flex-col fixed top-20 left-0 h-[calc(100vh-20px)] w-24 md:w-1/5 z-10 items-center gap-6 pt-10"
 >
+
   <!-- My Friends Button -->
   <button
     (click)="setActiveTab('myFriends')"
@@ -46,13 +46,56 @@ class="bg-gray-800 p-4 shadow-lg flex md:flex-col fixed bottom-0 w-full md:w-1/4
   </button>
 </div>
 
+<!-- Bottom Navigation for Mobile -->
+<div
+  class="bg-gray-800 p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-10 justify-around items-center h-16"
+>
+  <button
+    (click)="setActiveTab('myFriends')"
+    [ngClass]="{'bg-indigo-600': activeTab === 'myFriends'}"
+    class="flex flex-col items-center justify-center text-white text-xs h-full flex-1 rounded"
+  >
+    <i class="fas fa-users text-xl"></i>
+    <span>Friends</span>
+  </button>
+
+  <button
+    (click)="setActiveTab('addFriends')"
+    [ngClass]="{'bg-indigo-600': activeTab === 'addFriends'}"
+    class="flex flex-col items-center justify-center text-white text-xs h-full flex-1 rounded"
+  >
+    <i class="fas fa-user-plus text-xl"></i>
+    <span>Add</span>
+  </button>
+
+  <button
+    (click)="setActiveTab('friendRequests')"
+    [ngClass]="{'bg-indigo-600': activeTab === 'friendRequests'}"
+    class="flex flex-col items-center justify-center text-white text-xs relative h-full flex-1 rounded"
+  >
+    <i class="fas fa-envelope text-xl"></i>
+    <span>Requests</span>
+    <span
+    *ngIf="userProfile.friendRequestsReceived.length"
+    class="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-[6px] py-[2px] rounded-full leading-none flex items-center justify-center min-w-[18px] min-h-[18px]"
+  >
+    {{ userProfile.friendRequestsReceived.length }}
+  </span>
+  
+  </button>
+</div>
+
+
   <!-- Right Content Area (Changes Dynamically) -->
-  <div class="flex-1 p-6 overflow-y-auto min-h-[calc(100vh-80px)] pb-24">
+  <div class="flex-1 p-6 overflow-y-auto min-h-[calc(100vh-80px)] pb-24 md:ml-[20%]">
 
     <!-- My Friends Section -->
-    <div *ngIf="activeTab === 'myFriends'">
-      <h2 class="text-2xl font-semibold mb-4 mt-4">My Friends</h2>
-
+    <div #friendsSection *ngIf="activeTab === 'myFriends'" >
+      <h2 class="text-2xl font-semibold mb-4 mt-4 flex items-center">
+        My Friends 
+        <span class="text-gray-400 text-lg ml-2">({{ userProfile.friends.length }})</span>
+      </h2>
+      
       <!-- Search Bar -->
       <div
       #searchBar
@@ -113,8 +156,8 @@ class="bg-gray-800 p-4 shadow-lg flex md:flex-col fixed bottom-0 w-full md:w-1/4
     </div>
 
 <!-- Add Friends Section -->
-<div *ngIf="activeTab === 'addFriends'">
-  <h2 class="text-2xl font-semibold mb-6">Add Friends</h2>
+<div #addFriendsSection *ngIf="activeTab === 'addFriends'">
+  <h2 class="text-2xl font-semibold mb-4 mt-4">Add Friends</h2>
 
   <!-- Search Bar -->
   <div #searchBar class="relative max-w-lg mb-6">
@@ -195,8 +238,8 @@ class="bg-gray-800 p-4 shadow-lg flex md:flex-col fixed bottom-0 w-full md:w-1/4
 </div>
 
     <!-- Friend Requests Section -->
-    <div *ngIf="activeTab === 'friendRequests'">
-      <h2 class="text-2xl font-semibold mb-4">Friend Requests</h2>
+    <div #friendRequestsSection  *ngIf="activeTab === 'friendRequests'">
+      <h2 class="text-2xl font-semibold mb-4 mt-4">Friend Requests</h2>
       <div class="bg-gray-800 p-6 rounded-xl shadow-lg max-w-4xl mx-auto custom-font">
         <div *ngIf="userProfile.friendRequestsReceived.length; else noRequests">
           <ul class="space-y-4">

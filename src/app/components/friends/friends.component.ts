@@ -16,13 +16,17 @@ export class FriendsComponent implements OnInit {
   activeTab: string = 'myFriends';
   searchQuery: string = '';
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
-  
+
+  @ViewChild('friendsSection') friendsSection!: ElementRef;
+  @ViewChild('addFriendsSection') addFriendsSection!: ElementRef;
+  @ViewChild('friendRequestsSection') friendRequestsSection!: ElementRef;
   
   usersToAdd: User[] = [];
   addFriendsSearchInitiated = false;
   addFriendsSearchLoading = false;
   
   userProfile = {} as User;
+  dummyFriends: User[] = [];
 
   constructor(private userService: UserService,
               private toastrService: ToastrService
@@ -35,7 +39,30 @@ export class FriendsComponent implements OnInit {
   setActiveTab(tab: string) {
     this.activeTab = tab;
     this.searchQuery = '';
+
+    setTimeout(() => {
+      this.scrollToTop();
+    }, 0);
   }
+
+  scrollToTop() {
+    let targetElement: ElementRef | undefined;
+  
+    if (this.activeTab === 'myFriends') {
+      targetElement = this.friendsSection;
+    } else if (this.activeTab === 'addFriends') {
+      targetElement = this.addFriendsSection;
+    } else if (this.activeTab === 'friendRequests') {
+      targetElement = this.friendRequestsSection;
+    }
+  
+    if (targetElement) {
+      const yOffset = -140;
+      const y = targetElement.nativeElement.getBoundingClientRect().top + window.scrollY + yOffset;
+  
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  }  
 
   getSearchPlaceholder() {
     switch (this.activeTab) {
@@ -47,29 +74,47 @@ export class FriendsComponent implements OnInit {
   }
 
   filteredFriends() {
-    return this.userProfile?.friends.filter((friend) => friend.username.toLowerCase().includes(this.searchQuery.toLowerCase()));
+    return this.userProfile.friends.filter((friend) => friend.username.toLowerCase().includes(this.searchQuery.toLowerCase()));
   }
 
 
   getFriendData() {
-    if (this.userProfile && this.userProfile.username) {
-      // Profile already available → Set values immediately
-    } else {
-      // Profile not available → Fetch it first
-      this.userService.getAuthenticatedUserProfile().subscribe(profile => {
-        if (profile) {
-          this.userProfile = profile;
-        }
-      });
-    }
-  
-    // Listen for profile updates
     this.userService.userProfile$.subscribe(profile => {
       if (profile) {
         this.userProfile = profile;
+        this.injectDummyFriends();
       }
     });
   }
+  
+  private injectDummyFriends() {
+    if (!this.userProfile.friends) {
+      this.userProfile.friends = [];
+    }
+  
+    const currentFriendCount = this.userProfile.friends.length;
+  
+    if (currentFriendCount < 15) {
+      const neededFriends = 15 - currentFriendCount;
+  
+      const dummyFriends: User[] = Array.from({ length: neededFriends }).map((_, i) => ({
+        _id: `dummy_friend_${i + 1}`,
+        username: `Friend ${i + 1}`,
+        email: `friend${i + 1}@example.com`, // Fake email
+        profilePicture: `https://via.placeholder.com/150?text=F${i + 1}`, // Placeholder image
+        friends: [], // Assuming no nested friends for dummy data
+        friendRequestsSent: [],
+        friendRequestsReceived: [],
+        isFriend: true, // Since they are friends
+        hasPendingRequest: false, // No pending request
+      }));
+  
+      this.userProfile.friends = [...this.userProfile.friends, ...dummyFriends];
+      this.userProfile.friendRequestsReceived = [...this.userProfile.friendRequestsReceived, ...dummyFriends];
+      this.dummyFriends = dummyFriends
+    }
+  }
+  
 
   searchUsers(){
     if (!this.searchQuery.trim() || this.activeTab === 'myFriends') return;
@@ -88,13 +133,14 @@ export class FriendsComponent implements OnInit {
 
     this.userService.searchUsers(this.searchQuery).subscribe({
       next: (users: User[]) => {
-        this.usersToAdd = users.map((user: User) => {
-          return {
-            ...user,
-            isFriend: this.userProfile.friends.some(friend => friend._id === user._id),
-            hasPendingRequest: this.userProfile.friendRequestsSent.some(request => request._id === user._id),
-          };
-        });
+        this.usersToAdd = this.dummyFriends;
+        // this.usersToAdd = users.map((user: User) => {
+        //   return {
+        //     ...user,
+        //     isFriend: this.userProfile.friends.some(friend => friend._id === user._id),
+        //     hasPendingRequest: this.userProfile.friendRequestsSent.some(request => request._id === user._id),
+        //   };
+        // });
         
       setTimeout(() => {
         this.addFriendsSearchLoading = false;
@@ -115,6 +161,9 @@ export class FriendsComponent implements OnInit {
           user.hasPendingRequest = true;
 
           this.userProfile.friendRequestsSent = [...this.userProfile.friendRequestsSent, user];
+
+          // update the global profile
+          this.userService.setUserProfile(this.userProfile);
       },
       error: (error) => {
         this.toastrService.error('Error sending request', 'Error');
@@ -128,6 +177,9 @@ export class FriendsComponent implements OnInit {
         this.userProfile.friendRequestsReceived = this.userProfile.friendRequestsReceived.filter(r => r._id !== fromUser._id);
         this.userProfile.friends.push(fromUser);
         this.toastrService.success(response.message, 'Success');
+
+        // update the global profile
+        this.userService.setUserProfile(this.userProfile);
       },
       error: (error) => {
         this.toastrService.error(error.error?.message || 'Error sending request', 'Error');

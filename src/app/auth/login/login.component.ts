@@ -55,7 +55,7 @@ export class LoginComponent {
         : 'assets/user.png';
 
       localStorage.setItem('profilePicture', profilePicture);    
-      this.userService.setUserProfile(response);    
+      this.userService.setUserProfile(response.user);   
       this.router.navigate(['/']);
       },
       error: (error) => {
