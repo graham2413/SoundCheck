@@ -1,0 +1,47 @@
+<div class="container mx-auto max-w-4xl p-6 bg-gray-900 text-white rounded-lg shadow-lg pt-28">
+    <!-- Profile Section -->
+    <div class="flex flex-col items-center relative">
+        <div class="absolute top-0 w-full h-32 bg-gradient-to-r from-blue-900 to-blue-700 rounded-t-lg"></div>
+        <img [src]="user?.profilePicture || 'assets/user.png'" 
+           alt="Profile Picture" 
+           class="w-36 h-36 rounded-full border-4 border-indigo-500 shadow-lg mt-6 transform transition duration-300 hover:scale-105" />
+      <h2 class="text-4xl font-semibold mt-4">{{ user?.username }}</h2>
+      <p class="text-gray-400 text-sm mt-1">Joined {{ user?.createdAt | date }}</p>
+    </div>
+
+    <!-- Friends Section -->
+    <div class="mt-8">
+      <h3 class="text-xl font-semibold">Friends ({{ user?.friends.length || 0 }})</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-gray-800 rounded-lg overflow-hidden shadow-md">
+        <div *ngFor="let friend of user?.friends" class="flex flex-col items-center text-center">
+            <img [src]="friend.profilePicture || 'assets/user.png'" 
+               alt="Friend"
+               class="w-16 h-16 rounded-full border-2 border-gray-500 shadow-sm transition-transform hover:scale-110" />
+          <p class="text-sm mt-2 font-medium">{{ friend.username }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="mt-8">
+      <h3 class="text-xl font-semibold">Reviews</h3>
+      <div *ngIf="user?.reviews?.length; else noReviews">
+        <div *ngFor="let review of user?.reviews" 
+             class="flex items-start p-4 bg-gray-800 rounded-lg mb-2 shadow-md hover:shadow-lg transition-all">
+          <img [src]="review.albumCover || 'assets/user.png'" 
+               alt="Album Cover" 
+               class="w-16 h-16 rounded-md border-2 border-gray-600 shadow-sm mr-4" />
+          <div>
+            <h4 class="font-medium text-lg">{{ review.albumTitle }}</h4>
+            <p class="text-gray-300 text-sm">{{ review.content }}</p>
+            <span class="text-yellow-400 font-semibold text-sm">Rating: {{ review.rating }}/10</span>
+          </div>
+        </div>
+      </div>
+      <ng-template #noReviews>
+        <p class="text-gray-400 text-center p-4 bg-gray-800 rounded-lg shadow-sm">
+          This user hasn't reviewed anything yet.
+        </p>
+      </ng-template>
+    </div>
+</div>

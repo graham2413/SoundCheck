@@ -10,9 +10,9 @@ const userSchema = new Schema({
     displayName: { type: String },
 
     // Friends & Friend Requests
-    friends: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }], // Users they are friends with
-    friendRequestsReceived: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }], // Incoming requests
-    friendRequestsSent: [{ type: Schema.Types.ObjectId, ref: "User", default: [] }], // Outgoing requests
+    friends: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
+    friendRequestsReceived: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
+    friendRequestsSent: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },    
 
     // Spotify/ Spotify Authentication
     spotifyAccessToken: { type: String }, // Spotify token (expires periodically)

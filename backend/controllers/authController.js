@@ -47,7 +47,19 @@ exports.registerUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email })
+      .populate({
+        path: "friends",
+        select: "username profilePicture"
+      })
+      .populate({
+        path: "friendRequestsSent",
+        select: "username profilePicture"
+      })
+      .populate({
+        path: "friendRequestsReceived",
+        select: "username profilePicture"
+      });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -66,16 +78,30 @@ exports.loginUser = async (req, res) => {
         profilePicture: user.profilePicture,
         createdAt: user.createdAt,
         friendInfo: {
-          friends: user.friends,
-          friendRequestsSent: user.friendRequestsSent,
-          friendRequestsReceived: user.friendRequestsReceived,
-        },
-      },
+          friends: user.friends.map(friend => ({
+            _id: friend._id,
+            username: friend.username,
+            profilePicture: friend.profilePicture
+          })),
+          friendRequestsSent: user.friendRequestsSent.map(request => ({
+            _id: request._id,
+            username: request.username,
+            profilePicture: request.profilePicture
+          })),
+          friendRequestsReceived: user.friendRequestsReceived.map(request => ({
+            _id: request._id,
+            username: request.username,
+            profilePicture: request.profilePicture
+          }))
+        }
+      }
     });
   } catch (error) {
+    console.error("Error during login:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };
+
 
 // LOGOUT (JWT - Client-side should remove token)
 exports.logoutUser = (req, res) => {

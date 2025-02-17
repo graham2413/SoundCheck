@@ -1,35 +1,83 @@
 const User = require("../models/User");
 const { cloudinary, upload } = require("../config/cloudinaryConfig");
 const bcrypt = require("bcryptjs");
+const Review = require("../models/Review");
 
 exports.getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select("-password"); // Exclude password
+    const user = await User.findById(req.params.id)
+      .select("-password") // Exclude password
+      .populate({
+        path: "friends",
+        select: "username profilePicture", // Get only essential friend info
+      });
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json(user);
+
+    // Fetch user's reviews separately
+    const reviews = await Review.find({ user: user._id })
+      .select("albumTitle content rating createdAt type reviewText albumSongOrArtistId")
+      .sort({ createdAt: -1 }) // Sort reviews by newest first
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      profilePicture: user.profilePicture || "assets/user.png",
+      friends: user.friends,
+      reviews: reviews,
+      createdAt: user.createdAt,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ message: "Server Error", error });
   }
 };
+
 
 exports.getAuthenticatedUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password")
-    .populate("friendRequestsSent", "username profilePicture")
-    .populate("friendRequestsReceived", "username profilePicture")
-    .populate("friends", "username profilePicture");
+      .populate("friendRequestsSent", "username profilePicture")
+      .populate("friendRequestsReceived", "username profilePicture")
+      .populate("friends", "username profilePicture");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json(user);
+
+    const formattedUser = {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      profilePicture: user.profilePicture,
+      createdAt: user.createdAt,
+      friendInfo: {
+        friends: user.friends.map(friend => ({
+          _id: friend._id,
+          username: friend.username,
+          profilePicture: friend.profilePicture
+        })),
+        friendRequestsSent: user.friendRequestsSent.map(request => ({
+          _id: request._id,
+          username: request.username,
+          profilePicture: request.profilePicture
+        })),
+        friendRequestsReceived: user.friendRequestsReceived.map(request => ({
+          _id: request._id,
+          username: request.username,
+          profilePicture: request.profilePicture
+        }))
+      }
+    };
+
+    res.json(formattedUser);
   } catch (error) {
     console.error("Error fetching user profile:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };
+
 
 exports.updateUserProfile = async (req, res) => {
   try {
@@ -173,8 +221,8 @@ exports.acceptFriendRequest = async (req, res) => {
 };
 
 exports.declineFriendRequest = async (req, res) => {
-  const { userId } = req.user; // Authenticated user (receiver of the request)
-  const { fromUserId } = req.params; // Sender of the friend request
+  const userId = req.user._id; // Receiver of the request (ObjectId)
+  const { fromUserId } = req.params; // Sender of the friend request (string)
 
   try {
     const user = await User.findById(userId);
@@ -191,11 +239,10 @@ exports.declineFriendRequest = async (req, res) => {
 
     // Remove from friend request lists
     user.friendRequestsReceived = user.friendRequestsReceived.filter(
-      (id) => id.toString() !== fromUserId
-    );
+      (id) => id.toString() !== fromUserId);
+      
     fromUser.friendRequestsSent = fromUser.friendRequestsSent.filter(
-      (id) => id.toString() !== userId
-    );
+      (id) => !id.equals(userId));
 
     await user.save();
     await fromUser.save();
@@ -207,8 +254,8 @@ exports.declineFriendRequest = async (req, res) => {
 };
 
 exports.unfriendUser = async (req, res) => {
-  const { userId } = req.user; // Authenticated user
-  const { friendId } = req.params; // The friend being removed
+  const userId = req.user._id; // Receiver of the request (ObjectId)
+  const { friendId } = req.params; // The friend being removed (string)
 
   try {
     const user = await User.findById(userId);
@@ -227,7 +274,7 @@ exports.unfriendUser = async (req, res) => {
 
     // Remove each other from the friends list
     user.friends = user.friends.filter((id) => id.toString() !== friendId);
-    friend.friends = friend.friends.filter((id) => id.toString() !== userId);
+    friend.friends = friend.friends.filter((id) => !id.equals(userId));
 
     await user.save();
     await friend.save();

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { User } from 'src/app/models/responses/user.response';
 import { UserService } from 'src/app/services/user.service';
@@ -10,7 +11,7 @@ import { UserService } from 'src/app/services/user.service';
   templateUrl: './friends.component.html',
   styleUrls: ['./friends.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule, RouterModule],
 })
 export class FriendsComponent implements OnInit {
   activeTab: string = 'myFriends';
@@ -20,16 +21,27 @@ export class FriendsComponent implements OnInit {
   @ViewChild('friendsSection') friendsSection!: ElementRef;
   @ViewChild('addFriendsSection') addFriendsSection!: ElementRef;
   @ViewChild('friendRequestsSection') friendRequestsSection!: ElementRef;
-  
+
   usersToAdd: User[] = [];
   addFriendsSearchInitiated = false;
   addFriendsSearchLoading = false;
-  
-  userProfile = {} as User;
-  dummyFriends: User[] = [];
 
-  constructor(private userService: UserService,
-              private toastrService: ToastrService
+  userProfile: User = {
+    _id: '',
+    username: '',
+    email: '',
+    profilePicture: '',
+    friendInfo: {
+      friends: [],
+      friendRequestsReceived: [],
+      friendRequestsSent: []
+    }
+  } as User;
+  
+  constructor(
+    private userService: UserService,
+    private toastrService: ToastrService,
+    private changeDetectorRef: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -47,7 +59,7 @@ export class FriendsComponent implements OnInit {
 
   scrollToTop() {
     let targetElement: ElementRef | undefined;
-  
+
     if (this.activeTab === 'myFriends') {
       targetElement = this.friendsSection;
     } else if (this.activeTab === 'addFriends') {
@@ -55,70 +67,59 @@ export class FriendsComponent implements OnInit {
     } else if (this.activeTab === 'friendRequests') {
       targetElement = this.friendRequestsSection;
     }
-  
+
     if (targetElement) {
       const yOffset = -140;
-      const y = targetElement.nativeElement.getBoundingClientRect().top + window.scrollY + yOffset;
-  
+      const y =
+        targetElement.nativeElement.getBoundingClientRect().top +
+        window.scrollY +
+        yOffset;
+
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
-  }  
+  }
 
   getSearchPlaceholder() {
     switch (this.activeTab) {
-      case 'addFriends': return 'Search users to add...';
-      case 'myFriends': return 'Search your friends...';
-      case 'friendRequests': return 'Search friend requests...';
-      default: return 'Search...';
+      case 'addFriends':
+        return 'Search users to add...';
+      case 'myFriends':
+        return 'Search your friends...';
+      case 'friendRequests':
+        return 'Search friend requests...';
+      default:
+        return 'Search...';
     }
   }
 
   filteredFriends() {
-    return this.userProfile.friends.filter((friend) => friend.username.toLowerCase().includes(this.searchQuery.toLowerCase()));
-  }
-
+    return this.userProfile?.friendInfo?.friends?.length
+      ? this.userProfile.friendInfo.friends.filter((friend) =>
+          friend.username?.toLowerCase().includes(this.searchQuery?.toLowerCase() || '')
+        )
+      : [];
+  }  
 
   getFriendData() {
-    this.userService.userProfile$.subscribe(profile => {
+    this.userService.userProfile$.subscribe((profile) => {
       if (profile) {
-        this.userProfile = profile;
-        this.injectDummyFriends();
+        this.userProfile = {
+          ...profile,
+          friendInfo: {
+            friends: profile.friendInfo?.friends || [],
+            friendRequestsReceived: profile.friendInfo?.friendRequestsReceived || [],
+            friendRequestsSent: profile.friendInfo?.friendRequestsSent || []
+          }
+        };
+
+        this.changeDetectorRef.detectChanges();
       }
     });
   }
   
-  private injectDummyFriends() {
-    if (!this.userProfile.friends) {
-      this.userProfile.friends = [];
-    }
-  
-    const currentFriendCount = this.userProfile.friends.length;
-  
-    if (currentFriendCount < 15) {
-      const neededFriends = 15 - currentFriendCount;
-  
-      const dummyFriends: User[] = Array.from({ length: neededFriends }).map((_, i) => ({
-        _id: `dummy_friend_${i + 1}`,
-        username: `Friend ${i + 1}`,
-        email: `friend${i + 1}@example.com`, // Fake email
-        profilePicture: `https://via.placeholder.com/150?text=F${i + 1}`, // Placeholder image
-        friends: [], // Assuming no nested friends for dummy data
-        friendRequestsSent: [],
-        friendRequestsReceived: [],
-        isFriend: true, // Since they are friends
-        hasPendingRequest: false, // No pending request
-      }));
-  
-      this.userProfile.friends = [...this.userProfile.friends, ...dummyFriends];
-      this.userProfile.friendRequestsReceived = [...this.userProfile.friendRequestsReceived, ...dummyFriends];
-      this.dummyFriends = dummyFriends
-    }
-  }
-  
-
-  searchUsers(){
+  searchUsers() {
     if (!this.searchQuery.trim() || this.activeTab === 'myFriends') return;
-  
+
     // Scroll the search bar into view
     setTimeout(() => {
       const searchBarEl = this.searchBar.nativeElement;
@@ -133,77 +134,120 @@ export class FriendsComponent implements OnInit {
 
     this.userService.searchUsers(this.searchQuery).subscribe({
       next: (users: User[]) => {
-        this.usersToAdd = this.dummyFriends;
-        // this.usersToAdd = users.map((user: User) => {
-        //   return {
-        //     ...user,
-        //     isFriend: this.userProfile.friends.some(friend => friend._id === user._id),
-        //     hasPendingRequest: this.userProfile.friendRequestsSent.some(request => request._id === user._id),
-        //   };
-        // });
-        
-      setTimeout(() => {
-        this.addFriendsSearchLoading = false;
-      }, 500);
+        this.usersToAdd = users.map((user: User) => {
+          return {
+            ...user,
+            isFriend: this.userProfile?.friendInfo?.friends?.some(
+              (friend) => friend._id === user._id
+            ),
+            hasPendingRequestSent: this.userProfile?.friendInfo?.friendRequestsSent?.some(
+              (request) => request._id === user._id
+            ),
+            hasPendingRequestReceived:
+              this.userProfile?.friendInfo?.friendRequestsReceived?.some(
+                (request) => request._id === user._id
+              ),
+          };
+        });
+
+        setTimeout(() => {
+          this.addFriendsSearchLoading = false;
+        }, 500);
       },
       error: (error) => {
         this.addFriendsSearchLoading = false;
-        this.toastrService.error('Error occurred while searching users.', 'Error');
-      }
+        this.toastrService.error(
+          'Error occurred while searching users.',
+          'Error'
+        );
+      },
     });
-
   }
 
-  sendFriendRequest(user: User) {
-    this.userService.sendFriendRequest(user._id).subscribe({
+  sendFriendRequest(toUser: User) {
+    this.userService.sendFriendRequest(toUser._id).subscribe({
       next: (response) => {
         this.toastrService.success(response.message, 'Success');
-          user.hasPendingRequest = true;
+        toUser.hasPendingRequestSent = true;
 
-          this.userProfile.friendRequestsSent = [...this.userProfile.friendRequestsSent, user];
+        this.userProfile!.friendInfo.friendRequestsSent = [
+          ...(this.userProfile?.friendInfo?.friendRequestsSent || []),
+          toUser,
+        ];
 
-          // update the global profile
-          this.userService.setUserProfile(this.userProfile);
+        // update the global profile
+        this.userService.setUserProfile(this.userProfile);
       },
       error: (error) => {
         this.toastrService.error('Error sending request', 'Error');
       },
-    }); 
-   }
+    });
+  }
 
   acceptFriendRequest(fromUser: User) {
     this.userService.acceptFriendRequest(fromUser._id).subscribe({
       next: (response) => {
-        this.userProfile.friendRequestsReceived = this.userProfile.friendRequestsReceived.filter(r => r._id !== fromUser._id);
-        this.userProfile.friends.push(fromUser);
+        if (this.userProfile) {
+          this.userProfile.friendInfo.friendRequestsReceived =
+            this.userProfile.friendInfo.friendRequestsReceived?.filter(
+              (r) => r._id !== fromUser._id
+            ) || [];
+        }
+        this.userProfile?.friendInfo?.friends.push(fromUser);
         this.toastrService.success(response.message, 'Success');
 
         // update the global profile
         this.userService.setUserProfile(this.userProfile);
       },
       error: (error) => {
-        this.toastrService.error(error.error?.message || 'Error sending request', 'Error');
+        this.toastrService.error(
+          error.error?.message || 'Error sending request',
+          'Error'
+        );
       },
-    }); 
-   }
-
-  // Mock implementation of declining a friend request
-  declineFriendRequest(user: User) {
-    console.log(`Declining friend request from ${user.username}`);
-    // Simulate API call
-    setTimeout(() => {
-      // this.userProfile.friendRequestsReceived = this.userProfile.friendRequestsReceived.filter(r => r.id !== user.id);
-    }, 1000);
+    });
   }
 
-  // Mock implementation of unfriending a user
-  unfriend(user: User) {
-    console.log(`Unfriending ${user.username}`);
-    // Simulate API call
-    setTimeout(() => {
-    }, 1000);
+  declineFriendRequest(fromUser: User) {
+    this.userService.declineFriendRequest(fromUser._id).subscribe({
+      next: (response: any) => {
+        if (this.userProfile && this.userProfile.friendInfo.friendRequestsReceived) {
+          this.userProfile.friendInfo.friendRequestsReceived = this.userProfile.friendInfo.friendRequestsReceived.filter(
+            (r) => r._id !== fromUser._id
+          );
+        }
+
+        // update the global profile
+        this.userService.setUserProfile(this.userProfile);
+      },
+      error: (error: any) => {
+        this.toastrService.error(
+          error.error?.message || 'Error removing request',
+          'Error'
+        );
+      },
+    });
   }
 
-  viewProfile(user: User) {
+  removeFriend(friend: User) {
+    this.userService.removeFriend(friend._id).subscribe({
+      next: (response: any) => {
+        if (this.userProfile && this.userProfile.friendInfo.friends) {
+          this.userProfile.friendInfo.friends = this.userProfile.friendInfo.friends.filter(
+            (friendItem) => friendItem._id !== friend._id
+          );
+        }        
+
+        // update the global profile
+        this.userService.setUserProfile(this.userProfile);
+        this.toastrService.success('Removed friend', 'Success');
+      },
+      error: (error: any) => {
+        this.toastrService.error(
+          error.error?.message || 'Error removing friend',
+          'Error'
+        );
+      },
+    });
   }
 }

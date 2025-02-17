@@ -8,7 +8,7 @@ const { upload } = require("../config/cloudinaryConfig");
 router.get("/profile", authenticateUser, userController.getAuthenticatedUserProfile);
 
 // Get a specific user by ID (Public Route)
-router.get("/:id", userController.getUserProfile);
+router.get("/profile/:id", userController.getUserProfile);
 
 // Allow users to update their own profile (Protected Route)
 router.put("/profile", authenticateUser, upload.single("profilePicture"), userController.updateUserProfile);

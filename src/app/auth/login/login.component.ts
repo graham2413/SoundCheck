@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { LoginResponse } from 'src/app/models/responses/login-response';
 import { AuthService } from 'src/app/services/auth.service';
@@ -12,7 +12,7 @@ import { UserService } from 'src/app/services/user.service';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule, RouterModule]
 })
 export class LoginComponent {
   email: string = '';

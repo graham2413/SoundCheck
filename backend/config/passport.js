@@ -3,7 +3,7 @@ const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
 const SpotifyStrategy = require("passport-spotify").Strategy;
 const User = require("../models/User");
 require("dotenv").config();
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; //change eventually
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; //change eventually
 
 // JWT Strategy (for regular login)
 const jwtOptions = {

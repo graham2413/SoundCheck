@@ -1,7 +1,15 @@
 .active-link {
     background-color: #4b5563 !important;
-    color: #f8fafc !important;
+    color: #f8fafc;
     border-radius: 6px;
     padding: 10px 16px;
+  }
+  
+
+  @media (max-width: 910px) and (min-width: 768px) {
+    .link {
+      padding: 10px !important;
+      font-size: medium;
+    }
   }
   

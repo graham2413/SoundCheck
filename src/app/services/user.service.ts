@@ -98,4 +98,38 @@ export class UserService {
         { headers }
       );
     }
+
+    declineFriendRequest(fromUserId: string): Observable<{ message: string }> {
+      const token = localStorage.getItem('token');
+    
+      if (!token) {
+        console.error("No authentication token found");
+        return new Observable();
+      }
+      
+      const headers = { Authorization: `Bearer ${token}` };
+
+      return this.http.post<{ message: string }>(`${this.apiUrl}/friends/decline/${fromUserId}`, {},
+        { headers }
+      );
+    }
+
+    removeFriend(friendId: string): Observable<{ message: string }> {
+      const token = localStorage.getItem('token');
+    
+      if (!token) {
+        console.error("No authentication token found");
+        return new Observable();
+      }
+      
+      const headers = { Authorization: `Bearer ${token}` };
+
+      return this.http.post<{ message: string }>(`${this.apiUrl}/friends/unfriend/${friendId}`, {},
+        { headers }
+      );
+    }
+
+    getOtherUserProfileInfo(profileId: string): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/profile/${profileId}`);
+    }
 }
