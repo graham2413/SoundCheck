@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { env } from '../../env';
+import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
 import { LoginResponse } from '../models/responses/login-response';
 
@@ -9,7 +9,7 @@ import { LoginResponse } from '../models/responses/login-response';
   providedIn: 'root'
 })
 export class AuthService {
-    private apiUrl = env.authurl;
+    private apiUrl = environment.api.auth;
 
   constructor(private http: HttpClient, private router: Router) {}
 

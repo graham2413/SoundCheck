@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { env } from 'src/env';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SearchService {
-    private apiUrl = env.searchurl;
+    private apiUrl = environment.api.search;
 
   constructor(private http: HttpClient) {}
 

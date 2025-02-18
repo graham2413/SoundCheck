@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
-import { env } from '../../env';
+import { environment } from '../..//environments/environment';
 import { tap } from 'rxjs/operators';
 import { User } from '../models/responses/user.response';
 
@@ -9,7 +9,7 @@ import { User } from '../models/responses/user.response';
   providedIn: 'root',
 })
 export class UserService {
-  private apiUrl = env.userUrl;
+  private apiUrl = environment.api.users;
   private userProfileSubject = new BehaviorSubject<any>(null);
   userProfile$ = this.userProfileSubject.asObservable();
 
