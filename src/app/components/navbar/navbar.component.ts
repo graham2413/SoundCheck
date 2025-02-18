@@ -3,6 +3,7 @@ import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { User } from 'src/app/models/responses/user.response';
 import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
 
@@ -11,13 +12,23 @@ import { UserService } from 'src/app/services/user.service';
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule]
+  imports: [CommonModule, FormsModule, RouterModule],
 })
 export class NavbarComponent implements OnInit {
   isMenuOpen: boolean = false;
   isProfileMenuOpen: boolean = false;
   profilePicture: string = '';
-  userProfile: any = {};
+  userProfile: User = {
+    _id: '',
+    username: '',
+    email: '',
+    profilePicture: '',
+    friendInfo: {
+      friends: [],
+      friendRequestsReceived: [],
+      friendRequestsSent: [],
+    },
+  } as User;
 
   constructor(
     private authService: AuthService,
@@ -27,7 +38,7 @@ export class NavbarComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.userService.userProfile$.subscribe(profile => {
+    this.userService.userProfile$.subscribe((profile) => {
       if (profile) {
         this.userProfile = profile;
       }

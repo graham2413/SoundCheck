@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from 'src/app/services/auth.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-register',
@@ -19,6 +20,7 @@ export class RegisterComponent {
   confirmPassword: string = '';
   errorMessages: { username?: string; email?: string; password?: string; confirmPassword?: string} = {};
   isLoading: boolean = false;
+  isGoogleLoading: boolean = false;
 
   constructor(private authService: AuthService, private router: Router, private toastr: ToastrService) {}
 
@@ -72,29 +74,9 @@ export class RegisterComponent {
     });
   }
 
-  // loginWithGoogle() {
-  //   this.authService.loginWithGoogle().subscribe({
-  //     next: (response) => {
-  //       if (response.isNewUser) {
-  //         // Automatically register the user if it's their first time
-  //         this.authService.registerWithGoogle(response.name, response.email, response.profilePicture).subscribe({
-  //           next: () => {
-  //             localStorage.setItem('profilePicture', response.profilePicture || 'assets/user.png');
-  //             this.router.navigate(['/']);
-  //           },
-  //           error: (error) => {
-  //             console.error('Google registration failed', error);
-  //           }
-  //         });
-  //       } else {
-  //         // If user already exists, just log them in
-  //         localStorage.setItem('profilePicture', response.profilePicture || 'assets/user.png');
-  //         this.router.navigate(['/']);
-  //       }
-  //     },
-  //     error: (error) => {
-  //       console.error('Google login failed', error);
-  //     }
-  //   });
-  // }
+  loginWithGoogle() {
+    this.isGoogleLoading = true;
+    window.location.href = `${environment.backendUrl}/auth/google`;
+  }  
+  
 }

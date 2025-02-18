@@ -10,7 +10,7 @@
         class="absolute inset-0 h-full w-full object-contain"
       />
     </div>
-    <span class="text-2xl font-semibold">SoundCheck</span>
+    <span class="text-2xl font-semibold title">SoundCheck</span>
   </div>
 
   <div
@@ -32,7 +32,7 @@
       class="link rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
       (click)="closeProfileMenu()"
     >
-      Following
+      Friends
     </a>
     <a
       routerLink="/profile"
@@ -52,7 +52,7 @@
       >
         <div class="h-16 w-16 relative">
           <img
-            [src]="userProfile.profilePicture"
+          [src]="userProfile?.profilePicture || 'assets/user.png'"
             alt="User Profile"
             class="absolute inset-0 h-full w-full rounded-full border-2 border-gray-700 shadow-md object-cover"
           />
@@ -75,7 +75,7 @@
           class="block px-5 py-3 text-lg hover:bg-gray-700 hover:text-white rounded-md"
           (click)="closeProfileMenu()"
         >
-          Following
+          Freinds
         </a>
         <button
           (click)="logout()"

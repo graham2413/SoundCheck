@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { env } from '../../env';
 import { tap } from 'rxjs/operators';
 import { User } from '../models/responses/user.response';
@@ -19,8 +19,7 @@ export class UserService {
     const token = localStorage.getItem('token');
   
     if (!token) {
-      console.error("No authentication token found");
-      return new Observable();
+      return EMPTY;
     }
 
     const headers = { Authorization: `Bearer ${token}` };
@@ -131,5 +130,20 @@ export class UserService {
 
     getOtherUserProfileInfo(profileId: string): Observable<any> {
       return this.http.get<any>(`${this.apiUrl}/profile/${profileId}`);
+    }
+
+    deleteProfile(): Observable<{ message: string }> {
+      const token = localStorage.getItem('token');
+    
+      if (!token) {
+        console.error("No authentication token found");
+        return new Observable();
+      }
+      
+      const headers = { Authorization: `Bearer ${token}` };
+
+      return this.http.delete<{ message: string }>(`${this.apiUrl}/profile`,
+        { headers }
+      );
     }
 }

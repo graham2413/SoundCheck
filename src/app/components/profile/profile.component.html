@@ -17,10 +17,11 @@
           class="hidden"
         />
         <img
-          [src]="userProfile?.profilePicture || 'assets/user.png'"
-          alt="Profile Picture"
-          class="w-24 h-24 rounded-full border-2 border-gray-600 object-cover shadow-md hover:opacity-80 transition"
-        />
+        [src]="profilePictureUrl"
+        alt="Profile Picture"
+        class="w-24 h-24 rounded-full border-2 border-gray-600 object-cover shadow-md hover:opacity-80 transition"
+      />
+      
       </label>
       <p class="text-sm text-gray-400 mt-2">Click to change profile picture</p>
     </div>
@@ -97,28 +98,50 @@
     </div>
   </div>
 
-  <!-- Delete Account Confirmation Modal -->
-  <div
-    *ngIf="showDeleteConfirm"
-    class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-  >
-    <div class="bg-gray-800 p-6 rounded-lg shadow-md">
-      <h3 class="text-lg font-bold">Are you sure?</h3>
-      <p class="text-gray-400">This action cannot be undone.</p>
-      <div class="flex justify-end gap-4 mt-4">
-        <button
-          (click)="cancelDelete()"
-          class="px-4 py-2 bg-gray-700 rounded-md text-white"
-        >
-          Cancel
-        </button>
-        <button
-          (click)="deleteAccount()"
-          class="px-4 py-2 bg-red-500 rounded-md text-white"
-        >
-          Delete
-        </button>
-      </div>
+<!-- Delete Account Confirmation Modal -->
+<div
+  *ngIf="showDeleteConfirm"
+  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 px-4"
+>
+  <div class="bg-gray-800 p-6 w-full max-w-sm sm:max-w-md md:w-[30rem] rounded-lg shadow-lg">
+    <h3 class="text-xl font-bold text-white">Confirm Account Deletion</h3>
+    <p class="text-gray-400 text-lg mt-2">
+      Enter your email to confirm. This action is
+      <span class="text-red-400 font-semibold">permanent</span>.
+    </p>
+
+    <!-- Email Input -->
+    <div class="mt-4">
+      <label class="block text-gray-300 text-sm font-semibold mb-1">
+        Confirm Email Address
+      </label>
+      <input
+        type="email"
+        [(ngModel)]="confirmEmail"
+        name="confirmEmail"
+        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:outline-none"
+        placeholder="Enter your email"
+        (input)="validateEmail()"
+      />
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap justify-end gap-4 mt-6">
+      <button
+        (click)="cancelDelete()"
+        class="w-full sm:w-auto px-5 py-3 bg-gray-700 hover:bg-gray-600 transition rounded-md text-white"
+      >
+        Cancel
+      </button>
+      <button
+        (click)="deleteAccount()"
+        [disabled]="confirmEmail !== userProfile.email"
+        class="w-full sm:w-auto px-5 py-3 bg-red-600 hover:bg-red-500 transition rounded-md text-white disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Delete
+      </button>
     </div>
   </div>
+</div>
+
 </div>

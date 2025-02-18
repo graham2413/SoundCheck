@@ -7,7 +7,7 @@ import { User } from 'src/app/models/responses/user.response';
 import { UserService } from 'src/app/services/user.service';
 
 @Component({
-  selector: 'app-following',
+  selector: 'app-friends',
   templateUrl: './friends.component.html',
   styleUrls: ['./friends.component.css'],
   standalone: true,

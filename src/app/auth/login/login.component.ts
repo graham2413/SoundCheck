@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { LoginResponse } from 'src/app/models/responses/login-response';
 import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -19,6 +20,7 @@ export class LoginComponent {
   password: string = '';
   errorMessages: { email?: string; password?: string; general?: string } = {};
   isLoading: boolean = false;
+  isGoogleLoading = false;
 
   constructor(private authService: AuthService, private router: Router, private toastr: ToastrService, private userService: UserService) {}
 
@@ -48,37 +50,24 @@ export class LoginComponent {
 
     this.authService.login(userData).subscribe({
       next: (response: LoginResponse) => {
-        localStorage.setItem('token', response.token);
+      localStorage.setItem('token', response.token);
 
-        const profilePicture = response.user.profilePicture && response.user.profilePicture.trim() !== 'undefined'
-        ? response.user.profilePicture
-        : 'assets/user.png';
-
-      localStorage.setItem('profilePicture', profilePicture);    
       this.userService.setUserProfile(response.user);   
       this.router.navigate(['/']);
+      this.toastr.success('Logged in successfully!', 'Success');
+      this.isLoading = false;
       },
       error: (error) => {
         this.isLoading = false;
         this.toastr.error('Log in attempt failed.', 'Error');
         this.errorMessages.general = error.error.message || 'Invalid email or password.';
-      },
-      complete: () => {
-        this.toastr.success('Logged in successfully!', 'Success');
-        this.isLoading = false;
       }
     });
   }
 
-  // loginWithGoogle() {
-  //   this.authService.loginWithGoogle().subscribe({
-  //     next: (response) => {
-  //       localStorage.setItem('profilePicture', response.profilePicture || 'assets/user.png');
-  //       this.router.navigate(['/']);
-  //     },
-  //     error: (error) => {
-  //       console.error('Google login failed', error);
-  //     }
-  //   });
-  // }
+  loginWithGoogle() {
+    this.isGoogleLoading = true;
+    window.location.href = `${environment.backendUrl}/auth/google`;
+  }  
+  
 }

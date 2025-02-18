@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router, NavigationEnd, RouterOutlet, RouterModule } from '@angular/router';
 import { trigger, transition, style, animate, query, group } from '@angular/animations';
 import { filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './components/navbar/navbar.component';
+import { ToastrService } from 'ngx-toastr';
+import { UserService } from './services/user.service';
 
 @Component({
   selector: 'app-root',
@@ -28,16 +30,38 @@ import { NavbarComponent } from './components/navbar/navbar.component';
     ])
   ]
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'SoundCheck';
   currentUrl: string = '';
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private toastr: ToastrService, private userService: UserService) {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.currentUrl = event.urlAfterRedirects;
     });
+  }
+
+  ngOnInit() {
+    const queryParams = new URLSearchParams(window.location.search);
+    const token = queryParams.get('token');
+    const user = queryParams.get('user');
+
+    if (token) {
+      localStorage.setItem('token', token);
+
+      if (user) {
+        // Decode and store the user profile
+        const parsedUser = JSON.parse(decodeURIComponent(user));
+        this.userService.setUserProfile(parsedUser);
+      }
+
+      // Clear URL params to prevent looping issues
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Redirect to home page
+      this.router.navigate(['/']);
+    }
   }
 
   prepareRoute(outlet: RouterOutlet) {

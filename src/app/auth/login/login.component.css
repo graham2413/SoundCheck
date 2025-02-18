@@ -1,8 +1,8 @@
 input,
 textarea {
-  background-color: #374151 !important; /* Matches bg-gray-700 */
+  background-color: #374151 !important;
   color: white !important;
-  border: 1px solid #4b5563 !important; /* Matches other input borders */
+  border: 1px solid #4b5563 !important;
 }
 
 input::placeholder,
@@ -17,4 +17,36 @@ textarea:-webkit-autofill {
   -webkit-text-fill-color: white !important;
   border: 1px solid #4b5563 !important;
   transition: background-color 5000s ease-in-out 0s;
+}
+/* Regular Login Loader (Colorful Spinner) */
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #ffffff; /* White top */
+  border-right-color: #818cf8; /* Indigo */
+  border-left-color: #60a5fa; /* Blue */
+  border-bottom-color: #facc15; /* Yellow */
+  animation: spin 0.8s linear infinite;
+}
+
+/* Google Loader (Simple White Spinner) */
+.google-loader {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 3px solid white;
+  border-top-color: transparent;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

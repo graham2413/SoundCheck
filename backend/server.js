@@ -1,9 +1,11 @@
 const express = require("express");
 const connectDB = require("./config/db");
 require("dotenv").config();
+require('ssl-root-cas').inject();
 const cors = require("cors");
 const session = require("express-session");
 const passport = require("./config/passport");
+const googleAuthRoutes = require('./auth/google');
 
 // Import route files
 const userRoutes = require("./routes/userRoutes");
@@ -21,13 +23,14 @@ connectDB();
 app.use(express.json()); // Parses incoming JSON requests
 app.use(cors()); // Enables communication between frontend and backend
 
-// Add express-session (BEFORE passport.initialize())
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { secure: process.env.NODE_ENV === "production" }
 }));
+
+app.use('/auth', googleAuthRoutes);
 
 app.use(passport.initialize());
 app.use(passport.session()); // Required for OAuth authentication

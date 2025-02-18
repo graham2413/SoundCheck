@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { User } from 'src/app/models/responses/user.response';
 import { UserService } from 'src/app/services/user.service';
 
 @Component({
@@ -11,20 +13,33 @@ import { UserService } from 'src/app/services/user.service';
   imports: [CommonModule, FormsModule]
 })
 export class ProfileComponent implements OnInit {
-  userProfile: any = {};
+    userProfile: User = {
+      _id: '',
+      username: '',
+      email: '',
+      profilePicture: '',
+      friendInfo: {
+        friends: [],
+        friendRequestsReceived: [],
+        friendRequestsSent: []
+      }
+    } as User;
   newPassword: string = '';
   showDeleteConfirm: boolean = false;
   selectedFile: File | null = null;
   passwordError: string = '';
   isSaving: boolean = false;
+  confirmEmail: string = '';
+  profilePictureUrl: string = '';
 
-  constructor(private userService: UserService, private toastr: ToastrService) {}
+  constructor(private userService: UserService, private toastr: ToastrService, private router: Router) {}
 
   ngOnInit(): void {
     // Subscribe to the global profile state
     this.userService.userProfile$.subscribe(profile => {
       if (profile) {
         this.userProfile = profile;
+        this.updateProfilePictureUrl();
       }
     });
 
@@ -33,6 +48,14 @@ export class ProfileComponent implements OnInit {
       this.userService.getAuthenticatedUserProfile().subscribe();
     }
   }
+  
+  updateProfilePictureUrl() {
+    if (this.userProfile.profilePicture) {
+        this.profilePictureUrl = this.userProfile.profilePicture + '?t=' + Date.now();
+    } else {
+        this.profilePictureUrl = 'assets/user.png';
+    }
+}
   
   onProfilePictureChange(event: any) {
     const file = event.target.files[0];
@@ -91,7 +114,23 @@ export class ProfileComponent implements OnInit {
     this.showDeleteConfirm = false;
   }
 
+  validateEmail() {
+    this.confirmEmail = this.confirmEmail.trim();
+  }
+
   deleteAccount() {
-    // add delete account logic here
+    if (this.confirmEmail === this.userProfile.email) {
+      this.userService.deleteProfile().subscribe({
+        next: (response) => {
+          this.toastr.success('Profile Removed!', 'Success');
+    
+          localStorage.clear(); // Remove all user data
+          this.router.navigate(['/login']);
+        },
+        error: (err) => {
+          this.toastr.error("Failed to delete profile.", "Error");
+        },
+      })
+    }
   }
 }

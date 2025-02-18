@@ -10,7 +10,7 @@ import { ViewProfilePageComponent } from './components/view-profile-page/view-pr
 export const appRoutes: Routes = [
     { path: '', component: MainSearchComponent, canActivate: [AuthGuard], data: { animation: 'Home' } },
     { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard], data: { animation: 'Profile' } },
-    { path: 'friends', component: FriendsComponent, canActivate: [AuthGuard], data: { animation: 'Following' } },
+    { path: 'friends', component: FriendsComponent, canActivate: [AuthGuard], data: { animation: 'Friends' } },
     { path: 'profile/:userId', component: ViewProfilePageComponent, canActivate: [AuthGuard], data: { animation: 'ViewProfile' } },
     { path: 'login', component: LoginComponent, data: { animation: 'Login' } },
     { path: 'register', component: RegisterComponent, data: { animation: 'Register' } },

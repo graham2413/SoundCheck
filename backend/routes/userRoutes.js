@@ -13,6 +13,9 @@ router.get("/profile/:id", userController.getUserProfile);
 // Allow users to update their own profile (Protected Route)
 router.put("/profile", authenticateUser, upload.single("profilePicture"), userController.updateUserProfile);
 
+// Delete User Profile (Protected)
+router.delete("/profile", authenticateUser, userController.deleteUserProfile);
+
 /*
 FRIENDSHIP ROUTES
 */
