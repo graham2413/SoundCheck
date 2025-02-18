@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { AuthService } from 'src/app/services/auth.service';
-import { environment } from 'src/environments/environment';
+import { environment } from 'src/environments/environments';
 
 @Component({
   selector: 'app-register',
