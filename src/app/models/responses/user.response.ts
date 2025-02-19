@@ -10,6 +10,7 @@ export interface User {
   hasPendingRequestSent?: boolean;
   hasPendingRequestReceived?: boolean;
   reviews?: Review;
+  googleId: string;
 }
 
 export interface FriendInfo {

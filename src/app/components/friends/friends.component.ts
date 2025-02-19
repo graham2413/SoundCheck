@@ -29,6 +29,7 @@ export class FriendsComponent implements OnInit {
   userProfile: User = {
     _id: '',
     username: '',
+    googleId: '',
     email: '',
     profilePicture: '',
     friendInfo: {

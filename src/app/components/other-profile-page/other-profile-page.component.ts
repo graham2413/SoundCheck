@@ -7,8 +7,8 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'app-view-profile-page',
   imports: [CommonModule],
-  templateUrl: './view-profile-page.component.html',
-  styleUrl: './view-profile-page.component.css',
+  templateUrl: './other-profile-page.component.html',
+  styleUrl: './other-profile-page.component.css',
   standalone: true
 })
 export class ViewProfilePageComponent implements OnInit {

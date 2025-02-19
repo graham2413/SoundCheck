@@ -7,8 +7,8 @@ import { User } from 'src/app/models/responses/user.response';
 import { UserService } from 'src/app/services/user.service';
 
 @Component({
-  selector: 'app-profile',
-  templateUrl: './profile.component.html',
+  selector: 'app-user-profile',
+  templateUrl: './user-profile.component.html',
   standalone: true,
   imports: [CommonModule, FormsModule]
 })
@@ -16,6 +16,7 @@ export class ProfileComponent implements OnInit {
     userProfile: User = {
       _id: '',
       username: '',
+      googleId: '',
       email: '',
       profilePicture: '',
       friendInfo: {
@@ -24,13 +25,16 @@ export class ProfileComponent implements OnInit {
         friendRequestsSent: []
       }
     } as User;
+
   newPassword: string = '';
   showDeleteConfirm: boolean = false;
   selectedFile: File | null = null;
   passwordError: string = '';
-  isSaving: boolean = false;
   confirmEmail: string = '';
   profilePictureUrl: string = '';
+  
+  isSaving: boolean = false;
+  isDeleting: boolean = false;
 
   constructor(private userService: UserService, private toastr: ToastrService, private router: Router) {}
 
@@ -120,6 +124,7 @@ export class ProfileComponent implements OnInit {
 
   deleteAccount() {
     if (this.confirmEmail === this.userProfile.email) {
+      this.isDeleting = true;
       this.userService.deleteProfile().subscribe({
         next: (response) => {
           this.toastr.success('Profile Removed!', 'Success');

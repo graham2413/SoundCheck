@@ -22,6 +22,7 @@ export class NavbarComponent implements OnInit {
     _id: '',
     username: '',
     email: '',
+    googleId: '',
     profilePicture: '',
     friendInfo: {
       friends: [],

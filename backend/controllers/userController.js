@@ -104,6 +104,8 @@ exports.updateUserProfile = async (req, res) => {
 
     // Handle Password Update (If a new password is provided)
     if (req.body.newPassword && req.body.newPassword.trim() !== "") {
+      if (user.password) {
+
       const isSamePassword = await bcrypt.compare(
         req.body.newPassword,
         user.password
@@ -116,6 +118,7 @@ exports.updateUserProfile = async (req, res) => {
               "New password must be different from the current password.",
           });
       }
+    }
 
       // Hash and save the new password
       const salt = await bcrypt.genSalt(10);

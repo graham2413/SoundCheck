@@ -4,7 +4,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 require('dotenv').config();
-
+const { cloudinary, upload } = require("../config/cloudinaryConfig");
 const User = require('../models/User');
 
 const router = express.Router();
@@ -30,10 +30,11 @@ passport.use(new GoogleStrategy({
                 // If no existing account, create new user
                 user = new User({
                     googleId: profile.id,
-                    name: profile.displayName,
+                    username: profile.displayName,
                     email: profile.emails[0].value,
                     profilePicture: profile.photos[0].value
                 });
+                user.profilePicture = await updateUserProfilePicture(profile.photos[0].value);
             }
 
             await user.save();
@@ -95,5 +96,20 @@ router.get('/google/callback', passport.authenticate('google', { session: false 
         res.status(500).json({ message: 'Google login failed' });
     }
 });
+
+// Issue was google image urls would expire, this solves the issue by creating the image in my cloudinary instead
+async function updateUserProfilePicture(imageUrl) {
+    try {
+      const uploadedImage = await cloudinary.uploader.upload(imageUrl, {
+        folder: "profile_pictures",
+        transformation: [{ width: 300, height: 300, crop: "fill" }],
+      });
+      return uploadedImage.secure_url;
+    } catch (error) {
+      console.error("Error uploading image to Cloudinary:", error);
+      // If the upload fails, return the original URL as a fallback
+      return imageUrl;
+    }
+  }
 
 module.exports = router;

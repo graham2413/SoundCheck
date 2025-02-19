@@ -141,7 +141,7 @@
                 {{ record?.artist }}
               </p>
 
-              <app-audio-player [record]="record"></app-audio-player>
+              <app-audio-player *ngIf="type == 'song'" [record]="record"></app-audio-player>
             </div>
             <!-- Skeleton Loader -->
             <div

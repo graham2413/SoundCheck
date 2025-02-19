@@ -8,6 +8,7 @@ const userSchema = new Schema({
     password: { type: String },
     profilePicture: { type: String, default: "" }, // Profile picture URL
     displayName: { type: String },
+    googleId: {type: String, default: ""}, 
 
     // Friends & Friend Requests
     friends: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
