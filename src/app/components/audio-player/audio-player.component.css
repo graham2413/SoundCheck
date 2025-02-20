@@ -12,7 +12,7 @@
   border-radius: 8px;
   display: flex;
   align-items: center;
-  padding: 6px;
+  /* padding: 6px; */
   box-shadow: 0px 3px 6px rgba(255, 255, 255, 0.1);
   width: 100%;
   max-width: 240px;
@@ -117,3 +117,21 @@
     font-size: 1rem; /* Make it more readable */
   }
 }
+
+@media (max-width: 815px) {
+  .audio-container {
+    max-width: 200px;
+    min-width: 180px;
+  }
+  .custom-audio-player {
+    max-width: 200px;
+  }
+  .time-display {
+    font-size: 0.8rem;
+  }
+  .progress-bar {
+    width: 80%;
+  }
+}
+
+

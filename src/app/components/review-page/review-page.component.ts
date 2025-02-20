@@ -41,6 +41,8 @@ export class ReviewPageComponent implements OnInit {
 
   isDeleteLoading = false;
 
+  isPlaying = false;
+
   constructor(
     private activeModal: NgbActiveModal,
     private reviewService: ReviewService,
@@ -96,6 +98,10 @@ export class ReviewPageComponent implements OnInit {
 
   toggleReviewForm() {
     this.isAddingReview = !this.isAddingReview;
+    if(this.isAddingReview){
+      this.newRating = 5;
+      this.newReview = '';
+    }
   }
 
   get filteredReviews() {
@@ -195,6 +201,10 @@ export class ReviewPageComponent implements OnInit {
           },
         });
       }
+  }
+
+  updatePlayStatus(status: boolean) {
+    this.isPlaying = status;
   }
 
   getRatingGradient(rating: number): string {

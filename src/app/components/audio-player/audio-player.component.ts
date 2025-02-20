@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, ViewChild, ElementRef, AfterViewInit, Input } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  Input,
+  EventEmitter,
+  Output,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -7,11 +15,12 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './audio-player.component.html',
   styleUrls: ['./audio-player.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule],
 })
 export class AudioPlayerComponent implements AfterViewInit {
   @ViewChild('myAudio') myAudioRef!: ElementRef<HTMLAudioElement>;
   @Input() record: any;
+  @Output() playStatus = new EventEmitter<boolean>();
 
   audio!: HTMLAudioElement;
   isPlaying: boolean = false;
@@ -22,8 +31,17 @@ export class AudioPlayerComponent implements AfterViewInit {
     if (this.myAudioRef) {
       this.audio = this.myAudioRef.nativeElement;
 
-      this.audio.addEventListener('loadedmetadata', this.updateMetadata.bind(this));
+      this.audio.addEventListener(
+        'loadedmetadata',
+        this.updateMetadata.bind(this)
+      );
       this.audio.addEventListener('timeupdate', this.updateTime.bind(this));
+
+      // Listen for when the song ends
+      this.audio.addEventListener('ended', () => {
+        this.isPlaying = false;
+        this.playStatus.emit(false);
+      });
     }
   }
 
@@ -31,6 +49,7 @@ export class AudioPlayerComponent implements AfterViewInit {
     if (this.audio) {
       this.isPlaying = !this.isPlaying;
       this.isPlaying ? this.audio.play() : this.audio.pause();
+      this.playStatus.emit(this.isPlaying);
     }
   }
 
