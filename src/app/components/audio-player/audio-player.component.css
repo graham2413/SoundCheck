@@ -12,7 +12,6 @@
   border-radius: 8px;
   display: flex;
   align-items: center;
-  /* padding: 6px; */
   box-shadow: 0px 3px 6px rgba(255, 255, 255, 0.1);
   width: 100%;
   max-width: 240px;
@@ -105,12 +104,6 @@
   box-shadow: 0px 0px 6px rgba(255, 221, 68, 1);
 }
 
-/* Responsive Font Scaling */
-@media (min-width: 641px) { /* Larger than mobile */
-  .time-display {
-    font-size: 0.9rem; /* Bigger on tablets and desktops */
-  }
-}
 
 @media (min-width: 1024px) { /* Even larger screens */
   .time-display {
@@ -134,4 +127,31 @@
   }
 }
 
+
+@media (max-width: 465px) {
+  /* Scale the whole audio player */
+  .custom-audio-player {
+    transform: scale(0.9);
+    transform-origin: center center;
+    gap: 0 !important;
+  }
+
+  .audio-container {
+    padding-right: 0.75rem;
+    box-sizing: border-box; 
+  }
+
+  /* Shrink the play/pause button */
+  .play-pause-button {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem; 
+  }
+
+  /* Slightly narrower progress bar */
+  .progress-bar {
+    width: 75%;
+    height: 3px;
+  }
+}
 

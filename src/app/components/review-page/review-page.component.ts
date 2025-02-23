@@ -238,4 +238,43 @@ export class ReviewPageComponent implements OnInit {
   trackById(index: number, item: Review) {
     return item._id;
   }
+
+  
+  onKeyPressRating(event: KeyboardEvent, type: 'new' | 'edit'): void {
+    const input = event.target as HTMLInputElement;
+    const newValue = input.value + event.key;
+  
+    // Prevent non-numeric characters except for backspace
+    if (!/^\d*\.?\d*$/.test(event.key) && event.key !== 'Backspace') {
+      event.preventDefault();
+      return;
+    }
+  
+    // Restrict input length to max 3 characters (e.g., "10", "9.5", "5.0")
+    if (newValue.length > 3) {
+      event.preventDefault();
+    }
+  }
+  
+  onBlurRating(type: 'new' | 'edit'): void {
+    let rating = type === 'new' ? Number(this.newRating) : Number(this.editedRating);
+  
+    if (isNaN(rating) || rating === null) {
+      rating = 5;
+    } else if (rating < 0) {
+      rating = 0;
+    } else if (rating > 10) {
+      rating = 10;
+    }
+  
+    // Assign the corrected value back
+    if (type === 'new') {
+      this.newRating = rating;
+    } else {
+      this.editedRating = rating;
+    }
+  }
+  
+  
+  
 }
