@@ -10,13 +10,22 @@ import {
 } from 'src/app/models/responses/review-responses';
 import { ReviewService } from 'src/app/services/review.service';
 import { AudioPlayerComponent } from '../audio-player/audio-player.component';
+import { animate, query, stagger, style, transition, trigger } from '@angular/animations';
 
 @Component({
   selector: 'app-review-page',
   templateUrl: './review-page.component.html',
   styleUrls: ['./review-page.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, AudioPlayerComponent]
+  imports: [CommonModule, FormsModule, AudioPlayerComponent],
+  animations: [
+    trigger('fadeIn', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'scale(0.9)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'scale(1)' }))
+      ])
+    ])
+  ]
 })
 export class ReviewPageComponent implements OnInit {
   @Input() record: any;
