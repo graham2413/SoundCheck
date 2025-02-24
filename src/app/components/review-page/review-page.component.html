@@ -8,7 +8,7 @@
   </button>
 
   <!-- Overall Rating Circle -->
-  <div class="flex justify-center w-full mb-4 mt-4">
+  <div class="flex justify-center w-full mb-1 mt-4">
     <ng-container *ngIf="!isRatingLoaded; else ratingContentMobile">
       <div class="animate-pulse bg-gray-600 rounded-full w-20 h-20 flex items-center justify-center">
         <i class="fas fa-spinner fa-spin text-gray-400 text-2xl"></i>
@@ -295,7 +295,7 @@
     </button>
 
     <!-- Overall Rating Circle -->
-    <div class="flex justify-center w-full mb-3">
+    <div class="flex justify-center w-full">
       <ng-container *ngIf="!isRatingLoaded; else ratingContentDesktop">
         <div class="animate-pulse bg-gray-600 rounded-full w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 flex items-center justify-center">
           <i class="fas fa-spinner fa-spin text-gray-400 text-2xl md:text-3xl lg:text-4xl"></i>
@@ -333,25 +333,25 @@
 <div class="flex flex-col md:flex-row items-start gap-4 mt-6">
 <!-- iPod Container -->
 <div
-  class="relative bg-gray-800 rounded-lg p-4 w-[28vw] min-w-[200px] max-w-[400px] max-h-[60vh] aspect-[3/5] overflow-hidden"
-  [ngClass]="isPlaying ? 'scale-beat' : ''"
+class="relative bg-gray-800 rounded-lg p-3 md:p-4 w-[28vw] min-w-[200px] max-w-[300px] max-h-[60vh] overflow-hidden"
+[ngClass]="isPlaying ? 'scale-beat' : ''"
 >
   <!-- Content Wrapper -->
   <div class="flex flex-col h-full">
     <!-- Image Area (Grows) -->
-    <div class="relative flex-1 overflow-hidden">
+    <div class="relative flex-1 overflow-hidden flex items-center justify-center rounded-lg w-full h-full">
       <!-- Image Loader -->
       <div
-        *ngIf="!isImageLoaded"
-        class="absolute inset-0 bg-gray-700 skeleton-wave flex items-center justify-center"
-      ></div>
+      *ngIf="!isImageLoaded"
+      class="absolute inset-0 bg-gray-700 skeleton-wave flex items-center justify-center rounded-lg"
+    ></div>    
       <!-- Image -->
       <img
-        *ngIf="isImageLoaded"
-        [src]="record?.cover ? record.cover : record.picture"
-        alt="{{ record?.title }}"
-        class="absolute inset-0 w-full h-full object-contain rounded-lg"
-      />
+      *ngIf="isImageLoaded"
+      [src]="record?.cover ? record.cover : record.picture"
+      alt="{{ record?.title }}"
+      class="w-full h-full object-contain rounded-lg transition-transform duration-300 ease-in-out"
+    />      
     </div>
     <!-- Info and Audio Player Area -->
     <div class="mt-4 text-center">
