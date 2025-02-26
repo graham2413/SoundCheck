@@ -1,5 +1,5 @@
 const User = require("../models/User");
-const { cloudinary, upload } = require("../config/cloudinaryConfig");
+const { cloudinary } = require("../config/cloudinaryConfig");
 const bcrypt = require("bcryptjs");
 const Review = require("../models/Review");
 

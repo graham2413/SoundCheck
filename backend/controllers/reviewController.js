@@ -84,7 +84,7 @@ exports.editReview = async (req, res) => {
         await review.save();
         res.json({ message: "Review updated successfully", review });
     } catch (error) {
-        res.status(500).json({ message: "Server Error" });
+        res.status(500).json({ message: "Server Error", error: error });
     }
 };
 
@@ -105,6 +105,6 @@ exports.deleteReview = async (req, res) => {
         await review.deleteOne();
         res.json({ message: "Review deleted successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Server Error" });
+        res.status(500).json({ message: "Server Error", error: error });
     }
 };

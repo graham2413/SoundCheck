@@ -5,6 +5,9 @@ import { ReviewPageComponent } from '../review-page/review-page.component';
 import { ToastrService } from 'ngx-toastr';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { Song } from 'src/app/models/responses/song-response';
+import { Album } from 'src/app/models/responses/album-response';
+import { Artist } from 'src/app/models/responses/artist-response';
 
 @Component({
   selector: 'app-main-search',
@@ -19,7 +22,6 @@ export class MainSearchComponent {
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
   query: string = '';
-  results: any = { songs: [], albums: [], artists: [] };
   isLoading: boolean = false;
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
   private trackX = 0;
@@ -28,9 +30,21 @@ export class MainSearchComponent {
   selectedRecord: any = null;
   searchAttempted = false;
 
-  constructor(private searchService: SearchService, private modal: NgbModal, 
+  // Dropdown visibility state for genre filters
+  showGenreDropdown = { songs: false, albums: false, artists: false };
+
+  // Available genres for filtering
+  genres = { songs: [] as string[], albums: [] as string[], artists: [] as string[] };
+
+  // API results
+  results: { songs: Song[]; albums: Album[]; artists: Artist[] } = { songs: [], albums: [], artists: [] };
+
+  // Filtered results to store only matching genres
+  filteredResults: { songs: Song[]; albums: Album[]; artists: Artist[] } = { songs: [], albums: [], artists: [] };
+
+  constructor(private searchService: SearchService, private modal: NgbModal,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngAfterViewInit(): void {
     this.initializeMarquee();
@@ -89,7 +103,7 @@ export class MainSearchComponent {
 
   onSearch() {
     if (!this.query.trim()) return;
-  
+
     // Scroll the search bar into view
     setTimeout(() => {
       const searchBarEl = this.searchBar.nativeElement;
@@ -98,7 +112,7 @@ export class MainSearchComponent {
       const offset = elementTop - 110;
       window.scrollTo({ top: offset, behavior: 'smooth' });
     }, 0);
-  
+
     this.isLoading = true;
     this.searchAttempted = true;
 
@@ -121,6 +135,10 @@ export class MainSearchComponent {
           }))
         };
 
+        this.filteredResults = { ...this.results };
+
+        this.extractGenres();
+
         // Allow images to load
         setTimeout(() => {
           this.setActiveTab('songs');
@@ -132,6 +150,28 @@ export class MainSearchComponent {
         this.isLoading = false;
       },
     });
+  }
+
+  extractGenres() {
+    this.genres.songs = [...new Set(this.results.songs.map(song => song.genre as string).filter(g => g))];
+    this.genres.albums = [...new Set(this.results.albums.map(album => album.genre as string).filter(g => g))];
+    this.genres.artists = [...new Set(this.results.artists.map(artist => artist.genre as string).filter(g => g))];
+  }
+
+  toggleGenreFilter(section: 'songs' | 'albums' | 'artists') {
+    this.showGenreDropdown[section] = !this.showGenreDropdown[section];
+  }
+
+  filterByGenre(section: 'songs' | 'albums' | 'artists', genre: string) {
+    if (section === 'songs') {
+      this.filteredResults.songs = this.results.songs.filter(song => song.genre === genre);
+    } else if (section === 'albums') {
+      this.filteredResults.albums = this.results.albums.filter(album => album.genre === genre);
+    } else if (section === 'artists') {
+      this.filteredResults.artists = this.results.artists.filter(artist => artist.genre === genre);
+    }
+  
+    this.showGenreDropdown[section] = false; // Hide dropdown after selecting
   }
   
 
@@ -151,16 +191,16 @@ export class MainSearchComponent {
     modalRef.componentInstance.record = record;
     modalRef.componentInstance.type = type;
   }
-  
+
 
   getHighQualityImage(imageUrl: string): string {
     if (!imageUrl) return '';
-  
+
     // Ensure we're requesting the highest resolution available
     if (imageUrl.includes('api.deezer.com')) {
       return `${imageUrl}?size=xl`;
     }
-  
+
     return imageUrl;
   }
 

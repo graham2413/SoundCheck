@@ -2,9 +2,8 @@ const express = require('express');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 require('dotenv').config();
-const { cloudinary, upload } = require("../config/cloudinaryConfig");
+const { cloudinary } = require("../config/cloudinaryConfig");
 const User = require('../models/User');
 
 const router = express.Router();
@@ -93,7 +92,7 @@ router.get('/google/callback', passport.authenticate('google', { session: false 
         // Redirect with full user object
         res.redirect(`${process.env.FRONTEND_URL}/?token=${token}&user=${encodeURIComponent(JSON.stringify(formattedUser))}`);        
     } catch (error) {
-        res.status(500).json({ message: 'Google login failed' });
+        res.status(500).json({ message: 'Google login failed', error: error });
     }
 });
 

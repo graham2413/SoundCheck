@@ -168,10 +168,10 @@
   <!-- Toggle Buttons -->
   <div
     *ngIf="
-      results &&
-      (results?.songs?.length > 0 ||
-        results?.albums?.length > 0 ||
-        results?.artists?.length > 0)
+       results &&
+      ((results.songs?.length ?? 0) > 0 ||
+      (results.albums?.length ?? 0) > 0 ||
+      (results.artists?.length ?? 0) > 0)
     "
     class="mt-6 flex gap-4 justify-center"
   >
@@ -183,7 +183,7 @@
       Songs
     </button>
     <button
-      *ngIf="results?.albums?.length > 0"
+      *ngIf="results && (results.albums?.length ?? 0) > 0"
       (click)="setActiveTab('albums')"
       [class.bg-indigo-600]="activeTab === 'albums'"
       class="px-4 py-2 rounded-md hover:bg-indigo-500 transition"
@@ -191,7 +191,7 @@
       Albums
     </button>
     <button
-      *ngIf="results?.artists?.length > 0"
+     *ngIf="results && (results.artists?.length ?? 0) > 0"
       (click)="setActiveTab('artists')"
       [class.bg-indigo-600]="activeTab === 'artists'"
       class="px-4 py-2 rounded-md hover:bg-indigo-500 transition"
@@ -207,10 +207,27 @@
       *ngIf="activeTab === 'songs'"
       class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-3xl"
     >
-      <h2 class="text-2xl font-bold text-white mb-6 text-center">Songs</h2>
+    <div class="relative mb-6">
+      <h2 class="text-2xl font-bold text-white text-center">Songs</h2>
+      <button (click)="toggleGenreFilter('songs')"
+        class="absolute right-0 top-0 bg-gray-700 text-white p-2 rounded-md hover:bg-gray-600 transition">
+        <i class="fas fa-filter"></i>
+      </button>
+    </div>
+
+    <!-- Genre Filter Dropdown (Songs) -->
+    <div *ngIf="showGenreDropdown.songs" class="absolute right-0 mt-2 bg-gray-800 p-3 rounded-md shadow-lg z-10">
+      <button *ngFor="let genre of genres.songs" 
+        (click)="filterByGenre('songs', genre)"
+        class="block w-full text-left text-white hover:bg-gray-700 px-3 py-2 rounded-md transition"
+      >
+        {{ genre }}
+      </button>
+    </div>
+
       <ul class="mt-2 space-y-4">
         <li
-          *ngFor="let song of results?.songs"
+          *ngFor="let song of filteredResults.songs"
           class="flex items-center bg-gray-700 p-4 rounded-lg transition-transform duration-300 ease-in-out hover:translate-y-1 hover:scale-105 hover:bg-gray-700/50 hover:shadow-xl hover:border hover:border-blue-400"
           (click)="openModal(song, 'song')"
         >
@@ -238,12 +255,29 @@
       *ngIf="activeTab === 'albums'"
       class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
     >
-      <h2 class="text-2xl font-bold text-white mb-6 text-center">Albums</h2>
+    <div class="relative mb-6">
+      <h2 class="text-2xl font-bold text-white text-center">Albums</h2>
+      <button (click)="toggleGenreFilter('albums')"
+        class="absolute right-0 top-0 bg-gray-700 text-white p-2 rounded-md hover:bg-gray-600 transition">
+        <i class="fas fa-filter"></i>
+      </button>
+    </div>
+
+      <!-- Genre Filter Dropdown (Albums) -->
+      <div *ngIf="showGenreDropdown.albums" class="absolute right-0 mt-2 bg-gray-800 p-3 rounded-md shadow-lg z-10">
+        <button *ngFor="let genre of genres.albums" 
+          (click)="filterByGenre('albums', genre)"
+          class="block w-full text-left text-white hover:bg-gray-700 px-3 py-2 rounded-md transition"
+        >
+          {{ genre }}
+        </button>
+      </div>
+
       <ul
         class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-6 justify-center"
       >
         <li
-          *ngFor="let album of results?.albums"
+          *ngFor="let album of filteredResults.albums"
           class="group flex flex-col items-center p-4 rounded-md transition-transform duration-300 ease-in-out hover:translate-y-1 hover:scale-105 hover:bg-gray-700/50 hover:shadow-xl hover:border hover:border-blue-400"
           (click)="openModal(album, 'album')"
         >
@@ -271,12 +305,30 @@
       *ngIf="activeTab === 'artists'"
       class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
     >
-      <h2 class="text-2xl font-bold text-white mb-6 text-center">Artists</h2>
+    <div class="relative mb-6">
+      <h2 class="text-2xl font-bold text-white text-center">Artists</h2>
+      <button (click)="toggleGenreFilter('artists')"
+        class="absolute right-0 top-0 bg-gray-700 text-white p-2 rounded-md hover:bg-gray-600 transition">
+        <i class="fas fa-filter"></i>
+      </button>
+    </div>
+
+
+      <!-- Genre Filter Dropdown (Artists) -->
+      <div *ngIf="showGenreDropdown.artists" class="absolute right-0 mt-2 bg-gray-800 p-3 rounded-md shadow-lg z-10">
+        <button *ngFor="let genre of genres.artists" 
+          (click)="filterByGenre('artists', genre)"
+          class="block w-full text-left text-white hover:bg-gray-700 px-3 py-2 rounded-md transition"
+        >
+          {{ genre }}
+        </button>
+      </div>
+
       <ul
         class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-6 justify-center"
       >
         <li
-          *ngFor="let artist of results?.artists"
+          *ngFor="let artist of filteredResults.artists"
           class="group flex flex-col items-center p-4 rounded-md transition-transform duration-300 ease-in-out hover:translate-y-1 hover:scale-105 hover:bg-gray-700/50 hover:shadow-xl hover:border hover:border-blue-400"
           (click)="openModal(artist, 'artist')"
         >

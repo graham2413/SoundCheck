@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const albumSchema = new mongoose.Schema({
     title: String,
     artist: { type: mongoose.Schema.Types.ObjectId, ref: "Artist" }, // Reference to Artist
