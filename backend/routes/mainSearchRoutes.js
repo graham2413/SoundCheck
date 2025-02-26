@@ -1,8 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const mainSearchController = require("../controllers/mainSearchController");
+const { getTrackDetails, getAlbumDetails, searchMusic } = require("../controllers/mainSearchController");
 
-// Song routes
-router.get("/", mainSearchController.searchMusic);
+// Main search route
+router.get("/", searchMusic);
+
+// Search Track route
+router.get("/track/:trackId", getTrackDetails);
+
+// Serach Album route
+router.get("/album/:albumId", getAlbumDetails);
 
 module.exports = router;

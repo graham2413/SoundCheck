@@ -173,8 +173,8 @@
       (results.albums?.length ?? 0) > 0 ||
       (results.artists?.length ?? 0) > 0)
     "
-    class="mt-6 flex gap-4 justify-center"
-  >
+    class="mt-6 flex !gap-1 sm:!gap-4 justify-center"
+    >
     <button
       (click)="setActiveTab('songs')"
       [class.bg-indigo-600]="activeTab === 'songs'"
@@ -204,26 +204,47 @@
   <div *ngIf="resultsHasValues()" class="mt-6 w-full max-w-2xl mx-auto">
     <!-- Songs -->
     <div
-      *ngIf="activeTab === 'songs'"
-      class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-3xl"
-    >
+    *ngIf="activeTab === 'songs'"
+    class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
+  >
     <div class="relative mb-6">
       <h2 class="text-2xl font-bold text-white text-center">Songs</h2>
-      <button (click)="toggleGenreFilter('songs')"
-        class="absolute right-0 top-0 bg-gray-700 text-white p-2 rounded-md hover:bg-gray-600 transition">
+  
+    <!-- Filter Button Wrapper -->
+    <div class="absolute right-0 top-0">
+      <button #filterButton (click)="toggleGenreFilter('songs')"
+        class="p-2 rounded-md transition flex items-center gap-2"
+        [ngClass]="selectedGenre.songs ? 'bg-blue-600 hover:bg-blue-500' : 'bg-gray-700 hover:bg-gray-600'">
         <i class="fas fa-filter"></i>
+        <span class="hidden sm:inline">
+          {{ selectedGenre.songs ? selectedGenre.songs : 'Filter' }}
+        </span>
       </button>
-    </div>
+  
+      <!-- Genre Filter Dropdown (Songs) -->
+      <div #dropdownContainer *ngIf="showGenreDropdown.songs"
+        class="absolute right-0 mt-2 w-48 bg-gray-900/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700">
+        
+        <!-- "Clear Filter" Option (Only Shows When a Filter is Applied) -->
+        <button *ngIf="selectedGenre.songs" (click)="clearFilter('songs')"
+        class="flex items-center justify-center w-full text-left text-white py-1 rounded-md transition border border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-medium mb-2">
+        <i class="fas fa-times mr-2"></i> Clear
+      </button>      
 
-    <!-- Genre Filter Dropdown (Songs) -->
-    <div *ngIf="showGenreDropdown.songs" class="absolute right-0 mt-2 bg-gray-800 p-3 rounded-md shadow-lg z-10">
-      <button *ngFor="let genre of genres.songs" 
-        (click)="filterByGenre('songs', genre)"
-        class="block w-full text-left text-white hover:bg-gray-700 px-3 py-2 rounded-md transition"
-      >
-        {{ genre }}
-      </button>
+        <!-- Smooth Scroll for Many Items -->
+        <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
+          <button *ngFor="let genre of genres.songs" 
+            (click)="filterByGenre('songs', genre)"
+            class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium"
+            [ngClass]="selectedGenre.songs === genre 
+              ? 'bg-blue-500 text-white shadow-md hover:bg-blue-400' 
+              : 'hover:bg-gray-600/80'">
+            {{ genre }}
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
 
       <ul class="mt-2 space-y-4">
         <li
@@ -250,28 +271,49 @@
       </ul>
     </div>
 
-    <!-- Albums -->
-    <div
-      *ngIf="activeTab === 'albums'"
-      class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
-    >
-    <div class="relative mb-6">
-      <h2 class="text-2xl font-bold text-white text-center">Albums</h2>
-      <button (click)="toggleGenreFilter('albums')"
-        class="absolute right-0 top-0 bg-gray-700 text-white p-2 rounded-md hover:bg-gray-600 transition">
+<!-- Albums -->
+<div
+  *ngIf="activeTab === 'albums'"
+  class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
+>
+  <div class="relative mb-6">
+    <h2 class="text-2xl font-bold text-white text-center">Albums</h2>
+
+    <!-- Filter Button Wrapper -->
+    <div class="absolute right-0 top-0">
+      <button #filterButton (click)="toggleGenreFilter('albums')"
+        class="p-2 rounded-md transition flex items-center gap-2"
+        [ngClass]="selectedGenre.albums ? 'bg-blue-600 hover:bg-blue-500' : 'bg-gray-700 hover:bg-gray-600'">
         <i class="fas fa-filter"></i>
+        <span class="hidden sm:inline">
+          {{ selectedGenre.albums ? selectedGenre.albums : 'Filter' }}
+        </span>
       </button>
-    </div>
 
       <!-- Genre Filter Dropdown (Albums) -->
-      <div *ngIf="showGenreDropdown.albums" class="absolute right-0 mt-2 bg-gray-800 p-3 rounded-md shadow-lg z-10">
-        <button *ngFor="let genre of genres.albums" 
-          (click)="filterByGenre('albums', genre)"
-          class="block w-full text-left text-white hover:bg-gray-700 px-3 py-2 rounded-md transition"
-        >
-          {{ genre }}
-        </button>
+      <div #dropdownContainer *ngIf="showGenreDropdown.albums"
+        class="absolute right-0 mt-2 w-48 bg-gray-900/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700">
+        
+        <!-- "Clear Filter" Option (Only Shows When a Filter is Applied) -->
+        <button *ngIf="selectedGenre.albums" (click)="clearFilter('albums')"
+        class="flex items-center justify-center w-full text-left text-white py-1 rounded-md transition border border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-medium mb-2">
+        <i class="fas fa-times mr-2"></i> Clear
+      </button>      
+
+        <!-- Smooth Scroll for Many Items -->
+        <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
+          <button *ngFor="let genre of genres.albums" 
+            (click)="filterByGenre('albums', genre)"
+            class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium"
+            [ngClass]="selectedGenre.albums === genre 
+              ? 'bg-blue-500 text-white shadow-md hover:bg-blue-400' 
+              : 'hover:bg-gray-600/80'">
+            {{ genre }}
+          </button>
+        </div>
       </div>
+    </div>
+  </div>
 
       <ul
         class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-6 justify-center"
@@ -287,15 +329,20 @@
             class="h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 lg:h-40 lg:w-40 xl:h-44 xl:w-44 rounded-md object-cover shadow-md border-2 border-gray-600"
           />
           <p
-            class="title-text mt-2 text-sm md:text-base text-white text-center font-semibold max-w-full overflow-hidden text-ellipsis whitespace-nowrap group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none"
-          >
-            {{ album.title }}
-          </p>
-          <p
-            class="text-xs text-gray-400 text-center max-w-full overflow-hidden text-ellipsis whitespace-nowrap group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none"
-          >
-            {{ album.artist }}
-          </p>
+          class="title-text mt-2 text-sm md:text-base text-white text-center font-semibold w-full max-w-xs
+                 sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap 
+                 group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none"
+        >
+          {{ album.title }}
+        </p>
+        <p
+          class="text-xs text-gray-400 text-center w-full max-w-xs
+                 sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap 
+                 group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none"
+        >
+          {{ album.artist }}
+        </p>
+        
         </li>
       </ul>
     </div>
@@ -307,23 +354,6 @@
     >
     <div class="relative mb-6">
       <h2 class="text-2xl font-bold text-white text-center">Artists</h2>
-      <button (click)="toggleGenreFilter('artists')"
-        class="absolute right-0 top-0 bg-gray-700 text-white p-2 rounded-md hover:bg-gray-600 transition">
-        <i class="fas fa-filter"></i>
-      </button>
-    </div>
-
-
-      <!-- Genre Filter Dropdown (Artists) -->
-      <div *ngIf="showGenreDropdown.artists" class="absolute right-0 mt-2 bg-gray-800 p-3 rounded-md shadow-lg z-10">
-        <button *ngFor="let genre of genres.artists" 
-          (click)="filterByGenre('artists', genre)"
-          class="block w-full text-left text-white hover:bg-gray-700 px-3 py-2 rounded-md transition"
-        >
-          {{ genre }}
-        </button>
-      </div>
-
       <ul
         class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-6 justify-center"
       >
@@ -338,10 +368,12 @@
             class="w-24 sm:w-28 md:w-32 lg:w-36 xl:w-40 aspect-square rounded-full object-cover shadow-md border-2 border-gray-600"
           />
           <p
-            class="mt-2 text-base md:text-lg text-white text-center max-w-full overflow-hidden text-ellipsis whitespace-nowrap group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none"
-          >
-            {{ artist.name }}
-          </p>
+          class="mt-2 text-base md:text-lg text-white text-center max-w-full font-semibold
+                 sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap 
+                 group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none"
+        >
+          {{ artist.name }}
+        </p>        
         </li>
       </ul>
     </div>

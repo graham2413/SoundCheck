@@ -10,7 +10,8 @@ import {
 } from 'src/app/models/responses/review-responses';
 import { ReviewService } from 'src/app/services/review.service';
 import { AudioPlayerComponent } from '../audio-player/audio-player.component';
-import { animate, query, stagger, style, transition, trigger } from '@angular/animations';
+import { animate, style, transition, trigger } from '@angular/animations';
+import { SearchService } from 'src/app/services/search.service';
 
 @Component({
   selector: 'app-review-page',
@@ -55,11 +56,13 @@ export class ReviewPageComponent implements OnInit {
   constructor(
     private activeModal: NgbActiveModal,
     private reviewService: ReviewService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private searchService: SearchService
   ) {}
 
   ngOnInit(): void {
     this.getReviews();
+    this.getExtraDetails();
     setTimeout(() => {
       const modalElement = document.querySelector(
         '.modal-content'
@@ -99,6 +102,33 @@ export class ReviewPageComponent implements OnInit {
         this.isImageLoaded = true;
       },
     });
+  }
+
+  public getExtraDetails(){
+    if(this.type === 'song'){
+      this.searchService.getTrackDetails(this.record.id).subscribe({
+        next: (data: any) => {
+          this.record.releaseDate = data.releaseDate;
+      
+        },
+        error: (error) => {
+          this.record.releaseDate = null;
+        },
+      });
+    }
+
+    if(this.type === 'album'){
+      this.searchService.getAlbumDetails(this.record.id).subscribe({
+        next: (data: any) => {
+          this.record.releaseDate = data.releaseDate;
+      
+        },
+        error: (error) => {
+          this.record.releaseDate = null;
+        },
+      });
+    }
+
   }
 
   close() {

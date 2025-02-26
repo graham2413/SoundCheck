@@ -14,4 +14,12 @@ export class SearchService {
   searchMusic(query: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}?query=${encodeURIComponent(query)}`);
   }
+
+  getTrackDetails(trackId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/track/${trackId}`);
+  }
+
+  getAlbumDetails(albumId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/album/${albumId}`);
+  }
 }

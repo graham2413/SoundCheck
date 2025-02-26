@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { SearchService } from 'src/app/services/search.service';
 import { ReviewPageComponent } from '../review-page/review-page.component';
@@ -21,6 +21,9 @@ export class MainSearchComponent {
   @ViewChild('marqueeTrack') marqueeTrack!: ElementRef<HTMLDivElement>;
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
+@ViewChild('dropdownContainer') dropdownContainer!: ElementRef;
+@ViewChild('filterButton') filterButton!: ElementRef
+
   query: string = '';
   isLoading: boolean = false;
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
@@ -31,10 +34,12 @@ export class MainSearchComponent {
   searchAttempted = false;
 
   // Dropdown visibility state for genre filters
-  showGenreDropdown = { songs: false, albums: false, artists: false };
+  showGenreDropdown = { songs: false, albums: false };
 
   // Available genres for filtering
   genres = { songs: [] as string[], albums: [] as string[], artists: [] as string[] };
+
+  selectedGenre = { songs: '', albums: '' };
 
   // API results
   results: { songs: Song[]; albums: Album[]; artists: Artist[] } = { songs: [], albums: [], artists: [] };
@@ -42,13 +47,27 @@ export class MainSearchComponent {
   // Filtered results to store only matching genres
   filteredResults: { songs: Song[]; albums: Album[]; artists: Artist[] } = { songs: [], albums: [], artists: [] };
 
-  constructor(private searchService: SearchService, private modal: NgbModal,
-    private toastr: ToastrService
+  constructor(private searchService: SearchService,
+    private modal: NgbModal,
+    private toastr: ToastrService,
+    private eRef: ElementRef
   ) { }
 
   ngAfterViewInit(): void {
     this.initializeMarquee();
     requestAnimationFrame(() => this.animateMarquee());
+  }
+
+  @HostListener('document:click', ['$event'])
+  clickOutside(event: Event) {
+    const clickedInsideDropdown = this.dropdownContainer?.nativeElement.contains(event.target);
+    const clickedFilterButton = this.filterButton?.nativeElement.contains(event.target);
+  
+    if (clickedInsideDropdown || clickedFilterButton) {
+      return; // Do nothing
+    }
+  
+    this.showGenreDropdown = { songs: false, albums: false };
   }
 
   private initializeMarquee() {
@@ -153,27 +172,59 @@ export class MainSearchComponent {
   }
 
   extractGenres() {
-    this.genres.songs = [...new Set(this.results.songs.map(song => song.genre as string).filter(g => g))];
-    this.genres.albums = [...new Set(this.results.albums.map(album => album.genre as string).filter(g => g))];
-    this.genres.artists = [...new Set(this.results.artists.map(artist => artist.genre as string).filter(g => g))];
+    this.genres.songs = [...new Set(
+      this.results.songs
+        .map(song => song.genre as string)
+        .filter(g => g && g !== 'Unknown')
+    )];
+  
+    this.genres.albums = [...new Set(
+      this.results.albums
+        .map(album => album.genre as string)
+        .filter(g => g && g !== 'Unknown')
+    )];
   }
+  
 
-  toggleGenreFilter(section: 'songs' | 'albums' | 'artists') {
+  toggleGenreFilter(section: 'songs' | 'albums') {
     this.showGenreDropdown[section] = !this.showGenreDropdown[section];
   }
 
-  filterByGenre(section: 'songs' | 'albums' | 'artists', genre: string) {
-    if (section === 'songs') {
-      this.filteredResults.songs = this.results.songs.filter(song => song.genre === genre);
-    } else if (section === 'albums') {
-      this.filteredResults.albums = this.results.albums.filter(album => album.genre === genre);
-    } else if (section === 'artists') {
-      this.filteredResults.artists = this.results.artists.filter(artist => artist.genre === genre);
+  filterByGenre(section: 'songs' | 'albums', genre: string) {
+    if (this.selectedGenre[section] === genre) {
+      this.clearFilter(section); // If the same genre is clicked, remove the filter
+    } else {
+      this.selectedGenre[section] = genre;
+  
+      if (section === 'songs') {
+        this.filteredResults.songs = this.results.songs.filter((item: Song) => item.genre === genre);
+      } else {
+        this.filteredResults.albums = this.results.albums.filter((item: Album) => item.genre === genre);
+      }
     }
   
-    this.showGenreDropdown[section] = false; // Hide dropdown after selecting
+    this.showGenreDropdown[section] = false; // Close dropdown after selection
   }
   
+
+  clearFilter(section: 'songs' | 'albums') {
+    this.selectedGenre[section] = '';
+  
+    if (section === 'songs') {
+      this.filteredResults.songs = [...this.results.songs];
+    } else {
+      this.filteredResults.albums = [...this.results.albums];
+    }
+
+    // Scroll the search bar into view
+    setTimeout(() => {
+      const searchBarEl = this.searchBar.nativeElement;
+      const elementTop =
+        searchBarEl.getBoundingClientRect().top + window.pageYOffset;
+      const offset = elementTop - 110;
+      window.scrollTo({ top: offset, behavior: 'smooth' });
+    }, 0);
+  }
 
   setActiveTab(tab: 'songs' | 'albums' | 'artists') {
     this.activeTab = tab;
