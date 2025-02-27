@@ -316,25 +316,31 @@
         <!-- Wrapper for both iPods -->
         <div class="relative w-[28vw] min-w-[200px] max-w-[300px] max-h-[60vh] overflow-hidden">
 
-          <!-- First iPod -->
-          <div class="relative transition-transform duration-500" [@iPodTransition]="iPodState">
+<!-- First iPod -->
+<div class="relative transition-transform duration-500" [@iPodTransition]="iPodState">
 
-            <div class="bg-gray-800 rounded-lg p-3 md:p-4 w-full overflow-hidden">
-              <div class="flex flex-col h-full">
-                <!-- Image Area -->
-                <div
-                  class="relative flex-1 flex items-center justify-center rounded-lg w-full min-h-[200px] max-h-[60vh]">
-                  <div class="relative w-full min-h-[200px] aspect-square">
-                    <!-- Skeleton Loader -->
-                    <div *ngIf="!isImageLoaded"
-                      class="absolute inset-0 flex items-center justify-center bg-gray-700 skeleton-wave rounded-lg">
-                    </div>
-                    <!-- Actual Image -->
-                    <img *ngIf="isImageLoaded" [src]="record?.cover ? record.cover : record.picture"
-                      alt="{{ record?.title }}" (click)="showSecondIpod = true"
-                      class="absolute inset-0 w-full h-full object-contain rounded-lg transition-transform duration-300 ease-in-out hover:opacity-80 cursor-pointer" />
-                  </div>
-                </div>
+  <div class="bg-gray-800 rounded-lg p-3 md:p-4 w-full overflow-hidden">
+    <div class="flex flex-col h-full">
+      
+<!-- Image Area -->
+<div class="relative flex-1 flex items-center justify-center w-full min-h-[200px] max-h-[60vh]">
+  
+  <!-- Image Wrapper (Matches Mobile Structure) -->
+  <div class="relative w-full aspect-square flex items-center justify-center overflow-hidden rounded-lg">
+    
+    <!-- Skeleton Loader -->
+    <div *ngIf="!isImageLoaded"
+      class="absolute inset-0 flex items-center justify-center bg-gray-700 skeleton-wave rounded-lg">
+    </div>
+
+    <!-- Actual Image (Fixed) -->
+    <img *ngIf="isImageLoaded" [src]="record?.cover ? record.cover : record.picture"
+      alt="{{ record?.title }}" (click)="showSecondIpod = true"
+      class="w-full h-full object-contain rounded-lg cursor-pointer transition-transform duration-300 ease-in-out hover:opacity-80" />
+
+  </div>
+</div>
+
 
                 <!-- Info and Audio Player -->
                 <div class="mt-4 text-center">
