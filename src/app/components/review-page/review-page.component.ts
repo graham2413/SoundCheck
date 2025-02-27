@@ -26,11 +26,18 @@ import { SearchService } from 'src/app/services/search.service';
         animate('300ms ease-out', style({ opacity: 1, transform: 'scale(1)' }))
       ])
     ]),
-      trigger('slideFade', [
-        state('hidden', style({ opacity: 0, transform: 'translateY(20px)' })),
-        state('visible', style({ opacity: 1, transform: 'translateY(0)' })),
-        transition('hidden <=> visible', animate('0.4s ease-in-out')),
-      ]),
+    trigger('iPodTransition', [
+      state('original', style({ transform: 'translateY(0%)', opacity: 1 })),
+      state('shifted', style({ transform: 'translateY(100%)', opacity: 0 })),
+      transition('original => shifted', animate('0.4s ease-in-out')),
+      transition('shifted => original', animate('0.4s ease-in-out')),
+    ]),
+    trigger('fadeInContent', [
+      state('hidden', style({ opacity: 0, transform: 'translateY(-10px)' })),
+      state('visible', style({ opacity: 1, transform: 'translateY(0)' })),
+      transition('hidden => visible', animate('0.4s ease-in-out')),
+      transition('visible => hidden', animate('0.3s ease-in-out')),
+    ])
   ]
 })
 export class ReviewPageComponent implements OnInit {
@@ -107,6 +114,14 @@ export class ReviewPageComponent implements OnInit {
         this.isImageLoaded = true;
       },
     });
+  }
+
+  get iPodState() {
+    return this.showSecondIpod ? 'shifted' : 'original';
+  }
+
+  get contentState() {
+    return this.showSecondIpod ? 'visible' : 'hidden';
   }
 
   public getExtraDetails(){
