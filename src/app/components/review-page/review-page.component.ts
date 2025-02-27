@@ -50,8 +50,8 @@ export class ReviewPageComponent implements OnInit {
   editedReviewText: string = '';
 
   isDeleteLoading = false;
-
   isPlaying = false;
+  isFlipped = false;
 
   constructor(
     private activeModal: NgbActiveModal,
