@@ -1,7 +1,12 @@
 const axios = require("axios");
 const https = require("https");
 
-const albumGenreCache = new Map(); // Cache fopr albumGenre's
+const LRU = require('lru-cache');
+
+const albumGenreCache = new LRU({
+  max: 5000, // Store only the last 5000 albums
+  ttl: 1000 * 60 * 60 * 24, // Expire after 24 hours
+});
 
 exports.searchMusic = async (req, res) => {
   try {
