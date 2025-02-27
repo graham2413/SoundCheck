@@ -36,71 +36,68 @@
     </ng-template>
   </div>
 
-<!-- Mobile IPod Wrapper -->
-<div class="relative w-11/12 mx-auto overflow-hidden min-h-[200px] mb-6 p-2">
+  <!-- Mobile IPod Wrapper -->
+  <div class="relative w-11/12 mx-auto overflow-hidden min-h-[200px] mb-6 p-2">
 
-  <!-- First Mobile Modal (Slides Right) -->
-  <div class="relative transition-transform duration-500 h-full"
-    [@mobileModalTransition]="mobileModalState">
+    <!-- First Mobile Modal (Slides Right) -->
+    <div class="relative transition-transform duration-500 h-full" [@mobileModalTransition]="mobileModalState">
 
-    <div class="bg-gray-800 rounded-lg p-3 w-full overflow-hidden h-full flex flex-col justify-between"
-    [ngClass]="isPlaying ? 'scale-beat' : ''">
-      
-      <div class="flex items-stretch h-full">
-        <!-- Left Column: Image -->
-        <div class="w-5/12 flex-shrink-0 h-full">
-          <div class="relative w-full aspect-square flex items-center justify-center overflow-hidden rounded-lg">
-            <!-- Skeleton Loader -->
-            <div *ngIf="!isImageLoaded"
-              class="absolute inset-0 bg-gray-700 rounded-lg skeleton-wave flex items-center justify-center h-full">
-              <i class="fas fa-spinner fa-spin text-gray-400 text-2xl"></i>
+      <div class="bg-gray-800 rounded-lg p-3 w-full overflow-hidden h-full flex flex-col justify-between"
+        [ngClass]="isPlaying ? 'scale-beat' : ''">
+
+        <div class="flex items-stretch h-full">
+          <!-- Left Column: Image -->
+          <div class="w-5/12 flex-shrink-0 h-full">
+            <div class="relative w-full aspect-square flex items-center justify-center overflow-hidden rounded-lg">
+              <!-- Skeleton Loader -->
+              <div *ngIf="!isImageLoaded"
+                class="absolute inset-0 bg-gray-700 rounded-lg skeleton-wave flex items-center justify-center h-full">
+                <i class="fas fa-spinner fa-spin text-gray-400 text-2xl"></i>
+              </div>
+              <!-- Actual Image -->
+              <img *ngIf="isImageLoaded" [src]="record?.cover ? record.cover : record.picture" alt="{{ record?.title }}"
+                (click)="showSecondMobileIpod = true" class="w-full h-full object-contain rounded-lg cursor-pointer" />
             </div>
-            <!-- Actual Image -->
-            <img *ngIf="isImageLoaded" [src]="record?.cover ? record.cover : record.picture"
-              alt="{{ record?.title }}" (click)="showSecondMobileIpod = true"
-              class="w-full h-full object-contain rounded-lg cursor-pointer" />
           </div>
-        </div>
 
-        <!-- Right Column: Centered Text and Player -->
-        <div class="ml-3 flex flex-col justify-center items-center w-7/12 text-center h-full">
-          <p class="text-gray-200 text-xl font-semibold leading-tight">
-            <span *ngIf="type != 'artist'">{{ record?.title }}</span>
-            <span *ngIf="type == 'artist'">{{ record?.name }}</span>
-          </p>
-          <p class="text-gray-400 text-sm mt-1">
-            {{ record?.artist }}
-          </p>
+          <!-- Right Column: Centered Text and Player -->
+          <div class="ml-3 flex flex-col justify-center items-center w-7/12 text-center h-full">
+            <p class="text-gray-200 text-xl font-semibold leading-tight">
+              <span *ngIf="type != 'artist'">{{ record?.title }}</span>
+              <span *ngIf="type == 'artist'">{{ record?.name }}</span>
+            </p>
+            <p class="text-gray-400 text-sm mt-1">
+              {{ record?.artist }}
+            </p>
 
-          <div class="mt-4">
-            <app-audio-player *ngIf="type == 'song'" [record]="record"
-              (playStatus)="updatePlayStatus($event)"></app-audio-player>
+            <div class="mt-4">
+              <app-audio-player *ngIf="type == 'song'" [record]="record"
+                (playStatus)="updatePlayStatus($event)"></app-audio-player>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Second Mobile Modal (Slides In From Left) -->
-  <div class="absolute top-0 left-0 w-full transition-transform duration-500 p-2 h-full"
-    [@mobileFadeInContent]="mobileContentState"
-    [ngStyle]="{ 'pointer-events': showSecondMobileIpod ? 'auto' : 'none' }">
+    <!-- Second Mobile Modal (Slides In From Left) -->
+    <div class="absolute top-0 left-0 w-full transition-transform duration-500 p-2 h-full"
+      [@mobileFadeInContent]="mobileContentState"
+      [ngStyle]="{ 'pointer-events': showSecondMobileIpod ? 'auto' : 'none' }">
 
-    <div class="bg-gray-900 rounded-lg p-4 w-full overflow-hidden h-full flex flex-col justify-between">
-      <div class="flex flex-col h-full">
-        <h3 class="text-lg font-bold text-white">More Info</h3>
-        <p class="text-gray-300 text-sm mt-2 flex-grow">
-          {{ record?.additionalInfo }}
-        </p>
+      <div class="bg-gray-900 rounded-lg p-4 w-full overflow-hidden h-full flex flex-col justify-between">
+        <div class="flex flex-col h-full">
+          <h3 class="text-lg font-bold text-white">More Info</h3>
+          <p class="text-gray-300 text-sm mt-2 flex-grow">
+            {{ record?.additionalInfo }}
+          </p>
 
-        <button class="mt-4 px-4 py-2 bg-gray-600 text-white rounded self-end"
-          (click)="showSecondMobileIpod = false">
-          Close
-        </button>
+          <button class="mt-4 px-4 py-2 bg-gray-600 text-white rounded self-end" (click)="showSecondMobileIpod = false">
+            Close
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
   <!-- Reviews Section -->
   <div>
