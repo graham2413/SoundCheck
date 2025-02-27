@@ -37,7 +37,20 @@ import { SearchService } from 'src/app/services/search.service';
       state('visible', style({ opacity: 1, transform: 'translateY(0)' })),
       transition('hidden => visible', animate('0.4s ease-in-out')),
       transition('visible => hidden', animate('0.3s ease-in-out')),
+    ]),
+    trigger('mobileModalTransition', [
+      state('original', style({ transform: 'translateX(0%)', opacity: 1 })),
+      state('shifted', style({ transform: 'translateX(100%)', opacity: 0 })), // Move right when hidden
+      transition('original => shifted', animate('0.4s ease-in-out')),
+      transition('shifted => original', animate('0.4s ease-in-out')),
+    ]),
+    trigger('mobileFadeInContent', [
+      state('hidden', style({ opacity: 0, transform: 'translateX(-100%)' })), // Enter from the left
+      state('visible', style({ opacity: 1, transform: 'translateX(0)' })),  // Fade in to center
+      transition('hidden => visible', animate('0.4s ease-in-out')),
+      transition('visible => hidden', animate('0.3s ease-in-out')),
     ])
+    
   ]
 })
 export class ReviewPageComponent implements OnInit {
@@ -64,6 +77,7 @@ export class ReviewPageComponent implements OnInit {
   isDeleteLoading = false;
   isPlaying = false;
   showSecondIpod = false;
+  showSecondMobileIpod = false;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -122,6 +136,14 @@ export class ReviewPageComponent implements OnInit {
 
   get contentState() {
     return this.showSecondIpod ? 'visible' : 'hidden';
+  }
+
+  get mobileModalState() {
+    return this.showSecondMobileIpod ? 'shifted' : 'original';
+  }
+
+  get mobileContentState() {
+    return this.showSecondMobileIpod ? 'visible' : 'hidden';
   }
 
   public getExtraDetails(){
