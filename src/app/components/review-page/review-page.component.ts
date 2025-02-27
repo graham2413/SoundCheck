@@ -10,7 +10,7 @@ import {
 } from 'src/app/models/responses/review-responses';
 import { ReviewService } from 'src/app/services/review.service';
 import { AudioPlayerComponent } from '../audio-player/audio-player.component';
-import { animate, style, transition, trigger } from '@angular/animations';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import { SearchService } from 'src/app/services/search.service';
 
 @Component({
@@ -25,7 +25,12 @@ import { SearchService } from 'src/app/services/search.service';
         style({ opacity: 0, transform: 'scale(0.9)' }),
         animate('300ms ease-out', style({ opacity: 1, transform: 'scale(1)' }))
       ])
-    ])
+    ]),
+      trigger('slideFade', [
+        state('hidden', style({ opacity: 0, transform: 'translateY(20px)' })),
+        state('visible', style({ opacity: 1, transform: 'translateY(0)' })),
+        transition('hidden <=> visible', animate('0.4s ease-in-out')),
+      ]),
   ]
 })
 export class ReviewPageComponent implements OnInit {
@@ -51,7 +56,7 @@ export class ReviewPageComponent implements OnInit {
 
   isDeleteLoading = false;
   isPlaying = false;
-  isFlipped = false;
+  showSecondIpod = false;
 
   constructor(
     private activeModal: NgbActiveModal,
