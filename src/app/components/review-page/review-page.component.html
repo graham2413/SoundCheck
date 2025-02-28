@@ -392,7 +392,7 @@
                 </button>
               </div>
             </div>
-            <div class="custom-scrollbar max-h-[50vh] overflow-y-auto">
+            <div class="custom-scrollbar h-[50vh] overflow-y-auto">
               <!-- Loading Indicator for Reviews -->
               <ng-container *ngIf="!isReviewsLoaded; else reviewsContent">
                 <div class="space-y-3 mt-3">
@@ -481,7 +481,7 @@
 
                           <!-- Normal Review Display -->
                           <p *ngIf="!isEditingReview"
-                            class="text-gray-300 text-base lg:text-xl break-words text-center">
+                            class="text-gray-300 text-base lg:text-lg break-words text-center">
                             {{ existingUserReview.reviewText }}
                           </p>
 
@@ -535,7 +535,7 @@
 
                         <!-- Review Text Below -->
                         <div class="text-left">
-                          <p class="text-gray-300 sm:text-base lg:text-xl break-words text-center">
+                          <p class="text-gray-300 sm:text-base lg:text-lg break-words text-center">
                             {{ review.reviewText }}
                           </p>
                           <p class="text-gray-400 text-sm sm:text-base md:text-lg mt-3 font-medium text-center">
