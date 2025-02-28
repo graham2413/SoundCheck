@@ -155,3 +155,32 @@
   }
 }
 
+@media (max-width: 445px) {
+  /* Scale the whole audio player */
+  .custom-audio-player {
+    transform: scale(0.65);
+    transform-origin: center center;
+    gap: 0 !important;
+  }
+
+  .audio-container {
+    box-sizing: border-box; 
+    margin-left: 10%;
+  }
+
+  /* Shrink the play/pause button */
+  .play-pause-button {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem; 
+  }
+
+  /* Slightly narrower progress bar */
+  .progress-bar {
+    width: 60%;
+    height: 3px;
+  }
+  .time-display {
+    display: none;
+  }
+}
