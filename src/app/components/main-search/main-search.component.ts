@@ -21,8 +21,8 @@ export class MainSearchComponent {
   @ViewChild('marqueeTrack') marqueeTrack!: ElementRef<HTMLDivElement>;
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
-@ViewChild('dropdownContainer') dropdownContainer!: ElementRef;
-@ViewChild('filterButton') filterButton!: ElementRef
+  @ViewChild('dropdownContainer') dropdownContainer!: ElementRef;
+  @ViewChild('filterButton') filterButton!: ElementRef
 
   query: string = '';
   isLoading: boolean = false;
@@ -47,14 +47,16 @@ export class MainSearchComponent {
   // Filtered results to store only matching genres
   filteredResults: { songs: Song[]; albums: Album[]; artists: Artist[] } = { songs: [], albums: [], artists: [] };
 
+  isMarqueeLoading = true;
+
   constructor(private searchService: SearchService,
     private modal: NgbModal,
     private toastr: ToastrService,
-    private eRef: ElementRef
   ) { }
 
   ngAfterViewInit(): void {
-    this.initializeMarquee();
+    this.isMarqueeLoading = true;
+    this.loadAlbumImages();
     requestAnimationFrame(() => this.animateMarquee());
   }
 
@@ -62,14 +64,84 @@ export class MainSearchComponent {
   clickOutside(event: Event) {
     const clickedInsideDropdown = this.dropdownContainer?.nativeElement.contains(event.target);
     const clickedFilterButton = this.filterButton?.nativeElement.contains(event.target);
-  
+
     if (clickedInsideDropdown || clickedFilterButton) {
       return; // Do nothing
     }
-  
+
     this.showGenreDropdown = { songs: false, albums: false };
   }
 
+  private loadAlbumImages() {  
+    const trackEl = this.marqueeTrack.nativeElement;
+    const storedAlbums = localStorage.getItem("albumImages");
+    let albums: any[] = [];
+
+    if (storedAlbums) {
+      try {
+        albums = JSON.parse(storedAlbums).albums || [];
+      } catch (error) {
+        console.error("Error parsing stored album images:", error);
+        albums = [];
+      }
+    }
+
+    // If no albums found, use fallback static images
+    if (albums.length === 0) {
+      albums = Array.from({ length: 15 }, (_, i) => ({
+        imageUrl: `assets/album${i + 1}.jpg`,
+        name: `Static Album ${i + 1}`
+      }));
+    }
+
+    // Add images to the marquee track
+    albums.forEach((album) => {
+      const imgEl = document.createElement("img");
+      imgEl.src = album.imageUrl;
+      imgEl.alt = album.name;
+      imgEl.className =
+        "w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 object-cover mr-4 rounded";
+      trackEl.appendChild(imgEl);
+    });
+
+    this.isMarqueeLoading = false;
+    this.initializeMarquee();
+    // setTimeout(() => {
+    //   const storedAlbums = localStorage.getItem("albumImages");
+    //   let albums: any[] = [];
+  
+    //   if (storedAlbums) {
+    //     try {
+    //       albums = JSON.parse(storedAlbums).albums || [];
+    //     } catch (error) {
+    //       console.error("Error parsing stored album images:", error);
+    //       albums = [];
+    //     }
+    //   }
+  
+    //   // If no albums found, use fallback static images
+    //   if (albums.length === 0) {
+    //     albums = Array.from({ length: 15 }, (_, i) => ({
+    //       imageUrl: `assets/album${i + 1}.jpg`,
+    //       name: `Static Album ${i + 1}`
+    //     }));
+    //   }
+  
+    //   // Add images to the marquee track
+    //   albums.forEach((album) => {
+    //     const imgEl = document.createElement("img");
+    //     imgEl.src = album.imageUrl;
+    //     imgEl.alt = album.name;
+    //     imgEl.className =
+    //       "w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 object-cover mr-4 rounded";
+    //     trackEl.appendChild(imgEl);
+    //   });
+  
+    //   this.isMarqueeLoading = false;
+    //   this.initializeMarquee();
+    // }, 1000); // Delay fetching images for 1 second
+  }
+  
   private initializeMarquee() {
     const containerEl = this.marqueeContainer.nativeElement;
     const trackEl = this.marqueeTrack.nativeElement;
@@ -177,14 +249,14 @@ export class MainSearchComponent {
         .map(song => song.genre as string)
         .filter(g => g && g !== 'Unknown')
     )];
-  
+
     this.genres.albums = [...new Set(
       this.results.albums
         .map(album => album.genre as string)
         .filter(g => g && g !== 'Unknown')
     )];
   }
-  
+
 
   toggleGenreFilter(section: 'songs' | 'albums') {
     this.showGenreDropdown[section] = !this.showGenreDropdown[section];
@@ -195,21 +267,21 @@ export class MainSearchComponent {
       this.clearFilter(section); // If the same genre is clicked, remove the filter
     } else {
       this.selectedGenre[section] = genre;
-  
+
       if (section === 'songs') {
         this.filteredResults.songs = this.results.songs.filter((item: Song) => item.genre === genre);
       } else {
         this.filteredResults.albums = this.results.albums.filter((item: Album) => item.genre === genre);
       }
     }
-  
+
     this.showGenreDropdown[section] = false; // Close dropdown after selection
   }
-  
+
 
   clearFilter(section: 'songs' | 'albums') {
     this.selectedGenre[section] = '';
-  
+
     if (section === 'songs') {
       this.filteredResults.songs = [...this.results.songs];
     } else {

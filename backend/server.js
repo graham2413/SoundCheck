@@ -6,13 +6,15 @@ const cors = require("cors");
 const session = require("express-session");
 const passport = require("./config/passport");
 const googleAuthRoutes = require('./auth/google');
+const cron = require("node-cron");
+const spotifyController = require("./controllers/spotifyController");
 
 // Import route files
 const userRoutes = require("./routes/userRoutes");
 const mainSearchRoutes = require("./routes/mainSearchRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const authRoutes = require("./routes/authRoutes");
-const playlistRoutes = require("./routes/playlistRoutes");
+const spotifyRoutes = require("./routes/spotifyRoutes");
 
 const app = express();
 
@@ -45,7 +47,12 @@ app.use("/api/users", userRoutes);
 app.use("/api/search", mainSearchRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/playlists", playlistRoutes);
+app.use("/api/spotify", spotifyRoutes);
+
+// Run updatePopularAlbums every Friday at noon
+cron.schedule("0 12 * * 5", async () => {
+    await spotifyController.setAlbumImages();
+});
 
 // Start the Server
 const PORT = process.env.PORT || 5000;

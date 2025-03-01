@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { ToastrService } from 'ngx-toastr';
 import { UserService } from './services/user.service';
+import { SpotifyService } from './services/spotify.service';
 
 @Component({
   selector: 'app-root',
@@ -34,7 +35,7 @@ export class AppComponent implements OnInit {
   title = 'SoundCheck';
   currentUrl: string = '';
 
-  constructor(private router: Router, private toastr: ToastrService, private userService: UserService) {
+  constructor(private router: Router, private toastr: ToastrService, private userService: UserService, private spotifyService: SpotifyService) {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
@@ -43,6 +44,8 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.fetchAndStoreAlbums();
+
     const queryParams = new URLSearchParams(window.location.search);
     const token = queryParams.get('token');
     const user = queryParams.get('user');
@@ -62,6 +65,17 @@ export class AppComponent implements OnInit {
       // Redirect to home page
       this.router.navigate(['/']);
     }
+  }
+
+  private fetchAndStoreAlbums(): void {
+    this.spotifyService.getAlbumImages().subscribe({
+      next: (data) => {
+        localStorage.setItem('albumImages', JSON.stringify(data));
+      },
+      error: (err) => {
+        console.error('Failed to fetch album images:', err);
+      },
+    });
   }
 
   prepareRoute(outlet: RouterOutlet) {
