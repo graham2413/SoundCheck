@@ -39,13 +39,13 @@
 /* Match responsive image sizes */
 @media (min-width: 640px) {
   .skeleton {
-    width: 10rem; /* sm:w-40 */
+    width: 10rem;
     height: 10rem;
   }
 }
 @media (min-width: 768px) {
   .skeleton {
-    width: 12rem; /* md:w-48 */
+    width: 12rem;
     height: 12rem;
   }
 }

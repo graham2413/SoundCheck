@@ -251,7 +251,11 @@ exports.getTrackDetails = async (req, res) => {
       id: trackData.id,
       releaseDate: trackData.release_date || "Unknown",
       duration: trackData.duration, // in seconds
-    };
+      albumTitle: trackData.album?.title || "Unknown",
+      contributors: trackData.contributors
+      ? trackData.contributors.map((c) => c.name)
+      : [],
+  };
 
     return res.json(trackDetails);
   } catch (error) {

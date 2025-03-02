@@ -151,7 +151,9 @@ export class ReviewPageComponent implements OnInit {
       this.searchService.getTrackDetails(this.record.id).subscribe({
         next: (data: any) => {
           this.record.releaseDate = data.releaseDate;
-      
+          this.record.contributors = data.contributors;
+          this.record.albumTitle = data.albumTitle;
+          this.record.duration = data.duration;
         },
         error: (error) => {
           this.record.releaseDate = null;
@@ -172,6 +174,14 @@ export class ReviewPageComponent implements OnInit {
     }
 
   }
+
+  formatDuration(seconds: number | undefined): string {
+    if (!seconds) return "Unknown";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  }
+  
 
   close() {
     this.activeModal.close();
