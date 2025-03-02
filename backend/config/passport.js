@@ -40,7 +40,7 @@ passport.use(new SpotifyStrategy(
                     profilePicture: profile.photos?.[0] || "",
                     spotifyAccessToken: accessToken,
                     spotifyRefreshToken: refreshToken,
-                    displayName: profile.displayName || "Spotify User"
+                    username: profile.displayName || "Spotify User"
                 });
                 await user.save();
             } else {

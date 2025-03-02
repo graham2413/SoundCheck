@@ -2,8 +2,16 @@
   <!-- Marquee Container -->
   <div #marqueeContainer class="marquee-container">
     <div #marqueeTrack class="marquee-track">
+      <!-- Skeleton Loaders -->
+      <ng-container *ngIf="isMarqueeLoading; else albumImages">
+        <div *ngFor="let _ of skeletonArray" class="skeleton w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48"></div>
+      </ng-container>
+
+      <!-- Actual Images (Rendered after loading) -->
+      <ng-template #albumImages></ng-template>
     </div>
   </div>
+</div>
 
   <!-- Heading -->
   <div class="text-center max-w-5xl mx-auto mt-12 px-4">
@@ -93,7 +101,7 @@
   <!-- Toggle Buttons -->
   <div
     *ngIf="
-       results &&
+       results && !isLoading &&
       ((results.songs?.length ?? 0) > 0 ||
       (results.albums?.length ?? 0) > 0 ||
       (results.artists?.length ?? 0) > 0)
@@ -126,7 +134,7 @@
   </div>
 
   <!-- Search Results -->
-  <div *ngIf="resultsHasValues()" class="mt-6 w-full max-w-2xl mx-auto">
+  <div *ngIf="resultsHasValues() && !isLoading" class="mt-6 w-full max-w-2xl mx-auto">
     <!-- Songs -->
     <div
     *ngIf="activeTab === 'songs'"

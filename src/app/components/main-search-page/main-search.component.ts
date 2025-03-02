@@ -47,6 +47,7 @@ export class MainSearchComponent {
   // Filtered results to store only matching genres
   filteredResults: { songs: Song[]; albums: Album[]; artists: Artist[] } = { songs: [], albums: [], artists: [] };
 
+  skeletonArray = Array(15).fill(0);
   isMarqueeLoading = true;
 
   constructor(private searchService: SearchService,
@@ -74,72 +75,40 @@ export class MainSearchComponent {
 
   private loadAlbumImages() {  
     const trackEl = this.marqueeTrack.nativeElement;
-    const storedAlbums = localStorage.getItem("albumImages");
-    let albums: any[] = [];
-
-    if (storedAlbums) {
-      try {
-        albums = JSON.parse(storedAlbums).albums || [];
-      } catch (error) {
-        console.error("Error parsing stored album images:", error);
-        albums = [];
+    setTimeout(() => {
+      const storedAlbums = localStorage.getItem("albumImages");
+      let albums: any[] = [];
+  
+      if (storedAlbums) {
+        try {
+          albums = JSON.parse(storedAlbums).albums || [];
+        } catch (error) {
+          console.error("Error parsing stored album images:", error);
+          albums = [];
+        }
       }
-    }
-
-    // If no albums found, use fallback static images
-    if (albums.length === 0) {
-      albums = Array.from({ length: 15 }, (_, i) => ({
-        imageUrl: `assets/album${i + 1}.jpg`,
-        name: `Static Album ${i + 1}`
-      }));
-    }
-
-    // Add images to the marquee track
-    albums.forEach((album) => {
-      const imgEl = document.createElement("img");
-      imgEl.src = album.imageUrl;
-      imgEl.alt = album.name;
-      imgEl.className =
-        "w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 object-cover mr-4 rounded";
-      trackEl.appendChild(imgEl);
-    });
-
-    this.isMarqueeLoading = false;
-    this.initializeMarquee();
-    // setTimeout(() => {
-    //   const storedAlbums = localStorage.getItem("albumImages");
-    //   let albums: any[] = [];
   
-    //   if (storedAlbums) {
-    //     try {
-    //       albums = JSON.parse(storedAlbums).albums || [];
-    //     } catch (error) {
-    //       console.error("Error parsing stored album images:", error);
-    //       albums = [];
-    //     }
-    //   }
+      // If no albums found, use fallback static images
+      if (albums.length === 0) {
+        albums = Array.from({ length: 15 }, (_, i) => ({
+          imageUrl: `assets/album${i + 1}.jpg`,
+          name: `Static Album ${i + 1}`
+        }));
+      }
   
-    //   // If no albums found, use fallback static images
-    //   if (albums.length === 0) {
-    //     albums = Array.from({ length: 15 }, (_, i) => ({
-    //       imageUrl: `assets/album${i + 1}.jpg`,
-    //       name: `Static Album ${i + 1}`
-    //     }));
-    //   }
+      // Add images to the marquee track
+      albums.forEach((album) => {
+        const imgEl = document.createElement("img");
+        imgEl.src = album.imageUrl;
+        imgEl.alt = album.name;
+        imgEl.className =
+          "w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 object-cover mr-4 rounded";
+        trackEl.appendChild(imgEl);
+      });
   
-    //   // Add images to the marquee track
-    //   albums.forEach((album) => {
-    //     const imgEl = document.createElement("img");
-    //     imgEl.src = album.imageUrl;
-    //     imgEl.alt = album.name;
-    //     imgEl.className =
-    //       "w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 object-cover mr-4 rounded";
-    //     trackEl.appendChild(imgEl);
-    //   });
-  
-    //   this.isMarqueeLoading = false;
-    //   this.initializeMarquee();
-    // }, 1000); // Delay fetching images for 1 second
+      this.isMarqueeLoading = false;
+      this.initializeMarquee();
+    }, 1000); // Delay fetching images for 1 second
   }
   
   private initializeMarquee() {

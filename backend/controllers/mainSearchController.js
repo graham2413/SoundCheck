@@ -29,7 +29,7 @@ async function callDeezer(url) {
     }
 
     if (retries >= 10) {
-      console.error(`🚨 Max retries reached, dropping request: ${url}`);
+      console.error(`Max retries reached, dropping request: ${url}`);
       return { data: { data: [] } };
     }
 
@@ -49,7 +49,7 @@ async function callDeezer(url) {
 
       // Handle Deezer Quota Limit (Code 4)
       if (response.data?.error?.code === 4) {
-        await new Promise(resolve => setTimeout(resolve, 2 ** attempt * 1000));
+        await new Promise(resolve => setTimeout(resolve, 2 ** attempt * 1000)); // Exponential backoff
         attempt++;
         continue; // Retry again
       }
@@ -67,7 +67,7 @@ async function callDeezer(url) {
     }
   }
 
-  console.error(`❌ All attempts failed for ${url}`);
+  console.error(`All attempts failed for ${url}`);
   return { data: { data: [] } };
 }
 
@@ -187,7 +187,7 @@ async function getAlbumGenre(albumId) {
     );
 
     if (!albumDetails.data) {
-      console.error(`⚠️ Missing data in album details for album ${albumId}`);
+      console.error(`Missing data in album details for album ${albumId}`);
       return "Unknown";
     }
 
@@ -222,12 +222,10 @@ async function getGenreFromId(genreId) {
     const genreResponse = await callDeezer(`https://api.deezer.com/genre/${genreId}`);
     return genreResponse.data?.name || null;
   } catch (error) {
-    console.error(`❌ Failed to fetch genre name for ID ${genreId}:`, error.message);
+    console.error(`Failed to fetch genre name for ID ${genreId}:`, error.message);
     return null;
   }
 }
-
-
 
 
 exports.getTrackDetails = async (req, res) => {

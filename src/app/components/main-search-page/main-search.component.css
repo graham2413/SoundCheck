@@ -1,0 +1,61 @@
+.marquee-container {
+  position: relative;
+  padding: 1rem 0;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    #1f2937 0%,
+    #2d3748 100%
+  );
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center; 
+  justify-content: flex-start; 
+}
+
+.marquee-track {
+  position: static;
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.marquee-track img {
+  object-fit: cover;
+  margin-right: 1rem;
+  border-radius: 0.25rem;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #2d3748 25%, #4a5568 50%, #2d3748 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 8px;
+  width: 8rem;
+  height: 8rem;
+  margin-right: 1rem;
+}
+
+/* Match responsive image sizes */
+@media (min-width: 640px) {
+  .skeleton {
+    width: 10rem; /* sm:w-40 */
+    height: 10rem;
+  }
+}
+@media (min-width: 768px) {
+  .skeleton {
+    width: 12rem; /* md:w-48 */
+    height: 12rem;
+  }
+}
+
+/* Smooth shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

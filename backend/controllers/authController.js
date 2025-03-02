@@ -143,7 +143,7 @@ exports.spotifyCallback = async (req, res) => {
       // If user does not exist, create a new one
       user = new User({
         spotifyId: req.user.spotifyId,
-        displayName: req.user.displayName || "Spotify User",
+        username: req.user.displayName || "Spotify User",
         email: req.user.email || "",
         profilePicture: req.user.profilePicture || "",
         spotifyAccessToken: req.user.spotifyAccessToken,
