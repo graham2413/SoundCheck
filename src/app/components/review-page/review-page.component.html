@@ -379,22 +379,22 @@
           <!-- Second iPod -->
           <div class="absolute top-0 left-0 w-full h-full flex transition-transform duration-500"
             [@fadeInContent]="contentState" [ngStyle]="{ 'pointer-events': showSecondIpod ? 'auto' : 'none' }">
-            <div class="bg-gray-800 rounded-lg px-3 pt-3 pb-3 w-full flex flex-col h-full overflow-hidden">
-              <h3 class="text-xl title-text font-bold text-white text-center mb-4">Song Details</h3>
+            <div class="bg-gray-800 rounded-lg px-1.5 pt-3 pb-3 w-full flex flex-col h-full max-h-[80vh] overflow-y-auto custom-scrollbar">
+              <h3 class="song-details-title text-xl title-text font-bold text-white text-center mb-4 ">Song Details</h3>
 
-              <div class="space-y-3 pl-0 w-full">
+              <div class="space-y-3 pl-0 w-full song-details-card mb-2">
                 <!-- Album -->
                 <div class="flex items-start gap-2">
-                  <i class="fas fa-compact-disc text-blue-400 text-lg"></i>
+                  <i class="fas fa-compact-disc text-blue-400 text-xl"></i>
 
-                  <p class="text-white title-text"><strong>Album:</strong>
+                  <p class="text-white title-text "><strong>Album:</strong>
                     <span class="text-gray-300 ml-2">{{ record?.albumTitle || "Unknown" }}</span>
                   </p>
                 </div>
 
                 <!-- Release Date -->
                 <div class="flex items-start gap-2">
-                  <i class="fas fa-calendar-alt text-yellow-400 text-lg"></i>
+                  <i class="fas fa-calendar-alt text-yellow-400 text-xl"></i>
                   <p class="text-white title-text"><strong>Release Date:</strong>
                     <span class="text-gray-300 ml-2">{{ record?.releaseDate || "Unknown" }}</span>
                   </p>
@@ -402,7 +402,7 @@
 
                 <!-- Duration -->
                 <div class="flex items-start gap-2">
-                  <i class="fas fa-clock text-red-400 text-lg"></i>
+                  <i class="fas fa-clock text-red-400 text-xl"></i>
                   <p class="text-white title-text"><strong>Duration:</strong>
                     <span class="text-gray-300 ml-2">{{ formatDuration(record?.duration) }}</span>
                   </p>
@@ -411,11 +411,11 @@
                 <!-- Contributors -->
                 <div class="w-full">
                   <div class="flex items-start gap-2">
-                    <i class="fas fa-microphone text-purple-400 text-lg"></i>
+                    <i class="fas fa-microphone text-purple-400 text-xl"></i>
                     <p class="text-white title-text"><strong>Contributors:</strong></p>
                   </div>
                   <ul class="text-gray-300 title-text pl-4">
-                    <li *ngFor="let contributor of record?.contributors">{{ contributor }}</li>
+                    <li *ngFor="let contributor of record?.contributors">- {{ contributor }}</li>
                   </ul>
                 </div>
               </div>
@@ -423,9 +423,9 @@
               <!-- Close Button -->
               <div class="mt-auto flex justify-center">
                 <button
-                  class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-500 transition duration-300 shadow-md"
+                  class="close-button px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-500 transition duration-300 shadow-md flex items-center justify-center"
                   (click)="showSecondIpod = false">
-                  Close
+                  <i class="fas fa-arrow-right text-lg"></i>
                 </button>
               </div>
             </div>
