@@ -155,4 +155,7 @@
   .marginTopMobile {
     margin-top: .5rem;
   }
+  .widthMobileScale {
+    width: 100%;
+  }
 }
