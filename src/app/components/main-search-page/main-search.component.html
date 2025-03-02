@@ -195,15 +195,15 @@
         <p class="text-lg md:text-xl font-semibold text-white leading-tight title-text break-words">
           <span class="inline-block align-middle">
             {{ song.title }}
-            <span *ngIf="song?.isExplicit"
-              class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] font-bold w-5 h-5 px-[1px] rounded leading-none ml-1 whitespace-nowrap align-middle"
-              title="Explicit">
-              E
-            </span>
           </span>
         </p>
   
         <p class="text-sm md:text-base text-gray-400 mt-1">
+          <span *ngIf="song?.isExplicit"
+          class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+          title="Explicit">
+          E
+        </span>
           {{ song.artist }}
         </p>
       </div>

@@ -166,6 +166,7 @@
   .audio-container {
     box-sizing: border-box; 
     margin-left: 10%;
+    margin-top: 0 !important;
   }
 
   /* Shrink the play/pause button */

@@ -63,12 +63,17 @@
           </div>
 
           <!-- Right Column: Centered Text and Player -->
-          <div class="ml-3 flex flex-col justify-center items-center w-7/12 text-center h-full">
-            <p class="text-gray-200 text-xl font-semibold leading-tight">
+          <div class="ml-3 flex flex-col marginTopMobile justify-center items-center w-7/12 text-center h-full">
+            <p class="text-gray-200 text-xl recordTitle font-semibold leading-tight">
               <span *ngIf="type != 'artist'">{{ record?.title }}</span>
               <span *ngIf="type == 'artist'">{{ record?.name }}</span>
             </p>
-            <p class="text-gray-400 text-sm mt-1">
+            <p class="artistText text-gray-400 mt-1">
+              <span *ngIf="record?.isExplicit"
+              class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
+              title="Explicit">
+              E
+            </span>
               {{ record?.artist }}
             </p>
 
@@ -351,15 +356,15 @@
             <p class="text-gray-200 text-base sm:text-lg md:text-xl font-semibold flex items-center justify-center gap-2">
               <span *ngIf="type != 'artist'" class="inline-block align-middle">
                 {{ record?.title }}
-                <span *ngIf="record?.isExplicit"
-                  class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
-                  title="Explicit">
-                  E
-                </span>
               </span>
               <span *ngIf="type == 'artist'">{{ record?.name }}</span>
             </p>            
             <p class="text-gray-400 text-sm sm:text-base md:text-lg">
+              <span *ngIf="record?.isExplicit"
+              class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
+              title="Explicit">
+              E
+            </span>
               {{ record?.artist }}
             </p>
             <div class="mt-2">
