@@ -7,4 +7,8 @@ export interface Song {
     preview: string;
     isExplicit: boolean;
     genre: string;
+    releaseDate: string;
+    contributors: string[];
+    duration: number;
+    type: 'song';
   }

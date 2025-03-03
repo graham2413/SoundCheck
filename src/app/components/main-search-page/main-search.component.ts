@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { Song } from 'src/app/models/responses/song-response';
 import { Album } from 'src/app/models/responses/album-response';
 import { Artist } from 'src/app/models/responses/artist-response';
+import { SearchResponse } from 'src/app/models/responses/search-response';
 
 @Component({
   selector: 'app-main-search',
@@ -30,7 +31,7 @@ export class MainSearchComponent {
   private trackX = 0;
   private speed = 0.5;
   isModalOpen = false;
-  selectedRecord: any = null;
+  selectedRecord: Album | Artist | Song | null = null;
   searchAttempted = false;
 
   // Dropdown visibility state for genre filters
@@ -177,23 +178,27 @@ export class MainSearchComponent {
     this.searchAttempted = true;
 
     this.searchService.searchMusic(this.query).subscribe({
-      next: (data) => {
+      next: (data: SearchResponse) => {
         // Enhance images for better quality before storing results
         this.results = {
           ...data,
-          songs: data.songs.map((song: { cover: string }) => ({
+          songs: data.songs.map((song: Song) => ({
             ...song,
-            cover: this.getHighQualityImage(song.cover)
+            cover: this.getHighQualityImage(song.cover),
+            type: 'song' as const,
           })),
-          albums: data.albums.map((album: { cover: string }) => ({
+          albums: data.albums.map((album: Album) => ({
             ...album,
-            cover: this.getHighQualityImage(album.cover)
+            cover: this.getHighQualityImage(album.cover),
+            type: 'album' as const,
           })),
-          artists: data.artists.map((artist: { picture: string }) => ({
+          artists: data.artists.map((artist: Artist) => ({
             ...artist,
-            picture: this.getHighQualityImage(artist.picture)
-          }))
+            picture: this.getHighQualityImage(artist.picture),
+            type: 'artist' as const,
+          })),
         };
+      
 
         this.filteredResults = { ...this.results };
 
@@ -271,18 +276,18 @@ export class MainSearchComponent {
     this.activeTab = tab;
   }
 
-  openModal(record: any, type: string) {
+  openModal(record: Album | Artist | Song, type: 'album' | 'artist' | 'song') {
     const modalOptions: NgbModalOptions = {
       backdrop: 'static',
       keyboard: true,
       centered: true,
       scrollable: true,
     };
-
+  
     const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
     modalRef.componentInstance.record = record;
-    modalRef.componentInstance.type = type;
   }
+
 
 
   getHighQualityImage(imageUrl: string): string {

@@ -55,7 +55,7 @@
                 <i class="fas fa-spinner fa-spin text-gray-400 text-2xl"></i>
               </div>
               <!-- Actual Image -->
-              <img *ngIf="isImageLoaded" [src]="record?.cover ? record.cover : record.picture" alt="{{ record?.title }}"
+              <img *ngIf="isImageLoaded" [src]="record.type === 'artist' ? record.picture : record.cover" [alt]="record.type === 'artist' ? record.name : record.title"
                 (click)="showSecondMobileIpod = true"
                 class="max-w-full max-h-full object-contain rounded-lg cursor-pointer" />
 
@@ -65,20 +65,20 @@
           <!-- Right Column: Centered Text and Player -->
           <div class="ml-3 flex flex-col marginTopMobile justify-center items-center w-7/12 text-center h-full">
             <p class="text-gray-200 text-xl recordTitle font-semibold leading-tight">
-              <span *ngIf="type != 'artist'">{{ record?.title }}</span>
-              <span *ngIf="type == 'artist'">{{ record?.name }}</span>
+              <span *ngIf="record.type != 'artist'">{{ record.title }}</span>
+              <span *ngIf="record.type == 'artist'">{{ record.name }}</span>
             </p>
             <p class="artistText text-gray-400 mt-1">
-              <span *ngIf="record?.isExplicit"
-              class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
-              title="Explicit">
-              E
-            </span>
-              {{ record?.artist }}
+              <span *ngIf="isExplicit"
+                    class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
+                    title="Explicit">
+                E
+              </span>
+              {{ record.type !== 'artist' ? record.artist : '' }}
             </p>
 
             <div class="mt-4">
-              <app-audio-player *ngIf="type == 'song'" [record]="record"
+              <app-audio-player *ngIf="record.type == 'song'" [record]="record"
                 (playStatus)="updatePlayStatus($event)"></app-audio-player>
             </div>
           </div>
@@ -95,7 +95,7 @@
         <div class="flex flex-col h-full">
           <h3 class="text-lg font-bold text-white">More Info</h3>
           <p class="text-gray-300 text-sm mt-2 flex-grow">
-            {{ record?.additionalInfo }}
+            <!-- {{ record?.additionalInfo }} -->
           </p>
 
           <button class="mt-4 px-4 py-2 bg-gray-600 text-white rounded self-end" (click)="showSecondMobileIpod = false">
@@ -344,8 +344,8 @@
                     </div>
 
                     <!-- Actual Image (Fixed) -->
-                    <img *ngIf="isImageLoaded" [src]="record?.cover ? record.cover : record.picture"
-                      alt="{{ record?.title }}" (click)="showSecondIpod = true"
+                    <img *ngIf="isImageLoaded" [src]="record.type === 'artist' ? record.picture : record.cover" 
+                    [alt]="record.type === 'artist' ? record.name : record.title" (click)="showSecondIpod = true"
                       class="w-full h-full object-contain rounded-lg cursor-pointer transition-transform duration-300 ease-in-out hover:opacity-80" />
 
                   </div>
@@ -354,21 +354,21 @@
 <!-- Info and Audio Player -->
           <div class="mt-4 text-center">
             <p class="text-gray-200 text-base sm:text-lg md:text-xl font-semibold flex items-center justify-center gap-2">
-              <span *ngIf="type != 'artist'" class="inline-block align-middle">
-                {{ record?.title }}
+              <span *ngIf="record.type != 'artist'" class="inline-block align-middle">
+                {{ record.title }}
               </span>
-              <span *ngIf="type == 'artist'">{{ record?.name }}</span>
+              <span *ngIf="record.type == 'artist'">{{ record.name }}</span>
             </p>            
             <p class="text-gray-400 text-sm sm:text-base md:text-lg">
-              <span *ngIf="record?.isExplicit"
-              class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
-              title="Explicit">
-              E
-            </span>
-              {{ record?.artist }}
-            </p>
+              <span *ngIf="isExplicit"
+                    class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
+                    title="Explicit">
+                E
+              </span>
+              {{ record.type !== 'artist' ? record.artist : '' }}
+            </p>            
             <div class="mt-2">
-              <app-audio-player *ngIf="type == 'song'" [record]="record"
+              <app-audio-player *ngIf="record.type == 'song'" [record]="record"
                 (playStatus)="updatePlayStatus($event)"></app-audio-player>
             </div>
           </div>
@@ -383,39 +383,39 @@
               <h3 class="song-details-title text-xl title-text font-bold text-white text-center mb-4 ">Song Details</h3>
 
               <div class="space-y-3 pl-0 w-full song-details-card mb-2">
-                <!-- Album -->
-                <div class="flex items-start gap-2">
+                <!-- (Type: Song) Album -->
+                <div *ngIf="record.type === 'song' " class="flex items-start gap-2">
                   <i class="fas fa-compact-disc text-blue-400 text-xl"></i>
 
                   <p class="text-white title-text "><strong>Album:</strong>
-                    <span class="text-gray-300 ml-2">{{ record?.albumTitle || "Unknown" }}</span>
+                    <span class="text-gray-300 ml-2">{{ record.album || "Unknown" }}</span>
                   </p>
                 </div>
 
-                <!-- Release Date -->
-                <div class="flex items-start gap-2">
+                <!-- (Type: Song) Release Date -->
+                <div *ngIf="record.type === 'song' " class="flex items-start gap-2">
                   <i class="fas fa-calendar-alt text-yellow-400 text-xl"></i>
                   <p class="text-white title-text"><strong>Release Date:</strong>
-                    <span class="text-gray-300 ml-2">{{ record?.releaseDate || "Unknown" }}</span>
+                    <span class="text-gray-300 ml-2">{{ record.releaseDate || "Unknown" }}</span>
                   </p>
                 </div>
 
-                <!-- Duration -->
-                <div class="flex items-start gap-2">
+                <!-- (Type: Song) Duration -->
+                <div *ngIf="record.type === 'song' " class="flex items-start gap-2">
                   <i class="fas fa-clock text-red-400 text-xl"></i>
                   <p class="text-white title-text"><strong>Duration:</strong>
-                    <span class="text-gray-300 ml-2">{{ formatDuration(record?.duration) }}</span>
+                    <span class="text-gray-300 ml-2">{{ formatDuration(record.duration) }}</span>
                   </p>
                 </div>
 
-                <!-- Contributors -->
-                <div class="w-full">
+                <!-- (Type: Song) Contributors -->
+                <div *ngIf="record.type === 'song' " class="w-full">
                   <div class="flex items-start gap-2">
                     <i class="fas fa-microphone text-purple-400 text-xl"></i>
                     <p class="text-white title-text"><strong>Contributors:</strong></p>
                   </div>
                   <ul class="text-gray-300 title-text pl-4">
-                    <li *ngFor="let contributor of record?.contributors">- {{ contributor }}</li>
+                    <li *ngFor="let contributor of record.contributors">- {{ contributor }}</li>
                   </ul>
                 </div>
               </div>

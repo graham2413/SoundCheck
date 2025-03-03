@@ -12,6 +12,9 @@ import { ReviewService } from 'src/app/services/review.service';
 import { AudioPlayerComponent } from '../audio-player/audio-player.component';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { SearchService } from 'src/app/services/search.service';
+import { Album } from 'src/app/models/responses/album-response';
+import { Artist } from 'src/app/models/responses/artist-response';
+import { Song } from 'src/app/models/responses/song-response';
 
 @Component({
   selector: 'app-review-page',
@@ -54,8 +57,7 @@ import { SearchService } from 'src/app/services/search.service';
   ]
 })
 export class ReviewPageComponent implements OnInit {
-  @Input() record: any;
-  @Input() type: string = '';
+  @Input() record!: Album | Artist | Song;
 
   existingUserReview: Review | null = null;
   reviews: Review[] = [];
@@ -110,7 +112,7 @@ export class ReviewPageComponent implements OnInit {
   }
 
   getReviews() {
-    this.reviewService.searchReviews(this.record.id, this.type).subscribe({
+    this.reviewService.searchReviews(this.record.id, this.record.type).subscribe({
       next: (data: Reviews) => {
         this.reviews = data.reviews;
         this.existingUserReview = data.userReview;
@@ -146,34 +148,44 @@ export class ReviewPageComponent implements OnInit {
     return this.showSecondMobileIpod ? 'visible' : 'hidden';
   }
 
-  public getExtraDetails(){
-    if(this.type === 'song'){
+  get isExplicit(): boolean {
+    return this.record?.type === 'song' && 'isExplicit' in this.record
+      ? (this.record as Song).isExplicit
+      : false;
+  }
+  
+
+  public getExtraDetails() {
+    if (this.record.type === 'song') {
       this.searchService.getTrackDetails(this.record.id).subscribe({
-        next: (data: any) => {
-          this.record.releaseDate = data.releaseDate;
-          this.record.contributors = data.contributors;
-          this.record.albumTitle = data.albumTitle;
-          this.record.duration = data.duration;
+        next: (data: Song) => {
+          (this.record as Song).releaseDate = data.releaseDate;
+          (this.record as Song).contributors = data.contributors;
+          (this.record as Song).duration = data.duration;
         },
-        error: (error) => {
-          this.record.releaseDate = null;
+        error: () => {
+          (this.record as Song).releaseDate = '';
+        },
+      });
+    }
+  
+    if (this.record.type === 'album') {
+      this.searchService.getAlbumDetails(this.record.id).subscribe({
+        next: (data: Album) => {
+          (this.record as Album).releaseDate = data.releaseDate;
+        },
+        error: () => {
+          (this.record as Album).releaseDate = '';
         },
       });
     }
 
-    if(this.type === 'album'){
-      this.searchService.getAlbumDetails(this.record.id).subscribe({
-        next: (data: any) => {
-          this.record.releaseDate = data.releaseDate;
-      
-        },
-        error: (error) => {
-          this.record.releaseDate = null;
-        },
-      });
+    if (this.record.type === 'artist') {
+
     }
 
   }
+  
 
   formatDuration(seconds: number | undefined): string {
     if (!seconds) return "Unknown";
@@ -217,7 +229,7 @@ export class ReviewPageComponent implements OnInit {
   submitReview() {
     this.isCreateLoading = true;
     this.reviewService
-      .createReview(this.record.id, this.type, this.newRating, this.newReview)
+      .createReview(this.record.id, this.record.type, this.newRating, this.newReview)
       .subscribe({
         next: (data: NewReviewResponse) => {
           this.existingUserReview = data.review;

@@ -3,7 +3,8 @@ export interface Album {
     title: string;
     artist: string;
     cover: string;
-    release_date: string;
+    releaseDate: string;
     tracklist: string;
     genre: string;
+    type: 'album';
   }
