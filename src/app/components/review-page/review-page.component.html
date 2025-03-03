@@ -37,12 +37,13 @@
   </div>
 
   <!-- Mobile IPod Wrapper -->
-  <div class="relative w-9/12 widthMobileScale mx-auto overflow-hidden min-h-[200px] mb-6 p-2">
+  <div class="relative w-8/12 widthMobileScale mx-auto overflow-hidden min-h-[200px] mb-6 p-2">
 
     <!-- First Mobile Modal (Slides Right) -->
     <div class="relative transition-transform duration-500 h-full" [@mobileModalTransition]="mobileModalState">
 
-      <div class="bg-gray-800 rounded-lg p-2.5 w-full overflow-hidden h-full flex flex-col justify-between bottomPaddingFix"
+      <div
+        class="bg-gray-800 rounded-lg p-2.5 w-full overflow-hidden h-full flex flex-col justify-between bottomPaddingFix"
         [ngClass]="isPlaying ? 'scale-beat' : ''">
 
         <div class="flex items-center h-full">
@@ -55,8 +56,8 @@
                 <i class="fas fa-spinner fa-spin text-gray-400 text-2xl"></i>
               </div>
               <!-- Actual Image -->
-              <img *ngIf="isImageLoaded" [src]="record.type === 'artist' ? record.picture : record.cover" [alt]="record.type === 'artist' ? record.name : record.title"
-                (click)="showSecondMobileIpod = true"
+              <img *ngIf="isImageLoaded" [src]="record.type === 'artist' ? record.picture : record.cover"
+                [alt]="record.type === 'artist' ? record.name : record.title" (click)="showSecondMobileIpod = true"
                 class="max-w-full max-h-full object-contain rounded-lg cursor-pointer" />
 
             </div>
@@ -70,8 +71,8 @@
             </p>
             <p class="artistText text-gray-400 mt-1">
               <span *ngIf="isExplicit"
-                    class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
-                    title="Explicit">
+                class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
+                title="Explicit">
                 E
               </span>
               {{ record.type !== 'artist' ? record.artist : '' }}
@@ -85,25 +86,59 @@
         </div>
       </div>
     </div>
+<!-- Second iPod -->
+<div class="absolute top-0 left-0 w-full h-full flex transition-transform duration-500"
+  [@mobileFadeInContent]="mobileContentState"
+  [ngStyle]="{ 'pointer-events': showSecondMobileIpod ? 'auto' : 'none' }">
+  
+  <div class="bg-gray-800 rounded-lg px-3 pt-4 pb-4 w-full flex flex-col h-full max-h-[85vh] overflow-y-auto custom-scrollbar">
+    
+    <!-- Title -->
+    <h3 class="text-lg font-bold text-white text-center mb-3">Song Details</h3>
 
-    <!-- Second Mobile Modal (Slides In From Left) -->
-    <div class="absolute top-0 left-0 w-full transition-transform duration-500 p-2 h-full"
-      [@mobileFadeInContent]="mobileContentState"
-      [ngStyle]="{ 'pointer-events': showSecondMobileIpod ? 'auto' : 'none' }">
-
-      <div class="bg-gray-900 rounded-lg p-4 w-full overflow-hidden h-full flex flex-col justify-between">
-        <div class="flex flex-col h-full">
-          <h3 class="text-lg font-bold text-white">More Info</h3>
-          <p class="text-gray-300 text-sm mt-2 flex-grow">
-            <!-- {{ record?.additionalInfo }} -->
-          </p>
-
-          <button class="mt-4 px-4 py-2 bg-gray-600 text-white rounded self-end" (click)="showSecondMobileIpod = false">
-            Close
-          </button>
-        </div>
+    <!-- Details Container -->
+    <div class="space-y-4 w-full song-details-card">
+      
+      <!-- Album -->
+      <div *ngIf="record.type === 'song'" class="flex flex-col items-center text-center">
+        <i class="fas fa-compact-disc text-blue-400 text-2xl mb-1"></i>
+        <p class="text-white font-medium"><strong>Album:</strong> <span class="text-gray-300 ml-1">{{ record.album || "Unknown" }}</span></p>
       </div>
+
+      <!-- Release Date -->
+      <div *ngIf="record.type === 'song'" class="flex flex-col items-center text-center">
+        <i class="fas fa-calendar-alt text-yellow-400 text-2xl mb-1"></i>
+        <p class="text-white font-medium"><strong>Release Date:</strong> <span class="text-gray-300 ml-1">{{ record.releaseDate || "Unknown" }}</span></p>
+      </div>
+
+      <!-- Duration -->
+      <div *ngIf="record.type === 'song'" class="flex flex-col items-center text-center">
+        <i class="fas fa-clock text-red-400 text-2xl mb-1"></i>
+        <p class="text-white font-medium"><strong>Duration:</strong> <span class="text-gray-300 ml-1">{{ formatDuration(record.duration) }}</span></p>
+      </div>
+
+      <!-- Contributors -->
+      <div *ngIf="record.type === 'song'" class="flex flex-col items-center text-center w-full">
+        <i class="fas fa-microphone text-purple-400 text-2xl mb-1"></i>
+        <p class="text-white font-medium"><strong>Contributors:</strong></p>
+        <ul class="text-gray-300 text-sm">
+          <li *ngFor="let contributor of record.contributors" class="mt-0.5">- {{ contributor }}</li>
+        </ul>
+      </div>
+
     </div>
+
+    <!-- Close Button -->
+    <div class="mt-5 flex justify-center">
+      <button class="px-5 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-500 transition duration-300 shadow-md flex items-center justify-center"
+        (click)="showSecondMobileIpod = false">
+        <i class="fas fa-arrow-right text-lg"></i>
+      </button>
+    </div>
+
+  </div>
+</div>
+
   </div>
 
   <!-- Reviews Section -->
@@ -344,42 +379,44 @@
                     </div>
 
                     <!-- Actual Image (Fixed) -->
-                    <img *ngIf="isImageLoaded" [src]="record.type === 'artist' ? record.picture : record.cover" 
-                    [alt]="record.type === 'artist' ? record.name : record.title" (click)="showSecondIpod = true"
+                    <img *ngIf="isImageLoaded" [src]="record.type === 'artist' ? record.picture : record.cover"
+                      [alt]="record.type === 'artist' ? record.name : record.title" (click)="showSecondIpod = true"
                       class="w-full h-full object-contain rounded-lg cursor-pointer transition-transform duration-300 ease-in-out hover:opacity-80" />
 
                   </div>
                 </div>
 
-<!-- Info and Audio Player -->
-          <div class="mt-4 text-center">
-            <p class="text-gray-200 text-base sm:text-lg md:text-xl font-semibold flex items-center justify-center gap-2">
-              <span *ngIf="record.type != 'artist'" class="inline-block align-middle">
-                {{ record.title }}
-              </span>
-              <span *ngIf="record.type == 'artist'">{{ record.name }}</span>
-            </p>            
-            <p class="text-gray-400 text-sm sm:text-base md:text-lg">
-              <span *ngIf="isExplicit"
-                    class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
-                    title="Explicit">
-                E
-              </span>
-              {{ record.type !== 'artist' ? record.artist : '' }}
-            </p>            
-            <div class="mt-2">
-              <app-audio-player *ngIf="record.type == 'song'" [record]="record"
-                (playStatus)="updatePlayStatus($event)"></app-audio-player>
+                <!-- Info and Audio Player -->
+                <div class="mt-4 text-center">
+                  <p
+                    class="text-gray-200 text-base sm:text-lg md:text-xl font-semibold flex items-center justify-center gap-2">
+                    <span *ngIf="record.type != 'artist'" class="inline-block align-middle">
+                      {{ record.title }}
+                    </span>
+                    <span *ngIf="record.type == 'artist'">{{ record.name }}</span>
+                  </p>
+                  <p class="text-gray-400 text-sm sm:text-base md:text-lg">
+                    <span *ngIf="isExplicit"
+                      class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
+                      title="Explicit">
+                      E
+                    </span>
+                    {{ record.type !== 'artist' ? record.artist : '' }}
+                  </p>
+                  <div class="mt-2">
+                    <app-audio-player *ngIf="record.type == 'song'" [record]="record"
+                      (playStatus)="updatePlayStatus($event)"></app-audio-player>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          </div>
-        </div>
-      </div>
 
           <!-- Second iPod -->
           <div class="absolute top-0 left-0 w-full h-full flex transition-transform duration-500"
             [@fadeInContent]="contentState" [ngStyle]="{ 'pointer-events': showSecondIpod ? 'auto' : 'none' }">
-            <div class="bg-gray-800 rounded-lg px-1.5 pt-3 pb-3 w-full flex flex-col h-full max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <div
+              class="bg-gray-800 rounded-lg px-1.5 pt-3 pb-3 w-full flex flex-col h-full max-h-[80vh] overflow-y-auto custom-scrollbar">
               <h3 class="song-details-title text-xl title-text font-bold text-white text-center mb-4 ">Song Details</h3>
 
               <div class="space-y-3 pl-0 w-full song-details-card mb-2">
