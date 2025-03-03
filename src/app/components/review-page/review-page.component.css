@@ -145,26 +145,6 @@
   50% { transform: scaleY(2.5); }
 }
 
-@media (max-width: 445px) {
-  .artistText {
-    font-size: 0.8rem;
-  }
-  .recordTitle {
-    font-size: 1rem;
-  }
-  .explicit {
-    width: 1rem;
-    height: 1rem;
-  }
-}
-
-@media (max-width: 551px) {
-
-  .widthMobileScale {
-    width: 100%;
-  }
-
-}
 
 .song-details-title {
   font-size: 1.125rem;
