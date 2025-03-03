@@ -147,17 +147,23 @@
 
 @media (max-width: 445px) {
   .artistText {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
   }
   .recordTitle {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
-  .marginTopMobile {
-    margin-top: .5rem;
+  .explicit {
+    width: 1rem;
+    height: 1rem;
   }
+}
+
+@media (max-width: 551px) {
+
   .widthMobileScale {
     width: 100%;
   }
+
 }
 
 .song-details-title {

@@ -128,35 +128,7 @@
 }
 
 
-@media (max-width: 465px) {
-  /* Scale the whole audio player */
-  .custom-audio-player {
-    transform: scale(0.9);
-    transform-origin: center center;
-    gap: 0 !important;
-  }
-
-  .audio-container {
-    padding-right: 0.75rem;
-    box-sizing: border-box; 
-  }
-
-  /* Shrink the play/pause button */
-  .play-pause-button {
-    width: 28px;
-    height: 28px;
-    font-size: 0.75rem; 
-  }
-
-  /* Slightly narrower progress bar */
-  .progress-bar {
-    width: 75%;
-    height: 3px;
-  }
-}
-
 @media (max-width: 445px) {
-  /* Scale the whole audio player */
   .custom-audio-player {
     transform: scale(0.65);
     transform-origin: center center;
@@ -169,14 +141,12 @@
     margin-top: 0 !important;
   }
 
-  /* Shrink the play/pause button */
   .play-pause-button {
     width: 50px;
     height: 50px;
     font-size: 1.5rem; 
   }
 
-  /* Slightly narrower progress bar */
   .progress-bar {
     width: 60%;
     height: 3px;

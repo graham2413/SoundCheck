@@ -37,17 +37,17 @@
   </div>
 
   <!-- Mobile IPod Wrapper -->
-  <div class="relative w-11/12 widthMobileScale mx-auto overflow-hidden min-h-[200px] mb-6 p-2">
+  <div class="relative w-9/12 widthMobileScale mx-auto overflow-hidden min-h-[200px] mb-6 p-2">
 
     <!-- First Mobile Modal (Slides Right) -->
     <div class="relative transition-transform duration-500 h-full" [@mobileModalTransition]="mobileModalState">
 
-      <div class="bg-gray-800 rounded-lg p-3 w-full overflow-hidden h-full flex flex-col justify-between"
+      <div class="bg-gray-800 rounded-lg p-2.5 w-full overflow-hidden h-full flex flex-col justify-between bottomPaddingFix"
         [ngClass]="isPlaying ? 'scale-beat' : ''">
 
-        <div class="flex items-stretch h-full">
+        <div class="flex items-center h-full">
           <!-- Left Column: Image -->
-          <div class="w-5/12 flex-shrink min-h-0">
+          <div class="w-5/12 flex-shrink-0 h-full">
             <div class="relative w-full h-full flex items-start justify-start overflow-hidden rounded-lg">
               <!-- Skeleton Loader -->
               <div *ngIf="!isImageLoaded"
@@ -63,7 +63,7 @@
           </div>
 
           <!-- Right Column: Centered Text and Player -->
-          <div class="ml-3 flex flex-col marginTopMobile justify-center items-center w-7/12 text-center h-full">
+          <div class="ml-3 flex flex-col justify-center items-center w-7/12 text-left h-full">
             <p class="text-gray-200 text-xl recordTitle font-semibold leading-tight">
               <span *ngIf="record.type != 'artist'">{{ record.title }}</span>
               <span *ngIf="record.type == 'artist'">{{ record.name }}</span>
@@ -77,7 +77,7 @@
               {{ record.type !== 'artist' ? record.artist : '' }}
             </p>
 
-            <div class="mt-4">
+            <div class="mt-4 self-start w-full">
               <app-audio-player *ngIf="record.type == 'song'" [record]="record"
                 (playStatus)="updatePlayStatus($event)"></app-audio-player>
             </div>
