@@ -13,7 +13,6 @@
   fill: none;
   stroke-width: 4;
   stroke-linecap: round;
-  transition: stroke-dasharray 0.5s ease-in-out;
 }
 
 .rating-circle span {

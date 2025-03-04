@@ -12,48 +12,47 @@
             <i class="fa-solid fa-info text-xl"></i>
           </button>
 
-          <!-- Overall Rating Circle -->
-          <div class="flex justify-center w-full mt-1">
-            <ng-container *ngIf="!isRatingLoaded; else ratingContentMobile">
-              <div
-                class="animate-pulse bg-gray-600 rounded-full w-32 h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 flex items-center justify-center">
-                <i class="fas fa-spinner fa-spin text-gray-400 text-3xl md:text-4xl lg:text-5xl"></i>
-              </div>
-            </ng-container>
+        <!-- Overall Rating Circle -->
+        <div class="flex justify-center w-full mt-1">
+          <div class="relative w-32 h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 flex items-center justify-center">
+            <svg width="100%" height="100%" viewBox="0 0 42 42" class="circular-chart absolute w-full h-full">
+              <defs>
+                <linearGradient id="ratingGradientMobile" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color: #facc15; stop-opacity: 1" />
+                  <stop offset="100%" style="stop-color: #f59e0b; stop-opacity: 1" />
+                </linearGradient>
+              </defs>
 
-            <ng-template #ratingContentMobile>
-              <div class="relative w-32 h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 flex items-center justify-center">
-                <svg width="100%" height="100%" viewBox="0 0 42 42" class="circular-chart absolute w-full h-full">
-                  <defs>
-                    <linearGradient id="ratingGradientMobile" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" style="stop-color: #facc15; stop-opacity: 1" />
-                      <stop offset="100%" style="stop-color: #f59e0b; stop-opacity: 1" />
-                    </linearGradient>
-                  </defs>
-                  <circle class="circle-bg" cx="21" cy="21" r="18" stroke-width="4" />
-                  <circle class="circle" cx="21" cy="21" r="18"
-                  stroke="url(#ratingGradientMobile)"
-                  stroke-width="4"
-                  stroke-dasharray="113.1"
-                  [attr.stroke-dashoffset]="113.1 - (getAverageRating() / 10) * 113.1"
-                  [attr.style]="getAverageRating() === 0 ? 'stroke-opacity: 0;' : ''"
-                />
-                
-                </svg>
+              <circle class="circle-bg" cx="21" cy="21" r="18" stroke-width="4" />
+              <circle class="circle" cx="21" cy="21" r="18"
+                stroke="url(#ratingGradientMobile)"
+                stroke-width="4"
+                stroke-dasharray="113.1"
+                [attr.stroke-dashoffset]="isRatingLoaded ? (113.1 - (getAverageRating() / 10) * 113.1) : 113.1"
+                [attr.style]="getAverageRating() === 0 ? 'stroke-opacity: 0;' : ''"
+              />
+            </svg>
 
-                <!-- Rating Number + /10 -->
-                <span
-                  class="absolute inset-0 flex flex-col items-center justify-center text-white font-bold text-3xl md:text-4xl lg:text-5xl">
-                  {{ getAverageRating() | number : "1.1-1" }}
-                  <span class="text-base md:text-lg font-medium text-gray-300 z-10">/ 10</span>
-                </span>
+            <!-- Rating Number or Loader -->
+            <span class="absolute inset-0 flex flex-col items-center justify-center text-white font-bold text-3xl md:text-4xl lg:text-5xl">
+              <ng-container *ngIf="isRatingLoaded; else loadingSpinner">
+                {{ getAverageRating() | number : "1.1-1" }}
+                <span class="text-base md:text-lg font-medium text-gray-300 z-10">/ 10</span>
+              </ng-container>
+            </span>
+
+            <!-- Small Loader Inside Circle -->
+            <ng-template #loadingSpinner>
+              <div class="animate-pulse flex items-center justify-center">
+                <i class="fas fa-spinner fa-spin text-gray-400 text-2xl md:text-3xl lg:text-4xl"></i>
               </div>
             </ng-template>
           </div>
+        </div>
 
           <!-- Close Button -->
           <button (click)="close()"
-          class="bg-gray-800 text-white w-[60px] h-[62px] rounded-full flex items-center justify-center border-2 border-white">
+          class="bg-gray-800 text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white">
             <i class="fas fa-times text-lg"></i>
           </button>
         </div>

@@ -84,7 +84,7 @@ export class ReviewPageComponent implements OnInit {
   @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
   @ViewChild('scrollingContent', { static: false }) scrollingContent!: ElementRef;
   
-    isTextOverflowing = false;
+  isTextOverflowing = false;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -130,9 +130,6 @@ export class ReviewPageComponent implements OnInit {
     wrapper.offsetWidth; 
   
     this.isTextOverflowing = content.scrollWidth > wrapper.clientWidth;
-  
-    console.log('Text Overflow Detected:', this.isTextOverflowing);
-    console.log('Content Width:', content.scrollWidth, 'Wrapper Width:', wrapper.clientWidth);
   }
   
   
