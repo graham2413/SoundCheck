@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
@@ -81,6 +81,11 @@ export class ReviewPageComponent implements OnInit {
   showSecondIpod = false;
   showSecondMobileIpod = false;
 
+  @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
+  @ViewChild('scrollingContent', { static: false }) scrollingContent!: ElementRef;
+  
+    isTextOverflowing = false;
+
   constructor(
     private activeModal: NgbActiveModal,
     private reviewService: ReviewService,
@@ -108,8 +113,29 @@ export class ReviewPageComponent implements OnInit {
         modal.style.width = '90vw';
         modal.style.minWidth = '90vw';
       }
-    }, 50);
+      this.checkOverflow();
+    }, 200);
   }
+
+  checkOverflow() {
+    if (!this.scrollingWrapper || !this.scrollingContent) {
+      setTimeout(() => this.checkOverflow(), 100);
+      return;
+    }
+  
+    const wrapper = this.scrollingWrapper.nativeElement;
+    const content = this.scrollingContent.nativeElement;
+  
+    // Ensure width measurement is accurate by forcing reflow
+    wrapper.offsetWidth; 
+  
+    this.isTextOverflowing = content.scrollWidth > wrapper.clientWidth;
+  
+    console.log('Text Overflow Detected:', this.isTextOverflowing);
+    console.log('Content Width:', content.scrollWidth, 'Wrapper Width:', wrapper.clientWidth);
+  }
+  
+  
 
   getReviews() {
     this.reviewService.searchReviews(this.record.id, this.record.type).subscribe({
@@ -183,7 +209,6 @@ export class ReviewPageComponent implements OnInit {
     if (this.record.type === 'artist') {
 
     }
-
   }
   
 

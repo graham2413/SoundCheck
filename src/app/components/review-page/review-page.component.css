@@ -168,8 +168,62 @@
 }
 
 .song-details-card {
-  background-color: #1b1b1b; /* Slightly darker */
+  background-color: #1b1b1b;
   padding: 1rem;
   border-radius: 12px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); /* Soft shadow */
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.scrolling-wrapper {
+  display: flex;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  width: 100%;
+  text-align: center;
+  mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
+  justify-content: center; /* Center text when no scrolling */
+}
+
+.scrolling-content {
+  display: inline-block;
+  min-width: max-content;
+}
+
+/* Apply scrolling only when needed */
+.scroll-active {
+  justify-content: flex-start; /* Allow left-aligned scrolling */
+}
+
+.scroll-active .scrolling-content {
+  animation: infinite-scroll 15s linear infinite;
+  padding-left: 100%; /* Starts off-screen for a seamless loop */
+}
+
+@keyframes infinite-scroll {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.skeleton-loader {
+  width: 100%;
+  aspect-ratio: 1 / 1; /* Match typical album cover aspect ratio */
+  background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }

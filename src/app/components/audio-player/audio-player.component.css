@@ -122,3 +122,26 @@
     font-size: 0.8rem;
   }
 }
+
+@media (max-width: 640px) {
+  .audio-container {
+    width: 100% !important;
+  }
+  .custom-audio-player {
+    width: 100% !important;
+  }
+  .time-display {
+    font-size: 1.1rem;
+  }
+  .play-pause-button {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+@media (max-height: 670px) and (max-width: 379px) {
+  .play-pause-button {
+    width: 2.7rem;
+    height: 2.6rem;
+  }
+}
