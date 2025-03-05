@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const reviewSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Only logged-in users can review
     albumSongOrArtistId: { type: String, required: true }, // Can be linked to an album, artist, or song
-    type: { type: String, enum: ["album", "song"], required: true }, // Defines if it's for an album or song
+    type: { type: String, enum: ["Album", "Song", "Artist"], required: true }, // Defines if it's for an album, song, or artist
     rating: { type: Number, min: 0, max: 10, default: null },
     reviewText: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now }
