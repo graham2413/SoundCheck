@@ -6,5 +6,5 @@ export interface Album {
     releaseDate: string;
     tracklist: string;
     genre: string;
-    type: 'album';
+    type: 'Album';
   }

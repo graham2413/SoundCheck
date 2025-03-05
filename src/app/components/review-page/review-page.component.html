@@ -1,14 +1,19 @@
 <!-- MOBILE MODAL -->
 <div
+  *ngIf="isModalOpen"
   class="fixed inset-0 flex flex-col bg-[#1E1E1E] text-white overflow-y-auto md:hidden"
+  @slideUp
 >
   <!--iPod Container -->
   <div class="flex flex-col w-full min-h-screen flex-shrink-0">
     <!--iPod Back -->
-    <div *ngIf="showSecondIpod" class="relative w-full flex flex-col items-center min-h-screen bg-gray-800">
+    <div
+      *ngIf="showSecondIpod"
+      class="relative w-full flex flex-col items-center min-h-screen bg-gray-800 px-2"
+    >
       <button
         (click)="showSecondIpod = false"
-        class="bg-gray-800 text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white mt-3"
+        class="bg-gray-800 text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white mt-3 mb-3"
       >
         <i class="fas fa-arrow-left text-lg"></i>
       </button>
@@ -16,12 +21,12 @@
       <h3
         class="song-details-title text-xl title-text font-bold text-white text-center mb-4"
       >
-        Song Details
+        {{ record.type }} Details
       </h3>
 
       <div class="space-y-10 pl-0 w-full song-details-card mb-2 text-lg">
         <!-- (Type: Song) Album -->
-        <div *ngIf="record.type === 'song'" class="flex items-start gap-2">
+        <div *ngIf="record.type === 'Song'" class="flex items-start gap-2">
           <i class="fas fa-compact-disc text-blue-400 text-xl"></i>
 
           <p class="text-white title-text">
@@ -33,7 +38,7 @@
         </div>
 
         <!-- (Type: Song) Release Date -->
-        <div *ngIf="record.type === 'song'" class="flex items-start gap-2">
+        <div *ngIf="record.type === 'Song'" class="flex items-start gap-2">
           <i class="fas fa-calendar-alt text-yellow-400 text-xl"></i>
           <p class="text-white title-text">
             <strong>Release Date:</strong>
@@ -44,7 +49,7 @@
         </div>
 
         <!-- (Type: Song) Duration -->
-        <div *ngIf="record.type === 'song'" class="flex items-start gap-2">
+        <div *ngIf="record.type === 'Song'" class="flex items-start gap-2">
           <i class="fas fa-clock text-red-400 text-xl"></i>
           <p class="text-white title-text">
             <strong>Duration:</strong>
@@ -55,7 +60,7 @@
         </div>
 
         <!-- (Type: Song) Contributors -->
-        <div *ngIf="record.type === 'song'" class="w-full">
+        <div *ngIf="record.type === 'Song'" class="w-full">
           <div class="flex items-start gap-2">
             <i class="fas fa-microphone text-purple-400 text-xl"></i>
             <p class="text-white title-text">
@@ -122,6 +127,11 @@
                   cy="21"
                   r="18"
                   stroke-width="4"
+                  [attr.style]="
+                    isRatingLoaded && getAverageRating() === 0
+                      ? 'stroke-opacity: 0;'
+                      : ''
+                  "
                 />
                 <circle
                   class="circle"
@@ -132,26 +142,32 @@
                   stroke-width="4"
                   stroke-dasharray="113.1"
                   [attr.stroke-dashoffset]="
-                    isRatingLoaded
+                    isRatingLoaded && getAverageRating() > 0
                       ? 113.1 - (getAverageRating() / 10) * 113.1
                       : 113.1
                   "
                   [attr.style]="
-                    getAverageRating() === 0 ? 'stroke-opacity: 0;' : ''
+                    isRatingLoaded && getAverageRating() === 0
+                      ? 'stroke-opacity: 0;'
+                      : ''
                   "
                 />
               </svg>
 
-              <!-- Rating Number or Loader -->
+              <!-- Rating Number, Loader, or No Reviews Message -->
               <span
                 class="absolute inset-0 flex flex-col items-center justify-center text-white font-bold text-3xl md:text-4xl lg:text-5xl"
               >
                 <ng-container *ngIf="isRatingLoaded; else loadingSpinner">
-                  {{ getAverageRating() | number : "1.1-1" }}
-                  <span
-                    class="text-base md:text-lg font-medium text-gray-300 z-10"
-                    >/ 10</span
+                  <ng-container
+                    *ngIf="getAverageRating() > 0; else noReviewsMessage"
                   >
+                    {{ getAverageRating() | number : "1.1-1" }}
+                    <span
+                      class="text-base md:text-lg font-medium text-gray-300 z-10"
+                      >/ 10</span
+                    >
+                  </ng-container>
                 </ng-container>
               </span>
 
@@ -161,6 +177,22 @@
                   <i
                     class="fas fa-spinner fa-spin text-gray-400 text-2xl md:text-3xl lg:text-4xl"
                   ></i>
+                </div>
+              </ng-template>
+
+              <!-- No Reviews Star Rating Prompt -->
+              <ng-template #noReviewsMessage>
+                <div
+                  class="flex flex-col items-center justify-center text-gray-400"
+                >
+                  <div class="flex space-x-1">
+                    <i class="far fa-star text-3xl"></i>
+                    <i class="far fa-star text-3xl"></i>
+                    <i class="far fa-star text-3xl"></i>
+                    <i class="far fa-star text-3xl"></i>
+                    <i class="far fa-star text-3xl"></i>
+                  </div>
+                  <span class="text-lg font-medium">Be the first to rate!</span>
                 </div>
               </ng-template>
             </div>
@@ -189,8 +221,8 @@
             <!-- Image (Appears when loaded) -->
             <img
               *ngIf="isImageLoaded"
-              [src]="record.type === 'artist' ? record.picture : record.cover"
-              [alt]="record.type === 'artist' ? record.name : record.title"
+              [src]="record.type === 'Artist' ? record.picture : record.cover"
+              [alt]="record.type === 'Artist' ? record.name : record.title"
               class="rounded-lg w-full max-w-full max-h-full object-contain"
             />
           </div>
@@ -208,12 +240,12 @@
             >
               <div #scrollingContent class="scrolling-content">
                 <span
-                  *ngIf="record.type != 'artist'"
+                  *ngIf="record.type != 'Artist'"
                   class="inline-block align-middle"
                 >
                   {{ record.title }}
                 </span>
-                <span *ngIf="record.type == 'artist'">{{ record.name }}</span>
+                <span *ngIf="record.type == 'Artist'">{{ record.name }}</span>
               </div>
             </div>
           </div>
@@ -228,13 +260,13 @@
               E
             </span>
             <span>
-              {{ record.type !== "artist" ? record.artist : "" }}
+              {{ record.type !== "Artist" ? record.artist : "" }}
             </span>
           </p>
 
           <div class="mt-2">
             <app-audio-player
-              *ngIf="record.type == 'song'"
+              *ngIf="record.type == 'Song'"
               [record]="record"
             ></app-audio-player>
           </div>
@@ -507,6 +539,7 @@
       </div>
     </div>
   </div>
+</div>
 
   <!-- SEPARATION OF THE MODALS -->
 
@@ -636,12 +669,12 @@
                       <img
                         *ngIf="isImageLoaded"
                         [src]="
-                          record.type === 'artist'
+                          record.type === 'Artist'
                             ? record.picture
                             : record.cover
                         "
                         [alt]="
-                          record.type === 'artist' ? record.name : record.title
+                          record.type === 'Artist' ? record.name : record.title
                         "
                         (click)="showSecondIpod = true"
                         class="w-full h-full object-contain rounded-lg cursor-pointer transition-transform duration-300 ease-in-out hover:opacity-80"
@@ -655,12 +688,12 @@
                       class="text-gray-200 text-base sm:text-lg md:text-xl font-semibold flex items-center justify-center gap-2"
                     >
                       <span
-                        *ngIf="record.type != 'artist'"
+                        *ngIf="record.type != 'Artist'"
                         class="inline-block align-middle"
                       >
                         {{ record.title }}
                       </span>
-                      <span *ngIf="record.type == 'artist'">{{
+                      <span *ngIf="record.type == 'Artist'">{{
                         record.name
                       }}</span>
                     </p>
@@ -672,11 +705,11 @@
                       >
                         E
                       </span>
-                      {{ record.type !== "artist" ? record.artist : "" }}
+                      {{ record.type !== "Artist" ? record.artist : "" }}
                     </p>
                     <div class="mt-2">
                       <app-audio-player
-                        *ngIf="record.type == 'song'"
+                        *ngIf="record.type == 'Song'"
                         [record]="record"
                         (playStatus)="updatePlayStatus($event)"
                       ></app-audio-player>
@@ -704,7 +737,7 @@
                 <div class="space-y-3 pl-0 w-full song-details-card mb-2">
                   <!-- (Type: Song) Album -->
                   <div
-                    *ngIf="record.type === 'song'"
+                    *ngIf="record.type === 'Song'"
                     class="flex items-start gap-2"
                   >
                     <i class="fas fa-compact-disc text-blue-400 text-xl"></i>
@@ -719,7 +752,7 @@
 
                   <!-- (Type: Song) Release Date -->
                   <div
-                    *ngIf="record.type === 'song'"
+                    *ngIf="record.type === 'Song'"
                     class="flex items-start gap-2"
                   >
                     <i class="fas fa-calendar-alt text-yellow-400 text-xl"></i>
@@ -733,7 +766,7 @@
 
                   <!-- (Type: Song) Duration -->
                   <div
-                    *ngIf="record.type === 'song'"
+                    *ngIf="record.type === 'Song'"
                     class="flex items-start gap-2"
                   >
                     <i class="fas fa-clock text-red-400 text-xl"></i>
@@ -746,7 +779,7 @@
                   </div>
 
                   <!-- (Type: Song) Contributors -->
-                  <div *ngIf="record.type === 'song'" class="w-full">
+                  <div *ngIf="record.type === 'Song'" class="w-full">
                     <div class="flex items-start gap-2">
                       <i class="fas fa-microphone text-purple-400 text-xl"></i>
                       <p class="text-white title-text">
@@ -1073,4 +1106,3 @@
       </div>
     </div>
   </div>
-</div>

@@ -10,5 +10,5 @@ export interface Song {
     releaseDate: string;
     contributors: string[];
     duration: number;
-    type: 'song';
+    type: 'Song';
   }

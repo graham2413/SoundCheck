@@ -33,25 +33,22 @@ import { Song } from 'src/app/models/responses/song-response';
       state('original', style({ transform: 'translateY(0%)', opacity: 1 })),
       state('shifted', style({ transform: 'translateY(100%)', opacity: 0 })),
       transition('original => shifted', animate('0.4s ease-in-out')),
-      transition('shifted => original', animate('0.4s ease-in-out')),
+      transition('shifted => original', animate('0.4s ease-in-out'))
     ]),
     trigger('fadeInContent', [
       state('hidden', style({ opacity: 0, transform: 'translateY(-10px)' })),
       state('visible', style({ opacity: 1, transform: 'translateY(0)' })),
       transition('hidden => visible', animate('0.4s ease-in-out')),
-      transition('visible => hidden', animate('0.3s ease-in-out')),
+      transition('visible => hidden', animate('0.3s ease-in-out'))
     ]),
-    trigger('mobileModalTransition', [
-      state('original', style({ transform: 'translateX(0%)', opacity: 1 })),
-      state('shifted', style({ transform: 'translateX(100%)', opacity: 0 })), // Move right when hidden
-      transition('original => shifted', animate('0.4s ease-in-out')),
-      transition('shifted => original', animate('0.4s ease-in-out')),
-    ]),
-    trigger('mobileFadeInContent', [
-      state('hidden', style({ opacity: 0, transform: 'translateX(-100%)' })), // Enter from the left
-      state('visible', style({ opacity: 1, transform: 'translateX(0)' })),  // Fade in to center
-      transition('hidden => visible', animate('0.4s ease-in-out')),
-      transition('visible => hidden', animate('0.3s ease-in-out')),
+    trigger('slideUp', [
+      transition(':enter', [
+        style({ transform: 'translateY(100%)', opacity: 0 }),
+        animate('300ms ease-out', style({ transform: 'translateY(0)', opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in', style({ transform: 'translateY(100%)', opacity: 0 }))
+      ])
     ])
     
   ]
@@ -85,6 +82,7 @@ export class ReviewPageComponent implements OnInit {
   @ViewChild('scrollingContent', { static: false }) scrollingContent!: ElementRef;
   
   isTextOverflowing = false;
+  isModalOpen: boolean = true;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -132,7 +130,9 @@ export class ReviewPageComponent implements OnInit {
     this.isTextOverflowing = content.scrollWidth > wrapper.clientWidth;
   }
   
-  
+  get flipState() {
+    return this.showSecondIpod ? 'back' : 'front';
+  }
 
   getReviews() {
     this.reviewService.searchReviews(this.record.id, this.record.type).subscribe({
@@ -172,14 +172,14 @@ export class ReviewPageComponent implements OnInit {
   }
 
   get isExplicit(): boolean {
-    return this.record?.type === 'song' && 'isExplicit' in this.record
+    return this.record?.type === 'Song' && 'isExplicit' in this.record
       ? (this.record as Song).isExplicit
       : false;
   }
   
 
   public getExtraDetails() {
-    if (this.record.type === 'song') {
+    if (this.record.type === 'Song') {
       this.searchService.getTrackDetails(this.record.id).subscribe({
         next: (data: Song) => {
           (this.record as Song).releaseDate = data.releaseDate;
@@ -192,7 +192,7 @@ export class ReviewPageComponent implements OnInit {
       });
     }
   
-    if (this.record.type === 'album') {
+    if (this.record.type === 'Album') {
       this.searchService.getAlbumDetails(this.record.id).subscribe({
         next: (data: Album) => {
           (this.record as Album).releaseDate = data.releaseDate;
@@ -203,7 +203,7 @@ export class ReviewPageComponent implements OnInit {
       });
     }
 
-    if (this.record.type === 'artist') {
+    if (this.record.type === 'Artist') {
 
     }
   }
@@ -218,9 +218,12 @@ export class ReviewPageComponent implements OnInit {
   
 
   close() {
-    this.activeModal.close();
+    this.isModalOpen = false;
+    setTimeout(() => {
+      this.activeModal.close();
+    }, 300);
   }
-
+  
   toggleReviewForm() {
     this.isAddingReview = !this.isAddingReview;
     if(this.isAddingReview){

@@ -185,17 +185,17 @@ export class MainSearchComponent {
           songs: data.songs.map((song: Song) => ({
             ...song,
             cover: this.getHighQualityImage(song.cover),
-            type: 'song' as const,
+            type: 'Song' as const,
           })),
           albums: data.albums.map((album: Album) => ({
             ...album,
             cover: this.getHighQualityImage(album.cover),
-            type: 'album' as const,
+            type: 'Album' as const,
           })),
           artists: data.artists.map((artist: Artist) => ({
             ...artist,
             picture: this.getHighQualityImage(artist.picture),
-            type: 'artist' as const,
+            type: 'Artist' as const,
           })),
         };
       
@@ -275,10 +275,11 @@ export class MainSearchComponent {
   setActiveTab(tab: 'songs' | 'albums' | 'artists') {
     this.activeTab = tab;
   }
+  
 
-  openModal(record: Album | Artist | Song, type: 'album' | 'artist' | 'song') {
+  openModal(record: Album | Artist | Song) {
     const modalOptions: NgbModalOptions = {
-      backdrop: 'static',
+      backdrop: false,
       keyboard: true,
       centered: true,
       scrollable: true,
@@ -287,7 +288,6 @@ export class MainSearchComponent {
     const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
     modalRef.componentInstance.record = record;
   }
-
 
 
   getHighQualityImage(imageUrl: string): string {

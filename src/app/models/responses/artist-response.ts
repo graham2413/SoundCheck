@@ -3,6 +3,6 @@ export interface Artist {
     name: string;
     picture: string;
     tracklist: string;
-    type: 'artist';
+    type: 'Artist';
   }
   

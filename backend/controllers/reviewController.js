@@ -6,7 +6,7 @@ exports.createReview = async (req, res) => {
         const { albumSongOrArtistId, type, rating, reviewText } = req.body;
 
         if (!albumSongOrArtistId || !type) {
-            return res.status(400).json({ message: "Album or song ID and type are required." });
+            return res.status(400).json({ message: "Album, Song, or Artist ID AND type are required." });
         }
 
         const newReview = new Review({
@@ -41,7 +41,7 @@ exports.getReviewsWithUserReview = async (req, res) => {
         const user = req.user.id;
 
         // Check if type is provided and is valid
-        if (!type || !['song', 'album', 'artist'].includes(type)) {
+        if (!type || !['Song', 'Album', 'Artist'].includes(type)) {
             return res.status(400).json({ message: "Type (song, album, artist) is required and must be valid." });
         }
 

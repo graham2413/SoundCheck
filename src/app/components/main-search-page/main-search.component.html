@@ -183,7 +183,7 @@
     <li
       *ngFor="let song of filteredResults.songs"
       class="flex items-center bg-gray-700 p-4 rounded-lg transition-transform duration-300 ease-in-out hover:translate-y-1 hover:scale-105 hover:bg-gray-700/50 hover:shadow-xl hover:border hover:border-blue-400"
-      (click)="openModal(song, 'song')"
+      (click)="openModal(song)"
     >
       <img
         [src]="song.cover"
@@ -262,7 +262,7 @@
         <li
           *ngFor="let album of filteredResults.albums"
           class="group flex flex-col items-center p-4 rounded-md transition-transform duration-300 ease-in-out hover:translate-y-1 hover:scale-105 hover:bg-gray-700/50 hover:shadow-xl hover:border hover:border-blue-400"
-          (click)="openModal(album, 'album')"
+          (click)="openModal(album)"
         >
           <img
             [src]="album.cover"
@@ -301,7 +301,7 @@
         <li
           *ngFor="let artist of filteredResults.artists"
           class="group flex flex-col items-center p-4 rounded-md transition-transform duration-300 ease-in-out hover:translate-y-1 hover:scale-105 hover:bg-gray-700/50 hover:shadow-xl hover:border hover:border-blue-400"
-          (click)="openModal(artist, 'artist')"
+          (click)="openModal(artist)"
         >
           <img
             [src]="artist.picture"
