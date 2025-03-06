@@ -1,4 +1,4 @@
-<div class="container mx-auto max-w-4xl p-6 bg-gray-900 text-white rounded-lg shadow-lg pt-28">
+<div *ngIf="user" @fadeSlide class="container mx-auto max-w-4xl p-6 bg-gray-900 text-white rounded-lg shadow-lg pt-28">
     <!-- Profile Section -->
     <div class="flex flex-col items-center relative">
         <div class="absolute top-0 w-full h-32 bg-gradient-to-r from-blue-900 to-blue-700 rounded-t-lg"></div>
@@ -16,6 +16,7 @@
         <div *ngFor="let friend of user?.friends" class="flex flex-col items-center text-center">
             <img [src]="friend.profilePicture || 'assets/user.png'" 
                alt="Friend"
+               (click)="goToFriendsPage(friend)"
                class="w-16 h-16 rounded-full border-2 border-gray-500 shadow-sm transition-transform hover:scale-110" />
           <p class="text-sm mt-2 font-medium">{{ friend.username }}</p>
         </div>

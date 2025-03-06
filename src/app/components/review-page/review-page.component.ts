@@ -25,10 +25,13 @@ import { Song } from 'src/app/models/responses/song-response';
   animations: [
     trigger('fadeIn', [
       transition(':enter', [
-        style({ opacity: 0, transform: 'scale(0.9)' }),
-        animate('300ms ease-out', style({ opacity: 1, transform: 'scale(1)' }))
+        style({ opacity: 0, transform: 'translateY(10px) scale(0.95)' }), 
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0) scale(1)' }))
+      ]),
+      transition(':leave', [
+        animate('200ms ease-in', style({ opacity: 0, transform: 'translateY(10px) scale(0.95)' }))
       ])
-    ]),
+    ]),     
     trigger('iPodTransition', [
       state('original', style({ transform: 'translateY(0%)', opacity: 1 })),
       state('shifted', style({ transform: 'translateY(100%)', opacity: 0 })),
@@ -83,6 +86,9 @@ export class ReviewPageComponent implements OnInit {
   
   isTextOverflowing = false;
   isModalOpen: boolean = true;
+  isDekstopModalOpen: boolean = true;
+
+  @ViewChild('reviewsSection') reviewsSection!: ElementRef;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -113,6 +119,12 @@ export class ReviewPageComponent implements OnInit {
       }
       this.checkOverflow();
     }, 200);
+  }
+
+  scrollToReviews(): void {
+    if (this.reviewsSection) {
+      this.reviewsSection.nativeElement.scrollIntoView({ behavior: 'smooth' });
+    }
   }
 
   checkOverflow() {
@@ -219,9 +231,10 @@ export class ReviewPageComponent implements OnInit {
 
   close() {
     this.isModalOpen = false;
+    this.isDekstopModalOpen = false;
     setTimeout(() => {
       this.activeModal.close();
-    }, 300);
+    }, 150);
   }
   
   toggleReviewForm() {
@@ -349,7 +362,7 @@ export class ReviewPageComponent implements OnInit {
     } else if (rating >= 9 && rating < 10) {
       return 'linear-gradient(to right, #3A86FF, #1E40AF)'; // Blue - Excellent
     } else if (rating === 10) {
-      return 'linear-gradient(45deg, #9B5DE5, #F15BB5, #FEE440)'; // Special for 10/10
+      return 'linear-gradient(45deg, #9B5DE5, #F15BB5, #FEE440)'; // Perfect
     } else {
       return '';
     }

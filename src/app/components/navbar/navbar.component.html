@@ -60,30 +60,37 @@
       </button>
 
       <div
-        *ngIf="isProfileMenuOpen"
-        class="absolute right-0 mt-2 w-56 bg-gray-800 text-gray-300 rounded-md shadow-lg py-2 z-50 border border-gray-700"
+      *ngIf="isProfileMenuOpen"
+      @fadeScale
+      class="absolute font-semibold right-0 mt-2 w-56 bg-gray-900 text-gray-300 rounded-lg shadow-lg py-2 z-50 border border-gray-700"
       >
-        <a
-          routerLink="/profile"
-          class="block px-5 py-3 text-lg hover:bg-gray-700 hover:text-white rounded-md"
-          (click)="closeProfileMenu()"
-        >
-          My Profile
-        </a>
-        <a
-          routerLink="/friends"
-          class="block px-5 py-3 text-lg hover:bg-gray-700 hover:text-white rounded-md"
-          (click)="closeProfileMenu()"
-        >
-          Freinds
-        </a>
-        <button
-          (click)="logout()"
-          class="block w-full text-left px-5 py-3 text-lg text-red-400 hover:bg-gray-700 hover:text-red-300 rounded-md"
-        >
-          Logout
-        </button>
-      </div>
+      <a
+        routerLink="/profile"
+        class="flex items-center px-5 py-3 text-lg hover:bg-gray-700/60 hover:text-white rounded-lg transition-all duration-200"
+        (click)="closeProfileMenu()"
+      >
+        <i class="fas fa-user w-6 text-center"></i>
+        <span class="ml-3">Profile</span>
+      </a>
+    
+      <a
+        routerLink="/friends"
+        class="flex items-center px-5 py-3 text-lg hover:bg-gray-700/60 hover:text-white rounded-lg transition-all duration-200"
+        (click)="closeProfileMenu()"
+      >
+        <i class="fas fa-users w-6 text-center"></i>
+        <span class="ml-3">Friends</span>
+      </a>
+    
+      <button
+        (click)="logout()"
+        class="flex items-center w-full text-left px-5 py-3 text-lg text-red-400 hover:bg-gray-700/60 hover:text-red-300 rounded-lg transition-all duration-200"
+      >
+        <i class="fas fa-sign-out-alt w-6 text-center"></i>
+        <span class="ml-3">Logout</span>
+      </button>
+    </div>    
+    
     </div>
   </div>
 
@@ -101,43 +108,49 @@
     </svg>
   </button>
 </nav>
-
 <div
   *ngIf="isMenuOpen"
-  class="fixed inset-0 bg-gray-800 bg-opacity-95 backdrop-blur-lg flex flex-col items-center justify-center space-y-6 text-white md:hidden z-50"
+  @fadeSlide
+  class="fixed inset-0 bg-gray-900/90 backdrop-blur-lg flex flex-col items-center justify-center space-y-16 text-white md:hidden z-50"
 >
+  <!-- Close Button -->
+  <button
+    (click)="toggleMenu()"
+    class="absolute top-6 right-6 text-4xl text-gray-300 hover:text-white transition"
+  >
+    &times;
+  </button>
+
+  <!-- Navigation Links -->
   <a
     routerLink="/"
     (click)="toggleMenu()"
-    class="text-2xl text-gray-300 hover:text-white transition"
+    class="flex items-center gap-3 text-3xl font-semibold text-gray-300 hover:text-white transition"
   >
-    Search
+    <i class="fas fa-search"></i> Search
   </a>
 
   <a
     routerLink="/friends"
     (click)="toggleMenu()"
-    class="text-2xl text-gray-300 hover:text-white transition"
+    class="flex items-center gap-3 text-3xl font-semibold text-gray-300 hover:text-white transition"
   >
-    Friends
+    <i class="fas fa-users"></i> Friends
   </a>
+
   <a
     routerLink="/profile"
     (click)="toggleMenu()"
-    class="text-2xl text-gray-300 hover:text-white transition"
+    class="flex items-center gap-3 text-3xl font-semibold text-gray-300 hover:text-white transition"
   >
-    Profile
+    <i class="fas fa-user"></i> Profile
   </a>
+
+  <!-- Logout Button -->
   <button
     (click)="logout()"
-    class="bg-red-500 px-6 py-3 rounded-md text-xl text-white hover:brightness-110 transition"
+    class="flex items-center gap-3 bg-red-500 px-8 py-4 rounded-lg text-2xl font-semibold text-white hover:brightness-110 transition shadow-md"
   >
-    Logout
-  </button>
-  <button
-    (click)="toggleMenu()"
-    class="absolute top-6 right-6 text-3xl text-white"
-  >
-    &times;
+    <i class="fas fa-sign-out-alt"></i> Logout
   </button>
 </div>

@@ -118,33 +118,6 @@
   cursor: pointer;
 }
 
-.equalizer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  height: 30px;
-}
-
-.equalizer span {
-  width: 5px;
-  height: 20px;
-  background: lime;
-  display: block;
-  animation: equalizer 1.2s infinite ease-in-out;
-}
-
-.equalizer span:nth-child(1) { animation-delay: -1.2s; }
-.equalizer span:nth-child(2) { animation-delay: -1s; }
-.equalizer span:nth-child(3) { animation-delay: -0.8s; }
-.equalizer span:nth-child(4) { animation-delay: -0.6s; }
-
-@keyframes equalizer {
-  0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(2.5); }
-}
-
-
 .song-details-title {
   font-size: 1.125rem;
   font-weight: 600;
@@ -226,3 +199,4 @@
     background-position: 200% 0;
   }
 }
+
