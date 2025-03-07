@@ -94,9 +94,10 @@
           </button>
 
           <!-- Overall Rating Circle -->
-          <div 
-          (click)="scrollToReviews()"
-          class="flex justify-center w-full mt-1">
+          <div
+            (click)="scrollToReviews()"
+            class="flex justify-center w-full mt-1"
+          >
             <div
               class="relative w-32 h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 flex items-center justify-center"
             >
@@ -198,7 +199,7 @@
           <!-- No Reviews Star Rating Prompt -->
           <ng-template #noReviewsMessage>
             <div
-             (click)="scrollToReviews()"
+              (click)="scrollToReviews()"
               class="flex flex-col items-center justify-center text-gray-400"
             >
               <div class="flex space-x-1">
@@ -290,7 +291,7 @@
 
     <!-- Reviews Section -->
     <div
-    #reviewsSection
+      #reviewsSection
       class="bg-[#252525] p-2 rounded-lg shadow-md w-[98%] mx-auto mt-3 mb-3"
     >
       <div class="relative mb-2">
@@ -560,8 +561,8 @@
 
 <!-- DESKTOP/TABLET MODAL -->
 <div
-*ngIf="isDekstopModalOpen"
-@fadeIn
+  *ngIf="isDekstopModalOpen"
+  @fadeIn
   class="hidden md:flex min-h-[90vh] fixed inset-0 items-center justify-center bg-black bg-opacity-50 overflow-y-auto custom-scrollbar"
 >
   <div
@@ -710,9 +711,7 @@
       </div>
     </ng-template>
 
-    <div
-      class="flex-1 flex flex-col overflow-auto custom-scrollbar pr-2"
-    >
+    <div class="flex-1 flex flex-col overflow-auto custom-scrollbar pr-2">
       <!-- Two-Column Layout -->
       <div class="flex flex-col md:flex-row items-start gap-4 mt-2">
         <!-- Wrapper for both iPods -->
@@ -803,19 +802,21 @@
             <div
               class="bg-gray-800 rounded-lg px-1.5 pb-2 w-full flex flex-col h-full max-h-[80vh] overflow-y-auto custom-scrollbar"
             >
-                          <!-- Close Button -->
-                          <div class="mt-2 mb-2 flex justify-center">
-                            <button
-                            (click)="showSecondIpod = false"
-                            class="bg-gray-800 text-white w-[35px] h-[35px] rounded-full flex items-center justify-center border-2 border-white"
-                          >
-                            <i class="fas fa-arrow-left text-lg hover:text-yellow-500"></i>
-                          </button>
-                          </div>
+              <!-- Close Button -->
+              <div class="mt-2 mb-2 flex justify-center">
+                <button
+                  (click)="showSecondIpod = false"
+                  class="bg-gray-800 text-white w-[35px] h-[35px] rounded-full flex items-center justify-center border-2 border-white"
+                >
+                  <i
+                    class="fas fa-arrow-left text-lg hover:text-yellow-500"
+                  ></i>
+                </button>
+              </div>
               <h3
                 class="song-details-title text-xl title-text font-bold text-white text-center mb-4"
               >
-                {{record.type}} Details
+                {{ record.type }} Details
               </h3>
 
               <div class="space-y-3 pl-0 w-full song-details-card mb-2">
@@ -839,10 +840,14 @@
                   *ngIf="record.type === 'Song'"
                   class="flex items-start gap-2"
                 >
-                  <i class="fas fa-calendar-alt text-yellow-400 text-xl flex-shrink-0"></i>
+                  <i
+                    class="fas fa-calendar-alt text-yellow-400 text-xl flex-shrink-0"
+                  ></i>
                   <p class="text-white title-text flex-1">
                     <strong class="whitespace-nowrap">Release Date:</strong>
-                    <span class="text-gray-300 ml-2 break-words">{{ record.releaseDate || "Unknown" }}</span>
+                    <span class="text-gray-300 ml-2 break-words">{{
+                      record.releaseDate || "Unknown"
+                    }}</span>
                   </p>
                 </div>
 
@@ -864,15 +869,22 @@
                 <div *ngIf="record.type === 'Song'" class="w-full">
                   <div class="flex items-start gap-2">
                     <i class="fas fa-microphone text-purple-400 text-xl"></i>
-                    <p class="text-white title-text break-words overflow-hidden">
+                    <p
+                      class="text-white title-text break-words overflow-hidden"
+                    >
                       <strong>Contributors:</strong>
                     </p>
                   </div>
-                  <ul class="text-gray-300 title-text pl-4 break-words overflow-hidden">
-                    <li *ngFor="let contributor of record.contributors" class="break-words">
+                  <ul
+                    class="text-gray-300 title-text pl-4 break-words overflow-hidden"
+                  >
+                    <li
+                      *ngFor="let contributor of record.contributors"
+                      class="break-words"
+                    >
                       - {{ contributor }}
                     </li>
-                  </ul>                  
+                  </ul>
                 </div>
               </div>
             </div>
@@ -881,8 +893,9 @@
 
         <!-- Right Side: Reviews section -->
         <div class="w-full md:w-2/3">
-          <div class="bg-[#252525] p-3 rounded-xl shadow-md w-full h-[70vh] flex flex-col">
-
+          <div
+            class="bg-[#252525] p-3 rounded-xl shadow-md w-full h-[70vh] flex flex-col"
+          >
             <div class="flex flex-wrap items-center justify-between gap-2">
               <h3 class="text-lg font-semibold pb-2 title-text">
                 Reviews
