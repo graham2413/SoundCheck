@@ -199,3 +199,7 @@
     background-position: 200% 0;
   }
 }
+
+.custom-bg-color {
+  background-color: #0c1327; /* Slightly darker than bg-gray-800 */
+}
