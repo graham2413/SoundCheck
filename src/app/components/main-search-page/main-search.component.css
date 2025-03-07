@@ -1,6 +1,6 @@
 .marquee-container {
   position: relative;
-  padding: 1rem 0;
+  padding: .5rem 0;
   overflow: hidden;
   background: linear-gradient(
     135deg,
