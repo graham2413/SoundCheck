@@ -1,7 +1,7 @@
 <!-- MOBILE MODAL -->
 <div
   *ngIf="isModalOpen"
-  class="fixed inset-0 flex flex-col bg-[#1E1E1E] text-white overflow-y-auto md:hidden"
+  class="fixed inset-0 flex flex-col bg-gray-800 text-white overflow-y-auto md:hidden"
   @slideUp
 >
   <!--iPod Container -->
@@ -9,6 +9,7 @@
     <!--iPod Back -->
     <div
       *ngIf="showSecondIpod"
+      [@slideAnimation]="'back'"
       class="relative w-full flex flex-col items-center min-h-screen bg-gray-800 px-2"
     >
       <button
@@ -79,6 +80,7 @@
     <!--iPod Front -->
     <div
       *ngIf="!showSecondIpod"
+      [@slideAnimation]="'front'"
       class="relative w-full flex flex-col items-center min-h-screen"
     >
       <div class="bg-gray-800 pt-2 w-full flex flex-col min-h-screen">
