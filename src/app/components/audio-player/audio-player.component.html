@@ -1,31 +1,28 @@
 <div class="w-full flex justify-center">
-  <div class="audio-container md:px-3 rounded-lg mt-2 md:mt-3">
-    <div class="custom-audio-player w-full rounded-lg flex items-center gap-3 p-2.5">
-      
-      <!-- Play/Pause Button -->
-      <button (click)="togglePlay()" class="play-pause-button">
-        <i class="{{ isPlaying ? 'fas fa-pause' : 'fas fa-play' }}"></i>
-      </button>
+  <div class="w-full max-w-md flex items-center justify-center gap-6 p-3">
+    <!-- Backward Button -->
+    <button
+      class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center"
+    >
+      <i class="fas fa-backward"></i>
+    </button>
 
-      <!-- Audio Controls -->
-      <div class="audio-controls">
-        <!-- Timestamp Centered Above -->
-        <span class="time-display">{{ formatTime(currentTime) }} / {{ formatTime(audioDuration) }}</span>
+    <!-- Play/Pause Button -->
+    <button
+      (click)="togglePlay()"
+      class="bg-gray-700 text-gray-300 hover:bg-white hover:text-gray-800 w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md transition-colors duration-200"
+    >
+      <i class="{{ isPlaying ? 'fas fa-pause' : 'fas fa-play' }} text-3xl"></i>
+    </button>
 
-        <!-- Progress Bar Below -->
-        <input
-          type="range"
-          min="0"
-          [max]="audioDuration"
-          [(ngModel)]="currentTime"
-          (input)="seekAudio()"
-          class="progress-bar"
-        />
-      </div>
-      
-    </div>
+    <!-- Forward Button -->
+    <button
+      class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center"
+    >
+      <i class="fas fa-forward"></i>
+    </button>
   </div>
 </div>
 
 <!-- Hidden Audio Element -->
-<audio #myAudio [src]="record?.preview" style="display: none;"></audio>
+<audio #myAudio [src]="record?.preview" style="display: none"></audio>

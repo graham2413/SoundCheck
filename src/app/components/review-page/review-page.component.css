@@ -201,5 +201,9 @@
 }
 
 .custom-bg-color {
-  background-color: #0c1327; /* Slightly darker than bg-gray-800 */
+  background-color: #0c1327;
+}
+
+.z-fix {
+  z-index: 100;
 }

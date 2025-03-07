@@ -1,7 +1,7 @@
 <!-- MOBILE MODAL -->
 <div
   *ngIf="isModalOpen"
-  class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md:hidden"
+  class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md:hidden z-50"
   @slideUp
 >
   <!--iPod Container -->
@@ -39,7 +39,7 @@
         </div>
 
         <!-- (Type: Song) Release Date -->
-        <div *ngIf="record.type === 'Song'" class="flex items-start gap-2">
+        <div *ngIf="record.type !== 'Artist'" class="flex items-start gap-2">
           <i class="fas fa-calendar-alt text-yellow-400 text-xl"></i>
           <p class="text-white title-text">
             <strong>Release Date:</strong>
@@ -48,6 +48,25 @@
             }}</span>
           </p>
         </div>
+
+
+          <!-- Album Tracklist -->
+          <div *ngIf="record.type === 'Album'" class="w-full">
+            <div class="flex items-start gap-2 mb-3">
+              <i class="fas fa-music text-blue-400 text-xl"></i>
+              <p class="text-white title-text font-semibold">Tracklist</p>
+            </div>
+
+            <ul class="space-y-3">
+              <li *ngFor="let track of record.tracklist; let i = index" class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md">
+                <div class="flex items-center gap-3">
+                  <span class="text-gray-400 font-semibold text-lg">{{ i + 1 }}</span>
+                  <span class="text-white title-text truncate">{{ track.title }}</span>
+                </div>
+                <span class="text-gray-300 text-sm">{{ formatDuration(track.duration) || "?" }}</span>
+              </li>
+            </ul>
+          </div>
 
         <!-- (Type: Song) Duration -->
         <div *ngIf="record.type === 'Song'" class="flex items-start gap-2">
@@ -279,12 +298,10 @@
             </span>
           </p>
 
-          <div class="mt-2">
             <app-audio-player
               *ngIf="record.type == 'Song'"
               [record]="record"
             ></app-audio-player>
-          </div>
         </div>
       </div>
     </div>
@@ -563,7 +580,7 @@
 <div
   *ngIf="isDekstopModalOpen"
   @fadeIn
-  class="hidden md:flex min-h-[90vh] fixed inset-0 items-center justify-center bg-black bg-opacity-50 overflow-y-auto custom-scrollbar"
+  class="hidden md:flex min-h-[90vh] fixed inset-0 items-center justify-center bg-black bg-opacity-50 overflow-y-auto custom-scrollbar z-fix"
 >
   <div
     class="relative bg-[#1E1E1E] text-white md:w-[90%] xl:w-[85%] 2xl:w-[75%] sm:rounded-xl shadow-lg p-3 flex flex-col overflow-y-auto custom-scrollbar min-h-[90vh] max-h-[90vh]"
@@ -724,7 +741,7 @@
             [@iPodTransition]="iPodState"
           >
             <div
-              class="bg-gray-800 rounded-lg p-3 md:p-4 w-full overflow-hidden"
+              class="custom-bg-color rounded-lg p-3 md:p-4 w-full overflow-hidden"
             >
               <div class="flex flex-col h-full">
                 <!-- Image Area -->
@@ -781,13 +798,11 @@
                     </span>
                     {{ record.type !== "Artist" ? record.artist : "" }}
                   </p>
-                  <div class="mt-2">
                     <app-audio-player
                       *ngIf="record.type == 'Song'"
                       [record]="record"
                       (playStatus)="updatePlayStatus($event)"
                     ></app-audio-player>
-                  </div>
                 </div>
               </div>
             </div>
@@ -800,7 +815,7 @@
             [ngStyle]="{ 'pointer-events': showSecondIpod ? 'auto' : 'none' }"
           >
             <div
-              class="bg-gray-800 rounded-lg px-1.5 pb-2 w-full flex flex-col h-full max-h-[80vh] overflow-y-auto custom-scrollbar"
+              class="custom-bg-color rounded-lg px-1.5 pb-2 w-full flex flex-col h-full max-h-[80vh] overflow-y-auto custom-scrollbar"
             >
               <!-- Close Button -->
               <div class="mt-2 mb-2 flex justify-center">

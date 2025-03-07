@@ -224,13 +224,18 @@ export class ReviewPageComponent implements OnInit {
     if (this.record.type === 'Album') {
       this.searchService.getAlbumDetails(this.record.id).subscribe({
         next: (data: Album) => {
-          (this.record as Album).releaseDate = data.releaseDate;
+          const album = this.record as Album;
+          album.releaseDate = data.releaseDate;
+          album.tracklist = data.tracklist;
         },
         error: () => {
-          (this.record as Album).releaseDate = '';
+          const album = this.record as Album;
+          album.releaseDate = 'Unknown';
+          album.tracklist = [];
         },
       });
     }
+    
 
     if (this.record.type === 'Artist') {
 
