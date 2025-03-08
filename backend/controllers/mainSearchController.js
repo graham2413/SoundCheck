@@ -20,10 +20,7 @@ async function callDeezer(url) {
     if (requests < 50) {
       // Atomically add request and set expiration if needed
       const requestId = `${now}:${crypto.randomUUID()}`;
-      await redis.multi()
-        .zadd(key, now, requestId)
-        .expire(key, 5)
-        .exec();
+      await redis.multi().zadd(key, now, requestId).expire(key, 5).exec();
 
       break;
     }
@@ -34,7 +31,7 @@ async function callDeezer(url) {
     }
 
     const waitTime = (retries + 1) * 500; // Increasing wait time (500ms, 1s, 1.5s, ...)
-    await new Promise(resolve => setTimeout(resolve, waitTime));
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
 
     retries++;
   }
@@ -49,20 +46,29 @@ async function callDeezer(url) {
 
       // Handle Deezer Quota Limit (Code 4)
       if (response.data?.error?.code === 4) {
-        await new Promise(resolve => setTimeout(resolve, 2 ** attempt * 1000)); // Exponential backoff
+        await new Promise((resolve) =>
+          setTimeout(resolve, 2 ** attempt * 1000)
+        ); // Exponential backoff
         attempt++;
         continue; // Retry again
       }
 
       if (!response.data) {
-        console.error(`⚠️ Invalid response from Deezer: ${JSON.stringify(response.data)}`);
+        console.error(
+          `⚠️ Invalid response from Deezer: ${JSON.stringify(response.data)}`
+        );
         return { data: { data: [] } };
       }
 
       return response;
     } catch (error) {
-      console.error(`Deezer API error [${attempt + 1}/5]:`, url, error.response?.status, error.message);
-      await new Promise(res => setTimeout(res, 2 ** attempt * 1000)); // Exponential backoff
+      console.error(
+        `Deezer API error [${attempt + 1}/5]:`,
+        url,
+        error.response?.status,
+        error.message
+      );
+      await new Promise((res) => setTimeout(res, 2 ** attempt * 1000)); // Exponential backoff
       attempt++;
     }
   }
@@ -196,7 +202,11 @@ async function getAlbumGenre(albumId) {
     let genre = genresArray?.length ? genresArray[0].name : null;
 
     // Fallback: Use genre_id if no genre found and genre_id is valid
-    if (!genre && albumDetails.data.genre_id && albumDetails.data.genre_id > 0) {
+    if (
+      !genre &&
+      albumDetails.data.genre_id &&
+      albumDetails.data.genre_id > 0
+    ) {
       genre = await getGenreFromId(albumDetails.data.genre_id);
     }
 
@@ -219,14 +229,18 @@ async function getGenreFromId(genreId) {
   if (!genreId || genreId <= 0) return null;
 
   try {
-    const genreResponse = await callDeezer(`https://api.deezer.com/genre/${genreId}`);
+    const genreResponse = await callDeezer(
+      `https://api.deezer.com/genre/${genreId}`
+    );
     return genreResponse.data?.name || null;
   } catch (error) {
-    console.error(`Failed to fetch genre name for ID ${genreId}:`, error.message);
+    console.error(
+      `Failed to fetch genre name for ID ${genreId}:`,
+      error.message
+    );
     return null;
   }
 }
-
 
 exports.getTrackDetails = async (req, res) => {
   try {
@@ -253,9 +267,9 @@ exports.getTrackDetails = async (req, res) => {
       duration: trackData.duration, // in seconds
       albumTitle: trackData.album?.title || "Unknown",
       contributors: trackData.contributors
-      ? trackData.contributors.map((c) => c.name)
-      : [],
-  };
+        ? trackData.contributors.map((c) => c.name)
+        : [],
+    };
 
     return res.json(trackDetails);
   } catch (error) {
@@ -308,5 +322,50 @@ exports.getAlbumDetails = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Failed to retrieve album details" });
+  }
+};
+
+exports.getArtistTopTracks = async (req, res) => {
+  try {
+    const { artistId } = req.params;
+
+    if (!artistId) {
+      return res.status(400).json({ message: "Artist ID is required" });
+    }
+
+    // Fetch artist track details using rate-limited function
+    const artistsResponse = await callDeezer(
+      `https://api.deezer.com/artist/${artistId}/top?limit=25`
+    );
+
+    // Ensure the API response has expected structure
+    if (
+      !artistsResponse ||
+      !artistsResponse.data ||
+      !Array.isArray(artistsResponse.data.data)
+    ) {
+      return res
+        .status(404)
+        .json({ message: "Artist not found or no tracks available" });
+    }
+
+    // Extract relevant details
+    const artistTopTrackData = artistsResponse.data.data;
+    const artistTopTrackDetails = artistTopTrackData.map((track) => ({
+      id: track.id,
+      title: track.title ?? "Unknown Title",
+      duration: track.duration ?? 0,
+      isExplicit: track.explicit_lyrics,
+    }));
+
+    return res.json(artistTopTrackDetails);
+  } catch (error) {
+    console.error(
+      `Error fetching artist track details for ID ${req.params.artistId}:`,
+      error.message
+    );
+    return res
+      .status(500)
+      .json({ message: "Failed to retrieve artist track details" });
   }
 };

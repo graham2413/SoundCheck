@@ -49,25 +49,6 @@
           </p>
         </div>
 
-
-          <!-- Album Tracklist -->
-          <div *ngIf="record.type === 'Album'" class="w-full">
-            <div class="flex items-start gap-2 mb-3">
-              <i class="fas fa-music text-blue-400 text-xl"></i>
-              <p class="text-white title-text font-semibold">Tracklist</p>
-            </div>
-
-            <ul class="space-y-3">
-              <li *ngFor="let track of record.tracklist; let i = index" class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md">
-                <div class="flex items-center gap-3">
-                  <span class="text-gray-400 font-semibold text-lg">{{ i + 1 }}</span>
-                  <span class="text-white title-text truncate">{{ track.title }}</span>
-                </div>
-                <span class="text-gray-300 text-sm">{{ formatDuration(track.duration) || "?" }}</span>
-              </li>
-            </ul>
-          </div>
-
         <!-- (Type: Song) Duration -->
         <div *ngIf="record.type === 'Song'" class="flex items-start gap-2">
           <i class="fas fa-clock text-red-400 text-xl"></i>
@@ -93,6 +74,26 @@
             </li>
           </ul>
         </div>
+
+          <!-- Album  AND Artist Tracklist -->
+          <div *ngIf="record.type !== 'Song'" class="w-full">
+            <div class="flex items-start gap-2 mb-3">
+              <i class="fas fa-music text-blue-400 text-xl"></i>
+              <p *ngIf="record.type === 'Album'" class="text-white title-text font-semibold">Tracklist</p>
+              <p *ngIf="record.type === 'Artist'" class="text-white title-text font-semibold">Top Tracks</p>
+            </div>
+
+            <ul class="space-y-3">
+              <li *ngFor="let track of record.tracklist; let i = index" class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md">
+                <div class="flex items-center gap-3">
+                  <span class="text-gray-400 font-semibold text-lg">{{ i + 1 }}</span>
+                  <span class="text-white title-text truncate">{{ track.title }}</span>
+                </div>
+                <span class="text-gray-300 text-sm">{{ formatDuration(track.duration) || "?" }}</span>
+              </li>
+            </ul>
+          </div>
+
       </div>
     </div>
 

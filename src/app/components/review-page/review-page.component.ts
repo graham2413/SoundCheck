@@ -236,9 +236,17 @@ export class ReviewPageComponent implements OnInit {
       });
     }
     
-
     if (this.record.type === 'Artist') {
-
+      this.searchService.getArtistTracks(this.record.id).subscribe({
+        next: (data: Song[]) => {
+          const artist = this.record as Artist;
+          artist.tracklist = data;
+        },
+        error: () => {
+          const artist = this.record as Artist;
+          artist.tracklist = [];
+        },
+      });
     }
   }
   
