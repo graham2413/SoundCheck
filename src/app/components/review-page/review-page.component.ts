@@ -97,7 +97,9 @@ export class ReviewPageComponent implements OnInit {
   isPlaying = false;
   showSecondIpod = false;
   showSecondMobileIpod = false;
+  isScrollable = false;
 
+  @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
   @ViewChild('scrollingContent', { static: false }) scrollingContent!: ElementRef;
   
@@ -136,12 +138,24 @@ export class ReviewPageComponent implements OnInit {
       }
       this.checkOverflow();
     }, 200);
+    this.checkIfScrollable();
+  }
+
+  ngAfterViewChecked() {
+    if (this.showSecondIpod) {
+      setTimeout(() => this.checkIfScrollable(), 0);
+    }
   }
 
   scrollToReviews(): void {
     if (this.reviewsSection) {
       this.reviewsSection.nativeElement.scrollIntoView({ behavior: 'smooth' });
     }
+  }
+
+  checkIfScrollable() {
+    const el = this.scrollContainer.nativeElement;
+    this.isScrollable = el.scrollHeight > el.clientHeight;
   }
 
   checkOverflow() {
@@ -162,6 +176,20 @@ export class ReviewPageComponent implements OnInit {
   get flipState() {
     return this.showSecondIpod ? 'back' : 'front';
   }
+
+  formatDate(dateString: string | null | undefined): string {
+    if (!dateString) return "Unknown"; // Handle empty or null values
+  
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Unknown"; // Handle invalid dates
+  
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
+  
 
   getReviews() {
     this.reviewService.searchReviews(this.record.id, this.record.type).subscribe({

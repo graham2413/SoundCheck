@@ -10,7 +10,7 @@
     <div
       *ngIf="showSecondIpod"
       [@slideAnimation]="'back'"
-      class="relative w-full flex flex-col items-center min-h-screen custom-bg-color px-2"
+      class="relative w-full flex flex-col h-full custom-bg-color px-2 overflow-hidden"
     >
       <button
         (click)="showSecondIpod = false"
@@ -20,97 +20,96 @@
       </button>
 
       <h3
-        class="song-details-title text-xl title-text font-bold text-white text-center mb-4"
+        class="record-details-title text-2xl title-text font-bold text-white text-center"
       >
         {{ record.type }} Details
       </h3>
 
-      <div class="space-y-10 pl-0 w-full song-details-card mb-2 text-lg">
-        <!-- (Type: Song) Album -->
-        <div *ngIf="record.type === 'Song'" class="flex items-start gap-2">
-          <i class="fas fa-compact-disc text-blue-400 text-xl"></i>
-
-          <p class="text-white title-text">
-            <strong>Album:</strong>
-            <span class="text-gray-300 ml-2">{{
-              record.album || "Unknown"
-            }}</span>
-          </p>
-        </div>
-
-        <!-- (Type: Song) Release Date -->
-        <div *ngIf="record.type !== 'Artist'" class="flex items-start gap-2">
-          <i class="fas fa-calendar-alt text-yellow-400 text-xl"></i>
-          <p class="text-white title-text">
-            <strong>Release Date:</strong>
-            <span class="text-gray-300 ml-2">{{
-              record.releaseDate || "Unknown"
-            }}</span>
-          </p>
-        </div>
-
-        <!-- (Type: Song) Duration -->
-        <div *ngIf="record.type === 'Song'" class="flex items-start gap-2">
-          <i class="fas fa-clock text-red-400 text-xl"></i>
-          <p class="text-white title-text">
-            <strong>Duration:</strong>
-            <span class="text-gray-300 ml-2">{{
-              formatDuration(record.duration)
-            }}</span>
-          </p>
-        </div>
-
-        <!-- (Type: Song) Contributors -->
-        <div *ngIf="record.type === 'Song'" class="w-full">
-          <div class="flex items-start gap-2">
-            <i class="fas fa-microphone text-purple-400 text-xl"></i>
-            <p class="text-white title-text">
-              <strong>Contributors:</strong>
-            </p>
-          </div>
-          <ul class="text-gray-300 title-text pl-4">
-            <li *ngFor="let contributor of record.contributors">
-              - {{ contributor }}
-            </li>
-          </ul>
-        </div>
-
-        <!-- Album  AND Artist Tracklist -->
-        <div *ngIf="record.type !== 'Song'" class="w-full">
-          <div class="flex items-start gap-2 mb-3">
-            <i class="fas fa-music text-blue-400 text-xl"></i>
-            <p
-              *ngIf="record.type === 'Album'"
-              class="text-white title-text font-semibold"
-            >
-              Tracklist
-            </p>
-            <p
-              *ngIf="record.type === 'Artist'"
-              class="text-white title-text font-semibold"
-            >
-              Top Tracks
-            </p>
+      <div
+      #scrollContainer
+      [ngClass]="{'justify-center': !isScrollable, 'justify-start': isScrollable}"
+      class="record-details-card flex-grow overflow-y-auto w-full max-h-[80vh] flex flex-col items-center space-y-10 px-4 pb-4"
+    >
+    
+        <div
+          class="flex flex-col items-center justify-center w-full space-y-10"
+        >
+          <!-- (Type: Song) Album -->
+          <div
+            *ngIf="record.type === 'Song'"
+            class="flex flex-col items-center"
+          >
+            <i class="fas fa-compact-disc text-blue-400 pb-2 text-2xl"></i>
+            <p class="text-white title-text font-bold text-2xl">Album</p>
+            <p class="text-gray-300 text-xl">{{ record.album || "Unknown" }}</p>
           </div>
 
-          <ul class="space-y-3">
-            <li
-              *ngFor="let track of record.tracklist; let i = index"
-              class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md"
-            >
-              <div class="flex items-center gap-3">
-                <span class="text-gray-400 font-semibold text-lg">{{
-                  i + 1
+          <!-- (Type: Song) Release Date -->
+          <div
+            *ngIf="record.type !== 'Artist'"
+            class="flex flex-col items-center"
+          >
+            <i class="fas fa-calendar-alt text-yellow-400 pb-2 text-2xl"></i>
+            <p class="text-white title-text font-bold text-2xl">Release Date</p>
+            <p class="text-gray-300 text-xl">{{ formatDate(record.releaseDate) }}</p>
+          </div>
+
+          <!-- (Type: Song) Duration -->
+          <div
+            *ngIf="record.type === 'Song'"
+            class="flex flex-col items-center"
+          >
+            <i class="fas fa-clock text-red-400 pb-2 text-2xl"></i>
+            <p class="text-white title-text font-bold text-2xl">Duration</p>
+            <p class="text-gray-300 text-xl">{{ formatDuration(record.duration) }}</p>
+          </div>
+
+          <!-- (Type: Song) Contributors -->
+          <div
+            *ngIf="record.type === 'Song'"
+            class="w-full flex flex-col items-center"
+          >
+            <i class="fas fa-microphone text-purple-400 pb-2 text-2xl"></i>
+            <p class="text-white title-text font-bold text-2xl">Contributors</p>
+            <ul class="text-gray-300 title-text text-center text-xl">
+              <li *ngFor="let contributor of record.contributors" class="mt-2">
+                {{ contributor }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Album  AND Artist Tracklist -->
+          <div *ngIf="record.type !== 'Song'" class="w-full">
+            <div class="flex flex-col items-center text-center mb-3">
+              <i class="fas fa-music text-blue-400 text-2xl pb-2"></i>
+              <p *ngIf="record.type === 'Album'" class="text-white title-text font-semibold text-2xl">
+                Tracklist
+              </p>
+              <p *ngIf="record.type === 'Artist'" class="text-white title-text font-semibold text-2xl">
+                Top Tracks
+              </p>
+            </div>
+            
+
+            <ul class="space-y-3">
+              <li
+                *ngFor="let track of record.tracklist; let i = index"
+                class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md"
+              >
+                <div class="flex items-center gap-3">
+                  <span class="text-gray-400 font-semibold text-lg">{{
+                    i + 1
+                  }}</span>
+                  <span class="text-white title-text truncate overflow-hidden whitespace-nowrap text-ellipsis max-w-[240px]">
+                    {{ track.title }}
+                  </span>                  
+                </div>
+                <span class="text-gray-300 text-sm">{{
+                  formatDuration(track.duration) || "?"
                 }}</span>
-                <span class="text-white title-text truncate">{{
-                  track.title
-                }}</span>
-              </div>
-              <span class="text-gray-300 text-sm">{{
-                formatDuration(track.duration) || "?"
-              }}</span>
-            </li>
-          </ul>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -329,6 +328,7 @@
   <!-- Reviews Section -->
   <div
     #reviewsSection
+    *ngIf="!showSecondIpod"
     class="bg-[#252525] p-2 rounded-lg shadow-md w-[98%] mx-auto mt-3 mb-3"
   >
     <div class="relative mb-2">
@@ -842,12 +842,12 @@
                 </button>
               </div>
               <h3
-                class="song-details-title text-xl title-text font-bold text-white text-center mb-4"
+                class="record-details-title text-xl title-text font-bold text-white text-center mb-4"
               >
                 {{ record.type }} Details
               </h3>
 
-              <div class="space-y-3 pl-0 w-full song-details-card mb-2">
+              <div class="space-y-3 pl-0 w-full record-details-card mb-2">
                 <!-- (Type: Song) Album -->
                 <div
                   *ngIf="record.type === 'Song'"

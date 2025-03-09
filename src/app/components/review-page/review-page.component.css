@@ -118,8 +118,7 @@
   cursor: pointer;
 }
 
-.song-details-title {
-  font-size: 1.125rem;
+.record-details-title {
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -139,7 +138,7 @@
   transition: background 0.3s ease;
 }
 
-.song-details-card {
+.record-details-card {
   background-color: #1b1b1b;
   padding: 1rem;
   border-radius: 12px;
@@ -210,4 +209,11 @@
 
 .hidden {
   display: none;
+}
+
+
+@media (min-height: 720px) {
+  .paddingFix {
+    padding-top: 1.7rem;
+  }
 }
