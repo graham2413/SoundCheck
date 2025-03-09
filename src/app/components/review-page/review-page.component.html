@@ -8,10 +8,10 @@
   <div class="flex flex-col w-full min-h-screen flex-shrink-0">
     <!--iPod Back -->
     <div
-      *ngIf="showSecondIpod"
-      [@slideAnimation]="'back'"
-      class="relative w-full flex flex-col h-full custom-bg-color px-2 overflow-hidden"
-    >
+    *ngIf="showSecondIpod"
+    [@slideAnimation]="'back'"
+    class="relative w-full max-w-lg mx-auto flex flex-col h-full custom-bg-color px-2 overflow-hidden items-center"
+  >  
       <button
         (click)="showSecondIpod = false"
         class="bg-gray-800 text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white mt-3 mb-3"

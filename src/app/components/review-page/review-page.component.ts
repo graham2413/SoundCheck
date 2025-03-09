@@ -137,15 +137,18 @@ export class ReviewPageComponent implements OnInit {
         modal.style.minWidth = '90vw';
       }
       this.checkOverflow();
+  
+      if (this.scrollContainer) {
+        this.checkIfScrollable();
+      }
     }, 200);
-    this.checkIfScrollable();
   }
-
+  
   ngAfterViewChecked() {
-    if (this.showSecondIpod) {
+    if (this.showSecondIpod && this.scrollContainer) {
       setTimeout(() => this.checkIfScrollable(), 0);
     }
-  }
+  }  
 
   scrollToReviews(): void {
     if (this.reviewsSection) {
@@ -154,8 +157,14 @@ export class ReviewPageComponent implements OnInit {
   }
 
   checkIfScrollable() {
+    if (!this.scrollContainer) {
+      return;
+    }
+  
     const el = this.scrollContainer.nativeElement;
-    this.isScrollable = el.scrollHeight > el.clientHeight;
+    if (el) {
+      this.isScrollable = el.scrollHeight > el.clientHeight;
+    }
   }
 
   checkOverflow() {
