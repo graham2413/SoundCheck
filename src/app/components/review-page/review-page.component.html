@@ -591,9 +591,8 @@
 
 <!-- DESKTOP/TABLET MODAL -->
 <div
-  *ngIf="isDekstopModalOpen"
-  @fadeIn
-  class="hidden md:flex min-h-[90vh] fixed inset-0 items-center justify-center bg-black bg-opacity-50 overflow-y-auto custom-scrollbar z-fix"
+  *ngIf="isModalOpen"
+  class="hidden md:flex min-h-[90vh] fixed inset-0 items-center justify-center bg-black bg-opacity-50 overflow-y-auto custom-scrollbar z-50"
 >
   <div
     class="relative bg-[#1E1E1E] text-white md:w-[90%] xl:w-[85%] 2xl:w-[75%] sm:rounded-xl shadow-lg p-3 flex flex-col overflow-y-auto custom-scrollbar min-h-[90vh] max-h-[90vh]"

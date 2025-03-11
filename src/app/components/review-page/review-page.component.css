@@ -154,7 +154,7 @@
   text-align: center;
   mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
-  justify-content: center; /* Center text when no scrolling */
+  justify-content: center;
 }
 
 .scrolling-content {
@@ -162,14 +162,13 @@
   min-width: max-content;
 }
 
-/* Apply scrolling only when needed */
 .scroll-active {
-  justify-content: flex-start; /* Allow left-aligned scrolling */
+  justify-content: flex-start;
 }
 
 .scroll-active .scrolling-content {
   animation: infinite-scroll 15s linear infinite;
-  padding-left: 100%; /* Starts off-screen for a seamless loop */
+  padding-left: 100%;
 }
 
 @keyframes infinite-scroll {
@@ -183,7 +182,7 @@
 
 .skeleton-loader {
   width: 100%;
-  aspect-ratio: 1 / 1; /* Match typical album cover aspect ratio */
+  aspect-ratio: 1 / 1;
   background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
@@ -202,15 +201,6 @@
 .custom-bg-color {
   background-color: #0c1327;
 }
-
-.z-fix {
-  z-index: 100;
-}
-
-.hidden {
-  display: none;
-}
-
 
 @media (min-height: 720px) {
   .paddingFix {

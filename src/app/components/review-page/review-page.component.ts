@@ -105,7 +105,6 @@ export class ReviewPageComponent implements OnInit {
   
   isTextOverflowing = false;
   isModalOpen: boolean = true;
-  isDekstopModalOpen: boolean = true;
 
   @ViewChild('reviewsSection') reviewsSection!: ElementRef;
 
@@ -298,7 +297,6 @@ export class ReviewPageComponent implements OnInit {
 
   close() {
     this.isModalOpen = false;
-    this.isDekstopModalOpen = false;
     setTimeout(() => {
       this.activeModal.close();
     }, 150);
