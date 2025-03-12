@@ -275,14 +275,17 @@ export class ReviewPageComponent implements OnInit {
     if (this.record.type === 'Artist') {
       this.searchService.getArtistTracks(this.record.id).subscribe({
         next: (data: Song[]) => {
+      
           const artist = this.record as Artist;
-          artist.tracklist = data;
+          artist.tracklist = Array.isArray(data) ? data : [];
+      
         },
         error: () => {
           const artist = this.record as Artist;
           artist.tracklist = [];
         },
       });
+      
     }
   }
   
@@ -432,6 +435,10 @@ export class ReviewPageComponent implements OnInit {
       return '';
     }
   }
+
+  get isTracklistArray(): boolean {
+    return Array.isArray((this.record as Album | Artist).tracklist);
+  }  
 
   getAverageRating(): number {
     if (!this.reviews || this.reviews.length === 0) {
