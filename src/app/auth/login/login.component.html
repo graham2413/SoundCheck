@@ -58,16 +58,18 @@
         >
       </div>
 
-<!-- Login Button -->
-<button
-  (click)="onSubmit()"
-  [disabled]="isLoading"
-  class="w-full bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md font-semibold transition flex justify-center items-center gap-2 disabled:bg-indigo-400 disabled:cursor-not-allowed"
->
-  <span *ngIf="!isLoading">Sign In</span>
-  <div *ngIf="isLoading" class="spinner"></div>
-</button>
-
+      <!-- Login Button -->
+      <button
+        (click)="onSubmit()"
+        [disabled]="isLoading"
+        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md font-semibold transition flex justify-center items-center gap-2 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+      >
+        <span *ngIf="!isLoading">Sign In</span>
+        <div
+          *ngIf="isLoading"
+          class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+        ></div>
+      </button>
     </form>
 
     <!-- Divider -->
@@ -77,20 +79,23 @@
       <hr class="flex-grow border-gray-600" />
     </div>
 
-<!-- Google Login -->
-<div class="mt-4">
-  <button
-    (click)="loginWithGoogle()"
-    [disabled]="isGoogleLoading"
-    class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
-  >
-    <img src="../assets/google.png" class="h-5 w-5" *ngIf="!isGoogleLoading" />
-    <div *ngIf="isGoogleLoading" class="google-loader"></div>
-    <span *ngIf="!isGoogleLoading">Sign in with Google</span>
-    <span *ngIf="isGoogleLoading">Redirecting...</span>
-  </button>
-</div>
-
+    <!-- Google Login -->
+    <div class="mt-4">
+      <button
+        (click)="loginWithGoogle()"
+        [disabled]="isGoogleLoading"
+        class="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <img
+          src="../assets/google.png"
+          class="h-5 w-5"
+          *ngIf="!isGoogleLoading"
+        />
+        <div *ngIf="isGoogleLoading" class="google-loader"></div>
+        <span *ngIf="!isGoogleLoading">Sign in with Google</span>
+        <span *ngIf="isGoogleLoading">Redirecting...</span>
+      </button>
+    </div>
 
     <!-- Don't Have an Account -->
     <p class="text-center text-sm text-gray-400 mt-6">
