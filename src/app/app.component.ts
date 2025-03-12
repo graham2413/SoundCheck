@@ -83,7 +83,7 @@ export class AppComponent implements OnInit {
   }
 
   shouldShowNavbar(): boolean {
-    const hiddenRoutes = ['/login', '/register'];
-    return !hiddenRoutes.includes(this.currentUrl);
+    const hiddenRoutes = ['/login', '/register', '/reset-password', "/forgot-password", "/not-found"];
+    return !hiddenRoutes.some(route => this.currentUrl.startsWith(route));
   }
 }

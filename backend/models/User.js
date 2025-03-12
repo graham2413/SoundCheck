@@ -15,9 +15,13 @@ const userSchema = new Schema({
     friendRequestsSent: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },    
 
     // Spotify/ Spotify Authentication
-    spotifyAccessToken: { type: String }, // Spotify token (expires periodically)
-    spotifyRefreshToken: { type: String }, // Token to refresh Spotify access
-    spotifyId: { type: String, unique: true, sparse: true }, // Spotify user ID
+    spotifyAccessToken: { type: String },
+    spotifyRefreshToken: { type: String },
+    spotifyId: { type: String, unique: true, sparse: true },
+
+    // Reset Password properties
+    resetPasswordToken: String,  
+    resetPasswordExpires: Date,  
 
     createdAt: { type: Date, default: Date.now }
 });

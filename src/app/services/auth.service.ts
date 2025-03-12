@@ -29,4 +29,12 @@ export class AuthService {
     localStorage.clear();
     this.router.navigate(['/login']);
   }
+
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/forgot-password`, { email });
+  }  
+
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/reset-password`, { token, newPassword });
+  }
 }

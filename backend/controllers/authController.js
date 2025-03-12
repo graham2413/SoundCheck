@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 require("dotenv").config();
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 
 // REGISTER (Signup for non spotify registering users)
 exports.registerUser = async (req, res) => {
@@ -168,5 +170,86 @@ exports.spotifyCallback = async (req, res) => {
   } catch (error) {
     console.error("Error in Spotify callback:", error);
     res.status(500).json({ message: "Server Error" });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const email = req.body.email;
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.status(404).json({ message: "No user found with that email." });
+    }
+    
+    // If the user is Google-only, do not allow password reset.
+    if (!user.password) {
+      return res.status(400).json({ message: "This account uses Google sign-in only." });
+    }
+    
+    // Generate a reset token and expiration (1 hour)
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 3600000;
+    await user.save();
+    
+    // Configure nodemailer (example with Gmail)
+    const transporter = nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
+      },
+    });
+    
+    const resetURL = `http://localhost:4200/reset-password/${resetToken}`;
+    await transporter.sendMail({
+      to: user.email,
+      from: process.env.GMAIL_USER,
+      subject: "Password Reset",
+      text: `Hello ${user.username}, you requested a password reset. Click this link to reset your password: ${resetURL}`,
+    });
+    
+    return res.status(200).json({ message: "Password reset email sent." });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    // Find the user by reset token and check token is not expired
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+    
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token." });
+    }
+    
+
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({ message: "New password cannot be the same as the current password." });
+    }
+    
+    // Hash the new password before saving
+    const saltRounds = 10;
+    user.password = await bcrypt.hash(newPassword, saltRounds);
+    
+    // Clear reset token fields
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    
+    await user.save();
+    
+    return res.status(200).json({ message: "Password has been reset successfully." });
+  } catch (err) {
+    console.error("Reset password error:", err);
+    return res.status(500).json({ message: "Server error." });
   }
 };

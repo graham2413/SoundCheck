@@ -66,14 +66,14 @@ exports.importPlaylists = async (req, res) => {
 };
 
 // Fetch top 25 albums from Spotify and store them in the database (runs once a week)
-exports.setAlbumImages = async () => {
+exports.setAlbumImages = async (req, res) => {
     try {
         const accessToken = await getSpotifyAccessToken();
         if (!accessToken) {
             console.error("Failed to get Spotify access token.");
             return;
         }
-
+        
         // Get the current year dynamically
         const currentYear = new Date().getFullYear();
 
@@ -100,6 +100,7 @@ exports.setAlbumImages = async () => {
 
         await AlbumImage.deleteMany({});
         await AlbumImage.insertMany(albums);
+        return res.status(200).json({ message: "Album images updated successfully." });
 
     } catch (error) {
         console.error("error fetching popular albums:", error.response?.data || error.message);
