@@ -3,16 +3,23 @@ const Review = require("../models/Review");
 // Create a new review
 exports.createReview = async (req, res) => {
     try {
-        const { albumSongOrArtistId, type, rating, reviewText } = req.body;
+        const { albumSongOrArtist, rating, reviewText } = req.body;
 
-        if (!albumSongOrArtistId || !type) {
-            return res.status(400).json({ message: "Album, Song, or Artist ID AND type are required." });
+        if (!albumSongOrArtist || !albumSongOrArtist.id || !albumSongOrArtist.type) {
+            return res.status(400).json({ message: "Album, Song, or Artist details are required." });
         }
-
+        
+        // Create the new review object using the full `albumSongOrArtist` details
         const newReview = new Review({
             user: req.user._id,
-            albumSongOrArtistId,
-            type,
+            albumSongOrArtist: { // Store full object
+                id: albumSongOrArtist.id,
+                type: albumSongOrArtist.type,
+                title: albumSongOrArtist.title,
+                name: albumSongOrArtist.name,
+                coverImage: albumSongOrArtist.coverImage || "", // Optional fields
+                profilePicture: albumSongOrArtist.profilePicture || ""
+            },
             rating,
             reviewText
         });
@@ -33,7 +40,7 @@ exports.createReview = async (req, res) => {
 };
 
 
-// Get all reviews for an album/song as well as the current user's review
+// Get all reviews for an album/song/artist as well as the current user's review
 exports.getReviewsWithUserReview = async (req, res) => {
     try {
         const { id } = req.params;
@@ -46,10 +53,10 @@ exports.getReviewsWithUserReview = async (req, res) => {
         }
 
         // Get all reviews for the song/album/artist (filter by both ID and type)
-        const reviews = await Review.find({ albumSongOrArtistId: id, type: type }).populate("user", "username");
+        const reviews = await Review.find({ "albumSongOrArtist.id": id, "albumSongOrArtist.type": type }).populate("user", "username");
 
         // Get the current user's review (if it exists) for the specific type
-        const userReview = await Review.findOne({ albumSongOrArtistId: id, user, type: type }).populate("user", "username");
+        const userReview = await Review.findOne({ "albumSongOrArtist.id": id, user, "albumSongOrArtist.type": type }).populate("user", "username");
 
         return res.status(200).json({
             reviews,        // List of all reviews

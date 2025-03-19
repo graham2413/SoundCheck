@@ -10,7 +10,7 @@
         class="absolute inset-0 h-full w-full object-contain"
       />
     </div>
-    <span class="text-2xl font-semibold title">SoundCheck</span>
+    <span class="text-2xl font-semibold title title-text">SoundCheck</span>
   </div>
 
   <div
@@ -51,7 +51,17 @@
         class="flex items-center rounded-full focus:outline-none"
       >
         <div class="h-16 w-16 relative">
+           <!-- Skeleton Loader (When Loading) -->
+           <div
+           *ngIf="isProfileLoading"
+           class="absolute inset-0 flex items-center justify-center h-full w-full rounded-full border-2 border-gray-700 bg-gray-800"
+         >
+           <div class="w-6 h-6 border-t-2 border-white rounded-full animate-spin"></div>
+         </div>
+         
+          <!-- Profile Image (When Loaded) -->
           <img
+          *ngIf="!isProfileLoading"
           [src]="userProfile.profilePicture || 'assets/user.png'"
             alt="User Profile"
             class="absolute inset-0 h-full w-full rounded-full border-2 border-gray-700 shadow-md object-cover"

@@ -52,6 +52,8 @@ export class NavbarComponent implements OnInit {
     },
   } as User;
 
+  isProfileLoading: boolean = false;
+
   constructor(
     private authService: AuthService,
     private toastr: ToastrService,
@@ -60,14 +62,21 @@ export class NavbarComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.isProfileLoading = true;
+  
+    // Subscribes to updates from the user profile observable
     this.userService.userProfile$.subscribe((profile) => {
       if (profile) {
         this.userProfile = profile;
+        this.isProfileLoading = false;
       }
     });
-
+  
     if (!this.userProfile || !this.userProfile.username) {
-      this.userService.getAuthenticatedUserProfile().subscribe();
+      this.userService.getAuthenticatedUserProfile().subscribe({
+        next: () => this.isProfileLoading = false,
+        error: () => this.isProfileLoading = false
+      });
     }
   }
 

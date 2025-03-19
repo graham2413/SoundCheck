@@ -18,7 +18,7 @@ exports.getUserProfile = async (req, res) => {
 
     // Fetch user's reviews separately
     const reviews = await Review.find({ user: user._id })
-      .select("albumTitle content rating createdAt type reviewText albumSongOrArtistId")
+      .select("reviewText rating type createdAt albumSongOrArtist")
       .sort({ createdAt: -1 }) // Sort reviews by newest first
 
     res.json({

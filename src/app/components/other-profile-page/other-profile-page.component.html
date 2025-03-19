@@ -1,48 +1,112 @@
-<div *ngIf="user" @fadeSlide class="container mx-auto max-w-4xl p-6 bg-gray-900 text-white rounded-lg shadow-lg pt-28">
-    <!-- Profile Section -->
-    <div class="flex flex-col items-center relative">
-        <div class="absolute top-0 w-full h-32 bg-gradient-to-r from-blue-900 to-blue-700 rounded-t-lg"></div>
-        <img [src]="user?.profilePicture || 'assets/user.png'" 
-           alt="Profile Picture" 
-           class="w-36 h-36 rounded-full border-4 border-indigo-500 shadow-lg mt-6 transform transition duration-300 hover:scale-105" />
-      <h2 class="text-4xl font-semibold mt-4">{{ user?.username }}</h2>
-      <p class="text-gray-400 text-sm mt-1">Joined {{ user?.createdAt | date }}</p>
-    </div>
+<div
+  *ngIf="user"
+  @fadeSlide
+  class="container mx-auto max-w-4xl p-6 bg-gray-900 text-white rounded-lg shadow-lg pt-24"
+>
+  <!-- Profile Section -->
+  <div class="flex flex-col items-center relative">
+    <div
+      class="absolute top-0 w-full h-32 rounded-t-lg"
+    ></div>
+    <img
+      [src]="user?.profilePicture || 'assets/user.png'"
+      alt="Profile Picture"
+      class="w-32 h-32 rounded-full border-4 border-gray-400 shadow-lg mt-6 transform transition duration-300 hover:scale-105"
+    />
+    <h2 class="text-4xl font-semibold mt-4">{{ user?.username }}</h2>
+    <p class="text-gray-400 text-base mt-1">
+      Joined {{ user?.createdAt | date }}
+    </p>
+  </div>
 
-    <!-- Friends Section -->
-    <div class="mt-8">
-      <h3 class="text-xl font-semibold">Friends ({{ user?.friends.length || 0 }})</h3>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-gray-800 rounded-lg overflow-hidden shadow-md">
-        <div *ngFor="let friend of user?.friends" class="flex flex-col items-center text-center">
-            <img [src]="friend.profilePicture || 'assets/user.png'" 
-               alt="Friend"
-               (click)="goToFriendsPage(friend)"
-               class="w-16 h-16 rounded-full border-2 border-gray-500 shadow-sm transition-transform hover:scale-110" />
-          <p class="text-sm mt-2 font-medium">{{ friend.username }}</p>
-        </div>
+  <!-- Friends Section -->
+  <div class="mt-8">
+    <h3 class="text-xl font-semibold mb-2">
+      Friends ({{ user?.friends?.length || 0 }})
+    </h3>
+    <div
+      class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-gray-800 rounded-lg overflow-hidden shadow-md"
+    >
+      <div
+        *ngFor="let friend of user?.friends"
+        class="flex flex-col items-center text-center"
+      >
+        <img
+          [src]="friend.profilePicture || 'assets/user.png'"
+          alt="Friend"
+          (click)="goToFriendsPage(friend)"
+          class="w-16 h-16 rounded-full border-2 border-gray-500 shadow-sm transition-transform hover:scale-110"
+        />
+        <p class="text-base mt-2 font-medium">{{ friend.username }}</p>
       </div>
     </div>
+  </div>
 
-    <!-- Reviews Section -->
-    <div class="mt-8">
-      <h3 class="text-xl font-semibold">Reviews</h3>
-      <div *ngIf="user?.reviews?.length; else noReviews">
-        <div *ngFor="let review of user?.reviews" 
-             class="flex items-start p-4 bg-gray-800 rounded-lg mb-2 shadow-md hover:shadow-lg transition-all">
-          <img [src]="review.albumCover || 'assets/user.png'" 
-               alt="Album Cover" 
-               class="w-16 h-16 rounded-md border-2 border-gray-600 shadow-sm mr-4" />
-          <div>
-            <h4 class="font-medium text-lg">{{ review.albumTitle }}</h4>
-            <p class="text-gray-300 text-sm">{{ review.content }}</p>
-            <span class="text-yellow-400 font-semibold text-sm">Rating: {{ review.rating }}/10</span>
+  <!-- Reviews Section -->
+  <div class="mt-5">
+    <h3 class="text-xl font-semibold mb-2">
+      Reviews 
+      <ng-container *ngIf="user?.reviews?.length > 0">
+        ({{ user.reviews.length }})
+      </ng-container>
+    </h3>
+    
+    <div *ngIf="user?.reviews?.length; else noReviews">
+      <div
+        *ngFor="let review of user?.reviews"
+        class="flex items-start p-4 bg-gray-800 rounded-lg mb-3 shadow-md hover:shadow-lg transition-all relative"
+      >
+        <!-- Album Cover or Default Image -->
+        <div class="relative w-16 h-16 flex-shrink-0">
+          <img
+            [src]="review.albumSongOrArtist.coverImage"
+            [src]="review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.profilePicture : review.albumSongOrArtist.coverImage"
+            [alt]="review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.name : review.albumSongOrArtist.title"
+            class="w-16 h-16 rounded-md border-2 border-gray-600 shadow-sm"
+          />
+
+          <!-- Review Type Icon -->
+          <div
+            class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2"
+          >
+            <i
+              class="fas text-sm"
+              [ngClass]="{
+                'fa-music text-blue-400': review.albumSongOrArtist.type === 'Song',
+                'fa-compact-disc text-green-400': review.albumSongOrArtist.type === 'Album',
+                'fa-user text-purple-400': review.albumSongOrArtist.type === 'Artist'
+              }"
+              title="{{ review.type }}"
+            ></i>
           </div>
         </div>
+
+        <!-- Review Content -->
+        <div class="flex flex-col w-full ml-3 overflow-hidden w-full">
+          <h4 class="font-medium text-lg truncate" style="max-width: calc(100%);">
+            {{ review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.name : (review.albumSongOrArtist.title || "Unknown Title") }}
+          </h4>          
+
+          <p
+            class="text-gray-300 text-sm w-full overflow-hidden text-ellipsis whitespace-nowrap"
+            style="max-width: calc(100%);"
+          >
+            {{ review.reviewText }}
+          </p>
+
+          <!-- Rating -->
+          <span class="text-yellow-400 font-semibold text-sm mt-2">
+            ⭐ {{ review.rating }}/10
+          </span>
+        </div>
       </div>
-      <ng-template #noReviews>
-        <p class="text-gray-400 text-center p-4 bg-gray-800 rounded-lg shadow-sm">
-          This user hasn't reviewed anything yet.
-        </p>
-      </ng-template>
     </div>
+
+    <!-- No Reviews Message -->
+    <ng-template #noReviews>
+      <p class="text-gray-400 text-center p-4 bg-gray-800 rounded-lg shadow-sm">
+        This user hasn't reviewed anything yet.
+      </p>
+    </ng-template>
+  </div>
 </div>

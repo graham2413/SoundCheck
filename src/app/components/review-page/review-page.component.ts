@@ -15,6 +15,7 @@ import { SearchService } from 'src/app/services/search.service';
 import { Album } from 'src/app/models/responses/album-response';
 import { Artist } from 'src/app/models/responses/artist-response';
 import { Song } from 'src/app/models/responses/song-response';
+import { CreateReviewCommandModel } from 'src/app/models/command-models/create-review-commandmodel';
 
 @Component({
   selector: 'app-review-page',
@@ -334,22 +335,36 @@ export class ReviewPageComponent implements OnInit {
 
   submitReview() {
     this.isCreateLoading = true;
-    this.reviewService
-      .createReview(this.record.id, this.record.type, this.newRating, this.newReview)
-      .subscribe({
-        next: (data: NewReviewResponse) => {
-          this.existingUserReview = data.review;
-          this.reviews = [...this.reviews, data.review];
-          this.isAddingReview = false;
-          this.isCreateLoading = false;
-          this.toastr.success('Review created successfully.', 'Success');
-        },
-        error: (error) => {
-          this.toastr.error('Error occurred while creating review.', 'Error');
-          this.isCreateLoading = false;
-        },
-      });
-  }
+  
+    // Build the command model
+    const reviewCommand: CreateReviewCommandModel = {
+      albumSongOrArtist: {
+        id: this.record.id,
+        type: this.record.type,
+        title: this.record.type !== "Artist" ? this.record.title : undefined, // Only for Albums & Songs
+        name: this.record.type === "Artist" ? this.record.name : this.record.artist, // Artists use 'name', Albums/Songs use 'artist'
+        coverImage: this.record.type !== "Artist" ? this.record.cover : undefined, // Only for Albums & Songs
+        profilePicture: this.record.type === "Artist" ? this.record.picture : undefined // Only for Artists
+      },
+      rating: this.newRating,
+      reviewText: this.newReview
+    };
+  
+    // Call the API with the command object
+    this.reviewService.createReview(reviewCommand).subscribe({
+      next: (data: NewReviewResponse) => {
+        this.existingUserReview = data.review;
+        this.reviews = [...this.reviews, data.review];
+        this.isAddingReview = false;
+        this.isCreateLoading = false;
+        this.toastr.success("Review created successfully.", "Success");
+      },
+      error: (error) => {
+        this.toastr.error("Error occurred while creating review.", "Error");
+        this.isCreateLoading = false;
+      },
+    });
+  }  
 
   toggleEditReview(review: Review) {
     this.isEditingReview = true;

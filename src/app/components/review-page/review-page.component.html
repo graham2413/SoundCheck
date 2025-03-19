@@ -232,15 +232,15 @@
                 <span
                   class="absolute inset-0 flex flex-col items-center justify-center text-white font-bold text-3xl md:text-4xl lg:text-5xl"
                 >
-                  <ng-container
-                    *ngIf="getAverageRating() > 0; else noReviewsMessage"
-                  >
-                    {{ getAverageRating() | number : "1.1-1" }}
-                    <span
-                      class="text-base md:text-lg font-medium text-gray-300 z-10"
-                      >/ 10</span
-                    >
+                <ng-container *ngIf="getAverageRating() > 0; else noReviewsMessage">
+                  <ng-container *ngIf="getAverageRating() === 10; else formattedRating">
+                    10Re
                   </ng-container>
+                  <ng-template #formattedRating>
+                    {{ getAverageRating() | number: "1.1-1" }}
+                  </ng-template>
+                  <span class="text-[1.2rem] font-medium text-gray-300">/ 10</span>
+                </ng-container>
                 </span>
               </ng-template>
             </div>
@@ -345,7 +345,7 @@
     class="bg-[#252525] p-2 rounded-lg shadow-md w-[98%] mx-auto mt-3 mb-3"
   >
     <div class="relative mb-2">
-      <h2 class="text-xl font-semibold pt-1 text-center title-text">
+      <h2 class="text-2xl font-semibold pt-1 text-center title-text">
         Reviews
         {{
           filteredReviews.length + (existingUserReview ? 1 : 0) > 0
@@ -413,9 +413,9 @@
 
           <!-- Review Text -->
           <textarea
-            class="w-full p-3 bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500"
+            class="w-full p-3 text-xl bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500"
             placeholder="Write your review here..."
-            rows="3"
+            rows="7"
             [(ngModel)]="newReview"
           ></textarea>
           <div class="flex gap-2 mt-2">
@@ -462,7 +462,7 @@
 
                 <!-- Edit Rating Section -->
                 <div *ngIf="isEditingReview" class="w-full text-center mb-2">
-                  <p class="text-white font-medium text-lg mb-2">
+                  <p class="text-white title-text font-medium text-lg mb-2">
                     Rating:
                     <input
                       type="number"
@@ -508,19 +508,19 @@
                   <textarea
                     *ngIf="isEditingReview"
                     [(ngModel)]="editedReviewText"
-                    class="text-gray-300 break-words w-full bg-gray-800 rounded p-3 focus:outline-none focus:ring-blue-500"
-                    rows="3"
+                    class="text-xl text-gray-300 break-words w-full bg-gray-800 rounded p-3 focus:outline-none focus:ring-blue-500"
+                    rows="7"
                     placeholder="Write your review here..."
                   ></textarea>
                   <p
                     *ngIf="!isEditingReview"
-                    class="text-gray-300 text-base break-words"
+                    class="text-gray-300 text-xl break-words"
                   >
                     {{ existingUserReview.reviewText }}
                   </p>
                   <p
                     *ngIf="!isEditingReview"
-                    class="text-gray-400 text-base mt-3 font-medium text-center"
+                    class="text-gray-400 text-xl mt-3 font-medium text-center"
                   >
                     {{ existingUserReview.user.username }} (Your Review)
                   </p>
@@ -532,7 +532,7 @@
                   class="flex gap-2 justify-center mt-2"
                 >
                   <button
-                    class="bg-red-600 text-white px-4 py-2 rounded-lg w-full sm:w-auto"
+                    class="bg-red-600 text-xl text-white px-4 py-2 rounded-lg w-full"
                     (click)="cancelEditReview()"
                   >
                     Cancel
@@ -540,7 +540,7 @@
 
                   <button
                     (click)="submitEditReview()"
-                    class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-white w-full sm:w-auto"
+                    class="bg-green-600 text-xl hover:bg-green-700 px-4 py-2 rounded-lg text-white w-full"
                   >
                     <span *ngIf="!isEditLoading">Save</span>
                     <span *ngIf="isEditLoading" class="flex items-center gap-2">
@@ -564,7 +564,7 @@
         </ng-template>
         <!-- All Reviews Section -->
         <div>
-          <ng-container *ngIf="filteredReviews?.length; else noReviewsMobile">
+          <ng-container *ngIf="existingUserReview || filteredReviews.length > 0; else noReviewsMobile">
             <ul class="space-y-4 mt-3" @fadeIn>
               <li
                 *ngFor="let review of filteredReviews; trackBy: trackById"
@@ -577,11 +577,11 @@
                   <i class="fas fa-star"></i> {{ review.rating }} / 10
                 </p>
                 <div class="text-left">
-                  <p class="text-gray-300 text-base break-words">
+                  <p class="text-gray-300 text-xl break-words">
                     {{ review.reviewText }}
                   </p>
                   <p
-                    class="text-gray-400 text-base mt-3 font-medium text-center"
+                    class="text-gray-400 text-xl mt-3 font-medium text-center"
                   >
                     {{ review.user.username }}
                   </p>
@@ -590,7 +590,7 @@
             </ul>
           </ng-container>
           <ng-template #noReviewsMobile>
-            <p class="text-gray-400 italic mt-4 text-center text-base">
+            <p class="text-gray-400 mt-4 text-center text-xl">
               No reviews available.
             </p>
           </ng-template>
@@ -692,11 +692,14 @@
               cx="21"
               cy="21"
               r="18"
-              [attr.stroke-dasharray]="
-                (getAverageRating() > 0 ? getAverageRating() * 10 : 1) + ', 100'
-              "
               stroke="url(#ratingGradientDesktop)"
               stroke-width="4"
+              stroke-dasharray="113.1"
+              [attr.stroke-dashoffset]="
+                getAverageRating() > 0
+                  ? 113.1 - (getAverageRating() / 10) * 113.1
+                  : 113.1
+              "
               [attr.style]="
                 getAverageRating() === 0 ? 'stroke-opacity: 0;' : ''
               "
@@ -716,14 +719,16 @@
                 else loadingSpinner
               "
             >
-              <ng-container
-                *ngIf="getAverageRating() > 0; else noReviewsMessage"
-              >
-                {{ getAverageRating() | number : "1.1-1" }}
-                <span class="text-xs md:text-sm font-medium text-gray-300"
-                  >/ 10</span
-                >
+            <ng-container *ngIf="getAverageRating() > 0; else noReviewsMessage">
+              <ng-container *ngIf="getAverageRating() === 10; else formattedRating">
+                10
               </ng-container>
+              <ng-template #formattedRating>
+                {{ getAverageRating() | number: "1.1-1" }}
+              </ng-template>
+              <span class="text-xs md:text-sm font-medium text-gray-300">/ 10</span>
+            </ng-container>
+            
             </ng-container>
           </span>
         </div>
@@ -1044,7 +1049,7 @@
                   <textarea
                     class="w-full p-3 bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500"
                     placeholder="Write your review here..."
-                    rows="3"
+                    rows="7"
                     [(ngModel)]="newReview"
                   ></textarea>
                   <div class="flex flex-wrap gap-2 justify-between mt-2">
@@ -1141,15 +1146,15 @@
                           <textarea
                             *ngIf="isEditingReview"
                             [(ngModel)]="editedReviewText"
-                            class="text-gray-300 text-sm sm:text-base break-words w-full bg-gray-800 rounded p-2 border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            rows="3"
+                            class="text-gray-300 text-xl break-words w-full bg-gray-800 rounded p-2 border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            rows="7"
                             placeholder="Write your review here..."
                           ></textarea>
 
                           <!-- Normal Review Display -->
                           <p
                             *ngIf="!isEditingReview"
-                            class="text-gray-300 text-base lg:text-lg break-words text-center"
+                            class="text-gray-300 text-xl lg:text-lg break-words text-center"
                           >
                             {{ existingUserReview.reviewText }}
                           </p>
@@ -1157,7 +1162,7 @@
                           <!-- Hide Username when Editing -->
                           <p
                             *ngIf="!isEditingReview"
-                            class="text-gray-400 text-base mt-3 font-medium text-center"
+                            class="text-gray-400 text-xl mt-3 font-medium text-center"
                           >
                             {{ existingUserReview.user.username }} (Your Review)
                           </p>
@@ -1207,7 +1212,7 @@
 
                 <!-- All Reviews Section -->
                 <div class="max-h-full" @fadeIn>
-                  <ng-container *ngIf="filteredReviews?.length; else noReviews">
+                  <ng-container *ngIf="existingUserReview || filteredReviews.length > 0; else noReviews">
                     <ul class="space-y-4 mt-3">
                       <li
                         *ngFor="
