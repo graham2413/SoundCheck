@@ -5,10 +5,11 @@ import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import { Friend } from 'src/app/models/responses/friend-response';
 import { animate, style, transition, trigger } from '@angular/animations';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-view-profile-page',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './other-profile-page.component.html',
   styleUrl: './other-profile-page.component.css',
   standalone: true,
@@ -27,6 +28,8 @@ import { animate, style, transition, trigger } from '@angular/animations';
 export class ViewProfilePageComponent implements OnInit {
   userId!: string;
   user: any = null;
+  searchQuery: string = '';
+  filteredFriends: any[] = [];
 
   constructor(private route: ActivatedRoute, private userService: UserService, private toastr: ToastrService, private router: Router) {}
 
@@ -34,6 +37,7 @@ export class ViewProfilePageComponent implements OnInit {
     this.route.params.subscribe(params => {
       this.userId = params['userId'];
       this.user = null;
+      window.scrollTo(0, 0);
       this.fetchUserDetails();
     });
   }
@@ -42,6 +46,8 @@ export class ViewProfilePageComponent implements OnInit {
     this.userService.getOtherUserProfileInfo(this.userId).subscribe({
       next: (response) => {
        this.user = response;
+       this.filteredFriends = [...this.user.friends];
+
       },
       error: () => {
         this.toastr.error(
@@ -50,6 +56,13 @@ export class ViewProfilePageComponent implements OnInit {
         );
       },
     });
+  }
+  
+  filterFriends(): void {
+    const query = this.searchQuery.toLowerCase().trim();
+    this.filteredFriends = this.user.friends.filter((friend: { username: string; }) =>
+      friend.username.toLowerCase().includes(query)
+    );
   }
 
   public goToFriendsPage (friend: Friend){
