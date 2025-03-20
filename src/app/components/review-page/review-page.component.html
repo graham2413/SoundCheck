@@ -771,7 +771,7 @@
             [@iPodTransition]="iPodState"
           >
             <div
-              class="custom-bg-color rounded-lg p-3 md:p-4 w-full overflow-hidden"
+              class="custom-bg-color border border-gray-700 rounded-lg p-3 md:p-4 w-full overflow-hidden"
             >
               <div class="flex flex-col h-full">
                 <!-- Image Area -->
@@ -806,7 +806,7 @@
                 <!-- Info and Audio Player -->
                 <div class="mt-4 text-center">
                   <p
-                    class="text-gray-200 text-base sm:text-lg md:text-xl font-semibold flex items-center justify-center gap-2"
+                    class="text-gray-200 text-2xl font-semibold flex items-center justify-center gap-2"
                   >
                     <span
                       *ngIf="record.type != 'Artist'"
@@ -818,7 +818,7 @@
                       record.name
                     }}</span>
                   </p>
-                  <p class="text-gray-400 text-sm sm:text-base md:text-lg">
+                  <p class="text-gray-400 text-lg">
                     <span
                       *ngIf="isExplicit"
                       class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
@@ -978,7 +978,8 @@
             class="bg-[#252525] p-3 rounded-xl shadow-md w-full h-[70vh] flex flex-col"
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="text-lg font-semibold pb-2 title-text">
+              <h3 class="font-semibold pb-2 title-text text-3xl">
+                <i class="fas fas fa-comment-alt text-amber-400 text-2xl"></i>
                 Reviews
                 {{
                   filteredReviews.length + (existingUserReview ? 1 : 0) > 0
@@ -1252,7 +1253,7 @@
               </ng-template>
 
               <ng-template #noReviews>
-                <p class="text-gray-400 italic mt-3 text-sm sm:text-base">
+                <p class="text-gray-400 italic mt-10 text-2xl">
                   No reviews available.
                 </p>
               </ng-template>

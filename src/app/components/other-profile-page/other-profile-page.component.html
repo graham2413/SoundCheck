@@ -50,7 +50,7 @@
   </div>
 
   <!-- Scrollable Friends List -->
-  <div *ngIf="filteredFriends.length > 0" class="max-h-[16.5rem] overflow-y-auto bg-gray-700 rounded-lg shadow-md">
+  <div *ngIf="filteredFriends.length > 0" class="max-h-[16.5rem] overflow-y-auto bg-gray-700 rounded-lg shadow-md custom-scrollbar">
     <div
       *ngFor="let friend of filteredFriends"
       (click)="goToFriendsPage(friend)"
@@ -73,24 +73,24 @@
   <!-- Reviews Section -->
   <div class="mt-5 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-3">
     <h3 class="text-2xl font-semibold mb-2">
-      <i class="fas fas fa-comment-alt text-indigo-400 mr-1"></i> Reviews
+      <i class="fas fas fa-comment-alt text-amber-400 mr-1"></i> Reviews
       <ng-container *ngIf="user?.reviews?.length > 0">
         ({{ user.reviews.length }})
       </ng-container>
     </h3>
     
-    <div *ngIf="user?.reviews?.length; else noReviews">
+    <div *ngIf="user?.reviews?.length; else noReviews" class="max-h-[17.5rem] md:max-h-[36.2rem] overflow-y-auto custom-scrollbar rounded-lg">
       <div
         *ngFor="let review of user?.reviews"
-        class="flex items-start p-4 bg-[#18191B] rounded-lg mb-3 shadow-md relative transition-all hover:bg-gray-600 cursor-pointer group hover:p-4 hover:rounded-md"
+        class="flex items-start p-4 bg-[#18191B] border-b border-gray-500 shadow-md relative transition-all cursor-pointer group hover:bg-gray-700  hover:p-4 hover:rounded-md"
       >
         <!-- Album Cover or Default Image -->
-        <div class="relative w-16 h-16 flex-shrink-0">
+        <div class="relative h-[4rem] w-[4rem] md:w-[7rem] md:h-[7rem] flex-shrink-0">
           <img
             [src]="review.albumSongOrArtist.coverImage"
             [src]="review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.profilePicture : review.albumSongOrArtist.coverImage"
             [alt]="review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.name : review.albumSongOrArtist.title"
-            class="w-16 h-16 rounded-md border-2 border-gray-600 shadow-sm"
+            class="h-[4rem] w-[4rem] md:w-[7rem] md:h-[7rem] rounded-md border-2 border-gray-600 shadow-sm"
           />
 
           <!-- Review Type Icon -->
@@ -98,7 +98,7 @@
             class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2"
           >
             <i
-              class="fas text-sm"
+              class="fas text-sm md:text-xl"
               [ngClass]="{
                 'fa-music text-blue-400': review.albumSongOrArtist.type === 'Song',
                 'fa-compact-disc text-green-400': review.albumSongOrArtist.type === 'Album',
@@ -111,19 +111,19 @@
 
         <!-- Review Content -->
         <div class="flex flex-col w-full ml-3 overflow-hidden w-full">
-          <h4 class="font-medium text-lg truncate" style="max-width: calc(100%);">
+          <h4 class="font-medium text-lg md:text-2xl truncate" style="max-width: calc(100%);">
             {{ review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.name : (review.albumSongOrArtist.title || "Unknown Title") }}
           </h4>          
 
           <p
-            class="text-gray-300 text-sm w-full overflow-hidden text-ellipsis whitespace-nowrap"
+            class="text-gray-300 text-sm md:text-lg w-full overflow-hidden text-ellipsis whitespace-nowrap"
             style="max-width: calc(100%);"
           >
             {{ review.reviewText }}
           </p>
 
           <!-- Rating -->
-          <span class="text-yellow-400 font-semibold text-sm mt-2">
+          <span class="text-yellow-400 font-semibold text-sm md:text-lg mt-2">
             ⭐ {{ review.rating }}/10
           </span>
         </div>

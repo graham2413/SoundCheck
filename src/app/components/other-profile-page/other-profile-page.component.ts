@@ -46,6 +46,8 @@ export class ViewProfilePageComponent implements OnInit {
     this.userService.getOtherUserProfileInfo(this.userId).subscribe({
       next: (response) => {
        this.user = response;
+      //  this.user.friends = this.generateMockFriends(30);
+
        this.filteredFriends = [...this.user.friends];
 
       },
@@ -57,6 +59,15 @@ export class ViewProfilePageComponent implements OnInit {
       },
     });
   }
+
+  // generateMockFriends(count: number): any[] {
+  //   return Array.from({ length: count }, (_, i) => ({
+  //     username: `Friend ${i + 1}`,
+  //     profilePicture: i % 2 === 0 
+  //       ? 'https://api.dicebear.com/7.x/avataaars/svg?seed=Friend' + (i + 1) 
+  //       : 'assets/user.png' // Alternating between avatars and default image
+  //   }));
+  // }
   
   filterFriends(): void {
     const query = this.searchQuery.toLowerCase().trim();
