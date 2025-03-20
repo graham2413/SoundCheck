@@ -31,22 +31,7 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite linear;
   border-radius: 8px;
-  width: 8rem;
-  height: 8rem;
   margin-right: 1rem;
-}
-
-@media (min-width: 640px) {
-  .skeleton {
-    width: 10rem;
-    height: 10rem;
-  }
-}
-@media (min-width: 768px) {
-  .skeleton {
-    width: 12rem;
-    height: 12rem;
-  }
 }
 
 @keyframes shimmer {

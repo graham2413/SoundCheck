@@ -5,14 +5,3 @@
     padding: 10px 16px;
   }
   
-
-  @media (max-width: 910px) and (min-width: 768px) {
-    .link {
-      padding: 10px !important;
-      font-size: medium;
-    }
-    .title{
-      font-size: large;
-    }
-  }
-  

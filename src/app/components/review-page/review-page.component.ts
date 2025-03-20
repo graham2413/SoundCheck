@@ -75,39 +75,36 @@ import { CreateReviewCommandModel } from 'src/app/models/command-models/create-r
   ]
 })
 export class ReviewPageComponent implements OnInit {
-  @Input() record!: Album | Artist | Song;
 
   existingUserReview: Review | null = null;
   reviews: Review[] = [];
-
   isRatingLoaded = false;
   isReviewsLoaded = false;
   isImageLoaded = false;
-
   isAddingReview = false;
   isCreateLoading = false;
   newReview: string = '';
   newRating: number = 5.0;
-  
   isEditLoading = false;
   isEditingReview = false;
   editedRating = 0;
   editedReviewText: string = '';
-
   isDeleteLoading = false;
   isPlaying = false;
   showSecondIpod = false;
   showSecondMobileIpod = false;
   isScrollable = false;
+  isTextOverflowing = false;
+  isModalOpen: boolean = true;
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
   @ViewChild('scrollingContent', { static: false }) scrollingContent!: ElementRef;
-  
-  isTextOverflowing = false;
-  isModalOpen: boolean = true;
-
   @ViewChild('reviewsSection') reviewsSection!: ElementRef;
+
+  @Input() record!: Album | Artist | Song;
+  @Input() songList: Song[] = [];
+  @Input() currentIndex: number = 0;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -117,6 +114,10 @@ export class ReviewPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.openRecord();
+  }
+
+  openRecord(){
     this.getReviews();
     this.getExtraDetails();
     setTimeout(() => {
@@ -180,10 +181,30 @@ export class ReviewPageComponent implements OnInit {
     wrapper.offsetWidth; 
   
     this.isTextOverflowing = content.scrollWidth > wrapper.clientWidth;
-  }
+  
+    // Toggle 'scroll-active' class based on overflow
+    if (this.isTextOverflowing) {
+      this.scrollingWrapper.nativeElement.classList.add('scroll-active');
+    } else {
+      this.scrollingWrapper.nativeElement.classList.remove('scroll-active');
+    }
+  }  
   
   get flipState() {
     return this.showSecondIpod ? 'back' : 'front';
+  }
+
+  resetScrollingState() {
+    this.isTextOverflowing = false;
+    this.scrollingWrapper.nativeElement.classList.remove('scroll-active');
+  
+    // Temporarily hide title text to prevent flicker
+    this.scrollingContent.nativeElement.style.visibility = 'hidden';
+  
+    setTimeout(() => {
+      this.checkOverflow(); 
+      this.scrollingContent.nativeElement.style.visibility = 'visible';
+    }, 50);
   }
 
   formatDate(dateString: string | null | undefined): string {
@@ -286,10 +307,36 @@ export class ReviewPageComponent implements OnInit {
           artist.tracklist = [];
         },
       });
-      
     }
   }
   
+  nextSong() {
+    if (this.currentIndex < this.songList.length - 1) {
+      this.currentIndex++;
+      this.record = this.songList[this.currentIndex];
+
+      this.isReviewsLoaded = false;
+      this.isRatingLoaded = false;
+      this.isImageLoaded = false;
+
+      this.resetScrollingState();
+      this.openRecord();
+    }
+  }
+  
+  prevSong() {
+    if (this.currentIndex > 0) {
+      this.currentIndex--;
+      this.record = this.songList[this.currentIndex];
+      
+      this.isReviewsLoaded = false;
+      this.isRatingLoaded = false;
+      this.isImageLoaded = false;
+
+      this.resetScrollingState();
+      this.openRecord();
+    }
+  }
 
   formatDuration(seconds: number | undefined): string {
     if (!seconds) return "Unknown";
@@ -297,7 +344,6 @@ export class ReviewPageComponent implements OnInit {
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   }
-  
 
   close() {
     this.isModalOpen = false;

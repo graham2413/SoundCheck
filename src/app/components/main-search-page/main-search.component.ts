@@ -29,7 +29,7 @@ export class MainSearchComponent {
   isLoading: boolean = false;
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
   private trackX = 0;
-  private speed = 0.5;
+  private speed = 0.8;
   isModalOpen = false;
   selectedRecord: Album | Artist | Song | null = null;
   searchAttempted = false;
@@ -103,7 +103,7 @@ export class MainSearchComponent {
         imgEl.src = album.imageUrl;
         imgEl.alt = album.name;
         imgEl.className =
-          "w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 object-cover mr-4 rounded";
+          "w-[12rem] h-[12rem] md:w-[15rem] md:h-[15rem] object-cover mr-4 rounded";
         trackEl.appendChild(imgEl);
       });
   
@@ -286,6 +286,13 @@ export class MainSearchComponent {
     };
   
     const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+
+    if (record.type == 'Song') {
+      const index = this.filteredResults.songs.findIndex(s => s === record);
+      modalRef.componentInstance.songList = this.filteredResults.songs;
+      modalRef.componentInstance.currentIndex = index;
+    }
+
     modalRef.componentInstance.record = record;
   }
 

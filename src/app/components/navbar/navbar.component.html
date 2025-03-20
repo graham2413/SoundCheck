@@ -13,36 +13,36 @@
     <span class="text-2xl font-semibold title title-text">SoundCheck</span>
   </div>
 
-  <div
-    class="hidden md:flex absolute left-1/2 transform -translate-x-1/2 gap-10"
-  >
-    <a
-      routerLink="/"
-      routerLinkActive="active-link"
-      [routerLinkActiveOptions]="{ exact: true }"
-      class="link rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-      (click)="closeProfileMenu()"
-    >
-      Search
-    </a>
-
-    <a
-      routerLink="/friends"
-      routerLinkActive="active-link"
-      class="link rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-      (click)="closeProfileMenu()"
-    >
-      Friends
-    </a>
-    <a
-      routerLink="/profile"
-      routerLinkActive="active-link"
-      class="link rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-      (click)="closeProfileMenu()"
-    >
-      Profile
-    </a>
-  </div>
+  <div class="relative flex-1 flex justify-center">
+    <div class="hidden md:flex gap-10">
+      <a
+        routerLink="/"
+        routerLinkActive="active-link"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="link rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+        (click)="closeProfileMenu()"
+      >
+        Search
+      </a>
+  
+      <a
+        routerLink="/friends"
+        routerLinkActive="active-link"
+        class="link rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+        (click)="closeProfileMenu()"
+      >
+        Friends
+      </a>
+      <a
+        routerLink="/profile"
+        routerLinkActive="active-link"
+        class="link rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
+        (click)="closeProfileMenu()"
+      >
+        Profile
+      </a>
+    </div>
+  </div>  
 
   <div class="hidden md:flex items-center gap-4 relative">
     <div class="relative">
@@ -121,45 +121,47 @@
 <div
   *ngIf="isMenuOpen"
   @fadeSlide
-  class="fixed inset-0 bg-gray-900/90 backdrop-blur-lg flex flex-col items-center justify-center space-y-16 text-white md:hidden z-50"
+  class="fixed inset-0 bg-gray-900/90 backdrop-blur-lg flex flex-col items-center text-white md:hidden z-50 h-full py-10"
 >
   <!-- Close Button -->
   <button
     (click)="toggleMenu()"
-    class="absolute top-6 right-6 text-4xl text-gray-300 hover:text-white transition"
+    class="absolute top-6 right-6 text-6xl text-gray-300 hover:text-white transition"
   >
     &times;
   </button>
 
-  <!-- Navigation Links -->
-  <a
-    routerLink="/"
-    (click)="toggleMenu()"
-    class="flex items-center gap-3 text-3xl font-semibold text-gray-300 hover:text-white transition"
-  >
-    <i class="fas fa-search"></i> Search
-  </a>
+  <!-- Navigation Links Wrapper -->
+  <div class="flex flex-col items-center justify-center flex-1 w-full space-y-[5rem]">
+    <a
+      routerLink="/"
+      (click)="toggleMenu()"
+      class="flex items-center gap-3 text-4xl font-semibold text-gray-300 hover:text-white transition"
+    >
+      <i class="fas fa-search"></i> Search
+    </a>
 
-  <a
-    routerLink="/friends"
-    (click)="toggleMenu()"
-    class="flex items-center gap-3 text-3xl font-semibold text-gray-300 hover:text-white transition"
-  >
-    <i class="fas fa-users"></i> Friends
-  </a>
+    <a
+      routerLink="/friends"
+      (click)="toggleMenu()"
+      class="flex items-center gap-3 text-4xl font-semibold text-gray-300 hover:text-white transition"
+    >
+      <i class="fas fa-users"></i> Friends
+    </a>
 
-  <a
-    routerLink="/profile"
-    (click)="toggleMenu()"
-    class="flex items-center gap-3 text-3xl font-semibold text-gray-300 hover:text-white transition"
-  >
-    <i class="fas fa-user"></i> Profile
-  </a>
+    <a
+      routerLink="/profile"
+      (click)="toggleMenu()"
+      class="flex items-center gap-3 text-4xl font-semibold text-gray-300 hover:text-white transition"
+    >
+      <i class="fas fa-user"></i> Profile
+    </a>
+  </div>
 
   <!-- Logout Button -->
   <button
     (click)="logout()"
-    class="flex items-center gap-3 bg-red-500 px-8 py-4 rounded-lg text-2xl font-semibold text-white hover:brightness-110 transition shadow-md"
+    class="flex items-center gap-3 bg-red-500 px-8 py-4 rounded-lg text-2xl font-semibold text-white hover:brightness-110 transition shadow-md mb-10"
   >
     <i class="fas fa-sign-out-alt"></i> Logout
   </button>

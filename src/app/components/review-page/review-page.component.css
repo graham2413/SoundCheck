@@ -151,9 +151,9 @@
   position: relative;
   width: 100%;
   text-align: center;
-  mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
   justify-content: center;
+  mask-image: none;
+  -webkit-mask-image: none;
 }
 
 .scrolling-content {
@@ -163,7 +163,10 @@
 
 .scroll-active {
   justify-content: flex-start;
+  mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%);
 }
+
 
 .scroll-active .scrolling-content {
   animation: infinite-scroll 15s linear infinite;
@@ -177,15 +180,6 @@
   to {
     transform: translateX(-100%);
   }
-}
-
-.skeleton-loader {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.5s infinite;
-  border-radius: 8px;
 }
 
 @keyframes skeleton-loading {

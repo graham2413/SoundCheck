@@ -26,13 +26,15 @@
       </h3>
 
       <div
-        #scrollContainer
-        [ngClass]="{
-          'justify-center': !isScrollable,
-          'justify-start': isScrollable
-        }"
-        class="record-details-card flex-grow overflow-y-auto w-full max-h-[80vh] flex flex-col items-center space-y-10 px-4 pb-4"
-      >
+      #scrollContainer
+      [ngClass]="{
+        'justify-center': !isScrollable,
+        'justify-start': isScrollable
+      }"
+      class="record-details-card flex-grow overflow-y-auto w-full flex flex-col items-center space-y-10 px-4 pb-4"
+      style="min-height: 0; max-height: calc(100vh - 125px);"
+    >
+    
         <div
           class="flex flex-col items-center justify-center w-full space-y-10"
         >
@@ -103,20 +105,23 @@
             </div>
             <ul *ngIf="isTracklistArray" class="space-y-3">
               <li
-                *ngFor="let track of record.tracklist; let i = index"
-                class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md"
-              >
-                <div class="flex items-center gap-3">
-                  <span class="text-gray-400 font-semibold text-lg">{{
-                    i + 1
-                  }}</span>
-                  <span
-                    class="text-white title-text truncate overflow-hidden whitespace-nowrap text-ellipsis max-w-[240px]"
-                  >
-                    {{ track.title }}
-                  </span>
-                </div>
-              </li>
+              *ngFor="let track of record.tracklist; let i = index"
+              class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md"
+            >
+              <div class="flex items-center gap-3 flex-1 min-w-0 text-xl">
+                <span class="text-gray-400 font-semibold">
+                  {{ i + 1 }}
+                </span>
+                <span
+                  class="text-white truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0"
+                >
+                  {{ track.title }}
+                </span>
+              </div>
+              <span class="text-gray-300 text-md shrink-0 pl-2.5">
+                {{ formatDuration(track.duration) || "?" }}
+              </span>
+            </li>            
             </ul>
 
             <p *ngIf="!isTracklistArray" class="text-gray-400 text-center">
@@ -234,7 +239,7 @@
                 >
                 <ng-container *ngIf="getAverageRating() > 0; else noReviewsMessage">
                   <ng-container *ngIf="getAverageRating() === 10; else formattedRating">
-                    10Re
+                    10
                   </ng-container>
                   <ng-template #formattedRating>
                     {{ getAverageRating() | number: "1.1-1" }}
@@ -248,20 +253,19 @@
 
           <!-- No Reviews Star Rating Prompt -->
           <ng-template #noReviewsMessage>
-            <div
-              (click)="scrollToReviews()"
-              class="flex flex-col items-center justify-center text-gray-300"
-            >
-              <div class="flex space-x-1">
+            <div class="flex flex-col items-center justify-center text-gray-300">
+              <div class="inline-flex space-x-1" (click)="scrollToReviews()">
                 <i class="far fa-star text-3xl"></i>
                 <i class="far fa-star text-3xl"></i>
                 <i class="far fa-star text-3xl"></i>
                 <i class="far fa-star text-3xl"></i>
                 <i class="far fa-star text-3xl"></i>
               </div>
-              <span class="text-lg font-medium">Be the first to rate!</span>
+              <!-- Ensure only the text is clickable -->
+              <span class="text-lg font-medium cursor-pointer" (click)="scrollToReviews()">Be the first to rate!</span>
             </div>
           </ng-template>
+          
 
           <!-- Close Button -->
           <button
@@ -272,26 +276,19 @@
           </button>
         </div>
 
-        <!-- Image Section -->
-        <div class="flex flex-col items-center flex-grow justify-center">
-          <div
-            class="relative w-full max-w-[90%] h-[55vh] flex items-center justify-center"
-          >
-            <!-- Skeleton Loader (Matches Image Size) -->
-            <div
-              *ngIf="!isImageLoaded"
-              class="skeleton-loader w-full max-w-full max-h-full object-contain"
-            ></div>
+      <!-- Image Section -->
+      <div class="flex flex-col items-center flex-grow justify-center">
+        <div class="relative max-w-[90%] h-[55vh] flex items-center justify-center">
 
-            <!-- Image (Appears when loaded) -->
-            <img
-              *ngIf="isImageLoaded"
-              [src]="record.type === 'Artist' ? record.picture : record.cover"
-              [alt]="record.type === 'Artist' ? record.name : record.title"
-              class="rounded-lg w-full max-w-full max-h-full object-contain"
-            />
-          </div>
+          <!-- Image (Appears when loaded) -->
+          <img
+            [src]="record.type === 'Artist' ? record.picture : record.cover"
+            [alt]="record.type === 'Artist' ? record.name : record.title"
+            class="rounded-lg w-full max-w-full max-h-full object-contain"
+            (load)="isImageLoaded = true"
+          />
         </div>
+      </div>
 
         <!-- Info-->
         <div class="text-center text-3xl">
@@ -335,6 +332,8 @@
       *ngIf="record.type == 'Song'"
       [record]="record"
       [hidden]="showSecondIpod"
+      (next)="nextSong()"
+      (previous)="prevSong()"
     ></app-audio-player>
   </div>
 
@@ -345,7 +344,8 @@
     class="bg-[#252525] p-2 rounded-lg shadow-md w-[98%] mx-auto mt-3 mb-3"
   >
     <div class="relative mb-2">
-      <h2 class="text-2xl font-semibold pt-1 text-center title-text">
+      <h2 class="text-2xl font-semibold pt-1 title-text pl-2">
+        <i class="fas fas fa-comment-alt text-amber-400 text-xl"></i>
         Reviews
         {{
           filteredReviews.length + (existingUserReview ? 1 : 0) > 0
@@ -361,9 +361,9 @@
       >
         <button
           (click)="toggleReviewForm()"
-          class="flex items-center gap-1 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded font-medium transition text-sm"
+          class="flex items-center gap-1 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded font-medium transition text-xl"
         >
-          <i class="fas fa-plus-circle text-sm"></i>
+          <i class="fas fa-plus-circle text-xl"></i>
           <span>Add</span>
         </button>
       </div>
@@ -590,7 +590,7 @@
             </ul>
           </ng-container>
           <ng-template #noReviewsMobile>
-            <p class="text-gray-400 mt-4 text-center text-xl">
+            <p class="text-gray-400 mt-8 text-center text-xl">
               No reviews available.
             </p>
           </ng-template>
@@ -832,6 +832,8 @@
                     *ngIf="record.type == 'Song'"
                     [record]="record"
                     (playStatus)="updatePlayStatus($event)"
+                    (next)="nextSong()"
+                    (previous)="prevSong()"
                   ></app-audio-player>
                 </div>
               </div>
@@ -900,7 +902,7 @@
                   *ngIf="record.type === 'Song'"
                   class="flex flex-col items-center"
                 >
-                  <i class="fas fa-clock text-red-400 pb-2 text-lgl"></i>
+                  <i class="fas fa-clock text-red-400 pb-2 text-lg"></i>
                   <p class="text-white title-text font-bold text-lg">
                     Duration
                   </p>
@@ -948,23 +950,23 @@
 
                   <ul class="space-y-3">
                     <li
-                      *ngFor="let track of record.tracklist; let i = index"
-                      class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md"
-                    >
-                      <div class="flex items-center gap-2">
-                        <span class="text-gray-400 font-semibold text-md">{{
-                          i + 1
-                        }}</span>
-                        <span
-                          class="text-white title-text truncate overflow-hidden whitespace-nowrap text-ellipsis max-w-[155px]"
-                        >
-                          {{ track.title }}
-                        </span>
-                      </div>
-                      <span class="text-gray-300 text-sm">
-                        {{ formatDuration(track.duration) || "?" }}
+                    *ngFor="let track of record.tracklist; let i = index"
+                    class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md w-full"
+                  >
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                      <span class="text-gray-400 font-semibold text-md">
+                        {{ i + 1 }}
                       </span>
-                    </li>
+                      <span
+                        class="text-white title-text truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0"
+                      >
+                        {{ track.title }}
+                      </span>
+                    </div>
+                    <span class="text-gray-300 text-sm shrink-0 pl-2">
+                      {{ formatDuration(track.duration) || "?" }}
+                    </span>
+                  </li>                  
                   </ul>
                 </div>
               </div>
@@ -978,8 +980,8 @@
             class="bg-[#252525] p-3 rounded-xl shadow-md w-full h-[70vh] flex flex-col"
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="font-semibold pb-2 title-text text-3xl">
-                <i class="fas fas fa-comment-alt text-amber-400 text-2xl"></i>
+              <h3 class="font-semibold pb-2 title-text text-2xl">
+                <i class="fas fas fa-comment-alt text-amber-400 text-xl"></i>
                 Reviews
                 {{
                   filteredReviews.length + (existingUserReview ? 1 : 0) > 0

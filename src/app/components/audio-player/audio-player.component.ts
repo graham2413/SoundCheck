@@ -18,14 +18,25 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, FormsModule],
 })
 export class AudioPlayerComponent implements AfterViewInit {
+  
   @ViewChild('myAudio') myAudioRef!: ElementRef<HTMLAudioElement>;
   @Input() record: any;
   @Output() playStatus = new EventEmitter<boolean>();
+  @Output() next = new EventEmitter<void>();
+  @Output() previous = new EventEmitter<void>();
 
   audio!: HTMLAudioElement;
   isPlaying: boolean = false;
   audioDuration: number = 0;
   currentTime: number = 0;
+
+  onNextClick() {
+    this.next.emit();
+  }
+
+  onPreviousClick() {
+    this.previous.emit();
+  }
 
   ngAfterViewInit() {
     if (this.myAudioRef) {
