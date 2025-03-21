@@ -41,3 +41,8 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #666;
 }
+
+.no-scroll {
+  overflow: hidden;
+  height: 100vh; /* Prevent scrolling */
+}
