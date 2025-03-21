@@ -332,6 +332,7 @@
       *ngIf="record.type == 'Song'"
       [record]="record"
       [hidden]="showSecondIpod"
+      [showForwardAndBackwardButtons] = "showForwardAndBackwardButtons"
       (next)="nextSong()"
       (previous)="prevSong()"
     ></app-audio-player>
@@ -347,13 +348,15 @@
       <h2 class="text-2xl font-semibold pt-1 title-text pl-2">
         <i class="fas fas fa-comment-alt text-amber-400 text-xl"></i>
         Reviews
-        {{
-          filteredReviews.length + (existingUserReview ? 1 : 0) > 0
-            ? "(" +
-              (filteredReviews.length + (existingUserReview ? 1 : 0)) +
-              ")"
-            : ""
-        }}
+        <span class="text-xl text-gray-500">
+          {{
+            filteredReviews.length + (existingUserReview ? 1 : 0) > 0
+              ? "(" +
+                (filteredReviews.length + (existingUserReview ? 1 : 0)) +
+                ")"
+              : ""
+          }}
+        </span>
       </h2>
       <div
         *ngIf="!existingUserReview && !isAddingReview && isReviewsLoaded"
@@ -450,14 +453,14 @@
                   (click)="toggleEditReview(existingUserReview)"
                   class="absolute top-2 left-3 text-gray-400 hover:text-indigo-400 transition"
                 >
-                  <i class="fas fa-edit text-sm"></i>
+                  <i class="fas fa-edit text-2xl"></i>
                 </button>
                 <button
                   *ngIf="!isEditingReview"
                   (click)="deleteReview(existingUserReview)"
                   class="absolute top-2 right-3 text-gray-400 hover:text-red-500 transition"
                 >
-                  <i class="fas fa-trash text-sm"></i>
+                  <i class="fas fa-trash text-2xl"></i>
                 </button>
 
                 <!-- Edit Rating Section -->
@@ -497,14 +500,14 @@
                   [ngStyle]="{
                     background: getRatingGradient(existingUserReview.rating)
                   }"
-                  class="rating-bubble mx-auto text-white text-sm rounded-full px-2 py-1"
+                  class="rating-bubble mx-auto text-white rounded-full px-2 py-1 text-lg"
                 >
                   <i class="fas fa-star"></i>
                   {{ existingUserReview.rating }} / 10
                 </p>
 
                 <!-- Review Text -->
-                <div class="text-left w-full">
+                <div class="text-center w-full mt-4">
                   <textarea
                     *ngIf="isEditingReview"
                     [(ngModel)]="editedReviewText"
@@ -572,11 +575,11 @@
               >
                 <p
                   [ngStyle]="{ background: getRatingGradient(review.rating) }"
-                  class="rating-bubble mx-auto text-white text-sm rounded-full px-2 py-1"
+                  class="rating-bubble mx-auto text-white text-lg rounded-full px-2 py-1"
                 >
                   <i class="fas fa-star"></i> {{ review.rating }} / 10
                 </p>
-                <div class="text-left">
+                <div class="text-center mt-4">
                   <p class="text-gray-300 text-xl break-words">
                     {{ review.reviewText }}
                   </p>
@@ -983,13 +986,15 @@
               <h3 class="font-semibold pb-2 title-text text-2xl">
                 <i class="fas fas fa-comment-alt text-amber-400 text-xl"></i>
                 Reviews
-                {{
-                  filteredReviews.length + (existingUserReview ? 1 : 0) > 0
-                    ? "(" +
-                      (filteredReviews.length + (existingUserReview ? 1 : 0)) +
-                      ")"
-                    : ""
-                }}
+                <span class="text-xl text-gray-500">
+                  {{
+                    filteredReviews.length + (existingUserReview ? 1 : 0) > 0
+                      ? "(" +
+                        (filteredReviews.length + (existingUserReview ? 1 : 0)) +
+                        ")"
+                      : ""
+                  }}
+                </span>
               </h3>
               <div
                 *ngIf="
@@ -998,9 +1003,9 @@
               >
                 <button
                   (click)="toggleReviewForm()"
-                  class="flex items-center gap-1 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-lg font-medium transition text-sm"
+                  class="flex items-center gap-1 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-lg font-medium transition text-xl"
                 >
-                  <i class="fas fa-plus-circle text-base"></i>
+                  <i class="fas fa-plus-circle text-xl"></i>
                   <span>Add Review</span>
                 </button>
               </div>
@@ -1050,7 +1055,7 @@
                     />
                   </div>
                   <textarea
-                    class="w-full p-3 bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500"
+                    class="w-full p-3 bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 text-xl"
                     placeholder="Write your review here..."
                     rows="7"
                     [(ngModel)]="newReview"
@@ -1092,7 +1097,7 @@
                           (click)="toggleEditReview(existingUserReview)"
                           class="absolute top-2 left-3 text-gray-400 hover:text-indigo-400 transition"
                         >
-                          <i class="fas fa-edit text-sm sm:text-base"></i>
+                          <i class="fas fa-edit text-2xl"></i>
                         </button>
 
                         <button
@@ -1100,7 +1105,7 @@
                           (click)="deleteReview(existingUserReview)"
                           class="absolute top-2 right-3 text-gray-400 hover:text-red-500 transition"
                         >
-                          <i class="fas fa-trash text-sm sm:text-base"></i>
+                          <i class="fas fa-trash text-2xl"></i>
                         </button>
 
                         <!-- Rating Section -->
@@ -1157,7 +1162,7 @@
                           <!-- Normal Review Display -->
                           <p
                             *ngIf="!isEditingReview"
-                            class="text-gray-300 text-xl lg:text-lg break-words text-center"
+                            class="text-gray-300 text-xl break-words text-center mt-3"
                           >
                             {{ existingUserReview.reviewText }}
                           </p>
@@ -1235,14 +1240,14 @@
                         </p>
 
                         <!-- Review Text Below -->
-                        <div class="text-left">
+                        <div class="text-left mt-3">
                           <p
-                            class="text-gray-300 sm:text-base lg:text-lg break-words text-center"
+                            class="text-gray-300 text-xl break-words text-center"
                           >
                             {{ review.reviewText }}
                           </p>
                           <p
-                            class="text-gray-400 text-sm sm:text-base mt-3 font-medium text-center"
+                            class="text-gray-400 text-xl mt-3 font-medium text-center"
                           >
                             {{ review.user.username }}
                           </p>

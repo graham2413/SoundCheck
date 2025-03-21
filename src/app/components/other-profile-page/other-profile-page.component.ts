@@ -6,6 +6,11 @@ import { ToastrService } from 'ngx-toastr';
 import { Friend } from 'src/app/models/responses/friend-response';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { FormsModule } from '@angular/forms';
+import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
+import { ReviewPageComponent } from '../review-page/review-page.component';
+import { Album } from 'src/app/models/responses/album-response';
+import { Artist } from 'src/app/models/responses/artist-response';
+import { Song } from 'src/app/models/responses/song-response';
 
 @Component({
   selector: 'app-view-profile-page',
@@ -31,7 +36,7 @@ export class ViewProfilePageComponent implements OnInit {
   searchQuery: string = '';
   filteredFriends: any[] = [];
 
-  constructor(private route: ActivatedRoute, private userService: UserService, private toastr: ToastrService, private router: Router) {}
+  constructor(private route: ActivatedRoute, private userService: UserService, private toastr: ToastrService, private router: Router,private modal: NgbModal) {}
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -68,6 +73,21 @@ export class ViewProfilePageComponent implements OnInit {
   //       : 'assets/user.png' // Alternating between avatars and default image
   //   }));
   // }
+
+  openReview(review: Album | Artist | Song) {
+    const modalOptions: NgbModalOptions = {
+      backdrop: false,
+      keyboard: true,
+      centered: true,
+      scrollable: true,
+    };
+  
+    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+  
+    modalRef.componentInstance.record = review;
+    modalRef.componentInstance.showForwardAndBackwardButtons = false;
+  }
+  
   
   filterFriends(): void {
     const query = this.searchQuery.toLowerCase().trim();

@@ -7,8 +7,8 @@ const reviewSchema = new mongoose.Schema({
         type: { type: String, enum: ["Album", "Song", "Artist"], required: true },
         title: String,
         name: String,
-        coverImage: String,
-        profilePicture: String
+        cover: String,
+        picture: String
     },
     rating: { type: Number, min: 0, max: 10, default: null },
     reviewText: { type: String, default: "" },

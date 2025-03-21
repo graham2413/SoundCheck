@@ -1,7 +1,7 @@
 <div
   *ngIf="user"
   @fadeSlide
-  class="container mx-auto max-w-4xl p-6 bg-gray-900 text-white rounded-lg shadow-lg pt-24"
+  class="container mx-auto max-w-4xl p-6 bg-gray-900 text-white rounded-lg pt-24"
 >
   <!-- Profile Section -->
   <div class="flex flex-col items-center relative">
@@ -24,7 +24,7 @@
   <!-- Header Section -->
   <div class="flex justify-between items-center mb-4">
     <h3 class="text-2xl font-semibold text-white flex items-center gap-2">
-      <i class="fas fa-user-friends text-indigo-400 mr-1"></i> Friends ({{ user?.friends?.length || 0 }})
+      <i class="fas fa-user-friends text-indigo-400 mr-1"></i> Friends <span class="text-xl text-gray-500">({{ user?.friends?.length || 0 }})</span>
     </h3>
   </div>
 
@@ -74,21 +74,23 @@
   <div class="mt-5 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-3">
     <h3 class="text-2xl font-semibold mb-2">
       <i class="fas fas fa-comment-alt text-amber-400 mr-1"></i> Reviews
-      <ng-container *ngIf="user?.reviews?.length > 0">
+      <span *ngIf="user?.reviews?.length > 0" class="text-xl text-gray-500">
         ({{ user.reviews.length }})
-      </ng-container>
+      </span>
     </h3>
     
     <div *ngIf="user?.reviews?.length; else noReviews" class="max-h-[17.5rem] md:max-h-[36.2rem] overflow-y-auto custom-scrollbar rounded-lg">
       <div
-        *ngFor="let review of user?.reviews"
+        *ngFor="let review of user?.reviews; let last = last"
+        (click)="openReview(review.albumSongOrArtist)"
+        [ngClass]="{ 'border-b border-gray-500': !last }"
         class="flex items-start p-4 bg-[#18191B] border-b border-gray-500 shadow-md relative transition-all cursor-pointer group hover:bg-gray-700  hover:p-4 hover:rounded-md"
       >
         <!-- Album Cover or Default Image -->
         <div class="relative h-[4rem] w-[4rem] md:w-[7rem] md:h-[7rem] flex-shrink-0">
           <img
-            [src]="review.albumSongOrArtist.coverImage"
-            [src]="review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.profilePicture : review.albumSongOrArtist.coverImage"
+            [src]="review.albumSongOrArtist.cover"
+            [src]="review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.picture : review.albumSongOrArtist.cover"
             [alt]="review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.name : review.albumSongOrArtist.title"
             class="h-[4rem] w-[4rem] md:w-[7rem] md:h-[7rem] rounded-md border-2 border-gray-600 shadow-sm"
           />
@@ -132,7 +134,7 @@
 
     <!-- No Reviews Message -->
     <ng-template #noReviews>
-      <p class="text-gray-400 text-center p-4 bg-gray-800 rounded-lg shadow-sm">
+      <p class="text-gray-400 text-center p-4 bg-gray-800 rounded-lg text-lg">
         This user hasn't reviewed anything yet.
       </p>
     </ng-template>

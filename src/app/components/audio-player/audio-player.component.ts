@@ -21,6 +21,7 @@ export class AudioPlayerComponent implements AfterViewInit {
   
   @ViewChild('myAudio') myAudioRef!: ElementRef<HTMLAudioElement>;
   @Input() record: any;
+  @Input() showForwardAndBackwardButtons: boolean = true;
   @Output() playStatus = new EventEmitter<boolean>();
   @Output() next = new EventEmitter<void>();
   @Output() previous = new EventEmitter<void>();
@@ -31,10 +32,12 @@ export class AudioPlayerComponent implements AfterViewInit {
   currentTime: number = 0;
 
   onNextClick() {
+    this.isPlaying = false;
     this.next.emit();
   }
 
   onPreviousClick() {
+    this.isPlaying = false;
     this.previous.emit();
   }
 

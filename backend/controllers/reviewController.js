@@ -12,13 +12,13 @@ exports.createReview = async (req, res) => {
         // Create the new review object using the full `albumSongOrArtist` details
         const newReview = new Review({
             user: req.user._id,
-            albumSongOrArtist: { // Store full object
+            albumSongOrArtist: {
                 id: albumSongOrArtist.id,
                 type: albumSongOrArtist.type,
                 title: albumSongOrArtist.title,
                 name: albumSongOrArtist.name,
-                coverImage: albumSongOrArtist.coverImage || "", // Optional fields
-                profilePicture: albumSongOrArtist.profilePicture || ""
+                cover: albumSongOrArtist.cover || "",
+                picture: albumSongOrArtist.picture || ""
             },
             rating,
             reviewText

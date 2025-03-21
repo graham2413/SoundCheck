@@ -4,8 +4,8 @@ export interface CreateReviewCommandModel {
     type: "Album" | "Song" | "Artist";
     title?: string;  // Only for Albums & Songs
     name: string;    // Artist name
-    coverImage?: string; // Album/Song cover
-    profilePicture?: string; // Artist picture
+    cover?: string; // Album/Song cover
+    picture?: string; // Artist picture
   };
   rating: number;
   reviewText: string;

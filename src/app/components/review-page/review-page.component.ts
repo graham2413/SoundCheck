@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, input, Input, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
@@ -105,6 +105,7 @@ export class ReviewPageComponent implements OnInit {
   @Input() record!: Album | Artist | Song;
   @Input() songList: Song[] = [];
   @Input() currentIndex: number = 0;
+  @Input() showForwardAndBackwardButtons: boolean = true;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -389,8 +390,8 @@ export class ReviewPageComponent implements OnInit {
         type: this.record.type,
         title: this.record.type !== "Artist" ? this.record.title : undefined, // Only for Albums & Songs
         name: this.record.type === "Artist" ? this.record.name : this.record.artist, // Artists use 'name', Albums/Songs use 'artist'
-        coverImage: this.record.type !== "Artist" ? this.record.cover : undefined, // Only for Albums & Songs
-        profilePicture: this.record.type === "Artist" ? this.record.picture : undefined // Only for Artists
+        cover: this.record.type !== "Artist" ? this.record.cover : undefined, // Only for Albums & Songs
+        picture: this.record.type === "Artist" ? this.record.picture : undefined // Only for Artists
       },
       rating: this.newRating,
       reviewText: this.newReview
