@@ -2,7 +2,7 @@
   <div class="w-full max-w-md flex items-center justify-center gap-6 p-3">
     <!-- Backward Button -->
     <button
-      [hidden]="!showForwardAndBackwardButtons"
+      *ngIf="showForwardAndBackwardButtons"
       class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center" (click)="onPreviousClick()"
     >
       <i class="fas fa-backward"></i>
@@ -18,8 +18,8 @@
 
     <!-- Forward Button -->
     <button
-      [hidden]="!showForwardAndBackwardButtons"
-      class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center" (click)="onNextClick()"
+    *ngIf="showForwardAndBackwardButtons"
+    class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center" (click)="onNextClick()"
     >
       <i class="fas fa-forward"></i>
     </button>

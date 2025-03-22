@@ -24,7 +24,7 @@
   <!-- Header Section -->
   <div class="flex justify-between items-center mb-4">
     <h3 class="text-2xl font-semibold text-white flex items-center gap-2">
-      <i class="fas fa-user-friends text-indigo-400 mr-1"></i> Friends <span class="text-xl text-gray-500">({{ user?.friends?.length || 0 }})</span>
+      <i class="fas fa-user-friends text-indigo-400 mr-1 text-xl"></i> Friends <span class="text-xl text-gray-500">({{ user?.friends?.length || 0 }})</span>
     </h3>
   </div>
 
@@ -73,7 +73,7 @@
   <!-- Reviews Section -->
   <div class="mt-5 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-3">
     <h3 class="text-2xl font-semibold mb-2">
-      <i class="fas fas fa-comment-alt text-amber-400 mr-1"></i> Reviews
+      <i class="fas fas fa-comment-alt text-amber-400 mr-1 text-xl"></i> Reviews
       <span *ngIf="user?.reviews?.length > 0" class="text-xl text-gray-500">
         ({{ user.reviews.length }})
       </span>
