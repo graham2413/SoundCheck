@@ -96,6 +96,7 @@ export class ReviewPageComponent implements OnInit {
   isScrollable = false;
   isTextOverflowing = false;
   isModalOpen: boolean = true;
+  stars = Array(10).fill(0);
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
@@ -206,6 +207,10 @@ export class ReviewPageComponent implements OnInit {
       this.checkOverflow(); 
       this.scrollingContent.nativeElement.style.visibility = 'visible';
     }, 50);
+  }
+
+  floor(value: number): number {
+    return Math.floor(value);
   }
 
   formatDate(dateString: string | null | undefined): string {

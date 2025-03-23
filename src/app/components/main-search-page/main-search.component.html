@@ -70,7 +70,7 @@
 <!-- Skeleton Loader -->
 <div
   *ngIf="isLoading"
-  class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-3xl"
+  class="mt-6 mx-auto mb-6 bg-gray-800 pt-6  rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-3xl"
 >
   <div class="animate-pulse space-y-4">
     <div class="h-6 bg-gray-700 rounded w-1/4 mx-auto"></div>
@@ -140,18 +140,18 @@
 <!-- Search Results -->
 <div
   *ngIf="resultsHasValues() && !isLoading"
-  class="mt-6 w-full max-w-3xl mx-auto"
+  class="mt-6 w-full max-w-3xl mx-auto pb-1"
 >
   <!-- Songs -->
   <div
     *ngIf="activeTab === 'songs'"
-    class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
+    class="mt-6 mx-auto mb-6 bg-gray-800 p-1 pt-6 sm:p-3 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
   >
     <div class="relative mb-6">
       <h2 class="text-2xl font-bold text-white text-center">Songs</h2>
 
       <!-- Filter Button Wrapper -->
-      <div class="absolute right-0 top-0">
+      <div class="absolute right-0 top-0 pr-1">
         <button
           #filterButton
           (click)="toggleGenreFilter('songs')"
@@ -241,7 +241,7 @@
   <!-- Albums -->
   <div
     *ngIf="activeTab === 'albums'"
-    class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
+    class="mt-6 mx-auto mb-6 bg-gray-800 p-2 pt-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
   >
     <div class="relative mb-6">
       <h2 class="text-2xl font-bold text-white text-center">Albums</h2>

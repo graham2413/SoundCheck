@@ -26,15 +26,14 @@
       </h3>
 
       <div
-      #scrollContainer
-      [ngClass]="{
-        'justify-center': !isScrollable,
-        'justify-start': isScrollable
-      }"
-      class="record-details-card flex-grow overflow-y-auto w-full flex flex-col items-center space-y-10 px-4 pb-4"
-      style="min-height: 0; max-height: calc(100vh - 125px);"
-    >
-    
+        #scrollContainer
+        [ngClass]="{
+          'justify-center': !isScrollable,
+          'justify-start': isScrollable
+        }"
+        class="record-details-card flex-grow overflow-y-auto w-full flex flex-col items-center space-y-10 px-4 pb-4"
+        style="min-height: 0; max-height: calc(100vh - 125px)"
+      >
         <div
           class="flex flex-col items-center justify-center w-full space-y-10"
         >
@@ -105,23 +104,23 @@
             </div>
             <ul *ngIf="isTracklistArray" class="space-y-3">
               <li
-              *ngFor="let track of record.tracklist; let i = index"
-              class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md"
-            >
-              <div class="flex items-center gap-3 flex-1 min-w-0 text-xl">
-                <span class="text-gray-400 font-semibold">
-                  {{ i + 1 }}
+                *ngFor="let track of record.tracklist; let i = index"
+                class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md"
+              >
+                <div class="flex items-center gap-3 flex-1 min-w-0 text-xl">
+                  <span class="text-gray-400 font-semibold">
+                    {{ i + 1 }}
+                  </span>
+                  <span
+                    class="text-white truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0"
+                  >
+                    {{ track.title }}
+                  </span>
+                </div>
+                <span class="text-gray-300 text-md shrink-0 pl-2.5">
+                  {{ formatDuration(track.duration) || "?" }}
                 </span>
-                <span
-                  class="text-white truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0"
-                >
-                  {{ track.title }}
-                </span>
-              </div>
-              <span class="text-gray-300 text-md shrink-0 pl-2.5">
-                {{ formatDuration(track.duration) || "?" }}
-              </span>
-            </li>            
+              </li>
             </ul>
 
             <p *ngIf="!isTracklistArray" class="text-gray-400 text-center">
@@ -237,15 +236,21 @@
                 <span
                   class="absolute inset-0 flex flex-col items-center justify-center text-white font-bold text-3xl md:text-4xl lg:text-5xl"
                 >
-                <ng-container *ngIf="getAverageRating() > 0; else noReviewsMessage">
-                  <ng-container *ngIf="getAverageRating() === 10; else formattedRating">
-                    10
+                  <ng-container
+                    *ngIf="getAverageRating() > 0; else noReviewsMessage"
+                  >
+                    <ng-container
+                      *ngIf="getAverageRating() === 10; else formattedRating"
+                    >
+                      10
+                    </ng-container>
+                    <ng-template #formattedRating>
+                      {{ getAverageRating() | number : "1.1-1" }}
+                    </ng-template>
+                    <span class="text-[1.2rem] font-medium text-gray-300"
+                      >/ 10</span
+                    >
                   </ng-container>
-                  <ng-template #formattedRating>
-                    {{ getAverageRating() | number: "1.1-1" }}
-                  </ng-template>
-                  <span class="text-[1.2rem] font-medium text-gray-300">/ 10</span>
-                </ng-container>
                 </span>
               </ng-template>
             </div>
@@ -253,7 +258,9 @@
 
           <!-- No Reviews Star Rating Prompt -->
           <ng-template #noReviewsMessage>
-            <div class="flex flex-col items-center justify-center text-gray-300">
+            <div
+              class="flex flex-col items-center justify-center text-gray-300"
+            >
               <div class="inline-flex space-x-1" (click)="scrollToReviews()">
                 <i class="far fa-star text-3xl"></i>
                 <i class="far fa-star text-3xl"></i>
@@ -262,10 +269,13 @@
                 <i class="far fa-star text-3xl"></i>
               </div>
               <!-- Ensure only the text is clickable -->
-              <span class="text-lg font-medium cursor-pointer" (click)="scrollToReviews()">Be the first to rate!</span>
+              <span
+                class="text-lg font-medium cursor-pointer"
+                (click)="scrollToReviews()"
+                >Be the first to rate!</span
+              >
             </div>
           </ng-template>
-          
 
           <!-- Close Button -->
           <button
@@ -276,19 +286,20 @@
           </button>
         </div>
 
-      <!-- Image Section -->
-      <div class="flex flex-col items-center flex-grow justify-center">
-        <div class="relative max-w-[90%] h-[55vh] flex items-center justify-center">
-
-          <!-- Image (Appears when loaded) -->
-          <img
-            [src]="record.type === 'Artist' ? record.picture : record.cover"
-            [alt]="record.type === 'Artist' ? record.name : record.title"
-            class="rounded-lg w-full max-w-full max-h-full object-contain"
-            (load)="isImageLoaded = true"
-          />
+        <!-- Image Section -->
+        <div class="flex flex-col items-center flex-grow justify-center">
+          <div
+            class="relative max-w-[90%] h-[55vh] flex items-center justify-center"
+          >
+            <!-- Image (Appears when loaded) -->
+            <img
+              [src]="record.type === 'Artist' ? record.picture : record.cover"
+              [alt]="record.type === 'Artist' ? record.name : record.title"
+              class="rounded-lg w-full max-w-full max-h-full object-contain"
+              (load)="isImageLoaded = true"
+            />
+          </div>
         </div>
-      </div>
 
         <!-- Info-->
         <div class="text-center text-3xl">
@@ -332,7 +343,7 @@
       *ngIf="record.type == 'Song'"
       [record]="record"
       [hidden]="showSecondIpod"
-      [showForwardAndBackwardButtons] = "showForwardAndBackwardButtons"
+      [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
       (next)="nextSong()"
       (previous)="prevSong()"
     ></app-audio-player>
@@ -342,7 +353,7 @@
   <div
     #reviewsSection
     *ngIf="!showSecondIpod"
-    class="bg-[#252525] p-2 rounded-lg shadow-md w-[98%] mx-auto mt-3 mb-3"
+    class="bg-[#252525] p-2 shadow-md w-full mx-auto mt-3"
   >
     <div class="relative mb-2">
       <h2 class="text-2xl font-semibold pt-1 title-text pl-2">
@@ -382,62 +393,97 @@
       </ng-container>
 
       <ng-template #reviewsContentMobile>
-        <!-- "Add Review" Section -->
-        <div *ngIf="isAddingReview" class="mt-2 p-4 bg-[#3a3a3a] rounded-lg">
-          <div class="w-full text-center mb-2">
-            <p class="text-white font-medium text-lg mb-2">
-              Rating:
-              <!-- Single Numeric Input -->
-              <input
-                type="number"
-                min="0"
-                max="10"
-                step="0.1"
-                [(ngModel)]="newRating"
-                (keypress)="onKeyPressRating($event, 'new')"
-                (blur)="onBlurRating('new')"
-                class="w-16 text-2xl text-yellow-400 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <span class="text-yellow-300 text-lg opacity-70 font-medium ml-1"
-                >/10</span
-              >
+        <!-- Fullscreen Overlay -->
+        <div
+          *ngIf="isAddingReview"
+          class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+        >
+          <!-- Review Card -->
+          <div
+            class="w-[100vh] bg-[#3a3a3a] p-6 shadow-lg h-[100vh] flex flex-col justify-between"
+          >
+            <!-- Title -->
+            <p class="text-white font-semibold text-4xl mb-4 text-center">
+              <i class="fas fa-comments text-indigo-400 text-indigo-400"></i>
+              Feedback
             </p>
+            <!-- Rating and Textarea Container -->
+            <div class="flex flex-col items-center justify-center flex-grow">
+              <!-- Star Rating Display -->
+              <div class="flex justify-center mb-4">
+                <ng-container
+                  *ngFor="
+                    let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+                    let i = index
+                  "
+                >
+                  <i
+                    class="fas fa-star text-3xl"
+                    [ngClass]="{
+                      'text-yellow-400': newRating >= star - 0.5,
+                      'text-gray-500': newRating < star - 0.5
+                    }"
+                  ></i>
+                </ng-container>
+              </div>
+              <!-- Rating -->
+              <div class="text-center mb-4 w-full">
+                <p class="text-white font-medium text-3xl mb-2">
+                  Rating:
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    [(ngModel)]="newRating"
+                    (keypress)="onKeyPressRating($event, 'new')"
+                    (blur)="onBlurRating('new')"
+                    class="w-16 text-3xl text-yellow-400 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <span
+                    class="text-yellow-300 text-2xl opacity-70 font-medium ml-1"
+                    >/10</span
+                  >
+                </p>
 
-            <!-- Slider -->
-            <input
-              type="range"
-              min="0"
-              max="10"
-              step="0.1"
-              [(ngModel)]="newRating"
-              class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
-            />
-          </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  step="0.1"
+                  [(ngModel)]="newRating"
+                  class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
+                />
+              </div>
 
-          <!-- Review Text -->
-          <textarea
-            class="w-full p-3 text-xl bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500"
-            placeholder="Write your review here..."
-            rows="7"
-            [(ngModel)]="newReview"
-          ></textarea>
-          <div class="flex gap-2 mt-2">
-            <button
-              class="bg-red-600 text-white px-4 py-2 rounded-lg w-full"
-              (click)="cancelReview()"
-            >
-              Cancel
-            </button>
-            <button
-              (click)="submitReview()"
-              class="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg text-white w-full"
-            >
-              <span *ngIf="!isCreateLoading">Create</span>
-              <span *ngIf="isCreateLoading" class="flex items-center gap-2">
-                <i class="fas fa-spinner fa-spin"></i>
-                Creating
-              </span>
-            </button>
+              <!-- Review Textarea -->
+              <textarea
+                class="w-full p-3 text-xl bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500 h-[50vh]"
+                placeholder="Write your review here..."
+                [(ngModel)]="newReview"
+              ></textarea>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-2 mt-4 font-medium">
+              <button
+                class="bg-red-600 text-white text-2xl px-4 py-4 rounded-lg w-full flex items-center justify-center gap-2"
+                (click)="cancelReview()"
+              >
+                <i class="fa fa-times"></i> Cancel
+              </button>
+              <button
+                (click)="submitReview()"
+                class="bg-indigo-500 hover:bg-indigo-600 text-2xl px-4 py-2 rounded-lg text-white w-full flex items-center justify-center gap-2"
+              >
+                <ng-container *ngIf="!isCreateLoading">
+                  <i class="fas fa-paper-plane"></i> Create
+                </ng-container>
+                <ng-container *ngIf="isCreateLoading">
+                  <i class="fas fa-spinner fa-spin"></i> Creating
+                </ng-container>
+              </button>
+            </div>
           </div>
         </div>
         <!-- Existing User Review Section -->
@@ -463,35 +509,99 @@
                   <i class="fas fa-trash text-2xl"></i>
                 </button>
 
-                <!-- Edit Rating Section -->
-                <div *ngIf="isEditingReview" class="w-full text-center mb-2">
-                  <p class="text-white title-text font-medium text-lg mb-2">
-                    Rating:
-                    <input
-                      type="number"
-                      min="0"
-                      max="10"
-                      step="0.1"
-                      [(ngModel)]="editedRating"
-                      (keypress)="onKeyPressRating($event, 'edit')"
-                      (blur)="onBlurRating('edit')"
-                      class="w-16 text-2xl text-yellow-400 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <span
-                      class="text-yellow-300 text-lg opacity-70 font-medium ml-1"
-                      >/10</span
+                <!-- Fullscreen Overlay for Editing -->
+                <div
+                  *ngIf="isEditingReview"
+                  class="fixed inset-0 bg-black z-50 flex items-center justify-center"
+                >
+                  <div
+                    class="w-full bg-[#3a3a3a] p-6 shadow-lg h-full flex flex-col justify-between"
+                  >
+                    <!-- Header -->
+                    <p
+                      class="text-white font-semibold text-4xl mb-4 text-center flex items-center justify-center gap-2"
                     >
-                  </p>
+                      <i class="fas fa-edit text-indigo-400"></i>
+                      Editing Review
+                    </p>
+                    <!-- Edit Rating Section -->
+                    <div
+                      class="flex flex-col items-center justify-center flex-grow"
+                    >
+                      <div class="text-center w-full mx-auto">
+                        <div class="flex justify-center mb-4">
+                          <ng-container
+                            *ngFor="
+                              let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+                              let i = index
+                            "
+                          >
+                            <i
+                              class="fas fa-star text-3xl"
+                              [ngClass]="{
+                                'text-yellow-400': newRating >= star - 0.5,
+                                'text-gray-500': newRating < star - 0.5
+                              }"
+                            ></i>
+                          </ng-container>
+                        </div>
+                        <p class="text-white font-medium text-3xl mb-2">
+                          Rating:
+                          <input
+                            type="number"
+                            min="0"
+                            max="10"
+                            step="0.1"
+                            [(ngModel)]="editedRating"
+                            (keypress)="onKeyPressRating($event, 'edit')"
+                            (blur)="onBlurRating('edit')"
+                            class="w-16 text-3xl text-yellow-400 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                          <span
+                            class="text-yellow-300 text-2xl opacity-70 font-medium ml-1"
+                            >/10</span
+                          >
+                        </p>
 
-                  <!-- Slider Control -->
-                  <input
-                    type="range"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    [(ngModel)]="editedRating"
-                    class="w-full h-3 rounded-full bg-gray-700 appearance-none cursor-pointer transition-all slider-modern"
-                  />
+                        <!-- Slider Control -->
+                        <input
+                          type="range"
+                          min="0"
+                          max="10"
+                          step="0.1"
+                          [(ngModel)]="editedRating"
+                          class="w-full h-3 rounded-full bg-gray-700 appearance-none cursor-pointer transition-all slider-modern"
+                        />
+                      </div>
+
+                      <!-- Review Text -->
+                      <textarea
+                        [(ngModel)]="editedReviewText"
+                        class="w-full mt-5 p-3 text-xl bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500 h-[50vh]"
+                        placeholder="Write your review here..."
+                      ></textarea>
+                    </div>
+                    <!-- Buttons -->
+                    <div class="flex gap-2 mt-4 font-medium">
+                      <button
+                        class="bg-red-600 text-white text-2xl px-4 py-4 rounded-lg w-full flex items-center justify-center gap-2"
+                        (click)="cancelEditReview()"
+                      >
+                        <i class="fa fa-times"></i> Cancel
+                      </button>
+                      <button
+                        (click)="submitEditReview()"
+                        class="bg-green-500 hover:bg-green-600 text-2xl px-4 py-2 rounded-lg text-white w-full flex items-center justify-center gap-2"
+                      >
+                        <ng-container *ngIf="!isCreateLoading">
+                          <i class="fas fa-save"></i> Save
+                        </ng-container>
+                        <ng-container *ngIf="isCreateLoading">
+                          <i class="fas fa-spinner fa-spin"></i> Saving
+                        </ng-container>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Display Rating Bubble when NOT Editing -->
@@ -508,13 +618,6 @@
 
                 <!-- Review Text -->
                 <div class="text-center w-full mt-4">
-                  <textarea
-                    *ngIf="isEditingReview"
-                    [(ngModel)]="editedReviewText"
-                    class="text-xl text-gray-300 break-words w-full bg-gray-800 rounded p-3 focus:outline-none focus:ring-blue-500"
-                    rows="7"
-                    placeholder="Write your review here..."
-                  ></textarea>
                   <p
                     *ngIf="!isEditingReview"
                     class="text-gray-300 text-xl break-words"
@@ -527,30 +630,6 @@
                   >
                     {{ existingUserReview.user.username }} (Your Review)
                   </p>
-                </div>
-
-                <!-- Save & Cancel Buttons -->
-                <div
-                  *ngIf="isEditingReview"
-                  class="flex gap-2 justify-center mt-2"
-                >
-                  <button
-                    class="bg-red-600 text-xl text-white px-4 py-2 rounded-lg w-full"
-                    (click)="cancelEditReview()"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    (click)="submitEditReview()"
-                    class="bg-green-600 text-xl hover:bg-green-700 px-4 py-2 rounded-lg text-white w-full"
-                  >
-                    <span *ngIf="!isEditLoading">Save</span>
-                    <span *ngIf="isEditLoading" class="flex items-center gap-2">
-                      <i class="fas fa-spinner fa-spin"></i>
-                      Saving
-                    </span>
-                  </button>
                 </div>
               </li>
             </ul>
@@ -567,7 +646,12 @@
         </ng-template>
         <!-- All Reviews Section -->
         <div>
-          <ng-container *ngIf="existingUserReview || filteredReviews.length > 0; else noReviewsMobile">
+          <ng-container
+            *ngIf="
+              existingUserReview || filteredReviews.length > 0;
+              else noReviewsMobile
+            "
+          >
             <ul class="space-y-4 mt-3" @fadeIn>
               <li
                 *ngFor="let review of filteredReviews; trackBy: trackById"
@@ -583,9 +667,7 @@
                   <p class="text-gray-300 text-xl break-words">
                     {{ review.reviewText }}
                   </p>
-                  <p
-                    class="text-gray-400 text-xl mt-3 font-medium text-center"
-                  >
+                  <p class="text-gray-400 text-xl mt-3 font-medium text-center">
                     {{ review.user.username }}
                   </p>
                 </div>
@@ -722,16 +804,21 @@
                 else loadingSpinner
               "
             >
-            <ng-container *ngIf="getAverageRating() > 0; else noReviewsMessage">
-              <ng-container *ngIf="getAverageRating() === 10; else formattedRating">
-                10
+              <ng-container
+                *ngIf="getAverageRating() > 0; else noReviewsMessage"
+              >
+                <ng-container
+                  *ngIf="getAverageRating() === 10; else formattedRating"
+                >
+                  10
+                </ng-container>
+                <ng-template #formattedRating>
+                  {{ getAverageRating() | number : "1.1-1" }}
+                </ng-template>
+                <span class="text-xs md:text-sm font-medium text-gray-300"
+                  >/ 10</span
+                >
               </ng-container>
-              <ng-template #formattedRating>
-                {{ getAverageRating() | number: "1.1-1" }}
-              </ng-template>
-              <span class="text-xs md:text-sm font-medium text-gray-300">/ 10</span>
-            </ng-container>
-            
             </ng-container>
           </span>
         </div>
@@ -953,23 +1040,23 @@
 
                   <ul class="space-y-3">
                     <li
-                    *ngFor="let track of record.tracklist; let i = index"
-                    class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md w-full"
-                  >
-                    <div class="flex items-center gap-2 flex-1 min-w-0">
-                      <span class="text-gray-400 font-semibold text-md">
-                        {{ i + 1 }}
+                      *ngFor="let track of record.tracklist; let i = index"
+                      class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md w-full"
+                    >
+                      <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <span class="text-gray-400 font-semibold text-md">
+                          {{ i + 1 }}
+                        </span>
+                        <span
+                          class="text-white title-text truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0"
+                        >
+                          {{ track.title }}
+                        </span>
+                      </div>
+                      <span class="text-gray-300 text-sm shrink-0 pl-2">
+                        {{ formatDuration(track.duration) || "?" }}
                       </span>
-                      <span
-                        class="text-white title-text truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0"
-                      >
-                        {{ track.title }}
-                      </span>
-                    </div>
-                    <span class="text-gray-300 text-sm shrink-0 pl-2">
-                      {{ formatDuration(track.duration) || "?" }}
-                    </span>
-                  </li>                  
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -990,7 +1077,8 @@
                   {{
                     filteredReviews.length + (existingUserReview ? 1 : 0) > 0
                       ? "(" +
-                        (filteredReviews.length + (existingUserReview ? 1 : 0)) +
+                        (filteredReviews.length +
+                          (existingUserReview ? 1 : 0)) +
                         ")"
                       : ""
                   }}
@@ -1029,10 +1117,35 @@
               <ng-template #reviewsContent>
                 <div
                   *ngIf="isAddingReview"
-                  class="mt-2 p-4 bg-[#2F2F2F] rounded-lg"
+                  class="mt-2 p-4 bg-[#2F2F2F] rounded-lg flex flex-col justify-between h-full"
                 >
+                  <!-- Header -->
+                  <p class="text-white font-semibold text-3xl mb-4 text-center">
+                    <i
+                      class="fas fa-comments text-indigo-400 text-indigo-400"
+                    ></i>
+                    Feedback
+                  </p>
+
                   <!-- Rating Section -->
-                  <div class="w-full text-center mb-2">
+                  <div class="w-full text-center mb-4">
+                    <!-- Star Rating Display -->
+                    <div class="flex justify-center mb-2">
+                      <ng-container
+                        *ngFor="
+                          let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+                          let i = index
+                        "
+                      >
+                        <i
+                          class="fas fa-star text-2xl"
+                          [ngClass]="{
+                            'text-yellow-400': newRating >= star - 0.5,
+                            'text-gray-500': newRating < star - 0.5
+                          }"
+                        ></i>
+                      </ng-container>
+                    </div>
                     <p class="text-white font-medium text-lg mb-2">
                       Rating:
                       <span class="font-bold text-2xl text-yellow-400 glow">
@@ -1055,23 +1168,24 @@
                     />
                   </div>
                   <textarea
-                    class="w-full p-3 bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 text-xl"
+                    class="w-full p-3 bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 text-xl h-[35vh]"
                     placeholder="Write your review here..."
-                    rows="7"
                     [(ngModel)]="newReview"
                   ></textarea>
-                  <div class="flex flex-wrap gap-2 justify-between mt-2">
+                  <div class="flex gap-2 mt-4 font-medium">
                     <button
-                      class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg w-full sm:w-auto"
+                      class="bg-red-600 hover:bg-red-700 text-white text-2xl px-4 py-4 rounded-lg w-full flex items-center justify-center gap-2"
                       (click)="cancelReview()"
                     >
-                      Cancel
+                      <i class="fas fa-times"></i> Cancel
                     </button>
                     <button
                       (click)="submitReview()"
-                      class="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg text-white w-full sm:w-auto"
+                      class="bg-indigo-600 hover:bg-indigo-700 text-2xl px-4 py-2 rounded-lg text-white w-full flex items-center justify-center gap-2"
                     >
-                      <span *ngIf="!isCreateLoading">Create</span>
+                      <span *ngIf="!isCreateLoading"
+                        ><i class="fas fa-paper-plane"></i> Create</span
+                      >
                       <span
                         *ngIf="isCreateLoading"
                         class="flex items-center gap-2"
@@ -1089,7 +1203,7 @@
                   <div *ngIf="existingUserReview" class="mt-3" @fadeIn>
                     <ul class="space-y-2 sm:space-y-3">
                       <li
-                        class="review-card p-3 rounded-lg flex flex-col gap-3 relative bg-gray-900"
+                        class="review-card edit-card p-3 rounded-lg flex flex-col gap-3 relative bg-gray-900"
                       >
                         <!-- Edit & Delete Icons (Hidden when editing) -->
                         <button
@@ -1113,6 +1227,31 @@
                           *ngIf="isEditingReview"
                           class="w-full text-center mb-2"
                         >
+                          <!-- Header -->
+                            <p class="text-white font-semibold text-2xl mb-4 text-center">
+                              <i
+                                class="fas fa-comments text-indigo-400 text-indigo-400"
+                              ></i>
+                              Feedback
+                            </p>
+
+                            <!-- Star Rating Display -->
+                            <div class="flex justify-center mb-2">
+                              <ng-container
+                                *ngFor="
+                                  let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+                                  let i = index
+                                "
+                              >
+                                <i
+                                  class="fas fa-star text-2xl"
+                                  [ngClass]="{
+                                    'text-yellow-400': newRating >= star - 0.5,
+                                    'text-gray-500': newRating < star - 0.5
+                                  }"
+                                ></i>
+                              </ng-container>
+                            </div>
                           <p class="text-white font-medium text-lg mb-2">
                             Rating:
                             <span
@@ -1154,7 +1293,7 @@
                           <textarea
                             *ngIf="isEditingReview"
                             [(ngModel)]="editedReviewText"
-                            class="text-gray-300 text-xl break-words w-full bg-gray-800 rounded p-2 border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="text-gray-300 text-xl break-words w-full bg-gray-800 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             rows="7"
                             placeholder="Write your review here..."
                           ></textarea>
@@ -1179,22 +1318,23 @@
                         <!-- Submit & Cancel Buttons -->
                         <div
                           *ngIf="isEditingReview"
-                          class="flex justify-between mt-3"
+                          class="flex gap-2 mt-4 font-medium"
                         >
                           <button
                             (click)="cancelEditReview()"
                             [disabled]="isEditLoading"
-                            class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
-                          >
-                            Cancel
+                            class="bg-red-600 hover:bg-red-700 text-white text-2xl px-4 py-4 rounded-lg w-full flex items-center justify-center gap-2"
+                            >
+                            <i class="fas fa-times"></i> Cancel
                           </button>
 
                           <button
                             (click)="submitEditReview()"
                             [disabled]="isEditLoading"
-                            class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition flex items-center"
-                          >
-                            <span *ngIf="!isEditLoading">Save</span>
+                            class="bg-green-600 hover:bg-green-700 text-2xl px-4 py-2 rounded-lg text-white w-full flex items-center justify-center gap-2"
+                            >
+                            <span *ngIf="!isEditLoading">                          <i class="fas fa-save"></i> Save
+                            </span>
                             <span
                               *ngIf="isEditLoading"
                               class="flex items-center gap-2"
@@ -1220,7 +1360,12 @@
 
                 <!-- All Reviews Section -->
                 <div class="max-h-full" @fadeIn>
-                  <ng-container *ngIf="existingUserReview || filteredReviews.length > 0; else noReviews">
+                  <ng-container
+                    *ngIf="
+                      existingUserReview || filteredReviews.length > 0;
+                      else noReviews
+                    "
+                  >
                     <ul class="space-y-4 mt-3">
                       <li
                         *ngFor="
