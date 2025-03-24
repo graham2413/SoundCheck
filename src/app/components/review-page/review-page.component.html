@@ -444,8 +444,8 @@
                     [(ngModel)]="newRating"
                     (keypress)="onKeyPressRating($event, 'new')"
                     (blur)="onBlurRating('new')"
-                    class="w-16 text-3xl text-yellow-400 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                    class="w-[3.4rem] text-3xl leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
+                    />
                   <span
                     class="text-yellow-300 text-2xl opacity-70 font-medium ml-1"
                     >/10</span
@@ -535,22 +535,23 @@
                       class="flex flex-col items-center justify-center flex-grow"
                     >
                       <div class="text-center w-full mx-auto">
-                        <div class="flex justify-center mb-4">
-                          <ng-container
-                            *ngFor="
-                              let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-                              let i = index
-                            "
-                          >
-                            <i
-                              class="fas fa-star text-3xl"
-                              [ngClass]="{
-                                'text-yellow-400': newRating >= star - 0.5,
-                                'text-gray-500': newRating < star - 0.5
-                              }"
-                            ></i>
-                          </ng-container>
-                        </div>
+                      <!-- Star Rating Display -->
+                      <div class="flex justify-center mb-4">
+                        <ng-container
+                          *ngFor="
+                            let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+                            let i = index
+                          "
+                        >
+                          <i
+                            class="fas fa-star text-3xl"
+                            [ngClass]="{
+                              'text-yellow-400': editedRating >= star - 0.5,
+                              'text-gray-500': editedRating < star - 0.5
+                            }"
+                          ></i>
+                        </ng-container>
+                      </div>
                         <p class="text-white font-medium text-3xl mb-2">
                           Rating:
                           <input
@@ -561,7 +562,7 @@
                             [(ngModel)]="editedRating"
                             (keypress)="onKeyPressRating($event, 'edit')"
                             (blur)="onBlurRating('edit')"
-                            class="w-16 text-3xl text-yellow-400 bg-transparent border-none text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            class="w-[3.4rem] text-3xl leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
                           />
                           <span
                             class="text-yellow-300 text-2xl opacity-70 font-medium ml-1"
@@ -1152,11 +1153,18 @@
                         ></i>
                       </ng-container>
                     </div>
-                    <p class="text-white font-medium text-lg mb-2">
+                    <p class="text-white font-medium text-2xl mb-2">
                       Rating:
-                      <span class="font-bold text-2xl text-yellow-400 glow">
-                        {{ newRating.toFixed(1) }}
-                      </span>
+                      <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      [(ngModel)]="newRating"
+                      (keypress)="onKeyPressRating($event, 'new')"
+                      (blur)="onBlurRating('new')"
+                      class="w-[3.2rem] text-2xl leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
+                      />
                       <span
                         class="text-yellow-300 text-lg opacity-70 font-medium ml-1"
                         >/10</span
@@ -1235,10 +1243,8 @@
                         >
                           <!-- Header -->
                             <p class="text-white font-semibold text-2xl mb-4 text-center">
-                              <i
-                                class="fas fa-comments text-indigo-400 text-indigo-400"
-                              ></i>
-                              Feedback
+                              <i class="fas fa-edit text-indigo-400"></i>
+                              Editing Review
                             </p>
 
                             <!-- Star Rating Display -->
@@ -1252,20 +1258,26 @@
                                 <i
                                   class="fas fa-star text-2xl"
                                   [ngClass]="{
-                                    'text-yellow-400': newRating >= star - 0.5,
-                                    'text-gray-500': newRating < star - 0.5
+                                    'text-yellow-400': editedRating >= star - 0.5,
+                                    'text-gray-500': editedRating < star - 0.5
                                   }"
                                 ></i>
                               </ng-container>
                             </div>
-                          <p class="text-white font-medium text-lg mb-2">
+                          <p class="text-white font-medium text-2xl mb-2">
                             Rating:
+                            <input
+                            type="number"
+                            min="0"
+                            max="10"
+                            step="0.1"
+                            [(ngModel)]="editedRating"
+                            (keypress)="onKeyPressRating($event, 'new')"
+                            (blur)="onBlurRating('new')"
+                            class="w-[3.2rem] text-2xl leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
+                            />
                             <span
-                              class="text-yellow-400 font-bold text-2xl glow"
-                              >{{ editedRating }}</span
-                            >
-                            <span
-                              class="text-yellow-300 text-lg opacity-70 font-medium ml-1"
+                              class="text-yellow-300 text-lg opacity-70 font-medium"
                               >/10</span
                             >
                           </p>
