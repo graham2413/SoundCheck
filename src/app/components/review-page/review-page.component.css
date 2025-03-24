@@ -207,12 +207,13 @@
   background-color: #0c1327;
 }
 
-@media (min-height: 720px) {
-  .paddingFix {
-    padding-top: 1.7rem;
-  }
-}
 
 .edit-card {
   background-color: #2F2F2F;
+}
+
+@media (min-height: 720px) {
+  .paddingTallScreen {
+    padding-top: 1.7rem;
+  }
 }
