@@ -417,19 +417,12 @@
             <div class="flex flex-col items-center justify-center flex-grow">
               <!-- Star Rating Display -->
               <div class="flex justify-center mb-4">
-                <ng-container
-                  *ngFor="
-                    let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-                    let i = index
-                  "
-                >
-                  <i
-                    class="fas fa-star text-3xl"
-                    [ngClass]="{
-                      'text-yellow-400': newRating >= star - 0.5,
-                      'text-gray-500': newRating < star - 0.5
-                    }"
-                  ></i>
+                <ng-container *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]">
+                  <ng-container [ngSwitch]="getStarType(star, newRating)">
+                    <i *ngSwitchCase="'full'" class="fas fa-star text-3xl text-yellow-400"></i>
+                    <i *ngSwitchCase="'half'" class="fas fa-star-half-alt text-3xl text-yellow-400"></i>
+                    <i *ngSwitchCase="'empty'" class="far fa-star text-3xl text-gray-500"></i>
+                  </ng-container>
                 </ng-container>
               </div>
               <!-- Rating -->
@@ -537,21 +530,15 @@
                       <div class="text-center w-full mx-auto">
                       <!-- Star Rating Display -->
                       <div class="flex justify-center mb-4">
-                        <ng-container
-                          *ngFor="
-                            let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-                            let i = index
-                          "
-                        >
-                          <i
-                            class="fas fa-star text-3xl"
-                            [ngClass]="{
-                              'text-yellow-400': editedRating >= star - 0.5,
-                              'text-gray-500': editedRating < star - 0.5
-                            }"
-                          ></i>
+                        <ng-container *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]">
+                          <ng-container [ngSwitch]="getStarType(star, editedRating)">
+                            <i *ngSwitchCase="'full'" class="fas fa-star text-3xl text-yellow-400"></i>
+                            <i *ngSwitchCase="'half'" class="fas fa-star-half-alt text-3xl text-yellow-400"></i>
+                            <i *ngSwitchCase="'empty'" class="far fa-star text-3xl text-gray-500"></i>
+                          </ng-container>
                         </ng-container>
                       </div>
+
                         <p class="text-white font-medium text-3xl mb-2">
                           Rating:
                           <input
@@ -1136,23 +1123,16 @@
 
                   <!-- Rating Section -->
                   <div class="w-full text-center mb-4">
-                    <!-- Star Rating Display -->
-                    <div class="flex justify-center mb-2">
-                      <ng-container
-                        *ngFor="
-                          let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-                          let i = index
-                        "
-                      >
-                        <i
-                          class="fas fa-star text-2xl"
-                          [ngClass]="{
-                            'text-yellow-400': newRating >= star - 0.5,
-                            'text-gray-500': newRating < star - 0.5
-                          }"
-                        ></i>
-                      </ng-container>
-                    </div>
+                      <!-- Star Rating Display -->
+                      <div class="flex justify-center mb-4">
+                        <ng-container *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]">
+                          <ng-container [ngSwitch]="getStarType(star, newRating)">
+                            <i *ngSwitchCase="'full'" class="fas fa-star text-3xl text-yellow-400"></i>
+                            <i *ngSwitchCase="'half'" class="fas fa-star-half-alt text-3xl text-yellow-400"></i>
+                            <i *ngSwitchCase="'empty'" class="far fa-star text-3xl text-gray-500"></i>
+                          </ng-container>
+                        </ng-container>
+                      </div>
                     <p class="text-white font-medium text-2xl mb-2">
                       Rating:
                       <input
@@ -1246,24 +1226,16 @@
                               <i class="fas fa-edit text-indigo-400"></i>
                               Editing Review
                             </p>
-
-                            <!-- Star Rating Display -->
-                            <div class="flex justify-center mb-2">
-                              <ng-container
-                                *ngFor="
-                                  let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-                                  let i = index
-                                "
-                              >
-                                <i
-                                  class="fas fa-star text-2xl"
-                                  [ngClass]="{
-                                    'text-yellow-400': editedRating >= star - 0.5,
-                                    'text-gray-500': editedRating < star - 0.5
-                                  }"
-                                ></i>
-                              </ng-container>
-                            </div>
+                      <!-- Star Rating Display -->
+                      <div class="flex justify-center mb-4">
+                        <ng-container *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]">
+                          <ng-container [ngSwitch]="getStarType(star, editedRating)">
+                            <i *ngSwitchCase="'full'" class="fas fa-star text-3xl text-yellow-400"></i>
+                            <i *ngSwitchCase="'half'" class="fas fa-star-half-alt text-3xl text-yellow-400"></i>
+                            <i *ngSwitchCase="'empty'" class="far fa-star text-3xl text-gray-500"></i>
+                          </ng-container>
+                        </ng-container>
+                      </div>
                           <p class="text-white font-medium text-2xl mb-2">
                             Rating:
                             <input

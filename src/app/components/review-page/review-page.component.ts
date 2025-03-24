@@ -557,5 +557,11 @@ export class ReviewPageComponent implements OnInit {
       this.editedRating = rating;
     }
   }
+
+  getStarType(star: number, rating: number): 'full' | 'half' | 'empty' {
+    if (rating >= star) return 'full';
+    if (rating >= star - 0.5) return 'half';
+    return 'empty';
+  }  
   
 }
