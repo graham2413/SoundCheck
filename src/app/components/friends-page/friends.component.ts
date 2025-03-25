@@ -2,9 +2,11 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { User } from 'src/app/models/responses/user.response';
 import { UserService } from 'src/app/services/user.service';
+import { ConfirmationModalComponent } from './confirmation-modal/confirmation-modal.component';
 
 @Component({
   selector: 'app-friends',
@@ -42,7 +44,8 @@ export class FriendsComponent implements OnInit {
   constructor(
     private userService: UserService,
     private toastrService: ToastrService,
-    private changeDetectorRef: ChangeDetectorRef
+    private changeDetectorRef: ChangeDetectorRef,
+    private modal: NgbModal
   ) {}
 
   ngOnInit(): void {
@@ -251,4 +254,22 @@ export class FriendsComponent implements OnInit {
       },
     });
   }
+
+    openModal(friend: any) {
+      const modalOptions: NgbModalOptions = {
+        backdrop: false,
+        centered: true,
+      };
+    
+      const modalRef = this.modal.open(ConfirmationModalComponent, modalOptions);
+
+      modalRef.componentInstance.confirm.subscribe(() => {
+        this.removeFriend(friend);
+        modalRef.close();
+      });
+
+      modalRef.componentInstance.cancel.subscribe(() => {
+        modalRef.close();
+      });
+    }
 }

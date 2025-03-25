@@ -486,25 +486,22 @@ export class ReviewPageComponent implements OnInit {
     this.isPlaying = status;
   }
 
-  getRatingGradient(rating: number): string {
-    if (rating < 5) {
-      return 'linear-gradient(to right, #FF6B6B, #E63946)'; // Red - Very Poor
-    } else if (rating >= 5 && rating < 6) {
-      return 'linear-gradient(to right, #FF9F1C, #FF7F11)'; // Orange - Below Average
-    } else if (rating >= 6 && rating < 7) {
-      return 'linear-gradient(to right, #FFD166, #FFC300)'; // Yellow - Average
-    } else if (rating >= 7 && rating < 8) {
-      return 'linear-gradient(to right, #06D6A0, #05A676)'; // Green - Good
-    } else if (rating >= 8 && rating < 9) {
-      return 'linear-gradient(to right, #118AB2, #0E7490)'; // Teal - Very Good
-    } else if (rating >= 9 && rating < 10) {
-      return 'linear-gradient(to right, #3A86FF, #1E40AF)'; // Blue - Excellent
-    } else if (rating === 10) {
-      return 'linear-gradient(45deg, #9B5DE5, #F15BB5, #FEE440)'; // Perfect
-    } else {
-      return '';
-    }
+  getRatingBackground(rating: number): string {
+    if (rating == 10.0) return 'rgb(1, 6, 0)';
+    if (rating >= 9.0) return 'rgb(14, 72, 3)';
+    if (rating >= 8.0) return 'rgb(3, 156, 31)';     
+    if (rating >= 7.0) return 'rgb(202, 201, 0)';    
+    if (rating >= 6.0) return 'rgb(223,106,8)';    
+    return 'rgb(215,8,7)';                        
   }
+  
+  getRatingTextColor(rating: number): string {
+    // if (rating >= 9.0) return '#ffffff';
+    // if (rating >= 8.0) return '#ffffff';
+    // if (rating >= 7.0) return '#000000';
+    // if (rating >= 5.0) return '#000000';
+    return '#ffffff';                 
+  }  
 
   get isTracklistArray(): boolean {
     return Array.isArray((this.record as Album | Artist).tracklist);

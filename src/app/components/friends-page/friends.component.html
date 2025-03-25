@@ -1,16 +1,16 @@
 <div class="bg-gray-900 text-white min-h-screen flex w-full pt-20">
   <!-- Navigation for Medium to large screens -->
   <div
-    class="hidden md:flex bg-gray-800 p-4 shadow-lg flex-col fixed top-20 left-0 h-[calc(100vh-20px)] w-24 md:w-1/5 z-10 items-center gap-6 pt-10 justify-evenly"
+    class="hidden md:flex bg-gray-800 shadow-lg flex-col fixed top-20 left-0 h-[calc(100vh-20px)]  w-[11rem] z-10 items-center gap-6 pt-10 justify-evenly"
   >
     <!-- My Friends Button -->
     <button
       (click)="setActiveTab('myFriends')"
       [class.bg-indigo-600]="activeTab === 'myFriends'"
       [class.hover:bg-indigo-700]="activeTab !== 'myFriends'"
-      class="flex flex-col items-center justify-center p-3 rounded-md text-white text-xs md:text-lg transition transform hover:scale-105 relative"
+      class="flex flex-col items-center justify-center p-6 rounded-md text-white text-xl transition transform hover:scale-105 relative"
     >
-      <i class="fas fa-users text-2xl"></i>
+      <i class="fas fa-users text-3xl"></i>
       <span class="hidden md:inline mt-1">My Friends</span>
     </button>
 
@@ -19,9 +19,9 @@
       (click)="setActiveTab('addFriends')"
       [class.bg-indigo-600]="activeTab === 'addFriends'"
       [class.hover:bg-indigo-700]="activeTab !== 'addFriends'"
-      class="flex flex-col items-center justify-center p-3 rounded-md text-white text-xs md:text-lg transition transform hover:scale-105"
+      class="flex flex-col items-center justify-center p-6 rounded-md text-white text-xl transition transform hover:scale-105"
     >
-      <i class="fas fa-user-plus text-2xl"></i>
+      <i class="fas fa-user-plus text-3xl"></i>
       <span class="hidden md:inline mt-1">Add Friends</span>
     </button>
 
@@ -30,9 +30,9 @@
       (click)="setActiveTab('friendRequests')"
       [class.bg-indigo-600]="activeTab === 'friendRequests'"
       [class.hover:bg-indigo-700]="activeTab !== 'friendRequests'"
-      class="flex flex-col items-center justify-center p-3 rounded-md text-white text-xs md:text-lg transition transform hover:scale-105 relative"
+      class="flex flex-col items-center justify-center p-6 rounded-md text-white text-xl transition transform hover:scale-105 relative"
     >
-      <i class="fas fa-envelope text-2xl"></i>
+      <i class="fas fa-envelope text-3xl"></i>
       <span class="hidden md:inline mt-1">Requests</span>
       <span
         *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
@@ -45,36 +45,36 @@
 
   <!-- Bottom Navigation for Mobile -->
   <div
-    class="bg-gray-800 p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-10 justify-around items-center h-16"
+    class="bg-gray-800 p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-10 justify-around items-center h-[6rem]"
   >
     <button
       (click)="setActiveTab('myFriends')"
       [ngClass]="{ 'bg-indigo-600': activeTab === 'myFriends' }"
-      class="flex flex-col items-center justify-center text-white text-xs h-full flex-1 rounded-r"
+      class="flex flex-col items-center justify-center text-white text-xl h-full flex-1 rounded-r"
     >
-      <i class="fas fa-users text-xl"></i>
+      <i class="fas fa-users text-3xl mb-2"></i>
       <span>Friends</span>
     </button>
 
     <button
       (click)="setActiveTab('addFriends')"
       [ngClass]="{ 'bg-indigo-600': activeTab === 'addFriends' }"
-      class="flex flex-col items-center justify-center text-white text-xs h-full flex-1 rounded"
+      class="flex flex-col items-center justify-center text-white text-xl h-full flex-1 rounded"
     >
-      <i class="fas fa-user-plus text-xl"></i>
-      <span>Add</span>
+      <i class="fas fa-user-plus text-3xl mb-2"></i>
+      <span class="mr-1">Add</span>
     </button>
 
     <button
       (click)="setActiveTab('friendRequests')"
       [ngClass]="{ 'bg-indigo-600': activeTab === 'friendRequests' }"
-      class="flex flex-col items-center justify-center text-white text-xs relative h-full flex-1 rounded-l"
+      class="flex flex-col items-center justify-center text-white text-xl relative h-full flex-1 rounded-l"
     >
-      <i class="fas fa-envelope text-xl"></i>
+      <i class="fas fa-envelope text-3xl mb-1"></i>
       <span>Requests</span>
       <span
         *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
-        class="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-[6px] py-[2px] rounded-full leading-none flex items-center justify-center min-w-[18px] min-h-[18px]"
+        class="absolute top-2 right-1 bg-red-500 text-white text-[1rem] font-bold px-[6px] py-[2px] rounded-full leading-none flex items-center justify-center w-[1.65rem] h-[1.65rem]"
       >
         {{ userProfile.friendInfo.friendRequestsReceived.length }}
       </span>
@@ -112,42 +112,43 @@
         <div *ngIf="filteredFriends().length > 0">
           <ul class="space-y-4">
             <li
-              *ngFor="let friend of filteredFriends()"
-              class="flex flex-col items-center bg-gray-800 p-3 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700"
-            >
-              <!-- Profile Image -->
-              <div class="flex justify-center">
-                <img
-                  [src]="friend.profilePicture || 'assets/user.png'"
-                  alt="Profile"
-                  class="w-20 h-20 rounded-full object-cover border-3 border-gray-600 shadow-md transition-transform"
-                />
-              </div>
-
-              <!-- Username -->
-              <h2
-                class="text-lg font-semibold text-gray-200 mt-3 tracking-wide"
+            *ngFor="let friend of filteredFriends()"
+            class="flex flex-col items-center bg-gray-800 p-3 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700"
+          >
+            <!-- Profile Image -->
+            <div class="flex justify-center">
+              <img
+                [src]="friend.profilePicture || 'assets/user.png'"
+                alt="Profile"
+                class="w-20 h-20 rounded-full object-cover border-3 border-gray-600 shadow-md transition-transform"
+              />
+            </div>
+          
+            <!-- Username -->
+            <h2 class="text-lg font-semibold text-gray-200 mt-3 tracking-wide">
+              {{ friend.username }}
+            </h2>
+          
+            <!-- Buttons -->
+            <div class="flex justify-center gap-2 mt-3">
+              <button
+                [routerLink]="['/profile', friend._id]"
+                class="px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
               >
-                {{ friend.username }}
-              </h2>
-
-              <!-- Buttons -->
-              <div class="flex justify-center gap-2 mt-3">
-                <button
-                  [routerLink]="['/profile', friend._id]"
-                  class="px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-                >
-                  View Profile
-                </button>
-
-                <button
-                  (click)="removeFriend(friend)"
-                  class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-                >
-                  Unfriend
-                </button>
-              </div>
-            </li>
+                <i class="fas fa-user mr-1"></i>
+                View Profile
+              </button>
+          
+              <button
+                (click)="openModal(friend)"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
+              >
+                <i class="fas fa-user-minus mr-1"></i>
+                Unfriend
+              </button>
+            </div>
+          </li>
+          
           </ul>
         </div>
         <div *ngIf="!userProfile?.friendInfo?.friends || userProfile.friendInfo.friends.length === 0">
@@ -189,7 +190,7 @@
       <!-- Scrollable User List -->
       <div
         *ngIf="addFriendsSearchInitiated"
-        class="bg-gray-800 p-6 rounded-xl shadow-lg max-w-4xl mx-auto overflow-y-auto h-full"
+        class="bg-gray-800 p-2 rounded-xl shadow-lg max-w-4xl mx-auto overflow-y-auto h-full"
       >
         <!-- Show Skeleton Loader While Searching -->
         <div *ngIf="addFriendsSearchLoading" class="space-y-4 animate-pulse">
@@ -211,55 +212,58 @@
         <div *ngIf="usersToAdd.length > 0 && !addFriendsSearchLoading">
           <ul class="space-y-4">
             <li
-              *ngFor="let user of usersToAdd"
-              class="flex flex-col items-center bg-gray-800 p-3 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700"
-            >
-              <!-- Profile Image -->
-              <div class="flex justify-center">
-                <img
-                  [src]="user.profilePicture || 'assets/user.png'"
-                  alt="Profile"
-                  class="w-20 h-20 rounded-full object-cover border-3 border-gray-600 shadow-md transition-transform"
-                />
-              </div>
-
-              <!-- Username -->
-              <h2
-                class="text-lg font-semibold text-gray-200 mt-3 tracking-wide"
+            *ngFor="let user of usersToAdd"
+            class="flex flex-col items-center bg-gray-800 p-3 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700"
+          >
+            <!-- Profile Image -->
+            <div class="flex justify-center">
+              <img
+                [src]="user.profilePicture || 'assets/user.png'"
+                alt="Profile"
+                class="w-20 h-20 rounded-full object-cover border-3 border-gray-600 shadow-md transition-transform"
+              />
+            </div>
+          
+            <!-- Username -->
+            <h2 class="text-lg font-semibold text-gray-200 mt-3 tracking-wide">
+              {{ user.username }}
+            </h2>
+          
+            <!-- Buttons -->
+            <div class="flex justify-center gap-2 mt-3">
+              <!-- View Profile -->
+              <button
+                [routerLink]="['/profile', user._id]"
+                class="px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
               >
-                {{ user.username }}
-              </h2>
-
-              <!-- Buttons -->
-              <div class="flex justify-center gap-2 mt-3">
-                <button
-                  [routerLink]="['/profile', user._id]"
-                  class="px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-                >
-                  View Profile
-                </button>
-
-                <button
-                  (click)="sendFriendRequest(user)"
-                  [disabled]="
-                    user.isFriend ||
-                    user.hasPendingRequestSent ||
-                    user.hasPendingRequestReceived
-                  "
-                  class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {{
-                    user.isFriend
-                      ? "Already Friends"
-                      : user.hasPendingRequestSent
-                      ? "Request Sent"
-                      : user.hasPendingRequestReceived
-                      ? "Check Requests!"
-                      : "Add Friend"
-                  }}
-                </button>
-              </div>
-            </li>
+                <i class="fas fa-user mr-1"></i>
+                View Profile
+              </button>
+          
+              <!-- Add Friend -->
+              <button
+                (click)="sendFriendRequest(user)"
+                [disabled]="
+                  user.isFriend ||
+                  user.hasPendingRequestSent ||
+                  user.hasPendingRequestReceived
+                "
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i class="fas fa-user-plus mr-1"></i>
+                {{
+                  user.isFriend
+                    ? "Already Friends"
+                    : user.hasPendingRequestSent
+                    ? "Request Sent"
+                    : user.hasPendingRequestReceived
+                    ? "Check Requests!"
+                    : "Add Friend"
+                }}
+              </button>
+            </div>
+          </li>
+          
           </ul>
         </div>
 
@@ -294,44 +298,49 @@
         >
           <ul class="space-y-4">
             <li
-              *ngFor="
-                let request of userProfile.friendInfo.friendRequestsReceived
-              "
-              class="flex flex-col items-center bg-gray-800 p-3 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700 transition-transform hover:scale-105"
-            >
-              <div class="flex justify-center">
-                <img
-                  [src]="request.profilePicture || 'assets/user.png'"
-                  alt="Profile"
-                  class="w-20 h-20 rounded-full object-cover border-3 border-gray-500 shadow-md"
-                />
-              </div>
-              <span class="text-lg font-medium text-gray-300 mt-2">{{
-                request.username
-              }}</span>
-              <div class="flex flex-wrap justify-center gap-2 w-full mt-3">
-                <button
-                  [routerLink]="['/profile', request._id]"
-                  class="px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-                >
-                  View Profile
-                </button>
-
-                <button
-                  (click)="acceptFriendRequest(request)"
-                  class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-                >
-                  Accept
-                </button>
-
-                <button
-                  (click)="declineFriendRequest(request)"
-                  class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-                >
-                  Decline
-                </button>
-              </div>
-            </li>
+            *ngFor="let request of userProfile.friendInfo.friendRequestsReceived"
+            class="flex flex-col items-center bg-gray-800 p-4 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700 transition-transform hover:scale-105"
+          >
+            <!-- Profile Image -->
+            <img
+              [src]="request.profilePicture || 'assets/user.png'"
+              alt="Profile"
+              class="w-20 h-20 rounded-full object-cover border-2 border-gray-500 shadow-md"
+            />
+          
+            <!-- Username -->
+            <span class="text-lg font-semibold text-gray-200 mt-3">
+              {{ request.username }}
+            </span>
+          
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap justify-center gap-3 w-full mt-4">
+              <button
+                [routerLink]="['/profile', request._id]"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
+              >
+                <i class="fas fa-user"></i>
+                View Profile
+              </button>
+          
+              <button
+                (click)="acceptFriendRequest(request)"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
+              >
+                <i class="fas fa-check"></i>
+                Accept
+              </button>
+          
+              <button
+                (click)="declineFriendRequest(request)"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
+              >
+                <i class="fas fa-times"></i>
+                Decline
+              </button>
+            </div>
+          </li>
+          
           </ul>
         </div>
         <ng-template #noRequests>
@@ -343,10 +352,3 @@
     </div>
   </div>
 </div>
-
-<head>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
-    rel="stylesheet"
-  />
-</head>

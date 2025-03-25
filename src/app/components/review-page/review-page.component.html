@@ -602,7 +602,7 @@
                 <p
                   *ngIf="!isEditingReview"
                   [ngStyle]="{
-                    background: getRatingGradient(existingUserReview.rating)
+                    background: getRatingBackground(existingUserReview.rating)
                   }"
                   class="rating-bubble mx-auto text-white rounded-full px-2 py-1 text-lg"
                 >
@@ -652,7 +652,7 @@
                 class="review-card p-3 rounded-lg flex flex-col gap-2"
               >
                 <p
-                  [ngStyle]="{ background: getRatingGradient(review.rating) }"
+                  [ngStyle]="{ background: getRatingBackground(review.rating) }"
                   class="rating-bubble mx-auto text-white text-lg rounded-full px-2 py-1"
                 >
                   <i class="fas fa-star"></i> {{ review.rating }} / 10
@@ -1268,7 +1268,7 @@
                         <p
                           *ngIf="!isEditingReview"
                           [ngStyle]="{
-                            background: getRatingGradient(
+                            background: getRatingBackground(
                               existingUserReview.rating
                             )
                           }"
@@ -1367,7 +1367,7 @@
                         <!-- Centered Rating -->
                         <p
                           [ngStyle]="{
-                            background: getRatingGradient(review.rating)
+                            background: getRatingBackground(review.rating)
                           }"
                           class="rating-bubble mx-auto text-white"
                         >

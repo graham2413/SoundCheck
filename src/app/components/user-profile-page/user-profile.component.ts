@@ -138,4 +138,8 @@ export class ProfileComponent implements OnInit {
       })
     }
   }
+
+  viewPublicProfile(){
+    this.router.navigate([`/profile/${this.userProfile._id}`]);
+  }
 }
