@@ -83,11 +83,11 @@
 
   <!-- Right Content Area (Changes Dynamically) -->
   <div
-    class="flex-1 p-6 overflow-y-auto min-h-[calc(100vh-80px)] pb-24 md:ml-[20%]"
+    class="flex-1 p-3 overflow-y-auto min-h-[calc(100vh-80px)] pb-24 md:ml-[22%]"
   >
     <!-- My Friends Section -->
     <div #friendsSection *ngIf="activeTab === 'myFriends'">
-      <h2 class="text-2xl font-semibold mb-4 mt-4 flex items-center">
+      <h2 class="text-2xl font-semibold mb-4 mt-4 flex items-center ml-2">
         My Friends
         <span class="text-gray-400 text-lg ml-2"
           >({{ userProfile.friendInfo.friends.length || 0 }})</span
@@ -108,48 +108,47 @@
         ></i>
       </div>
 
-      <div class="bg-gray-800 p-6 rounded-xl shadow-lg max-w-4xl mx-auto">
+      <div class="bg-gray-800 p-2 rounded-xl shadow-lg max-w-4xl mx-auto">
         <div *ngIf="filteredFriends().length > 0">
           <ul class="space-y-4">
             <li
-            *ngFor="let friend of filteredFriends()"
-            class="flex flex-col items-center bg-gray-800 p-3 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700"
-          >
-            <!-- Profile Image -->
-            <div class="flex justify-center">
+              *ngFor="let friend of filteredFriends()"
+              class="flex items-center bg-gray-800 p-3 rounded-xl shadow-lg border border-gray-700"
+            >
+              <!-- Profile Image on the left -->
               <img
                 [src]="friend.profilePicture || 'assets/user.png'"
                 alt="Profile"
-                class="w-20 h-20 rounded-full object-cover border-3 border-gray-600 shadow-md transition-transform"
+                class="w-20 h-20 rounded-full object-cover border-2 border-gray-600 shadow-md mr-4"
               />
-            </div>
           
-            <!-- Username -->
-            <h2 class="text-lg font-semibold text-gray-200 mt-3 tracking-wide">
-              {{ friend.username }}
-            </h2>
+              <!-- Right side: Username and Buttons -->
+              <div class="flex flex-col">
+                <h2 class="text-lg font-semibold text-gray-200 mb-2">
+                  {{ friend.username }}
+                </h2>
           
-            <!-- Buttons -->
-            <div class="flex justify-center gap-2 mt-3">
-              <button
-                [routerLink]="['/profile', friend._id]"
-                class="px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-              >
-                <i class="fas fa-user mr-1"></i>
-                View Profile
-              </button>
+                <div class="flex gap-2">
+                  <button
+                    [routerLink]="['/profile', friend._id]"
+                    class="p-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    <i class="fas fa-user mr-1"></i>
+                    View Profile
+                  </button>
           
-              <button
-                (click)="openModal(friend)"
-                class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-              >
-                <i class="fas fa-user-minus mr-1"></i>
-                Unfriend
-              </button>
-            </div>
-          </li>
-          
+                  <button
+                    (click)="openModal(friend)"
+                    class="p-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700"
+                  >
+                    <i class="fas fa-user-minus mr-1"></i>
+                    Unfriend
+                  </button>
+                </div>
+              </div>
+            </li>
           </ul>
+          
         </div>
         <div *ngIf="!userProfile?.friendInfo?.friends || userProfile.friendInfo.friends.length === 0">
           <p class="text-gray-400 text-center text-lg">
@@ -170,7 +169,7 @@
 
     <!-- Add Friends Section -->
     <div #addFriendsSection *ngIf="activeTab === 'addFriends'">
-      <h2 class="text-2xl font-semibold mb-4 mt-4">Add Friends</h2>
+      <h2 class="text-2xl font-semibold mb-4 mt-4 ml-2">Add Friends</h2>
 
       <!-- Search Bar -->
       <div #searchBar class="relative max-w-lg mb-6">
@@ -212,59 +211,58 @@
         <div *ngIf="usersToAdd.length > 0 && !addFriendsSearchLoading">
           <ul class="space-y-4">
             <li
-            *ngFor="let user of usersToAdd"
-            class="flex flex-col items-center bg-gray-800 p-3 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700"
-          >
-            <!-- Profile Image -->
-            <div class="flex justify-center">
+              *ngFor="let user of usersToAdd"
+              class="flex items-center bg-gray-800 p-3 rounded-xl shadow-lg border border-gray-700 w-full transition-colors"
+            >
+              <!-- Profile Image -->
               <img
                 [src]="user.profilePicture || 'assets/user.png'"
                 alt="Profile"
-                class="w-20 h-20 rounded-full object-cover border-3 border-gray-600 shadow-md transition-transform"
+                class="w-20 h-20 rounded-full object-cover border-2 border-gray-600 shadow-md mr-4 flex-shrink-0"
               />
-            </div>
           
-            <!-- Username -->
-            <h2 class="text-lg font-semibold text-gray-200 mt-3 tracking-wide">
-              {{ user.username }}
-            </h2>
+              <!-- Username and Buttons -->
+              <div class="flex flex-col justify-center flex-1">
+                <h2 class="text-lg font-semibold text-gray-200 mb-3">
+                  {{ user.username }}
+                </h2>
           
-            <!-- Buttons -->
-            <div class="flex justify-center gap-2 mt-3">
-              <!-- View Profile -->
-              <button
-                [routerLink]="['/profile', user._id]"
-                class="px-3 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-              >
-                <i class="fas fa-user mr-1"></i>
-                View Profile
-              </button>
+                <div class="flex gap-2 flex-nowrap overflow-x-auto">
+                  <!-- View Profile -->
+                  <button
+                    [routerLink]="['/profile', user._id]"
+                    class="p-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    <i class="fas fa-user mr-1"></i>
+                    View Profile
+                  </button>
           
-              <!-- Add Friend -->
-              <button
-                (click)="sendFriendRequest(user)"
-                [disabled]="
-                  user.isFriend ||
-                  user.hasPendingRequestSent ||
-                  user.hasPendingRequestReceived
-                "
-                class="px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <i class="fas fa-user-plus mr-1"></i>
-                {{
-                  user.isFriend
-                    ? "Already Friends"
-                    : user.hasPendingRequestSent
-                    ? "Request Sent"
-                    : user.hasPendingRequestReceived
-                    ? "Check Requests!"
-                    : "Add Friend"
-                }}
-              </button>
-            </div>
-          </li>
-          
+                  <!-- Add Friend -->
+                  <button
+                    (click)="sendFriendRequest(user)"
+                    [disabled]="
+                      user.isFriend ||
+                      user.hasPendingRequestSent ||
+                      user.hasPendingRequestReceived
+                    "
+                    class="p-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <i class="fas fa-user-plus mr-1"></i>
+                    {{
+                      user.isFriend
+                        ? "Already Friends"
+                        : user.hasPendingRequestSent
+                        ? "Request Sent"
+                        : user.hasPendingRequestReceived
+                        ? "Check Requests!"
+                        : "Add Friend"
+                    }}
+                  </button>
+                </div>
+              </div>
+            </li>
           </ul>
+          
         </div>
 
         <!-- Show "No Users Found" Message Only When Search Has Completed -->
@@ -283,7 +281,7 @@
 
     <!-- Friend Requests Section -->
     <div #friendRequestsSection *ngIf="activeTab === 'friendRequests'">
-      <h2 class="text-2xl font-semibold mb-4 mt-4 flex items-center">
+      <h2 class="text-2xl font-semibold mb-4 mt-4 flex items-center ml-2">
         Friend Requests
         <span class="text-gray-400 text-lg ml-2">
           ({{ userProfile.friendInfo.friendRequestsReceived.length || 0 }})
