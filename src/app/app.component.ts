@@ -32,7 +32,7 @@ import { SpotifyService } from './services/spotify.service';
   ]
 })
 export class AppComponent implements OnInit {
-  title = 'SoundCheck';
+  title = 'Sound Check';
   currentUrl: string = '';
 
   constructor(private router: Router, private toastr: ToastrService, private userService: UserService, private spotifyService: SpotifyService) {

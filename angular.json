@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "SoundCheck": {
+    "Sound Check": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -54,13 +54,13 @@
   "builder": "@angular-devkit/build-angular:dev-server",
   "configurations": {
     "production": {
-      "buildTarget": "SoundCheck:build:production"
+      "buildTarget": "Sound Check:build:production"
     },
     "development": {
-      "buildTarget": "SoundCheck:build:development"
+      "buildTarget": "Sound Check:build:development"
     },
     "hmr": { 
-      "buildTarget": "SoundCheck:build:development",
+      "buildTarget": "Sound Check:build:development",
       "hmr": true
     }
   },

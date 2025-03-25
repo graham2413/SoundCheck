@@ -20,16 +20,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have as title 'SoundCheck'`, () => {
+  it(`should have as title 'Sound Check'`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('SoundCheck');
+    expect(app.title).toEqual('Sound Check');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.content span')?.textContent).toContain('SoundCheck app is running!');
+    expect(compiled.querySelector('.content span')?.textContent).toContain('Sound Check app is running!');
   });
 });
