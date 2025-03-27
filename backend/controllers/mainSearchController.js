@@ -5,8 +5,10 @@ const crypto = require("crypto");
 const fs = require('fs');
 
 const redis = new Redis({
-  host: process.env.REDIS_HOST || "127.0.0.1",
-  port: process.env.REDIS_PORT || 6379,
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT,
+  password: process.env.REDIS_PASSWORD,
+  tls: {} // Required for Upstash SSL
 });
 
 async function callDeezer(url) {
