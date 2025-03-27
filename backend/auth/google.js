@@ -53,13 +53,13 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 router.get('/google/callback', passport.authenticate('google', { session: false }), async (req, res) => {
     try {
         const user = await User.findById(req.user._id)
-        .populate("friendRequestsSent", "username profilePicture")
-        .populate("friendRequestsReceived", "username profilePicture")
-        .populate("friends", "username profilePicture");
-
+            .populate("friendRequestsSent", "username profilePicture")
+            .populate("friendRequestsReceived", "username profilePicture")
+            .populate("friends", "username profilePicture");
+    
         const formattedUser = {
             _id: user._id,
-            username: user.username || user.name, // Use Google name if no username
+            username: user.username || user.name,
             email: user.email,
             profilePicture: user.profilePicture,
             createdAt: user.createdAt,
@@ -81,16 +81,15 @@ router.get('/google/callback', passport.authenticate('google', { session: false 
                 })) || []
             }
         };
-        
-        // Generate JWT Token
+    
+        // Embed formatted user directly in JWT payload
         const token = jwt.sign(
-            { userId: user._id },
+            { user: formattedUser },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
-        
-        // Redirect with full user object
-        res.redirect(`${process.env.FRONTEND_URL}/?token=${token}&user=${encodeURIComponent(JSON.stringify(formattedUser))}`);        
+    
+        res.redirect(`${process.env.FRONTEND_URL}/?token=${token}`);
     } catch (error) {
         res.status(500).json({ message: 'Google login failed', error: error });
     }

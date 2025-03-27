@@ -28,6 +28,7 @@
     "@ng-bootstrap/ng-bootstrap": "^18.0.0",
     "bootstrap": "^5.x.x",
     "cloudinary": "^2.5.1",
+    "jwt-decode": "^4.0.0",
     "ngx-progressive-image-loader": "^4.0.0",
     "ngx-toastr": "^19.0.0",
     "rxjs": "~7.8.0",

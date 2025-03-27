@@ -7,6 +7,7 @@ import { NavbarComponent } from './components/navbar/navbar.component';
 import { ToastrService } from 'ngx-toastr';
 import { UserService } from './services/user.service';
 import { SpotifyService } from './services/spotify.service';
+import { jwtDecode } from 'jwt-decode';
 
 @Component({
   selector: 'app-root',
@@ -45,27 +46,26 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.fetchAndStoreAlbums();
-
+  
     const queryParams = new URLSearchParams(window.location.search);
     const token = queryParams.get('token');
-    const user = queryParams.get('user');
-
+  
     if (token) {
       localStorage.setItem('token', token);
-
-      if (user) {
-        // Decode and store the user profile
-        const parsedUser = JSON.parse(decodeURIComponent(user));
-        this.userService.setUserProfile(parsedUser);
+  
+      // Decode user directly from token
+      const decoded: any = jwtDecode(token);
+      if (decoded?.user) {
+        this.userService.setUserProfile(decoded.user);
       }
-
+  
       // Clear URL params to prevent looping issues
       window.history.replaceState({}, document.title, window.location.pathname);
-
+  
       // Redirect to home page
       this.router.navigate(['/']);
     }
-  }
+  }  
 
   private fetchAndStoreAlbums(): void {
     this.spotifyService.getAlbumImages().subscribe({
