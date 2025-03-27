@@ -1,6 +1,5 @@
 const axios = require("axios");
 const User = require("../models/User");
-require("dotenv").config();
 const AlbumImage = require("../models/AlbumImage");
 const getSpotifyAccessToken = require("../auth/spotifyAuth");
 

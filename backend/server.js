@@ -1,6 +1,6 @@
 const express = require("express");
 const connectDB = require("./config/db");
-require("dotenv").config();
+const dotenv = require("dotenv");
 require('ssl-root-cas').inject();
 const cors = require("cors");
 const session = require("express-session");
@@ -8,6 +8,12 @@ const passport = require("./config/passport");
 const googleAuthRoutes = require('./auth/google');
 const cron = require("node-cron");
 const spotifyController = require("./controllers/spotifyController");
+
+if (process.env.NODE_ENV === "development") {
+    dotenv.config({ path: ".env.development" });
+  } else {
+    dotenv.config(); // defaults to .env (production)
+  }
 
 // Import route files
 const userRoutes = require("./routes/userRoutes");

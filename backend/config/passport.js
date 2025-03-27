@@ -2,7 +2,6 @@ const passport = require("passport");
 const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
 const SpotifyStrategy = require("passport-spotify").Strategy;
 const User = require("../models/User");
-require("dotenv").config();
 
 // JWT Strategy (for regular login)
 const jwtOptions = {

@@ -2,10 +2,8 @@ const express = require('express');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
 const { cloudinary } = require("../config/cloudinaryConfig");
 const User = require('../models/User');
-
 const router = express.Router();
 
 // Configure Google OAuth Strategy
