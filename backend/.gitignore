@@ -4,3 +4,6 @@ node_modules/
 Dockerrun.aws.json
 docker-compose.yml
 dockerfile
+
+cacert.pem
+nov-root.pem

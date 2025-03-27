@@ -2,6 +2,7 @@ const axios = require("axios");
 const https = require("https");
 const Redis = require("ioredis");
 const crypto = require("crypto");
+const fs = require('fs');
 
 const redis = new Redis({
   host: process.env.REDIS_HOST || "127.0.0.1",
@@ -37,7 +38,9 @@ async function callDeezer(url) {
   }
 
   // HTTPS agent
-  const agent = new https.Agent({ rejectUnauthorized: false });
+  const agent = new https.Agent({
+    ca: fs.readFileSync('cacert.pem'),
+  });
 
   let attempt = 0;
   while (attempt < 5) {
