@@ -64,8 +64,9 @@ export class AppComponent implements OnInit {
   
       // Redirect to home page
       this.router.navigate(['/']);
+      this.toastr.success('Logged in successfully!', 'Success');
     }
-  }  
+  }
 
   private fetchAndStoreAlbums(): void {
     this.spotifyService.getAlbumImages().subscribe({

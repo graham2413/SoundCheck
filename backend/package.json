@@ -2,12 +2,12 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "NODE_ENV=development node server.js",
-    "debug": "node --inspect server.js",
-    "dev": "NODE_ENV=development nodemon server.js"
-  },
+"scripts": {
+  "start": "cross-env NODE_ENV=production node server.js",
+  "dev": "cross-env NODE_ENV=development nodemon server.js",
+  "debug": "cross-env NODE_ENV=development node --inspect server.js",
+  "test": "echo \"Error: no test specified\" && exit 1"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -38,7 +38,9 @@
   "description": "",
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "cross-env": "^7.0.3",
     "eslint": "^9.21.0",
-    "globals": "^16.0.0"
+    "globals": "^16.0.0",
+    "nodemon": "^3.1.9"
   }
 }
