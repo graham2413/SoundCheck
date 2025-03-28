@@ -34,6 +34,7 @@ const allowedOrigins = [
 // Dynamic CORS origin check
 app.use(cors({
   origin: (origin, callback) => {
+    console.log('Request origin:', origin);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, origin);
     } else {
