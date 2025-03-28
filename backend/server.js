@@ -29,14 +29,27 @@ connectDB();
 
 // Middleware
 app.use(express.json()); // Parses incoming JSON requests
-app.use(cors()); // Enables communication between frontend and backend
 
+const allowedOrigins = [
+  "http://localhost:4200",
+  "http://soundcheck-frontend-bucket.s3-website-us-east-1.amazonaws.com"
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true
+  })
+);
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === "production" }
-}));
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+    }
+    }));
 
 app.use('/auth', googleAuthRoutes);
 
