@@ -201,7 +201,7 @@ exports.forgotPassword = async (req, res) => {
       },
     });
     
-    const resetURL = `http://http://${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
     await transporter.sendMail({
       to: user.email,
       from: process.env.GMAIL_USER,
