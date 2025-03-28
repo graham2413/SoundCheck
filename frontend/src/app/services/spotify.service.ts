@@ -13,6 +13,6 @@ export class SpotifyService {
 
   // Fetch stored album images from backend
   getAlbumImages(): Observable<any> {
-    return this.http.get<any>(` ${this.apiUrl}/stored-albums`);
+    return this.http.get<any>(`${this.apiUrl}/stored-albums`);
   }
 }
