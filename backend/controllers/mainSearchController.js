@@ -2,7 +2,7 @@ const axios = require("axios");
 const https = require("https");
 const Redis = require("ioredis");
 const crypto = require("crypto");
-const fs = require('fs');
+// const fs = require('fs');
 
 const redis = new Redis({
   host: process.env.REDIS_HOST,
@@ -14,6 +14,8 @@ const redis = new Redis({
 redis.on('error', (err) => {
   console.error("❌ Redis connection error:", err);
 });
+
+redis.on('connect', () => console.log("✅ Redis connected"));
 
 async function callDeezer(url) {
   const key = `deezer-rate-limit`;
@@ -45,9 +47,10 @@ async function callDeezer(url) {
   }
 
   // HTTPS agent
-  const agent = new https.Agent({
-    ca: fs.readFileSync('cacert.pem'),
-  });
+  const agent = new https.Agent();
+  // const agent = new https.Agent({
+  //   ca: fs.readFileSync('cacert.pem'),
+  // });
 
   let attempt = 0;
   while (attempt < 5) {
