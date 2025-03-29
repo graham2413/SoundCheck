@@ -25,19 +25,23 @@ const app = express();
 connectDB();
 app.use(express.json());
 
-const allowedOrigins = [
-  "http://localhost:4200",
-  "https://soundcheck-frontend-bucket.s3-website-us-east-1.amazonaws.com",
-  "https://di5r6h6unhwwg.cloudfront.net"
-].map(origin => origin.trim());
-
 app.use(cors({
   origin: (origin, callback) => {
-    const cleanedOrigin = origin?.trim();
-    console.log("→ Cleaned origin:", `'${cleanedOrigin}'`);
-    console.log("→ Allowed origins:", allowedOrigins);
+    const allowedOrigins = [
+      "http://localhost:4200",
+      "https://soundcheck-frontend-bucket.s3-website-us-east-1.amazonaws.com",
+      "https://di5r6h6unhwwg.cloudfront.net"
+    ];
 
-    if (!origin || allowedOrigins.includes(cleanedOrigin)) {
+    const cleanedOrigin = origin?.trim();
+    console.log("🟡 Incoming origin:", `'${cleanedOrigin}'`);
+
+    for (const allowed of allowedOrigins) {
+      console.log(`🔍 Compare: '${cleanedOrigin}' === '${allowed}' →`, cleanedOrigin === allowed);
+    }
+
+    if (!cleanedOrigin || allowedOrigins.includes(cleanedOrigin)) {
+      console.log("✅ CORS allowed");
       callback(null, cleanedOrigin);
     } else {
       console.warn("❌ CORS BLOCKED:", cleanedOrigin);
@@ -46,6 +50,7 @@ app.use(cors({
   },
   credentials: true
 }));
+
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
