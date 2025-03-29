@@ -35,7 +35,7 @@ app.use(cors({
     const allowedOrigins = [
       "http://localhost:4200",
       "https://soundcheck-frontend-bucket.s3-website-us-east-1.amazonaws.com",
-      "https://di5r6h6unhwwg.cloudfront.net"
+      "https://di5r6h6unwhwg.cloudfront.net"
     ].map(normalize);
 
     const cleanedOrigin = normalize(origin);
