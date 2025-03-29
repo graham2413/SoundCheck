@@ -27,7 +27,8 @@ app.use(express.json());
 
 app.use(cors({
   origin: (origin, callback) => {
-    const normalize = str => str?.trim().replace(/\u200B/g, '').replace(/\r?\n|\r/g, '');
+    const normalize = str =>
+      str?.trim().replace(/\u200B/g, '').replace(/\r?\n|\r/g, '');
 
     const allowedOrigins = [
       "http://localhost:4200",
@@ -39,11 +40,11 @@ app.use(cors({
     console.log("🟡 Incoming origin:", `'${cleanedOrigin}'`);
     console.log("🔐 Allowed origins:", allowedOrigins);
 
-    for (const allowed of allowedOrigins) {
-      console.log(`🔍 Compare: '${cleanedOrigin}' === '${allowed}' →`, cleanedOrigin === allowed);
-    }
+    const isAllowed = !cleanedOrigin || allowedOrigins.some(
+      allowed => cleanedOrigin.localeCompare(allowed, undefined, { sensitivity: 'base' }) === 0
+    );
 
-    if (!cleanedOrigin || allowedOrigins.includes(cleanedOrigin)) {
+    if (isAllowed) {
       console.log("✅ CORS allowed:", cleanedOrigin);
       callback(null, cleanedOrigin);
     } else {
