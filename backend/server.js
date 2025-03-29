@@ -31,15 +31,17 @@ const allowedOrigins = [
   "https://di5r6h6unhwwg.cloudfront.net"
 ];
 
-// Dynamic CORS origin check
 app.use(cors({
   origin: (origin, callback) => {
-    console.log('Incoming origin:', origin);
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, origin);
+    const cleanedOrigin = origin?.trim();
+    console.log("→ Cleaned origin:", `'${cleanedOrigin}'`);
+    console.log("→ Allowed origins:", allowedOrigins);
+
+    if (!origin || allowedOrigins.includes(cleanedOrigin)) {
+      callback(null, cleanedOrigin);
     } else {
-      console.warn('Blocked by CORS:', origin);
-      callback(new Error('Not allowed by CORS'));
+      console.warn("❌ CORS BLOCKED:", cleanedOrigin);
+      callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true
