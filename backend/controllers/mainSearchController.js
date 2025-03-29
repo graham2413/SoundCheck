@@ -11,6 +11,10 @@ const redis = new Redis({
   tls: {} // Required for Upstash SSL
 });
 
+redis.on('error', (err) => {
+  console.error("❌ Redis connection error:", err);
+});
+
 async function callDeezer(url) {
   const key = `deezer-rate-limit`;
   const now = Math.floor(Date.now() / 1000);
@@ -19,6 +23,7 @@ async function callDeezer(url) {
   while (true) {
     await redis.zremrangebyscore(key, "-inf", now - 5);
     const requests = await redis.zcard(key);
+    console.log("🔁 Redis request count:", requests);
 
     if (requests < 50) {
       // Atomically add request and set expiration if needed
@@ -71,7 +76,8 @@ async function callDeezer(url) {
         `Deezer API error [${attempt + 1}/5]:`,
         url,
         error.response?.status,
-        error.message
+        error.message,
+        error?.stack
       );
       await new Promise((res) => setTimeout(res, 2 ** attempt * 1000)); // Exponential backoff
       attempt++;

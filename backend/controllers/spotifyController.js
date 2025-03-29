@@ -109,7 +109,6 @@ exports.setAlbumImages = async (req, res) => {
 // Retrieve stored album images from the database
 exports.getAlbumImages = async (req, res) => {
     try {
-        console.log("inside method");
         const albums = await AlbumImage.find({}, { _id: 0, spotifyId: 1, name: 1, artist: 1, imageUrl: 1 });
 
         if (!albums.length) {

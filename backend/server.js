@@ -30,8 +30,6 @@ app.use(cors({
     const normalize = str =>
       str?.trim().replace(/\u200B/g, '').replace(/\r?\n|\r/g, '');
 
-    const showCodes = str => str?.split('').map(c => c.charCodeAt(0));
-
     const allowedOrigins = [
       "http://localhost:4200",
       "https://soundcheck-frontend-bucket.s3-website-us-east-1.amazonaws.com",
@@ -39,17 +37,13 @@ app.use(cors({
     ].map(normalize);
 
     const cleanedOrigin = normalize(origin);
-    console.log("🟡 Incoming origin:", `'${cleanedOrigin}'`);
-    console.log("🔐 Allowed origins:", allowedOrigins);
 
     let isAllowed = false;
 
     for (const allowed of allowedOrigins) {
       const normalizedAllowed = normalize(allowed);
       const match = cleanedOrigin?.localeCompare(normalizedAllowed, undefined, { sensitivity: 'base' }) === 0;
-      console.log(`🔍 Compare: '${cleanedOrigin}' === '${normalizedAllowed}' →`, match);
-      console.log("   🔢 cleanedOrigin char codes:", showCodes(cleanedOrigin));
-      console.log("   🔢 allowedOrigin  char codes:", showCodes(normalizedAllowed));
+
       if (match) {
         isAllowed = true;
         break;
@@ -57,7 +51,6 @@ app.use(cors({
     }
 
     if (isAllowed || !cleanedOrigin) {
-      console.log("✅ CORS allowed:", cleanedOrigin);
       callback(null, cleanedOrigin);
     } else {
       console.warn("❌ CORS BLOCKED:", cleanedOrigin);
