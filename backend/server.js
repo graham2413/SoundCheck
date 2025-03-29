@@ -29,7 +29,7 @@ const allowedOrigins = [
   "http://localhost:4200",
   "https://soundcheck-frontend-bucket.s3-website-us-east-1.amazonaws.com",
   "https://di5r6h6unhwwg.cloudfront.net"
-];
+].map(origin => origin.trim());
 
 app.use(cors({
   origin: (origin, callback) => {
