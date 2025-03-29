@@ -34,11 +34,12 @@ const allowedOrigins = [
 // Dynamic CORS origin check
 app.use(cors({
   origin: (origin, callback) => {
-    console.log('Request origin:', origin);
+    console.log('Incoming origin:', origin);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, origin);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      console.warn('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true
