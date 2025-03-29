@@ -27,21 +27,24 @@ app.use(express.json());
 
 app.use(cors({
   origin: (origin, callback) => {
+    const normalize = str => str?.trim().replace(/\u200B/g, '').replace(/\r?\n|\r/g, '');
+
     const allowedOrigins = [
       "http://localhost:4200",
       "https://soundcheck-frontend-bucket.s3-website-us-east-1.amazonaws.com",
       "https://di5r6h6unhwwg.cloudfront.net"
-    ];
+    ].map(normalize);
 
-    const cleanedOrigin = origin?.trim();
+    const cleanedOrigin = normalize(origin);
     console.log("🟡 Incoming origin:", `'${cleanedOrigin}'`);
+    console.log("🔐 Allowed origins:", allowedOrigins);
 
     for (const allowed of allowedOrigins) {
       console.log(`🔍 Compare: '${cleanedOrigin}' === '${allowed}' →`, cleanedOrigin === allowed);
     }
 
     if (!cleanedOrigin || allowedOrigins.includes(cleanedOrigin)) {
-      console.log("✅ CORS allowed");
+      console.log("✅ CORS allowed:", cleanedOrigin);
       callback(null, cleanedOrigin);
     } else {
       console.warn("❌ CORS BLOCKED:", cleanedOrigin);
