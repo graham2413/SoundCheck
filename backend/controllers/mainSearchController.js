@@ -4,14 +4,18 @@ const Redis = require("ioredis");
 const crypto = require("crypto");
  const fs = require('fs');
 
-const redis = new Redis({
-  host: process.env.REDIS_HOST,
-  port: process.env.REDIS_PORT,
-  password: process.env.REDIS_PASSWORD,
-  tls: {
-    ca: fs.readFileSync('cacert.pem'),
-  } // Required for Upstash SSL
-});
+ const isProd = process.env.NODE_ENV === 'production';
+
+ const redis = new Redis({
+   host: process.env.REDIS_HOST,
+   port: process.env.REDIS_PORT,
+   password: process.env.REDIS_PASSWORD,
+   tls: isProd
+     ? {} // In production, use default trusted CAs (Upstash works fine with this)
+     : {
+         ca: fs.readFileSync('cacert.pem'),
+       }
+ });
 
 redis.on('error', (err) => {
   console.error("❌ Redis connection error:", err);
