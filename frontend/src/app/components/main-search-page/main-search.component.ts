@@ -165,6 +165,8 @@ export class MainSearchComponent {
   onSearch() {
     if (!this.query.trim()) return;
 
+    (document.activeElement as HTMLElement)?.blur();
+
     // Scroll the search bar into view
     setTimeout(() => {
       const searchBarEl = this.searchBar.nativeElement;
