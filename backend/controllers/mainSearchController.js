@@ -9,7 +9,7 @@ const redis = new Redis({
   port: process.env.REDIS_PORT,
   password: process.env.REDIS_PASSWORD,
   tls: {
-    ca: fs.readFileSync('cacert.pem'), // 👈 add this line
+    ca: fs.readFileSync('cacert.pem'),
   } // Required for Upstash SSL
 });
 
