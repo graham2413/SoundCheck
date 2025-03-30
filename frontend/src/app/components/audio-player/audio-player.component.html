@@ -13,7 +13,13 @@
       (click)="togglePlay()"
       class="bg-gray-700 text-gray-300 hover:bg-white hover:text-gray-800 w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md transition-colors duration-200"
     >
-      <i class="{{ isPlaying ? 'fas fa-pause' : 'fas fa-play' }} text-3xl"></i>
+      <ng-container *ngIf="isLoading; else playIcon">
+        <i class="fas fa-spinner fa-spin text-2xl"></i>
+      </ng-container>
+
+      <ng-template #playIcon>
+        <i class="{{ isPlaying ? 'fas fa-pause' : 'fas fa-play' }} text-3xl"></i>
+      </ng-template>
     </button>
 
     <!-- Forward Button -->

@@ -340,7 +340,7 @@
           
           </p>
         </div>
-        <div class="flex-grow flex items-end justify-center">
+        <div class="flex-grow flex items-end justify-center"   style="padding-bottom: env(safe-area-inset-bottom);"        >
           <app-audio-player
             class="paddingTallScreen"
             *ngIf="record.type == 'Song'"
@@ -915,6 +915,7 @@
                   <app-audio-player
                     *ngIf="record.type == 'Song'"
                     [record]="record"
+                    #audioPlayer
                     (playStatus)="updatePlayStatus($event)"
                     (next)="nextSong()"
                     (previous)="prevSong()"

@@ -12,7 +12,7 @@ const authenticateUser = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify token
-        const userId = decoded.user?.id || decoded.user?._id;
+        const userId = decoded.userId || decoded.user?._id;
         const user = await User.findById(userId).select("-password"); // // Exclude password
 
         if (!user) {

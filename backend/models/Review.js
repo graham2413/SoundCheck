@@ -9,7 +9,6 @@ const reviewSchema = new mongoose.Schema({
         name: String,
         cover: String,
         picture: String,
-        preview: String,
         isExplicit: Boolean, // Song
         artist: String, // Song and album
     },

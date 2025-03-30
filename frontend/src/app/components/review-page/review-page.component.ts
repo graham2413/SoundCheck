@@ -107,6 +107,7 @@ export class ReviewPageComponent implements OnInit {
   @Input() songList: Song[] = [];
   @Input() currentIndex: number = 0;
   @Input() showForwardAndBackwardButtons: boolean = true;
+  @ViewChild(AudioPlayerComponent) audioPlayerComponent!: AudioPlayerComponent;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -269,7 +270,6 @@ export class ReviewPageComponent implements OnInit {
       ? (this.record as Song).isExplicit
       : false;
   }
-  
 
   public getExtraDetails() {
     if (this.record.type === 'Song') {
@@ -278,6 +278,8 @@ export class ReviewPageComponent implements OnInit {
           (this.record as Song).releaseDate = data.releaseDate;
           (this.record as Song).contributors = data.contributors;
           (this.record as Song).duration = data.duration;
+          (this.record as Song).preview = data.preview;
+          this.audioPlayerComponent.stopLoading();
         },
         error: () => {
           (this.record as Song).releaseDate = '';
@@ -397,7 +399,6 @@ export class ReviewPageComponent implements OnInit {
         name: this.record.type === "Artist" ? this.record.name : this.record.artist, // Artists use 'name', Albums/Songs use 'artist'
         cover: this.record.type !== "Artist" ? this.record.cover : undefined, // Only for Albums & Songs
         picture: this.record.type === "Artist" ? this.record.picture : undefined, // Only for Artists
-        preview: this.record.type === 'Song' ? this.record.preview : undefined, // Only for Songs
         artist: this.record.type !== 'Artist' ? this.record.artist : undefined, //  Only for Albums & Songs
         isExplicit: this.record.type === 'Song' ? this.record.isExplicit : undefined // Only for Songs
       },

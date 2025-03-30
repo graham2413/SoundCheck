@@ -1,7 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY);
 const crypto = require("crypto");
 
 // REGISTER (Signup for non spotify registering users)
@@ -175,40 +176,35 @@ exports.spotifyCallback = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   try {
     const email = req.body.email;
-    const user = await User.findOne({ email });
     
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "No user found with that email." });
     }
     
-    // If the user is Google-only, do not allow password reset.
     if (!user.password) {
       return res.status(400).json({ message: "This account uses Google sign-in only." });
     }
-    
-    // Generate a reset token and expiration (1 hour)
+
     const resetToken = crypto.randomBytes(32).toString("hex");
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
-    
-    // Configure nodemailer (example with Gmail)
-    const transporter = nodemailer.createTransport({
-      service: "Gmail",
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
-      },
-    });
-    
+
     const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    await transporter.sendMail({
+
+    const { error } = await resend.emails.send({
+      from: "SoundCheck <onboarding@resend.dev>", // or use your own domain after verification
       to: user.email,
-      from: process.env.GMAIL_USER,
       subject: "Password Reset",
-      text: `Hello ${user.username}, you requested a password reset. Click this link to reset your password: ${resetURL}`,
+      text: `Hello ${user.username}, you requested a password reset. Click this link to reset your password: ${resetURL}`
     });
-    
+
+    if (error) {
+      console.error("❌ Resend error:", error);
+      return res.status(500).json({ message: "Email failed to send." });
+    }
+
     return res.status(200).json({ message: "Password reset email sent." });
   } catch (error) {
     console.error("Forgot password error:", error);

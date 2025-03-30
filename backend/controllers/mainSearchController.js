@@ -2,6 +2,7 @@ const axios = require("axios");
 const https = require("https");
 const Redis = require("ioredis");
 const crypto = require("crypto");
+ const fs = require('fs');
 
 const redis = new Redis({
   host: process.env.REDIS_HOST,
@@ -45,7 +46,10 @@ async function callDeezer(url) {
   }
 
   // HTTPS agent
-  const agent = new https.Agent();
+  // const agent = new https.Agent();
+    const agent = new https.Agent({
+    ca: fs.readFileSync('cacert.pem'),
+  });
 
   let attempt = 0;
   while (attempt < 5) {
@@ -272,6 +276,7 @@ exports.getTrackDetails = async (req, res) => {
     const trackData = trackResponse.data;
     const trackDetails = {
       id: trackData.id,
+      preview: trackData.preview,
       releaseDate: trackData.release_date || "Unknown",
       duration: trackData.duration, // in seconds
       albumTitle: trackData.album?.title || "Unknown",

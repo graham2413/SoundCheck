@@ -6,7 +6,6 @@ export interface CreateReviewCommandModel {
     name?: string;    // Artist name
     cover?: string; // Album/Song cover
     picture?: string; // Artist picture
-    preview?: string; // Song preview
     isExplicit?: boolean; // Song
     artist?: string;
   };

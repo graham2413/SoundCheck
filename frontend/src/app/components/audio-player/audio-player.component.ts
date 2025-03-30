@@ -22,6 +22,7 @@ export class AudioPlayerComponent implements AfterViewInit {
   @ViewChild('myAudio') myAudioRef!: ElementRef<HTMLAudioElement>;
   @Input() record: any;
   @Input() showForwardAndBackwardButtons: boolean = true;
+  isLoading: boolean = true;
   @Output() playStatus = new EventEmitter<boolean>();
   @Output() next = new EventEmitter<void>();
   @Output() previous = new EventEmitter<void>();
@@ -67,6 +68,10 @@ export class AudioPlayerComponent implements AfterViewInit {
     }
   }
 
+  public stopLoading(): void {
+    this.isLoading = false;
+  }
+  
   seekAudio() {
     if (this.audio) {
       this.audio.currentTime = this.currentTime;
