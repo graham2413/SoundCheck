@@ -1,13 +1,12 @@
 <!-- MOBILE MODAL -->
 <div
-  *ngIf="isModalOpen"
-  class="fixed inset-0 flex flex-col custom-bg-color text-white md:hidden z-50 overflow-y-auto"
-  @slideUp
-  style="height: 100svh;"
+*ngIf="isModalOpen"
+class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md:hidden z-50"
+@slideUp
 >
-  <!--iPod Container -->
-  <div class="flex flex-col w-full flex-shrink-0 justify-between" style="min-height: 100svh;">
-    <!--iPod Back -->
+<!--iPod Container -->
+<div class="flex flex-col w-full min-h-screen flex-shrink-0 justify-between">
+<!--iPod Back -->
     <div
       *ngIf="showSecondIpod"
       [@slideAnimation]="'back'"
