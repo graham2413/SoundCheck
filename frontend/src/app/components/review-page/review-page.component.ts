@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, input, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
@@ -107,7 +107,7 @@ export class ReviewPageComponent implements OnInit {
   @Input() songList: Song[] = [];
   @Input() currentIndex: number = 0;
   @Input() showForwardAndBackwardButtons: boolean = true;
-  @ViewChild(AudioPlayerComponent) audioPlayerComponent!: AudioPlayerComponent;
+  @ViewChildren(AudioPlayerComponent) audioPlayers!: QueryList<AudioPlayerComponent>;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -279,7 +279,7 @@ export class ReviewPageComponent implements OnInit {
           (this.record as Song).contributors = data.contributors;
           (this.record as Song).duration = data.duration;
           (this.record as Song).preview = data.preview;
-          this.audioPlayerComponent.stopLoading();
+            this.audioPlayers.forEach((player: AudioPlayerComponent) => player.stopLoading());
         },
         error: () => {
           (this.record as Song).releaseDate = '';
