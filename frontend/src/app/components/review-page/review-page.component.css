@@ -205,12 +205,6 @@
   background-color: #2F2F2F;
 }
 
-@media (min-height: 720px) {
-  .paddingTallScreen {
-    padding-top: 1.7rem;
-  }
-}
-
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   opacity: 0; /* hide default arrows */

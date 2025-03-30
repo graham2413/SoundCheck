@@ -289,7 +289,7 @@ class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md
         <!-- Image Section -->
         <div class="flex flex-col items-center flex-grow justify-center">
           <div
-            class="relative max-w-[90%] h-[55vh] flex items-center justify-center"
+            class="relative max-w-[90%] mt-2 mb-5 flex items-center justify-center"
           >
             <!-- Image (Appears when loaded) -->
             <img
@@ -344,7 +344,7 @@ class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md
           style="padding-bottom: env(safe-area-inset-bottom)"
         >
           <app-audio-player
-            class="paddingTallScreen"
+            class="pt-1"
             *ngIf="record.type == 'Song'"
             [record]="record"
             [hidden]="showSecondIpod"
