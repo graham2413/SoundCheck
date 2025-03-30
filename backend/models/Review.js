@@ -11,6 +11,7 @@ const reviewSchema = new mongoose.Schema({
         picture: String,
         isExplicit: Boolean, // Song
         artist: String, // Song and album
+        album: String // Song
     },
     rating: { type: Number, min: 0, max: 10, default: null },
     reviewText: { type: String, default: "" },

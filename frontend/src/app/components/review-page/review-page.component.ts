@@ -400,7 +400,8 @@ export class ReviewPageComponent implements OnInit {
         cover: this.record.type !== "Artist" ? this.record.cover : undefined, // Only for Albums & Songs
         picture: this.record.type === "Artist" ? this.record.picture : undefined, // Only for Artists
         artist: this.record.type !== 'Artist' ? this.record.artist : undefined, //  Only for Albums & Songs
-        isExplicit: this.record.type === 'Song' ? this.record.isExplicit : undefined // Only for Songs
+        isExplicit: this.record.type === 'Song' ? this.record.isExplicit : undefined, // Only for Songs
+        album: this.record.type === 'Song' ? this.record.album : undefined // Only for Songs
       },
       rating: this.newRating,
       reviewText: this.newReview

@@ -8,6 +8,7 @@ export interface CreateReviewCommandModel {
     picture?: string; // Artist picture
     isExplicit?: boolean; // Song
     artist?: string;
+    album?: string;
   };
   rating: number;
   reviewText: string;

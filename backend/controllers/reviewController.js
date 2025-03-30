@@ -20,7 +20,8 @@ exports.createReview = async (req, res) => {
                 cover: albumSongOrArtist.cover || "",
                 picture: albumSongOrArtist.picture || "",
                 isExplicit: albumSongOrArtist.isExplicit || false,
-                artist: albumSongOrArtist.artist
+                artist: albumSongOrArtist.artist,
+                album: albumSongOrArtist.album || ""
             },
             rating,
             reviewText

@@ -39,6 +39,8 @@ export class ProfileComponent implements OnInit {
   constructor(private userService: UserService, private toastr: ToastrService, private router: Router) {}
 
   ngOnInit(): void {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+
     // Subscribe to the global profile state
     this.userService.userProfile$.subscribe(profile => {
       if (profile) {
