@@ -137,8 +137,8 @@
       [@slideAnimation]="'front'"
       class="relative w-full flex flex-col items-center"
     >
-    <div class="custom-bg-color pt-2 w-full flex flex-col flex-grow min-h-0">
-      <div class="flex justify-between items-center px-4 w-full min-h-[60px]">
+      <div class="custom-bg-color pt-2 w-full flex flex-col flex-grow min-h-0">
+        <div class="flex justify-between items-center px-4 w-full min-h-[60px]">
           <!-- Left Button -->
           <button
             (click)="showSecondIpod = true"
@@ -333,14 +333,16 @@
               E
             </span>
             <span
-            class="truncate overflow-hidden whitespace-nowrap max-w-full px-2"
-          >
-            {{ record.type !== "Artist" ? record.artist : "" }}
-          </span>
-          
+              class="truncate overflow-hidden whitespace-nowrap max-w-full px-2"
+            >
+              {{ record.type !== "Artist" ? record.artist : "" }}
+            </span>
           </p>
         </div>
-        <div class="flex-grow flex items-end justify-center"   style="padding-bottom: env(safe-area-inset-bottom);">
+        <div
+          class="flex-grow flex items-end justify-center"
+          style="padding-bottom: env(safe-area-inset-bottom)"
+        >
           <app-audio-player
             class="paddingTallScreen"
             *ngIf="record.type == 'Song'"
@@ -418,11 +420,22 @@
             <div class="flex flex-col items-center justify-center flex-grow">
               <!-- Star Rating Display -->
               <div class="flex justify-center mb-4">
-                <ng-container *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]">
+                <ng-container
+                  *ngFor="let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+                >
                   <ng-container [ngSwitch]="getStarType(star, newRating)">
-                    <i *ngSwitchCase="'full'" class="fas fa-star text-3xl text-yellow-400"></i>
-                    <i *ngSwitchCase="'half'" class="fas fa-star-half-alt text-3xl text-yellow-400"></i>
-                    <i *ngSwitchCase="'empty'" class="far fa-star text-3xl text-gray-500"></i>
+                    <i
+                      *ngSwitchCase="'full'"
+                      class="fas fa-star text-3xl text-yellow-400"
+                    ></i>
+                    <i
+                      *ngSwitchCase="'half'"
+                      class="fas fa-star-half-alt text-3xl text-yellow-400"
+                    ></i>
+                    <i
+                      *ngSwitchCase="'empty'"
+                      class="far fa-star text-3xl text-gray-500"
+                    ></i>
                   </ng-container>
                 </ng-container>
               </div>
@@ -439,7 +452,7 @@
                     (keypress)="onKeyPressRating($event, 'new')"
                     (blur)="onBlurRating('new')"
                     class="w-[3.4rem] text-3xl leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
-                    />
+                  />
                   <span
                     class="text-yellow-300 text-2xl opacity-70 font-medium ml-1"
                     >/10</span
@@ -529,16 +542,29 @@
                       class="flex flex-col items-center justify-center flex-grow"
                     >
                       <div class="text-center w-full mx-auto">
-                      <!-- Star Rating Display -->
-                      <div class="flex justify-center mb-4">
-                        <ng-container *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]">
-                          <ng-container [ngSwitch]="getStarType(star, editedRating)">
-                            <i *ngSwitchCase="'full'" class="fas fa-star text-3xl text-yellow-400"></i>
-                            <i *ngSwitchCase="'half'" class="fas fa-star-half-alt text-3xl text-yellow-400"></i>
-                            <i *ngSwitchCase="'empty'" class="far fa-star text-3xl text-gray-500"></i>
+                        <!-- Star Rating Display -->
+                        <div class="flex justify-center mb-4">
+                          <ng-container
+                            *ngFor="let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+                          >
+                            <ng-container
+                              [ngSwitch]="getStarType(star, editedRating)"
+                            >
+                              <i
+                                *ngSwitchCase="'full'"
+                                class="fas fa-star text-3xl text-yellow-400"
+                              ></i>
+                              <i
+                                *ngSwitchCase="'half'"
+                                class="fas fa-star-half-alt text-3xl text-yellow-400"
+                              ></i>
+                              <i
+                                *ngSwitchCase="'empty'"
+                                class="far fa-star text-3xl text-gray-500"
+                              ></i>
+                            </ng-container>
                           </ng-container>
-                        </ng-container>
-                      </div>
+                        </div>
 
                         <p class="text-white font-medium text-3xl mb-2">
                           Rating:
@@ -916,7 +942,9 @@
                   <app-audio-player
                     *ngIf="record.type == 'Song'"
                     [record]="record"
-                    [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
+                    [showForwardAndBackwardButtons]="
+                      showForwardAndBackwardButtons
+                    "
                     #audioPlayer
                     (playStatus)="updatePlayStatus($event)"
                     (next)="nextSong()"
@@ -1126,27 +1154,38 @@
 
                   <!-- Rating Section -->
                   <div class="w-full text-center mb-4">
-                      <!-- Star Rating Display -->
-                      <div class="flex justify-center mb-4">
-                        <ng-container *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]">
-                          <ng-container [ngSwitch]="getStarType(star, newRating)">
-                            <i *ngSwitchCase="'full'" class="fas fa-star text-3xl text-yellow-400"></i>
-                            <i *ngSwitchCase="'half'" class="fas fa-star-half-alt text-3xl text-yellow-400"></i>
-                            <i *ngSwitchCase="'empty'" class="far fa-star text-3xl text-gray-500"></i>
-                          </ng-container>
+                    <!-- Star Rating Display -->
+                    <div class="flex justify-center mb-4">
+                      <ng-container
+                        *ngFor="let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+                      >
+                        <ng-container [ngSwitch]="getStarType(star, newRating)">
+                          <i
+                            *ngSwitchCase="'full'"
+                            class="fas fa-star text-3xl text-yellow-400"
+                          ></i>
+                          <i
+                            *ngSwitchCase="'half'"
+                            class="fas fa-star-half-alt text-3xl text-yellow-400"
+                          ></i>
+                          <i
+                            *ngSwitchCase="'empty'"
+                            class="far fa-star text-3xl text-gray-500"
+                          ></i>
                         </ng-container>
-                      </div>
+                      </ng-container>
+                    </div>
                     <p class="text-white font-medium text-2xl mb-2">
                       Rating:
                       <input
-                      type="number"
-                      min="0"
-                      max="10"
-                      step="0.1"
-                      [(ngModel)]="newRating"
-                      (keypress)="onKeyPressRating($event, 'new')"
-                      (blur)="onBlurRating('new')"
-                      class="w-[3.2rem] text-2xl leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
+                        type="number"
+                        min="0"
+                        max="10"
+                        step="0.1"
+                        [(ngModel)]="newRating"
+                        (keypress)="onKeyPressRating($event, 'new')"
+                        (blur)="onBlurRating('new')"
+                        class="w-[3.2rem] text-2xl leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
                       />
                       <span
                         class="text-yellow-300 text-lg opacity-70 font-medium ml-1"
@@ -1225,31 +1264,48 @@
                           class="w-full text-center mb-2"
                         >
                           <!-- Header -->
-                            <p class="text-white font-semibold text-2xl mb-4 text-center">
-                              <i class="fas fa-edit text-indigo-400"></i>
-                              Editing Review
-                            </p>
-                      <!-- Star Rating Display -->
-                      <div class="flex justify-center mb-4">
-                        <ng-container *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]">
-                          <ng-container [ngSwitch]="getStarType(star, editedRating)">
-                            <i *ngSwitchCase="'full'" class="fas fa-star text-3xl text-yellow-400"></i>
-                            <i *ngSwitchCase="'half'" class="fas fa-star-half-alt text-3xl text-yellow-400"></i>
-                            <i *ngSwitchCase="'empty'" class="far fa-star text-3xl text-gray-500"></i>
-                          </ng-container>
-                        </ng-container>
-                      </div>
+                          <p
+                            class="text-white font-semibold text-2xl mb-4 text-center"
+                          >
+                            <i class="fas fa-edit text-indigo-400"></i>
+                            Editing Review
+                          </p>
+                          <!-- Star Rating Display -->
+                          <div class="flex justify-center mb-4">
+                            <ng-container
+                              *ngFor="
+                                let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                              "
+                            >
+                              <ng-container
+                                [ngSwitch]="getStarType(star, editedRating)"
+                              >
+                                <i
+                                  *ngSwitchCase="'full'"
+                                  class="fas fa-star text-3xl text-yellow-400"
+                                ></i>
+                                <i
+                                  *ngSwitchCase="'half'"
+                                  class="fas fa-star-half-alt text-3xl text-yellow-400"
+                                ></i>
+                                <i
+                                  *ngSwitchCase="'empty'"
+                                  class="far fa-star text-3xl text-gray-500"
+                                ></i>
+                              </ng-container>
+                            </ng-container>
+                          </div>
                           <p class="text-white font-medium text-2xl mb-2">
                             Rating:
                             <input
-                            type="number"
-                            min="0"
-                            max="10"
-                            step="0.1"
-                            [(ngModel)]="editedRating"
-                            (keypress)="onKeyPressRating($event, 'new')"
-                            (blur)="onBlurRating('new')"
-                            class="w-[3.2rem] text-2xl leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.1"
+                              [(ngModel)]="editedRating"
+                              (keypress)="onKeyPressRating($event, 'new')"
+                              (blur)="onBlurRating('new')"
+                              class="w-[3.2rem] text-2xl leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
                             />
                             <span
                               class="text-yellow-300 text-lg opacity-70 font-medium"
@@ -1317,7 +1373,7 @@
                             (click)="cancelEditReview()"
                             [disabled]="isEditLoading"
                             class="bg-red-600 hover:bg-red-700 text-white text-2xl px-4 py-4 rounded-lg w-full flex items-center justify-center gap-2"
-                            >
+                          >
                             <i class="fas fa-times"></i> Cancel
                           </button>
 
@@ -1325,8 +1381,9 @@
                             (click)="submitEditReview()"
                             [disabled]="isEditLoading"
                             class="bg-green-600 hover:bg-green-700 text-2xl px-4 py-2 rounded-lg text-white w-full flex items-center justify-center gap-2"
-                            >
-                            <span *ngIf="!isEditLoading">                          <i class="fas fa-save"></i> Save
+                          >
+                            <span *ngIf="!isEditLoading">
+                              <i class="fas fa-save"></i> Save
                             </span>
                             <span
                               *ngIf="isEditLoading"
