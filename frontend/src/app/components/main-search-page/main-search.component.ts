@@ -174,13 +174,14 @@ export class MainSearchComponent {
         searchBarEl.getBoundingClientRect().top + window.pageYOffset;
       const offset = elementTop - 110;
     
-      // Use instant scroll
+      // Scroll to the search bar with offset
       window.scrollTo({ top: offset, behavior: 'auto' });
     
-      // Additional nudge to hide Safari address bar
-      window.scrollBy(0, 50); // triggers address bar collapse
+      // Tiny nudge to collapse Safari's address bar
+      setTimeout(() => {
+        window.scrollBy(0, 2); // subtle, almost invisible scroll
+      }, 50);
     }, 0);
-    
 
     this.isLoading = true;
     this.searchAttempted = true;
