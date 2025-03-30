@@ -59,7 +59,7 @@ export class LoginComponent {
       },
       error: (error) => {
         this.isLoading = false;
-        this.toastr.error('Log in attempt failed.', 'Error');
+        this.toastr.error(`Log in attempt failed:  ${error.error?.message}.`, 'Error');
         this.errorMessages.general = error.error.message || 'Invalid email or password.';
       }
     });
