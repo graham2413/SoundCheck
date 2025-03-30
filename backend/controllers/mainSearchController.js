@@ -46,10 +46,15 @@ async function callDeezer(url) {
   }
 
   // HTTPS agent
-  // const agent = new https.Agent();
-    const agent = new https.Agent({
-    ca: fs.readFileSync('cacert.pem'),
-  });
+  let agent;
+
+  if (process.env.NODE_ENV === 'production') {
+    agent = new https.Agent();
+  } else {
+    agent = new https.Agent({
+      ca: fs.readFileSync('cacert.pem'),
+    });
+  }
 
   let attempt = 0;
   while (attempt < 5) {
