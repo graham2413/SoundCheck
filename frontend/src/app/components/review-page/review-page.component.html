@@ -756,11 +756,7 @@
               stroke="url(#ratingGradientDesktop)"
               stroke-width="4"
               stroke-dasharray="113.1"
-              [attr.stroke-dashoffset]="
-                getAverageRating() > 0
-                  ? 113.1 - (getAverageRating() / 10) * 113.1
-                  : 113.1
-              "
+              [attr.stroke-dashoffset]="circleDashOffset"
               [attr.style]="
                 getAverageRating() === 0 ? 'stroke-opacity: 0;' : ''
               "

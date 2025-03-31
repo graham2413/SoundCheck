@@ -98,6 +98,7 @@ export class ReviewPageComponent implements OnInit {
   isModalOpen: boolean = true;
   stars = Array(10).fill(0);
   ratingBarFill: number = 0;
+  circleDashOffset: number = 113.1;
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
@@ -236,12 +237,14 @@ export class ReviewPageComponent implements OnInit {
         this.existingUserReview = data.userReview;
 
         this.ratingBarFill = 0;
+        this.circleDashOffset = 113.1;
         this.isRatingLoaded = true;
         this.isReviewsLoaded = true;
         this.isImageLoaded = true;
 
         setTimeout(() => {
           this.ratingBarFill = this.getAverageRating() * 10;
+          this.circleDashOffset = 113.1 - (this.getAverageRating() / 10) * 113.1;
         }, 50); 
       },
       error: (error) => {

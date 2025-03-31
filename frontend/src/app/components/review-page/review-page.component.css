@@ -13,6 +13,7 @@
   fill: none;
   stroke-width: 4;
   stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s ease-in-out, stroke-opacity 0.3s ease;
 }
 
 .rating-circle span {

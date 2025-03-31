@@ -11,7 +11,7 @@
     <img
       [src]="user?.profilePicture || 'assets/user.png'"
       alt="Profile Picture"
-      class="w-32 h-32 rounded-full border-4 border-gray-400 shadow-lg mt-6 transform transition duration-300 hover:scale-105"
+      class="w-[10rem] h-[10rem] md:w-[12rem] md:h-[12rem] rounded-md shadow-lg mt-6"
     />
     <h2 class="text-4xl font-semibold mt-4">{{ user?.username }}</h2>
     <p class="text-gray-400 text-base mt-1">
@@ -60,7 +60,7 @@
       <img
         [src]="friend.profilePicture || 'assets/user.png'"
         alt="Friend"
-        class="w-12 h-12 rounded-full border-2 border-gray-500 shadow-sm"
+        class="w-[4.5rem] h-[4.5rem] rounded-md shadow-sm"
       />
       
       <!-- Username -->
@@ -87,12 +87,12 @@
         class="flex items-start p-4 bg-[#18191B] border-b border-gray-500 shadow-md relative transition-all cursor-pointer group hover:bg-gray-700  hover:p-4 hover:rounded-md"
       >
         <!-- Album Cover or Default Image -->
-        <div class="relative h-[4rem] w-[4rem] md:w-[7rem] md:h-[7rem] flex-shrink-0">
+        <div class="relative h-[4.5rem] w-[4.5rem] md:w-[7rem] md:h-[7rem] flex-shrink-0">
           <img
             [src]="review.albumSongOrArtist.cover"
             [src]="review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.picture : review.albumSongOrArtist.cover"
             [alt]="review.albumSongOrArtist.type === 'Artist' ? review.albumSongOrArtist.name : review.albumSongOrArtist.title"
-            class="h-[4rem] w-[4rem] md:w-[7rem] md:h-[7rem] rounded-md border-2 border-gray-600 shadow-sm"
+            class="h-[4.5rem] w-[4.5rem] md:w-[7rem] md:h-[7rem] rounded-md border-2 border-gray-600 shadow-sm"
           />
 
           <!-- Review Type Icon -->
