@@ -1,12 +1,12 @@
 <!-- MOBILE MODAL -->
 <div
-*ngIf="isModalOpen"
-class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md:hidden z-50"
-@slideUp
+  *ngIf="isModalOpen"
+  class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md:hidden z-50"
+  @slideUp
 >
-<!--iPod Container -->
-<div class="flex flex-col w-full min-h-screen flex-shrink-0 justify-between">
-<!--iPod Back -->
+  <!--iPod Container -->
+  <div class="flex flex-col w-full min-h-screen flex-shrink-0 justify-between">
+    <!--iPod Back -->
     <div
       *ngIf="showSecondIpod"
       [@slideAnimation]="'back'"
@@ -33,7 +33,7 @@ class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md
         }"
         class="record-details-card flex-grow overflow-y-auto w-full flex flex-col items-center space-y-10 px-4 pb-4"
         style="min-height: 0; max-height: calc(100svh - 125px)"
-              >
+      >
         <div
           class="flex flex-col items-center justify-center w-full space-y-10"
         >
@@ -137,7 +137,7 @@ class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md
       [@slideAnimation]="'front'"
       class="relative w-full flex flex-col items-center"
     >
-      <div class="custom-bg-color pt-2 w-full flex flex-col flex-grow min-h-0">
+      <div class="custom-bg-color pt-4 w-full flex flex-col flex-grow min-h-0">
         <div class="flex justify-between items-center px-4 w-full min-h-[60px]">
           <!-- Left Button -->
           <button
@@ -147,13 +147,13 @@ class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md
             <i class="fa-solid fa-info text-xl"></i>
           </button>
 
-          <!-- Overall Rating Circle -->
+          <!-- Overall Rating -->
           <div
             (click)="scrollToReviews()"
-            class="flex justify-center w-full mt-1"
+            class="flex justify-center w-full mb-4"
           >
             <div
-              class="relative w-32 h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 flex items-center justify-center"
+              class="relative w-[75%] flex flex-col items-center justify-center"
             >
               <ng-container
                 *ngIf="
@@ -164,77 +164,18 @@ class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md
                   else ratingContentMobile
                 "
               >
-                <!-- Gray Background & Spinner (Loading State) -->
+                <!-- Loading State -->
                 <div
-                  class="animate-pulse bg-gray-600 rounded-full w-full h-full flex items-center justify-center"
+                  class="animate-pulse bg-gray-600 rounded w-full h-16 flex items-center justify-center"
                 >
-                  <i
-                    class="fas fa-spinner fa-spin text-gray-400 text-3xl md:text-4xl lg:text-5xl"
-                  ></i>
+                  <i class="fas fa-spinner fa-spin text-gray-400 text-3xl"></i>
                 </div>
               </ng-container>
 
               <ng-template #ratingContentMobile>
-                <svg
-                  width="100%"
-                  height="100%"
-                  viewBox="0 0 42 42"
-                  class="circular-chart absolute w-full h-full"
-                >
-                  <defs>
-                    <linearGradient
-                      id="ratingGradientMobile"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="0%"
-                    >
-                      <stop
-                        offset="0%"
-                        style="stop-color: #facc15; stop-opacity: 1"
-                      />
-                      <stop
-                        offset="100%"
-                        style="stop-color: #f59e0b; stop-opacity: 1"
-                      />
-                    </linearGradient>
-                  </defs>
-
-                  <!-- Background Circle -->
-                  <circle
-                    class="circle-bg"
-                    cx="21"
-                    cy="21"
-                    r="18"
-                    stroke-width="4"
-                    [attr.style]="
-                      getAverageRating() === 0 ? 'stroke-opacity: 0;' : ''
-                    "
-                  />
-
-                  <!-- Foreground Circle (Rating Progress) -->
-                  <circle
-                    class="circle"
-                    cx="21"
-                    cy="21"
-                    r="18"
-                    stroke="url(#ratingGradientMobile)"
-                    stroke-width="4"
-                    stroke-dasharray="113.1"
-                    [attr.stroke-dashoffset]="
-                      getAverageRating() > 0
-                        ? 113.1 - (getAverageRating() / 10) * 113.1
-                        : 113.1
-                    "
-                    [attr.style]="
-                      getAverageRating() === 0 ? 'stroke-opacity: 0;' : ''
-                    "
-                  />
-                </svg>
-
-                <!-- Rating Number, No Reviews, or Spinner -->
-                <span
-                  class="absolute inset-0 flex flex-col items-center justify-center text-white font-bold text-3xl md:text-4xl lg:text-5xl"
+                <!-- Rating Badge -->
+                <div
+                  class="bg-gray-800 px-3 py-1 rounded-full text-white text-2xl font-bold tracking-wide shadow mb-2 flex items-center justify-center"
                 >
                   <ng-container
                     *ngIf="getAverageRating() > 0; else noReviewsMessage"
@@ -247,11 +188,24 @@ class="fixed inset-0 flex flex-col custom-bg-color text-white overflow-y-auto md
                     <ng-template #formattedRating>
                       {{ getAverageRating() | number : "1.1-1" }}
                     </ng-template>
-                    <span class="text-[1.2rem] font-medium text-gray-300"
+                    <span class="text-lg font-medium text-gray-300 ml-1"
                       >/ 10</span
                     >
                   </ng-container>
-                </span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div
+                  class="mt-1 w-full bg-gray-700 h-3 rounded-full overflow-hidden"
+                >
+                  <div
+                    class="h-3 rounded-full transition-all duration-700 ease-out"
+                    style="
+                      background: linear-gradient(to right, #facc15, #f59e0b);
+                    "
+                    [style.width.%]="ratingBarFill"
+                  ></div>
+                </div>
               </ng-template>
             </div>
           </div>

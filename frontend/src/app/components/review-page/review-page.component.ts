@@ -97,6 +97,7 @@ export class ReviewPageComponent implements OnInit {
   isTextOverflowing = false;
   isModalOpen: boolean = true;
   stars = Array(10).fill(0);
+  ratingBarFill: number = 0;
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
@@ -120,19 +121,6 @@ export class ReviewPageComponent implements OnInit {
     this.openRecord();
   }
 
-  openRecord(){
-    this.getReviews();
-    this.getExtraDetails();
-    setTimeout(() => {
-      const modalElement = document.querySelector(
-        '.modal-content'
-      ) as HTMLElement;
-      if (modalElement) {
-        modalElement.scrollTop = 0; // Scroll to top
-      }
-    }, 100);
-  }
-
   ngAfterViewInit() {
     setTimeout(() => {
       const modal = document.querySelector('.modal-dialog') as HTMLElement;
@@ -153,6 +141,19 @@ export class ReviewPageComponent implements OnInit {
       setTimeout(() => this.checkIfScrollable(), 0);
     }
   }  
+
+  openRecord(){
+    this.getReviews();
+    this.getExtraDetails();
+    setTimeout(() => {
+      const modalElement = document.querySelector(
+        '.modal-content'
+      ) as HTMLElement;
+      if (modalElement) {
+        modalElement.scrollTop = 0; // Scroll to top
+      }
+    }, 100);
+  }
 
   scrollToReviews(): void {
     if (this.reviewsSection) {
@@ -234,11 +235,14 @@ export class ReviewPageComponent implements OnInit {
         this.reviews = data.reviews;
         this.existingUserReview = data.userReview;
 
+        this.ratingBarFill = 0;
+        this.isRatingLoaded = true;
+        this.isReviewsLoaded = true;
+        this.isImageLoaded = true;
+
         setTimeout(() => {
-          this.isReviewsLoaded = true;
-          this.isRatingLoaded = true;
-          this.isImageLoaded = true;
-        }, 100);
+          this.ratingBarFill = this.getAverageRating() * 10;
+        }, 50); 
       },
       error: (error) => {
         this.toastr.error('Error occurred while retrieving reviews.', 'Error');
@@ -495,15 +499,7 @@ export class ReviewPageComponent implements OnInit {
     if (rating >= 7.0) return 'rgb(202, 201, 0)';    
     if (rating >= 6.0) return 'rgb(223,106,8)';    
     return 'rgb(215,8,7)';                        
-  }
-  
-  getRatingTextColor(rating: number): string {
-    // if (rating >= 9.0) return '#ffffff';
-    // if (rating >= 8.0) return '#ffffff';
-    // if (rating >= 7.0) return '#000000';
-    // if (rating >= 5.0) return '#000000';
-    return '#ffffff';                 
-  }  
+  } 
 
   get isTracklistArray(): boolean {
     return Array.isArray((this.record as Album | Artist).tracklist);
