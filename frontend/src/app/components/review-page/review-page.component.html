@@ -194,14 +194,15 @@
                   </div>
 
                   <!-- Progress Bar -->
-                  <div class="mt-1 w-full bg-gray-700 h-3 rounded-full overflow-hidden">
+                  <div
+                    class="mt-1 w-full bg-gray-700 h-3 rounded-full overflow-hidden"
+                  >
                     <div
                       class="h-3 rounded-full transition-all duration-700 ease-out"
                       [style.width.%]="ratingBarFill"
                       [style.background]="getRatingGradient()"
                     ></div>
                   </div>
-                  
                 </ng-container>
               </ng-template>
             </div>
@@ -427,27 +428,27 @@
                 placeholder="Write your review here..."
                 [(ngModel)]="newReview"
               ></textarea>
-            </div>
 
-            <!-- Buttons -->
-            <div class="flex gap-2 mt-4 font-medium">
-              <button
-                class="bg-red-600 text-white text-2xl px-4 py-4 rounded-lg w-full flex items-center justify-center gap-2"
-                (click)="cancelReview()"
-              >
-                <i class="fa fa-times"></i> Cancel
-              </button>
-              <button
-                (click)="submitReview()"
-                class="bg-indigo-500 hover:bg-indigo-600 text-2xl px-4 py-2 rounded-lg text-white w-full flex items-center justify-center gap-2"
-              >
-                <ng-container *ngIf="!isCreateLoading">
-                  <i class="fas fa-paper-plane"></i> Create
-                </ng-container>
-                <ng-container *ngIf="isCreateLoading">
-                  <i class="fas fa-spinner fa-spin"></i> Creating
-                </ng-container>
-              </button>
+              <!-- Buttons -->
+              <div class="flex gap-2 mt-3 font-medium w-full">
+                <button
+                  class="bg-red-600 text-white text-2xl px-4 py-4 rounded-lg w-1/2 flex items-center justify-center gap-2"
+                  (click)="cancelReview()"
+                >
+                  <i class="fa fa-times"></i> Cancel
+                </button>
+                <button
+                  (click)="submitReview()"
+                  class="bg-indigo-500 hover:bg-indigo-600 text-2xl px-4 py-4 rounded-lg text-white w-1/2 flex items-center justify-center gap-2"
+                >
+                  <ng-container *ngIf="!isCreateLoading">
+                    <i class="fas fa-paper-plane"></i> Create
+                  </ng-container>
+                  <ng-container *ngIf="isCreateLoading">
+                    <i class="fas fa-spinner fa-spin"></i> Creating
+                  </ng-container>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -576,7 +577,6 @@
                           </ng-container>
                         </button>
                       </div>
-                      
                     </div>
                   </div>
                 </div>
