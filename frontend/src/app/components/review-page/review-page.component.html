@@ -155,58 +155,53 @@
             <div
               class="relative w-[75%] flex flex-col items-center justify-center"
             >
-              <ng-container
-                *ngIf="
-                  !isRatingLoaded ||
-                    isDeleteLoading ||
-                    isEditLoading ||
-                    isCreateLoading;
-                  else ratingContentMobile
-                "
+            <ng-container
+            *ngIf="
+              !isRatingLoaded ||
+                isDeleteLoading ||
+                isEditLoading ||
+                isCreateLoading;
+              else ratingAvailable
+            "
+          >
+            <!-- Loading Spinner -->
+            <div
+              class="animate-pulse bg-gray-600 rounded w-full h-16 flex items-center justify-center"
+            >
+              <i class="fas fa-spinner fa-spin text-gray-400 text-3xl"></i>
+            </div>
+          </ng-container>
+          
+          <ng-template #ratingAvailable>
+            <ng-container *ngIf="getAverageRating() > 0; else noReviewsMessage">
+              <!-- Rating Badge -->
+              <div
+                class="bg-gray-800 px-3 py-1 rounded-full text-white text-2xl font-bold tracking-wide shadow mb-2 flex items-center justify-center"
               >
-                <!-- Loading State -->
-                <div
-                  class="animate-pulse bg-gray-600 rounded w-full h-16 flex items-center justify-center"
+                <ng-container
+                  *ngIf="getAverageRating() === 10; else formattedRating"
                 >
-                  <i class="fas fa-spinner fa-spin text-gray-400 text-3xl"></i>
-                </div>
-              </ng-container>
-
-              <ng-template #ratingContentMobile>
-                <!-- Rating Badge -->
+                  10
+                </ng-container>
+                <ng-template #formattedRating>
+                  {{ getAverageRating() | number : "1.1-1" }}
+                </ng-template>
+                <span class="text-lg font-medium text-gray-300 ml-1">/ 10</span>
+              </div>
+          
+              <!-- Progress Bar -->
+              <div
+                class="mt-1 w-full bg-gray-700 h-3 rounded-full overflow-hidden"
+              >
                 <div
-                  class="bg-gray-800 px-3 py-1 rounded-full text-white text-2xl font-bold tracking-wide shadow mb-2 flex items-center justify-center"
-                >
-                  <ng-container
-                    *ngIf="getAverageRating() > 0; else noReviewsMessage"
-                  >
-                    <ng-container
-                      *ngIf="getAverageRating() === 10; else formattedRating"
-                    >
-                      10
-                    </ng-container>
-                    <ng-template #formattedRating>
-                      {{ getAverageRating() | number : "1.1-1" }}
-                    </ng-template>
-                    <span class="text-lg font-medium text-gray-300 ml-1"
-                      >/ 10</span
-                    >
-                  </ng-container>
-                </div>
-
-                <!-- Progress Bar -->
-                <div
-                  class="mt-1 w-full bg-gray-700 h-3 rounded-full overflow-hidden"
-                >
-                  <div
-                    class="h-3 rounded-full transition-all duration-700 ease-out"
-                    style="
-                      background: linear-gradient(to right, #facc15, #f59e0b);
-                    "
-                    [style.width.%]="ratingBarFill"
-                  ></div>
-                </div>
-              </ng-template>
+                  class="h-3 rounded-full transition-all duration-700 ease-out"
+                  style="background: linear-gradient(to right, #facc15, #f59e0b);"
+                  [style.width.%]="ratingBarFill"
+                ></div>
+              </div>
+            </ng-container>
+          </ng-template>
+          
             </div>
           </div>
 
