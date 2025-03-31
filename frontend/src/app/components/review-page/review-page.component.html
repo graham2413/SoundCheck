@@ -568,10 +568,10 @@
                           (click)="submitEditReview()"
                           class="bg-green-500 hover:bg-green-600 text-2xl px-4 py-4 rounded-lg text-white w-1/2 flex items-center justify-center gap-2"
                         >
-                          <ng-container *ngIf="!isCreateLoading">
+                          <ng-container *ngIf="!isEditLoading">
                             <i class="fas fa-save"></i> Save
                           </ng-container>
-                          <ng-container *ngIf="isCreateLoading">
+                          <ng-container *ngIf="isEditLoading">
                             <i class="fas fa-spinner fa-spin"></i> Saving
                           </ng-container>
                         </button>
