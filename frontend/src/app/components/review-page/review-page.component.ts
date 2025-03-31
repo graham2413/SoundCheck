@@ -55,23 +55,50 @@ import { CreateReviewCommandModel } from 'src/app/models/command-models/create-r
       ])
     ]),
     trigger('slideAnimation', [
-      transition('void => back', [ // Back screen enters from right
-        style({ transform: 'translateX(100%)', opacity: 0 }),
-        animate('400ms ease-out', style({ transform: 'translateX(0%)', opacity: 1 }))
-      ]),
-      transition('void => front', [ // Front screen enters from left
+      // Front enters
+      transition('void => front', [
         style({ transform: 'translateX(-100%)', opacity: 0 }),
-        animate('400ms ease-out', style({ transform: 'translateX(0%)', opacity: 1 }))
+        animate('400ms ease-out', style({ transform: 'translateX(0)', opacity: 1 }))
       ]),
-      transition('back => front', [ // Going back to front, back slides right
+    
+      // Back enters
+      transition('void => back', [
+        style({ transform: 'translateX(100%)', opacity: 0 }),
+        animate('400ms ease-out', style({ transform: 'translateX(0)', opacity: 1 }))
+      ]),
+    
+      // Front to Back
+      transition('front => back', [
+        animate('400ms ease-in', style({ transform: 'translateX(-100%)', opacity: 0 }))
+      ]),
+    
+      // Back to Front
+      transition('back => front', [
         animate('400ms ease-in', style({ transform: 'translateX(100%)', opacity: 0 }))
       ]),
-      transition('front => back', [ // Going to back, front slides left
+    
+      // Front to Hidden (used when hiding front)
+      transition('front => hidden', [
         animate('400ms ease-in', style({ transform: 'translateX(-100%)', opacity: 0 }))
+      ]),
+    
+      // Hidden to Front (used when showing front)
+      transition('hidden => front', [
+        style({ transform: 'translateX(-100%)', opacity: 0 }),
+        animate('400ms ease-out', style({ transform: 'translateX(0)', opacity: 1 }))
+      ]),
+    
+      // Back to Hidden
+      transition('back => hidden', [
+        animate('400ms ease-in', style({ transform: 'translateX(100%)', opacity: 0 }))
+      ]),
+    
+      // Hidden to Back
+      transition('hidden => back', [
+        style({ transform: 'translateX(100%)', opacity: 0 }),
+        animate('400ms ease-out', style({ transform: 'translateX(0)', opacity: 1 }))
       ])
-    ])
-    
-    
+    ])   
   ]
 })
 export class ReviewPageComponent implements OnInit {
