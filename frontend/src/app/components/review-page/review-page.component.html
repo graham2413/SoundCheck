@@ -133,8 +133,7 @@
 
     <!--iPod Front -->
     <div
-      *ngIf="!showSecondIpod"
-      [@slideAnimation]="'front'"
+    [ngClass]="{ hidden: showSecondIpod }"      [@slideAnimation]="'front'"
       class="relative w-full flex flex-col items-center"
     >
       <div class="custom-bg-color pt-4 w-full flex flex-col flex-grow min-h-0">
