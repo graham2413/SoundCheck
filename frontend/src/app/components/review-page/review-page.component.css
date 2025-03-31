@@ -227,3 +227,7 @@ input[type='number'] {
   opacity: 0;
   pointer-events: none;
 }
+
+.rating-badge-bg {
+  background-color: #515455;
+}
