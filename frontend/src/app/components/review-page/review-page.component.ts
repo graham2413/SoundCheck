@@ -418,6 +418,7 @@ export class ReviewPageComponent implements OnInit {
         this.reviews = [...this.reviews, data.review];
         this.isAddingReview = false;
         this.isCreateLoading = false;
+        this.ratingBarFill = this.getAverageRating() * 10;
         this.toastr.success("Review created successfully.", "Success");
       },
       error: (error) => {
@@ -456,6 +457,7 @@ export class ReviewPageComponent implements OnInit {
             
             this.isEditingReview = false;
             this.isEditLoading = false;
+            this.ratingBarFill = this.getAverageRating() * 10;
             this.toastr.success('Review edited successfully.', 'Success');
           },
           error: (error) => {
@@ -478,6 +480,7 @@ export class ReviewPageComponent implements OnInit {
             this.reviews = this.reviews.filter(r => r._id !== review._id);
             this.existingUserReview = null;
             this.isDeleteLoading = false;
+            this.ratingBarFill = this.getAverageRating() * 10;
             this.toastr.success('Review deleted successfully.', 'Success');
           },
           error: (error) => {
@@ -499,7 +502,12 @@ export class ReviewPageComponent implements OnInit {
     if (rating >= 7.0) return 'rgb(202, 201, 0)';    
     if (rating >= 6.0) return 'rgb(223,106,8)';    
     return 'rgb(215,8,7)';                        
-  } 
+  }
+
+  getRatingGradient(): string {
+    return 'linear-gradient(to right, #fde047, #facc15, #f59e0b, #b45309)';
+  }
+  
 
   get isTracklistArray(): boolean {
     return Array.isArray((this.record as Album | Artist).tracklist);
