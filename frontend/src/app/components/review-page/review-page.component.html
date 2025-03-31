@@ -360,7 +360,7 @@
         >
           <!-- Review Card -->
           <div
-            class="bg-[#3a3a3a] p-6 pb-10 shadow-lg flex flex-col justify-between"
+            class="bg-[#3a3a3a] p-6 shadow-lg flex flex-col justify-between"
             style="width: 100dvh; height: 100dvh"
           >
             <!-- Title -->
@@ -481,7 +481,7 @@
                   style="height: 100dvh"
                 >
                   <div
-                    class="bg-[#3a3a3a] p-6 pb-10 shadow-lg flex flex-col justify-between"
+                    class="bg-[#3a3a3a] p-6 shadow-lg flex flex-col"
                     style="width: 100vw; height: 100dvh"
                   >
                     <!-- Header -->
@@ -552,29 +552,31 @@
                       <!-- Review Text -->
                       <textarea
                         [(ngModel)]="editedReviewText"
-                        class="w-full mt-5 p-3 text-xl bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500 h-[50vh]"
+                        class="w-full mt-5 p-3 text-xl bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500 h-[45vh]"
                         placeholder="Write your review here..."
                       ></textarea>
-                    </div>
-                    <!-- Buttons -->
-                    <div class="flex gap-2 mt-4 font-medium">
-                      <button
-                        class="bg-red-600 text-white text-2xl px-4 py-4 rounded-lg w-full flex items-center justify-center gap-2"
-                        (click)="cancelEditReview()"
-                      >
-                        <i class="fa fa-times"></i> Cancel
-                      </button>
-                      <button
-                        (click)="submitEditReview()"
-                        class="bg-green-500 hover:bg-green-600 text-2xl px-4 py-2 rounded-lg text-white w-full flex items-center justify-center gap-2"
-                      >
-                        <ng-container *ngIf="!isCreateLoading">
-                          <i class="fas fa-save"></i> Save
-                        </ng-container>
-                        <ng-container *ngIf="isCreateLoading">
-                          <i class="fas fa-spinner fa-spin"></i> Saving
-                        </ng-container>
-                      </button>
+
+                      <!-- Buttons -->
+                      <div class="flex gap-2 font-medium w-full mt-3">
+                        <button
+                          class="bg-red-600 text-white text-2xl px-4 py-4 rounded-lg w-1/2 flex items-center justify-center gap-2"
+                          (click)="cancelEditReview()"
+                        >
+                          <i class="fa fa-times"></i> Cancel
+                        </button>
+                        <button
+                          (click)="submitEditReview()"
+                          class="bg-green-500 hover:bg-green-600 text-2xl px-4 py-4 rounded-lg text-white w-1/2 flex items-center justify-center gap-2"
+                        >
+                          <ng-container *ngIf="!isCreateLoading">
+                            <i class="fas fa-save"></i> Save
+                          </ng-container>
+                          <ng-container *ngIf="isCreateLoading">
+                            <i class="fas fa-spinner fa-spin"></i> Saving
+                          </ng-container>
+                        </button>
+                      </div>
+                      
                     </div>
                   </div>
                 </div>
