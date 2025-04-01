@@ -538,6 +538,13 @@ export class ReviewPageComponent implements OnInit {
     return 'linear-gradient(to right, #fde047, #facc15, #f59e0b, #b45309)';
   }
   
+getSliderBackground(value: number): string {
+  const percent = (value / 10) * 100;
+  const adjust = value <= 1.1 ? 0.7 : -.7; // Adjust the overshoot based on the value
+  const adjustedPercent = Math.min(percent + adjust, 100);
+  return `linear-gradient(to right, #5D41D4 0%, #5D41D4 ${adjustedPercent}%, #26272A ${adjustedPercent}%, #26272A 100%)`;
+}
+
 
   get isTracklistArray(): boolean {
     return Array.isArray((this.record as Album | Artist).tracklist);

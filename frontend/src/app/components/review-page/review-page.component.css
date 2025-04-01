@@ -96,17 +96,13 @@
 .slider-modern {
   appearance: none;
   width: 100%;
-  height: 16px; /* overall input height */
-  background: transparent; /* remove default */
+  height: 16px;
+  background: transparent;
 }
 
 /* Track */
 .slider-modern::-webkit-slider-runnable-track {
   height: 10px;
-  background: #6c6868;
-  border: 1px solid #000;
-  border-radius: 10px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* Thumb */
@@ -114,14 +110,13 @@
   appearance: none;
   width: 22px;
   height: 22px;
-  background: #726bff;
+  background: #6747EE;
   border-radius: 50%;
   cursor: pointer;
   margin-top: -6px; /* aligns thumb vertically with taller track */
   border: none;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
 }
-
 
 .record-details-title {
   font-weight: 600;
