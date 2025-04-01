@@ -489,7 +489,7 @@
                   style="width: 100vw; height: 100dvh"
                   >
                   <!-- Header with Back Button -->
-                  <div class="relative w-full flex items-center justify-center border-b-2 border-gray-500 pb-4 px-4 pt-3">
+                  <div class="relative w-full h-[64px] flex items-center justify-center border-b-2 border-gray-500 px-4">
                     <button
                       [disabled]="isEditLoading"
                       (click)="cancelEditReview()"
@@ -503,9 +503,7 @@
                   </div>
                   
                   <!-- Edit Rating Section -->
-                  <div
-                    class="flex flex-col items-center justify-center flex-grow"
-                  >
+                  <div class="flex flex-col flex-grow w-full px-4 pt-4 overflow-hidden">
                     <div class="text-center w-full mx-auto">
                     <!-- Star Rating Display -->
                     <div class="flex justify-center mb-4 gap-0.5">
@@ -567,9 +565,11 @@
                     <textarea
                     [(ngModel)]="editedReviewText"
                     [disabled]="isEditLoading"
-                    class="w-full mt-5 p-3 text-xl bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none h-[45vh]"
+                    class="w-full flex-grow mt-5 p-3 text-xl bg-gray-800 rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none"
                     placeholder="Write your review here..."
+                    style="min-height: 120px; max-height: calc(100dvh - 300px);"
                     ></textarea>
+                  
 
                     <!-- Button -->
                     <div class="flex font-medium w-full mt-3">
