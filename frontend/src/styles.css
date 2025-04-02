@@ -18,9 +18,6 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   transition: none !important;
   animation: none !important;
 }
-.title-text {
-  letter-spacing: .9px;
-}
 
 /* Custom Dark Mode Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
@@ -45,4 +42,7 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 .no-scroll {
   overflow: hidden;
   height: 100vh; /* Prevent scrolling */
+}
+* {
+  font-family: 'Poppins', sans-serif;
 }

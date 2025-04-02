@@ -126,6 +126,7 @@ export class ReviewPageComponent implements OnInit {
   stars = Array(10).fill(0);
   ratingBarFill: number = 0;
   circleDashOffset: number = 113.1;
+  isCompactView = false;
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
@@ -147,6 +148,12 @@ export class ReviewPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.openRecord();
+    this.checkIfCompactView();
+    window.addEventListener('resize', this.checkIfCompactView.bind(this));
+  }
+
+  checkIfCompactView() {
+    this.isCompactView = window.innerHeight < 705;
   }
 
   ngAfterViewInit() {
@@ -449,6 +456,9 @@ export class ReviewPageComponent implements OnInit {
         this.isAddingReview = false;
         this.isCreateLoading = false;
         this.ratingBarFill = this.getAverageRating() * 10;
+        setTimeout(() => {
+          this.circleDashOffset = 113.1 - (this.getAverageRating() / 10) * 113.1;
+        }, 50);         
         this.toastr.success("Review created successfully.", "Success");
       },
       error: (error) => {
@@ -488,7 +498,9 @@ export class ReviewPageComponent implements OnInit {
             this.isEditingReview = false;
             this.isEditLoading = false;
             this.ratingBarFill = this.getAverageRating() * 10;
-            this.toastr.success('Review edited successfully.', 'Success');
+            setTimeout(() => {
+              this.circleDashOffset = 113.1 - (this.getAverageRating() / 10) * 113.1;
+            }, 50);               this.toastr.success('Review edited successfully.', 'Success');
           },
           error: (error) => {
             this.isEditLoading = false;
@@ -511,7 +523,9 @@ export class ReviewPageComponent implements OnInit {
             this.existingUserReview = null;
             this.isDeleteLoading = false;
             this.ratingBarFill = this.getAverageRating() * 10;
-            this.toastr.success('Review deleted successfully.', 'Success');
+            setTimeout(() => {
+              this.circleDashOffset = 113.1 - (this.getAverageRating() / 10) * 113.1;
+            }, 50);               this.toastr.success('Review deleted successfully.', 'Success');
           },
           error: (error) => {
             this.isDeleteLoading = false;
@@ -538,13 +552,23 @@ export class ReviewPageComponent implements OnInit {
     return 'linear-gradient(to right, #fde047, #facc15, #f59e0b, #b45309)';
   }
   
-getSliderBackground(value: number): string {
-  const percent = (value / 10) * 100;
-  const adjust = value <= 1.1 ? 0.7 : -.7; // Adjust the overshoot based on the value
-  const adjustedPercent = Math.min(percent + adjust, 100);
-  return `linear-gradient(to right, #5D41D4 0%, #5D41D4 ${adjustedPercent}%, #26272A ${adjustedPercent}%, #26272A 100%)`;
-}
-
+  getSliderBackground(value: number): string {
+    const rawPercent = (value / 10) * 100;
+  
+    // Small dynamic correction curve based on empirical testing
+    const correction =
+      value < 1 ? 0.8 :
+      value < 2 ? 0.5 :
+      value < 3 ? 0.3 :
+      value > 9 ? -0.3 :
+      value > 8 ? -0.5 :
+      value > 7 ? -0.7 :
+      0;
+  
+    const adjustedPercent = Math.min(Math.max(rawPercent + correction, 0), 100);
+  
+    return `linear-gradient(to right, #5D41D4 0%, #5D41D4 ${adjustedPercent}%, #858585 ${adjustedPercent}%, #858585 100%)`;
+  }  
 
   get isTracklistArray(): boolean {
     return Array.isArray((this.record as Album | Artist).tracklist);

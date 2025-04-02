@@ -18,7 +18,7 @@
 
 <!-- Heading -->
 <div class="text-center max-w-5xl mx-auto px-4">
-  <h1 class="title-text text-4xl md:text-5xl font-extrabold tracking-tight">
+  <h1 class=" text-4xl md:text-5xl font-extrabold tracking-tight">
     Explore Your Favorite Music
   </h1>
   <p class="mt-2 text-lg text-gray-300">
@@ -116,7 +116,7 @@
   <button
     (click)="setActiveTab('songs')"
     [class.bg-indigo-600]="activeTab === 'songs'"
-    class="px-4 py-2 rounded-md hover:bg-indigo-500 transition text-xl font-bold title-text"
+    class="px-4 py-2 rounded-md hover:bg-indigo-500 transition text-xl font-bold "
   >
     Songs
   </button>
@@ -124,7 +124,7 @@
     *ngIf="results && (results.albums?.length ?? 0) > 0"
     (click)="setActiveTab('albums')"
     [class.bg-indigo-600]="activeTab === 'albums'"
-    class="px-4 py-2 rounded-md hover:bg-indigo-500 transition text-xl font-bold title-text"
+    class="px-4 py-2 rounded-md hover:bg-indigo-500 transition text-xl font-bold "
   >
     Albums
   </button>
@@ -132,7 +132,7 @@
     *ngIf="results && (results.artists?.length ?? 0) > 0"
     (click)="setActiveTab('artists')"
     [class.bg-indigo-600]="activeTab === 'artists'"
-    class="px-4 py-2 rounded-md hover:bg-indigo-500 transition text-xl font-bold title-text"
+    class="px-4 py-2 rounded-md hover:bg-indigo-500 transition text-xl font-bold "
   >
     Artists
   </button>
@@ -219,7 +219,7 @@
         <!-- Text Container -->
         <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
           <p
-            class="text-lg md:text-xl font-semibold text-white leading-tight title-text break-words overflow-hidden whitespace-normal break-words"
+            class="text-lg md:text-xl font-semibold text-white leading-tight  break-words overflow-hidden whitespace-normal break-words"
           >
             {{ song.title }}
           </p>
@@ -313,7 +313,7 @@
           class="h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 lg:h-40 lg:w-40 xl:h-44 xl:w-44 rounded-md object-cover shadow-md border-2 border-gray-600"
         />
         <p
-        class="title-text mt-2 text-lg text-white text-center font-semibold w-full max-w-xs sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none break-words"
+        class=" mt-2 text-lg text-white text-center font-semibold w-full max-w-xs sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none break-words"
       >
         {{ album.title }}
       </p>      
@@ -347,7 +347,7 @@
             class="h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 lg:h-40 lg:w-40 xl:h-44 xl:w-44 rounded-md object-cover shadow-md border-2 border-gray-600"
             />
           <p
-            class="mt-2 text-lg text-white text-center max-w-full font-semibold title-text sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none break-words"
+            class="mt-2 text-lg text-white text-center max-w-full font-semibold  sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap group-hover:whitespace-normal group-hover:overflow-visible group-hover:max-w-none break-words"
           >
             {{ artist.name }}
           </p>
