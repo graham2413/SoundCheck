@@ -146,12 +146,16 @@
 }
 
 .title-wrapper {
-  width: 100vw;
+  width: 90vw;
   overflow: hidden;
   white-space: nowrap;
   display: block;
   margin: 0 auto;
   text-align: center;
+
+  /* Fade-in/out edges */
+  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
 }
 
 .title-content {
@@ -166,12 +170,13 @@
 
 @keyframes scroll-left {
   0% {
-    transform: translateX(60%);
+    transform: translateX(50%);
   }
   100% {
     transform: translateX(-100%);
   }
 }
+
 
 @keyframes skeleton-loading {
   0% {

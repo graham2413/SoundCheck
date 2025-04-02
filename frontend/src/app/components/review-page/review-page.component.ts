@@ -224,8 +224,9 @@ export class ReviewPageComponent implements OnInit {
   
     // Use full viewport width as the cutoff threshold
     const viewportWidth = window.innerWidth;
-    const isOverflowing = content.scrollWidth > viewportWidth;
-    this.isTextOverflowing = isOverflowing;
+    const buffer = 0.95;
+    const isOverflowing = content.scrollWidth > wrapper.clientWidth * buffer;
+        this.isTextOverflowing = isOverflowing;
   
     console.log({
       scrollWidth: content.scrollWidth,
