@@ -56,10 +56,10 @@ exports.getReviewsWithUserReview = async (req, res) => {
         }
 
         // Get all reviews for the song/album/artist (filter by both ID and type)
-        const reviews = await Review.find({ "albumSongOrArtist.id": id, "albumSongOrArtist.type": type }).populate("user", "username");
+        const reviews = await Review.find({ "albumSongOrArtist.id": id, "albumSongOrArtist.type": type }).populate("user", "username profilePicture");
 
         // Get the current user's review (if it exists) for the specific type
-        const userReview = await Review.findOne({ "albumSongOrArtist.id": id, user, "albumSongOrArtist.type": type }).populate("user", "username");
+        const userReview = await Review.findOne({ "albumSongOrArtist.id": id, user, "albumSongOrArtist.type": type }).populate("user", "username profilePicture");
 
         return res.status(200).json({
             reviews,        // List of all reviews
