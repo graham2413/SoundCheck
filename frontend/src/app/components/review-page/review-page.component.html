@@ -253,7 +253,7 @@
             <img
               [src]="record.type === 'Artist' ? record.picture : record.cover"
               [alt]="record.type === 'Artist' ? record.name : record.title"
-              class="rounded-lg w-full max-w-[420px] max-h-[420px] object-contai imageHeight"
+              class="rounded-lg w-full max-w-[420px] max-h-[420px] object-contain imageHeight"
               (load)="isImageLoaded = true"
             />
           </div>
@@ -261,26 +261,21 @@
 
         <!-- Info and Audio Player Section -->
         <div class="flex flex-col items-center justify-center flex-1 pb-4">
-          <div class="text-center text-3xl mb-4">
-            <div
-              class="text-gray-200 font-semibold overflow-hidden whitespace-nowrap relative"
-            >
+          <div class="text-center text-3xl mb-4 text-gray-200 font-semibold">
+            <div class="title-wrapper" #scrollingWrapper>
               <div
-                #scrollingWrapper
-                class="scrolling-wrapper"
-                [ngClass]="{ 'scroll-active': isTextOverflowing }"
+                class="title-content"
+                #scrollingContent
+                [class.scroll-animate]="isTextOverflowing"
               >
-                <div #scrollingContent class="scrolling-content">
-                  <span
-                    *ngIf="record.type != 'Artist'"
-                    class="inline-block align-middle"
-                  >
-                    {{ record.title }}
-                  </span>
-                  <span *ngIf="record.type == 'Artist'">{{ record.name }}</span>
-                </div>
+                <span *ngIf="record.type !== 'Artist'" class="inline-block align-middle">
+                  {{ record.title }}
+                </span>
+                <span *ngIf="record.type === 'Artist'">
+                  {{ record.name }}
+                </span>
               </div>
-            </div>
+            </div>                    
 
             <p
               class="text-gray-400 text-xl flex items-center justify-center mt-2"
@@ -362,6 +357,7 @@
         <!-- Fullscreen Overlay for Creating -->
         <div
           *ngIf="isAddingReview"
+          @overlayAnimation
           class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
           style="height: 100dvh"
         >
@@ -496,6 +492,7 @@
                 <!-- Fullscreen Overlay for Editing -->
                 <div
                   *ngIf="isEditingReview"
+                  @overlayAnimation
                   class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
                   style="height: 100dvh"
                 >
@@ -1394,6 +1391,7 @@
                 <!-- Fullscreen Overlay for Editing -->
                 <div
                   *ngIf="isEditingReview"
+                  @overlayAnimation
                   class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
                   style="height: 100dvh"
                 >
@@ -1516,6 +1514,7 @@
                 <!-- Fullscreen Overlay for Creating -->
                 <div
                   *ngIf="isAddingReview"
+                  @overlayAnimation
                   class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
                   style="height: 100dvh"
                 >

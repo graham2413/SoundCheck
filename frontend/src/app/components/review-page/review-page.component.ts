@@ -24,6 +24,15 @@ import { CreateReviewCommandModel } from 'src/app/models/command-models/create-r
   standalone: true,
   imports: [CommonModule, FormsModule, AudioPlayerComponent],
   animations: [
+        trigger('overlayAnimation', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(30px)' }),
+        animate('250ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
+      ]),
+      transition(':leave', [
+        animate('200ms ease-in', style({ opacity: 0, transform: 'translateY(30px)' })),
+      ]),
+    ]),
     trigger('fadeIn', [
       transition(':enter', [
         style({ opacity: 0, transform: 'translateY(10px) scale(0.95)' }), 
@@ -158,18 +167,19 @@ export class ReviewPageComponent implements OnInit {
 
   ngAfterViewInit() {
     setTimeout(() => {
-      const modal = document.querySelector('.modal-dialog') as HTMLElement;
-      if (modal) {
-        modal.style.width = '90vw';
-        modal.style.minWidth = '90vw';
-      }
-      this.checkOverflow();
+      requestAnimationFrame(() => {
+        this.checkOverflow(); // initial render
   
-      if (this.scrollContainer) {
-        this.checkIfScrollable();
-      }
+        if (this.scrollContainer) {
+          this.checkIfScrollable();
+        }
+      });
     }, 200);
   }
+  
+  ngOnChanges() {
+    setTimeout(() => this.checkOverflow(), 0);
+  }  
   
   ngAfterViewChecked() {
     if (this.showSecondIpod && this.scrollContainer) {
@@ -208,25 +218,20 @@ export class ReviewPageComponent implements OnInit {
   }
 
   checkOverflow() {
-    if (!this.scrollingWrapper || !this.scrollingContent) {
-      setTimeout(() => this.checkOverflow(), 100);
-      return;
-    }
+    const wrapper = this.scrollingWrapper?.nativeElement;
+    const content = this.scrollingContent?.nativeElement;
+    if (!wrapper || !content) return;
   
-    const wrapper = this.scrollingWrapper.nativeElement;
-    const content = this.scrollingContent.nativeElement;
+    // Use full viewport width as the cutoff threshold
+    const viewportWidth = window.innerWidth;
+    const isOverflowing = content.scrollWidth > viewportWidth;
+    this.isTextOverflowing = isOverflowing;
   
-    // Ensure width measurement is accurate by forcing reflow
-    wrapper.offsetWidth; 
-  
-    this.isTextOverflowing = content.scrollWidth > wrapper.clientWidth;
-  
-    // Toggle 'scroll-active' class based on overflow
-    if (this.isTextOverflowing) {
-      this.scrollingWrapper.nativeElement.classList.add('scroll-active');
-    } else {
-      this.scrollingWrapper.nativeElement.classList.remove('scroll-active');
-    }
+    console.log({
+      scrollWidth: content.scrollWidth,
+      viewportWidth,
+      overflow: isOverflowing
+    });
   }  
   
   get flipState() {

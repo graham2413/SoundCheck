@@ -1,34 +1,42 @@
 <div class="w-full flex justify-center paddingFix">
   <div class="w-full max-w-md flex items-center justify-center gap-6 p-3">
-    <!-- Backward Button -->
-    <button
-      *ngIf="showForwardAndBackwardButtons"
-      class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center" (click)="onPreviousClick()"
-    >
-      <i class="fas fa-backward"></i>
-    </button>
+    <!-- Loading State -->
+    <ng-container *ngIf="isLoading; else playerControls">
+      <div class="w-full flex justify-center items-center gap-4">
+        <div class="w-14 h-14 rounded-full bg-gray-700 animate-pulse"></div>
+        <div class="w-16 h-16 rounded-full bg-gray-700 animate-pulse"></div>
+        <div class="w-14 h-14 rounded-full bg-gray-700 animate-pulse"></div>
+      </div>
+    </ng-container>
 
-    <!-- Play/Pause Button -->
-    <button
-      (click)="togglePlay()"
-      class="bg-gray-700 text-gray-300 hover:bg-white hover:text-gray-800 w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md transition-colors duration-200"
-    >
-      <ng-container *ngIf="isLoading; else playIcon">
-        <i class="fas fa-spinner fa-spin text-2xl"></i>
-      </ng-container>
+    <!-- Actual Player -->
+    <ng-template #playerControls>
+      <!-- Backward Button -->
+      <button
+        *ngIf="showForwardAndBackwardButtons"
+        class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center"
+        (click)="onPreviousClick()"
+      >
+        <i class="fas fa-backward"></i>
+      </button>
 
-      <ng-template #playIcon>
+      <!-- Play/Pause Button -->
+      <button
+        (click)="togglePlay()"
+        class="bg-gray-700 text-gray-300 hover:bg-white hover:text-gray-800 w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md transition-colors duration-200"
+      >
         <i class="{{ isPlaying ? 'fas fa-pause' : 'fas fa-play' }} text-3xl"></i>
-      </ng-template>
-    </button>
+      </button>
 
-    <!-- Forward Button -->
-    <button
-    *ngIf="showForwardAndBackwardButtons"
-    class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center" (click)="onNextClick()"
-    >
-      <i class="fas fa-forward"></i>
-    </button>
+      <!-- Forward Button -->
+      <button
+        *ngIf="showForwardAndBackwardButtons"
+        class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center"
+        (click)="onNextClick()"
+      >
+        <i class="fas fa-forward"></i>
+      </button>
+    </ng-template>
   </div>
 </div>
 
