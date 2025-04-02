@@ -9,6 +9,7 @@ import {
   Output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Song } from 'src/app/models/responses/song-response';
 
 @Component({
   selector: 'app-audio-player',
@@ -20,9 +21,12 @@ import { FormsModule } from '@angular/forms';
 export class AudioPlayerComponent implements AfterViewInit {
   
   @ViewChild('myAudio') myAudioRef!: ElementRef<HTMLAudioElement>;
+
   @Input() record: any;
   @Input() showForwardAndBackwardButtons: boolean = true;
-  isLoading: boolean = true;
+  @Input() currentIndex!: number;
+  @Input() songList: Song[] = [];
+  
   @Output() playStatus = new EventEmitter<boolean>();
   @Output() next = new EventEmitter<void>();
   @Output() previous = new EventEmitter<void>();
@@ -31,6 +35,7 @@ export class AudioPlayerComponent implements AfterViewInit {
   isPlaying: boolean = false;
   audioDuration: number = 0;
   currentTime: number = 0;
+  isLoading: boolean = true;
 
   onNextClick() {
     this.isPlaying = false;

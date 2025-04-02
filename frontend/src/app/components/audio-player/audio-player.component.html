@@ -13,6 +13,7 @@
       <!-- Backward Button -->
       <button
         *ngIf="showForwardAndBackwardButtons"
+        [style.visibility]="currentIndex > 0 ? 'visible' : 'hidden'"
         class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center"
         (click)="onPreviousClick()"
       >
@@ -30,6 +31,7 @@
       <!-- Forward Button -->
       <button
         *ngIf="showForwardAndBackwardButtons"
+        [style.visibility]="currentIndex < songList.length - 1 ? 'visible' : 'hidden'"
         class="text-gray-700 hover:text-white text-3xl w-14 h-14 flex items-center justify-center"
         (click)="onNextClick()"
       >
