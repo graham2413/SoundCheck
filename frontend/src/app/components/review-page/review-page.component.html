@@ -262,20 +262,25 @@
         <!-- Info and Audio Player Section -->
         <div class="flex flex-col items-center justify-center flex-1 pb-4">
           <div class="text-center text-3xl mb-4 text-gray-200 font-semibold">
-            <div class="title-wrapper" #scrollingWrapper>
-              <div
-                class="title-content"
-                #scrollingContent
-                [class.scroll-animate]="isTextOverflowing"
-              >
-                <span *ngIf="record.type !== 'Artist'" class="inline-block align-middle">
-                  {{ record.title }}
-                </span>
-                <span *ngIf="record.type === 'Artist'">
-                  {{ record.name }}
-                </span>
-              </div>
-            </div>                    
+<div
+  class="title-wrapper"
+  [class.masked]="isTextOverflowing"
+  #scrollingWrapper
+>
+  <div
+    class="title-content"
+    #scrollingContent
+    [class.scroll-animate]="isTextOverflowing"
+  >
+    <span *ngIf="record.type !== 'Artist'" class="inline-block align-middle">
+      {{ record.title }}
+    </span>
+    <span *ngIf="record.type === 'Artist'">
+      {{ record.name }}
+    </span>
+  </div>
+</div>
+                
 
             <p
               class="text-gray-400 text-xl flex items-center justify-center mt-2"

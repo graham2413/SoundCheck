@@ -34,11 +34,13 @@ export class AudioPlayerComponent implements AfterViewInit {
 
   onNextClick() {
     this.isPlaying = false;
+    this.isLoading = true;
     this.next.emit();
   }
 
   onPreviousClick() {
     this.isPlaying = false;
+    this.isLoading = true;
     this.previous.emit();
   }
 

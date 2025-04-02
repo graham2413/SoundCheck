@@ -152,8 +152,9 @@
   display: block;
   margin: 0 auto;
   text-align: center;
+}
 
-  /* Fade-in/out edges */
+.title-wrapper.masked {
   mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
 }
