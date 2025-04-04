@@ -92,5 +92,15 @@ cron.schedule("0 12 * * 5", async () => {
   await spotifyController.setAlbumImages();
 });
 
+// Keep-alive ping (every 14 minutes - prevents cold starts)
+cron.schedule("*/14 * * * *", async () => {
+  try {
+    await fetch("https://soundcheck-backend-k7ec.onrender.com/");
+    console.log("Keep-alive ping sent");
+  } catch (err) {
+    console.error("Keep-alive failed:", err.message);
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

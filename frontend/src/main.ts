@@ -18,9 +18,9 @@ bootstrapApplication(AppComponent, {
     provideRouter(appRoutes),
     provideAnimations(),
     provideToastr({
-      positionClass: 'toast-bottom-center',
+      positionClass: 'toast-top-center',
       preventDuplicates: true,
-      timeOut: 3000,
+      timeOut: 2500,
       closeButton: true, 
       progressBar: true,
       progressAnimation:'increasing'

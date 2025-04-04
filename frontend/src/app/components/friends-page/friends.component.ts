@@ -109,14 +109,61 @@ export class FriendsComponent implements OnInit {
   getFriendData() {
     this.userService.userProfile$.subscribe((profile) => {
       if (profile) {
+        // this.userProfile = {
+        //   ...profile,
+        //   friendInfo: {
+        //     friends: profile.friendInfo?.friends || [],
+        //     friendRequestsReceived: profile.friendInfo?.friendRequestsReceived || [],
+        //     friendRequestsSent: profile.friendInfo?.friendRequestsSent || []
+        //   }
+        // };
+
         this.userProfile = {
-          ...profile,
+          _id: 'mock-user-id',
+          username: 'Test User',
+          email: 'test@example.com',
+          profilePicture: 'https://i.pravatar.cc/150?img=99',
+          googleId: 'google-mock-id',
           friendInfo: {
-            friends: profile.friendInfo?.friends || [],
-            friendRequestsReceived: profile.friendInfo?.friendRequestsReceived || [],
-            friendRequestsSent: profile.friendInfo?.friendRequestsSent || []
-          }
+            friends: Array.from({ length: 10 }, (_, i) => ({
+              _id: `friend-${i + 1}`,
+              username: `Friend ${i + 1}`,
+              email: `friend${i + 1}@test.com`,
+              profilePicture: `https://i.pravatar.cc/150?img=${i + 1}`,
+              googleId: `google-friend-${i + 1}`,
+              friendInfo: {
+                friends: [],
+                friendRequestsReceived: [],
+                friendRequestsSent: [],
+              },
+            })),
+            friendRequestsReceived: Array.from({ length: 10 }, (_, i) => ({
+              _id: `request-received-${i + 1}`,
+              username: `Requester ${i + 1}`,
+              email: `requester${i + 1}@test.com`,
+              profilePicture: `https://i.pravatar.cc/150?img=${i + 20}`,
+              googleId: `google-requester-${i + 1}`,
+              friendInfo: {
+                friends: [],
+                friendRequestsReceived: [],
+                friendRequestsSent: [],
+              },
+            })),
+            friendRequestsSent: Array.from({ length: 10 }, (_, i) => ({
+              _id: `request-sent-${i + 1}`,
+              username: `Sent To ${i + 1}`,
+              email: `sentto${i + 1}@test.com`,
+              profilePicture: `https://i.pravatar.cc/150?img=${i + 40}`,
+              googleId: `google-sentto-${i + 1}`,
+              friendInfo: {
+                friends: [],
+                friendRequestsReceived: [],
+                friendRequestsSent: [],
+              },
+            })),
+          },
         };
+        
 
         this.changeDetectorRef.detectChanges();
       }
@@ -140,21 +187,33 @@ export class FriendsComponent implements OnInit {
 
     this.userService.searchUsers(this.searchQuery).subscribe({
       next: (users: User[]) => {
-        this.usersToAdd = users.map((user: User) => {
-          return {
-            ...user,
-            isFriend: this.userProfile?.friendInfo?.friends?.some(
-              (friend) => friend._id === user._id
-            ),
-            hasPendingRequestSent: this.userProfile?.friendInfo?.friendRequestsSent?.some(
-              (request) => request._id === user._id
-            ),
-            hasPendingRequestReceived:
-              this.userProfile?.friendInfo?.friendRequestsReceived?.some(
-                (request) => request._id === user._id
-              ),
-          };
-        });
+        // this.usersToAdd = users.map((user: User) => {
+        //   return {
+        //     ...user,
+        //     isFriend: this.userProfile?.friendInfo?.friends?.some(
+        //       (friend) => friend._id === user._id
+        //     ),
+        //     hasPendingRequestSent: this.userProfile?.friendInfo?.friendRequestsSent?.some(
+        //       (request) => request._id === user._id
+        //     ),
+        //     hasPendingRequestReceived:
+        //       this.userProfile?.friendInfo?.friendRequestsReceived?.some(
+        //         (request) => request._id === user._id
+        //       ),
+        //   };
+        // });
+       this.usersToAdd = Array.from({ length: 10 }, (_, i) => ({
+          _id: `user-${i + 1}`,
+          username: `User ${i + 1}`,
+          email: `user${i + 1}@test.com`,
+          profilePicture: `https://i.pravatar.cc/150?img=${i + 1}`,
+          googleId: `google-user-${i + 1}`,
+          friendInfo: {
+            friends: [],
+            friendRequestsReceived: [],
+            friendRequestsSent: [],
+          },
+        }));
 
         setTimeout(() => {
           this.addFriendsSearchLoading = false;

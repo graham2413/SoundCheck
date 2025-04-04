@@ -31,7 +31,7 @@ exports.createReview = async (req, res) => {
         await newReview.save();
 
         // Populate the user details for the created review
-        await newReview.populate('user', 'username');
+        await newReview.populate('user', 'username profilePicture');
 
         res.status(201).json({
             message: "Review created successfully!",
@@ -75,28 +75,32 @@ exports.getReviewsWithUserReview = async (req, res) => {
 // Edit a review (Only the review owner)
 exports.editReview = async (req, res) => {
     try {
-        const { rating, reviewText } = req.body;
-        const review = await Review.findById(req.params.id);
-
-        if (!review) {
-            return res.status(404).json({ message: "Review not found" });
-        }
-
-        // Ensure the user is the owner
-        if (review.user.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ message: "Unauthorized to edit this review" });
-        }
-
-        // Update only provided fields
-        if (rating !== undefined) review.rating = rating;
-        if (reviewText !== undefined) review.reviewText = reviewText;
-
-        await review.save();
-        res.json({ message: "Review updated successfully", review });
+      const { rating, reviewText } = req.body;
+  
+      // Populate user from the start
+      const review = await Review.findById(req.params.id).populate('user');
+  
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+  
+      if (review.user._id.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: "Unauthorized to edit this review" });
+      }
+  
+      if (rating !== undefined) review.rating = rating;
+      if (reviewText !== undefined) review.reviewText = reviewText;
+      review.createdAt = new Date();
+  
+      await review.save();
+  
+      // Return the same populated object
+      res.json({ message: "Review updated successfully", review });
     } catch (error) {
-        res.status(500).json({ message: "Server Error", error: error });
+      res.status(500).json({ message: "Server Error", error });
     }
-};
+  };
+  
 
 // Delete a review (Only the review owner)
 exports.deleteReview = async (req, res) => {

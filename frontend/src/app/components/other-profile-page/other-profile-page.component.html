@@ -1,7 +1,7 @@
 <div
   *ngIf="user"
   @fadeSlide
-  class="container mx-auto max-w-4xl p-6 bg-gray-900 text-white rounded-lg pt-24"
+  class="container mx-auto max-w-4xl p-6 bg-[#161A24] text-white rounded-lg pt-24"
 >
   <!-- Profile Section -->
   <div class="flex flex-col items-center relative">
@@ -54,7 +54,7 @@
     <div
       *ngFor="let friend of filteredFriends"
       (click)="goToFriendsPage(friend)"
-      class="flex items-center gap-4 p-3 border-b border-gray-900 last:border-none transition-all hover:bg-gray-900 cursor-pointer group hover:rounded-md"
+      class="flex items-center gap-4 p-3 border-b border-gray-900 last:border-none transition-all hover:bg-[#161A24] cursor-pointer group hover:rounded-md"
     >
       <!-- Profile Picture (No Hover Effect) -->
       <img

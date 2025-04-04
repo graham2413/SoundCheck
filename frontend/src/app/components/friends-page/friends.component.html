@@ -1,165 +1,207 @@
-<div class="bg-gray-900 text-white min-h-screen flex w-full pt-20">
+<div class="flex bg-gray-800 text-white min-h-screen w-full pt-[4.5rem]">
   <!-- Navigation for Medium to large screens -->
   <div
-    class="hidden md:flex bg-gray-800 shadow-lg flex-col fixed top-20 left-0 h-[calc(100vh-20px)]  w-[11rem] z-10 items-center gap-6 pt-10 justify-evenly"
-  >
-    <!-- My Friends Button -->
+  class="hidden md:flex bg-[#0E1829] shadow-lg flex-col fixed top-[5rem] pt-5 left-0 h-screen md:w-[22%] z-10"
+>
+
     <button
       (click)="setActiveTab('myFriends')"
-      [class.bg-indigo-600]="activeTab === 'myFriends'"
-      [class.hover:bg-indigo-700]="activeTab !== 'myFriends'"
-      class="flex flex-col items-center justify-center p-6 rounded-md text-white text-xl transition transform hover:scale-105 relative"
+      [ngClass]="{
+        'text-white': activeTab === 'myFriends',
+        'text-gray-400': activeTab !== 'myFriends'
+      }"
+      class="larger-desktop-icons flex flex-col items-center justify-center p-8 text-white text-xl transition transform relative"
     >
       <i class="fas fa-users text-3xl"></i>
       <span class="hidden md:inline mt-1">My Friends</span>
     </button>
 
-    <!-- Add Friends Button -->
     <button
       (click)="setActiveTab('addFriends')"
-      [class.bg-indigo-600]="activeTab === 'addFriends'"
-      [class.hover:bg-indigo-700]="activeTab !== 'addFriends'"
-      class="flex flex-col items-center justify-center p-6 rounded-md text-white text-xl transition transform hover:scale-105"
+      [ngClass]="{
+        'text-white': activeTab === 'addFriends',
+        'text-gray-400': activeTab !== 'addFriends'
+      }"
+      class="larger-desktop-icons flex flex-col items-center justify-center p-8 text-white text-xl transition transform"
     >
       <i class="fas fa-user-plus text-3xl"></i>
       <span class="hidden md:inline mt-1">Add Friends</span>
     </button>
 
-    <!-- Friend Requests Button -->
     <button
       (click)="setActiveTab('friendRequests')"
-      [class.bg-indigo-600]="activeTab === 'friendRequests'"
-      [class.hover:bg-indigo-700]="activeTab !== 'friendRequests'"
-      class="flex flex-col items-center justify-center p-6 rounded-md text-white text-xl transition transform hover:scale-105 relative"
+      [ngClass]="{
+        'text-white': activeTab === 'friendRequests',
+        'text-gray-400': activeTab !== 'friendRequests'
+      }"
+      class="larger-desktop-icons flex flex-col items-center justify-center p-8 text-white text-xl transition transform relative"
     >
-      <i class="fas fa-envelope text-3xl"></i>
+      <div class="relative">
+        <i class="fas fa-envelope text-3xl"></i>
+        <span
+          *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
+          class="absolute -top-4 -right-8 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full"
+        >
+          {{ userProfile.friendInfo.friendRequestsReceived.length }}
+        </span>
+      </div>
       <span class="hidden md:inline mt-1">Requests</span>
-      <span
-        *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
-        class="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full"
-      >
-        {{ userProfile.friendInfo.friendRequestsReceived.length }}
-      </span>
     </button>
   </div>
 
   <!-- Bottom Navigation for Mobile -->
   <div
-    class="bg-gray-800 p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-10 justify-around items-center h-[6rem]"
+    class="bg-[#0E1829] p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-10 justify-around items-center h-[5rem]"
   >
     <button
       (click)="setActiveTab('myFriends')"
-      [ngClass]="{ 'bg-indigo-600': activeTab === 'myFriends' }"
-      class="flex flex-col items-center justify-center text-white text-xl h-full flex-1 rounded-r"
+      [ngClass]="{
+        'text-white': activeTab === 'myFriends',
+        'text-gray-400': activeTab !== 'myFriends'
+      }"
+      class="flex flex-col items-center justify-center h-full flex-1 rounded-r"
     >
-      <i class="fas fa-users text-3xl mb-2"></i>
+      <i
+        class="fas fa-users text-2xl mb-1"
+        [ngClass]="{
+          'text-white': activeTab === 'myFriends',
+          'text-gray-400': activeTab !== 'myFriends'
+        }"
+      ></i>
       <span>Friends</span>
     </button>
 
     <button
       (click)="setActiveTab('addFriends')"
-      [ngClass]="{ 'bg-indigo-600': activeTab === 'addFriends' }"
-      class="flex flex-col items-center justify-center text-white text-xl h-full flex-1 rounded"
+      [ngClass]="{
+        'text-white': activeTab === 'addFriends',
+        'text-gray-400': activeTab !== 'addFriends'
+      }"
+      class="flex flex-col items-center justify-center h-full flex-1 rounded"
     >
-      <i class="fas fa-user-plus text-3xl mb-2"></i>
+      <i
+        class="fas fa-user-plus text-2xl mb-1"
+        [ngClass]="{
+          'text-white': activeTab === 'addFriends',
+          'text-gray-400': activeTab !== 'addFriends'
+        }"
+      ></i>
       <span class="mr-1">Add</span>
     </button>
 
     <button
       (click)="setActiveTab('friendRequests')"
-      [ngClass]="{ 'bg-indigo-600': activeTab === 'friendRequests' }"
-      class="flex flex-col items-center justify-center text-white text-xl relative h-full flex-1 rounded-l"
+      [ngClass]="{
+        'text-white': activeTab === 'friendRequests',
+        'text-gray-400': activeTab !== 'friendRequests'
+      }"
+      class="flex flex-col items-center justify-center relative h-full flex-1 rounded-l"
     >
-      <i class="fas fa-envelope text-3xl mb-1"></i>
+      <i
+        class="fas fa-envelope text-2xl mb-1"
+        [ngClass]="{
+          'text-white': activeTab === 'friendRequests',
+          'text-gray-400': activeTab !== 'friendRequests'
+        }"
+      ></i>
       <span>Requests</span>
       <span
         *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
-        class="absolute top-2 right-1 bg-red-500 text-white text-[1rem] font-bold px-[6px] py-[2px] rounded-full leading-none flex items-center justify-center w-[1.65rem] h-[1.65rem]"
+        class="absolute top-2 right-5 bg-red-500 text-white text-[0.9rem] font-bold px-[5px] py-[1px] rounded-full leading-none flex items-center justify-center w-[1.5rem] h-[1.5rem]"
       >
         {{ userProfile.friendInfo.friendRequestsReceived.length }}
       </span>
     </button>
   </div>
-
   <!-- Right Content Area (Changes Dynamically) -->
   <div
-    class="flex-1 p-3 overflow-y-auto min-h-[calc(100vh-80px)] pb-24 md:ml-[22%]"
-  >
+  class="flex-1 sm:p-3 overflow-y-auto min-h-[calc(100vh-80px)] pb-20 md:ml-[22%]"
+>
     <!-- My Friends Section -->
     <div #friendsSection *ngIf="activeTab === 'myFriends'">
-      <h2 class="text-3xl font-semibold mb-5 mt-4 flex items-center ml-2">
-        My Friends
-        <span class="text-gray-400 text-2xl ml-2"
-          >({{ userProfile.friendInfo.friends.length || 0 }})</span
+      <div class="bg-gray-800 w-full sm:max-w-[800px] sm:mx-auto sm:rounded-lg">
+        <h2 class="text-3xl font-semibold mb-4 pt-10 text-center">
+          My Friends
+          <span class="text-gray-400 text-2xl ml-2">
+            ({{ userProfile.friendInfo.friends.length || 0 }})
+          </span>
+        </h2>
+
+        <!-- Search Bar -->
+        <div #searchBar class="relative w-[95%] sm:max-w-[800px] mb-6 mx-auto">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            placeholder="{{ getSearchPlaceholder() }}"
+            (keyup.enter)="searchUsers()"
+            class="w-full rounded-full bg-gray-800 border border-gray-600 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg shadow-md"
+          />
+          <i
+            class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+          ></i>
+        </div>
+        <div
+          *ngIf="filteredFriends().length > 0"
+          class="sm:max-w-[800px] mx-auto sm:rounded-lg"
         >
-      </h2>
-
-      <!-- Search Bar -->
-      <div #searchBar class="relative max-w-lg mb-6">
-        <input
-          type="text"
-          [(ngModel)]="searchQuery"
-          placeholder="{{ getSearchPlaceholder() }}"
-          (keyup.enter)="searchUsers()"
-          class="w-full rounded-full bg-gray-800 border border-gray-600 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg shadow-md"
-        />
-        <i
-          class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-        ></i>
-      </div>
-
-      <div class="bg-gray-800 p-2 rounded-xl shadow-lg max-w-4xl mx-auto">
-        <div *ngIf="filteredFriends().length > 0">
-          <ul class="space-y-4">
+          <ul>
             <li
-              *ngFor="let friend of filteredFriends()"
-              class="flex items-center bg-gray-800 p-3 rounded-xl shadow-lg border border-gray-700"
+              *ngFor="
+                let friend of filteredFriends();
+                let i = index;
+                let last = last
+              "
+              [routerLink]="['/profile', friend._id]"
+              [ngClass]="[
+                'flex items-center bg-gray-800 p-3 w-full',
+                i !== 0 ? 'border-t border-gray-500' : 'sm:rounded-t-xl',
+                !last ? 'border-b border-gray-500' : 'sm:rounded-b-xl'
+              ]"
             >
               <!-- Profile Image on the left -->
               <img
                 [src]="friend.profilePicture || 'assets/user.png'"
                 alt="Profile"
-                class="w-20 h-20 rounded-md object-cover shadow-md mr-4"
+                class="w-20 h-20 rounded-full object-cover shadow-md mr-4"
               />
-          
-              <!-- Right side: Username and Buttons -->
-              <div class="flex flex-col">
-                <h2 class="text-lg font-semibold text-gray-200 mb-2">
+
+              <!-- Username in the middle -->
+              <div class="flex-1">
+                <h2 class="text-lg font-semibold text-gray-200">
                   {{ friend.username }}
                 </h2>
-          
-                <div class="flex gap-2">
-                  <button
-                    [routerLink]="['/profile', friend._id]"
-                    class="p-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    <i class="fas fa-user mr-1"></i>
-                    View Profile
-                  </button>
-          
-                  <button
-                    (click)="openModal(friend)"
-                    class="p-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700"
-                  >
-                    <i class="fas fa-user-minus mr-1"></i>
-                    Unfriend
-                  </button>
-                </div>
+              </div>
+
+              <!-- Buttons on the far right, stacked -->
+              <div class="flex flex-col gap-2">
+                <button
+                  (click)="openModal(friend); $event.stopPropagation()"
+                  class="p-2 px-3 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white sm:hover:bg-red-700"
+                >
+                  <i class="fas fa-user-minus mr-1"></i>
+                  Unfriend
+                </button>
               </div>
             </li>
           </ul>
-          
         </div>
-        <div *ngIf="!userProfile?.friendInfo?.friends || userProfile.friendInfo.friends.length === 0">
+        <div
+          *ngIf="
+            !userProfile?.friendInfo?.friends ||
+            userProfile.friendInfo.friends.length === 0
+          "
+        >
           <p class="text-gray-400 text-center text-lg">
             You have no friends yet.
           </p>
         </div>
 
         <div
-        *ngIf="filteredFriends().length === 0 &&
-               userProfile?.friendInfo?.friends &&
-               userProfile.friendInfo.friends.length > 0"
+          *ngIf="
+            filteredFriends().length === 0 &&
+            userProfile?.friendInfo?.friends &&
+            userProfile.friendInfo.friends.length > 0
+          "
           class="text-center text-gray-400 py-4"
         >
           No friends found for "{{ searchQuery }}".
@@ -168,101 +210,116 @@
     </div>
 
     <!-- Add Friends Section -->
-    <div #addFriendsSection *ngIf="activeTab === 'addFriends'">
-      <h2 class="text-3xl font-semibold mb-5 mt-4 ml-2">Add Friends</h2>
-
-      <!-- Search Bar -->
-      <div #searchBar class="relative max-w-lg mb-6">
-        <input
-          type="text"
-          [(ngModel)]="searchQuery"
-          placeholder="{{ getSearchPlaceholder() }}"
-          (keyup.enter)="searchUsers()"
-          class="w-full rounded-full bg-gray-800 border border-gray-600 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg shadow-md"
-        />
-        <i
-          (click)="searchUsers()"
-          class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"
-        ></i>
-      </div>
-
+    <div #addFriendsSection>
       <!-- Scrollable User List -->
       <div
-        *ngIf="addFriendsSearchInitiated"
-        class="bg-gray-800 p-2 rounded-xl shadow-lg max-w-4xl mx-auto overflow-y-auto h-full"
+        *ngIf="activeTab === 'addFriends'"
+        class="bg-gray-800 w-full mx-auto overflow-y-auto h-full rounded-lg sm:max-w-[800px]"
       >
+        <h2 class="text-3xl font-semibold mb-4 pt-10 ml-2 text-center">
+          Add Friends
+        </h2>
+
+        <!-- Search Bar -->
+        <div #searchBar class="relative mb-6 w-[95%] sm:max-w-[800px] mx-auto">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            placeholder="{{ getSearchPlaceholder() }}"
+            (keydown.enter)="searchUsers()"
+            class="w-full rounded-full bg-gray-800 border border-gray-600 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg shadow-md"
+          />
+          <i
+            (click)="searchUsers()"
+            class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"
+          ></i>
+        </div>
         <!-- Show Skeleton Loader While Searching -->
-        <div *ngIf="addFriendsSearchLoading" class="space-y-4 animate-pulse">
+        <div *ngIf="addFriendsSearchLoading" class="space-y-4">
           <div
-            class="flex flex-col items-center bg-gray-700 p-4 rounded-lg shadow-md text-center"
+            *ngFor="let _ of [0, 1, 2, 3]; let i = index; let last = last"
+            [ngClass]="[
+              'flex items-center bg-gray-800 p-3 w-full',
+              i !== 0 ? 'border-t border-gray-500' : 'sm:rounded-t-xl',
+              !last ? 'border-b border-gray-500' : 'sm:rounded-b-xl'
+            ]"
           >
-            <div class="w-20 h-20 bg-gray-600 rounded-full animate-pulse"></div>
+            <!-- Skeleton Profile Image -->
             <div
-              class="w-32 h-4 bg-gray-600 mt-2 rounded-md animate-pulse"
+              class="w-20 h-20 bg-gray-600 rounded-full animate-pulse mr-4"
             ></div>
-            <div class="flex flex-wrap justify-center gap-2 w-full mt-3">
-              <div class="w-24 h-8 bg-gray-600 rounded-md animate-pulse"></div>
-              <div class="w-24 h-8 bg-gray-600 rounded-md animate-pulse"></div>
+
+            <!-- Username & Button placeholder -->
+            <div class="flex-1">
+              <div
+                class="w-32 h-5 bg-gray-600 rounded mb-3 animate-pulse"
+              ></div>
+            </div>
+
+            <!-- Button Placeholder -->
+            <div>
+              <div
+                class="w-24 h-8 bg-gray-600 rounded-full animate-pulse"
+              ></div>
             </div>
           </div>
         </div>
 
         <!-- Display Users (Only if users are found) -->
-        <div *ngIf="usersToAdd.length > 0 && !addFriendsSearchLoading">
-          <ul class="space-y-4">
+        <div
+          *ngIf="usersToAdd.length > 0 && !addFriendsSearchLoading"
+          class="rounded-lg"
+        >
+          <ul>
             <li
-              *ngFor="let user of usersToAdd"
-              class="flex items-center bg-gray-800 p-3 rounded-xl shadow-lg border border-gray-700 w-full transition-colors"
+              *ngFor="let user of usersToAdd; let i = index; let last = last"
+              [routerLink]="['/profile', user._id]"
+              [ngClass]="[
+                'flex items-center bg-gray-800 p-3 w-full',
+                i !== 0 ? 'border-t border-gray-500' : 'sm:rounded-t-xl',
+                !last ? 'border-b border-gray-500' : 'sm:rounded-b-xl'
+              ]"
             >
               <!-- Profile Image -->
               <img
                 [src]="user.profilePicture || 'assets/user.png'"
                 alt="Profile"
-                class="w-20 h-20 rounded-md object-cover shadow-md mr-4"
+                class="w-20 h-20 rounded-full object-cover shadow-md mr-4"
               />
-          
-              <!-- Username and Buttons -->
-              <div class="flex flex-col justify-center flex-1">
+
+              <!-- Username -->
+              <div class="flex-1">
                 <h2 class="text-lg font-semibold text-gray-200 mb-3">
                   {{ user.username }}
                 </h2>
-          
-                <div class="flex gap-2 flex-nowrap overflow-x-auto">
-                  <!-- View Profile -->
-                  <button
-                    [routerLink]="['/profile', user._id]"
-                    class="p-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    <i class="fas fa-user mr-1"></i>
-                    View Profile
-                  </button>
-          
-                  <!-- Add Friend -->
-                  <button
-                    (click)="sendFriendRequest(user)"
-                    [disabled]="
-                      user.isFriend ||
-                      user.hasPendingRequestSent ||
-                      user.hasPendingRequestReceived
-                    "
-                    class="p-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <i class="fas fa-user-plus mr-1"></i>
-                    {{
-                      user.isFriend
-                        ? "Already Friends"
-                        : user.hasPendingRequestSent
-                        ? "Request Sent"
-                        : user.hasPendingRequestReceived
-                        ? "Check Requests!"
-                        : "Add Friend"
-                    }}
-                  </button>
-                </div>
+              </div>
+
+              <!-- Button -->
+              <div class="flex flex-col gap-2 items-end">
+                <!-- Add Friend -->
+                <button
+                  (click)="sendFriendRequest(user); $event.stopPropagation()"
+                  [disabled]="
+                    user.isFriend ||
+                    user.hasPendingRequestSent ||
+                    user.hasPendingRequestReceived
+                  "
+                  class="p-2 px-5 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white sm:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i class="fas fa-user-plus mr-1"></i>
+                  {{
+                    user.isFriend
+                      ? "Already Friends"
+                      : user.hasPendingRequestSent
+                      ? "Request Sent"
+                      : user.hasPendingRequestReceived
+                      ? "Check Requests!"
+                      : "Add"
+                  }}
+                </button>
               </div>
             </li>
           </ul>
-          
         </div>
 
         <!-- Show "No Users Found" Message Only When Search Has Completed -->
@@ -281,64 +338,69 @@
 
     <!-- Friend Requests Section -->
     <div #friendRequestsSection *ngIf="activeTab === 'friendRequests'">
-      <h2 class="text-3xl font-semibold mb-5 mt-4 flex items-center ml-2">
-        Friend Requests
-        <span class="text-gray-400 text-2xl ml-2">
-          ({{ userProfile.friendInfo.friendRequestsReceived.length || 0 }})
-        </span>
-      </h2>
-      <div class="bg-gray-800 p-2 rounded-xl shadow-lg max-w-4xl mx-auto">
+      <div class="bg-gray-800 mx-auto sm:rounded-lg sm:max-w-[800px]">
+        <h2 class="text-3xl font-semibold mb-5 pt-10 items-center text-center">
+          Friend Requests
+          <span class="text-gray-400 text-2xl ml-2">
+            ({{ userProfile.friendInfo.friendRequestsReceived.length || 0 }})
+          </span>
+        </h2>
         <div
           *ngIf="
             userProfile?.friendInfo?.friendRequestsReceived?.length;
             else noRequests
           "
         >
-          <ul class="space-y-4">
+          <ul>
             <li
-            *ngFor="let request of userProfile.friendInfo.friendRequestsReceived"
-            class="flex flex-col items-center bg-gray-800 p-4 rounded-xl shadow-lg max-w-sm mx-auto text-center border border-gray-700 transition-transform hover:scale-105"
-          >
-            <!-- Profile Image -->
-            <img
-              [src]="request.profilePicture || 'assets/user.png'"
-              alt="Profile"
-              class="w-20 h-20 rounded-md object-cover shadow-md mr-4"
+              *ngFor="
+                let request of userProfile.friendInfo.friendRequestsReceived;
+                let i = index;
+                let last = last
+              "
+              [routerLink]="['/profile', request._id]"
+              [ngClass]="[
+                'flex items-center bg-gray-800 p-3 w-full',
+                i !== 0 ? 'border-t border-gray-500' : 'sm:rounded-t-xl',
+                !last ? 'border-b border-gray-500' : 'sm:rounded-b-xl'
+              ]"
+            >
+              <!-- Left: Profile Image -->
+              <img
+                [src]="request.profilePicture || 'assets/user.png'"
+                alt="Profile"
+                class="w-20 h-20 rounded-full object-cover shadow-md mr-4"
               />
-          
-            <!-- Username -->
-            <span class="text-lg font-semibold text-gray-200 mt-3">
-              {{ request.username }}
-            </span>
-          
-            <!-- Action Buttons -->
-            <div class="flex flex-wrap justify-center gap-3 w-full mt-4">
-              <button
-                [routerLink]="['/profile', request._id]"
-                class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
+
+              <!-- Middle: Username -->
+              <div class="flex-1">
+                <span class="text-lg font-semibold text-gray-200">
+                  {{ request.username }}
+                </span>
+              </div>
+
+              <!-- Right: Action Buttons -->
+              <div
+                class="flex flex-col gap-2 items-end py-2"
+                (click)="$event.stopPropagation()"
               >
-                <i class="fas fa-user"></i>
-                View Profile
-              </button>
-          
-              <button
-                (click)="acceptFriendRequest(request)"
-                class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-              >
-                <i class="fas fa-check"></i>
-                Accept
-              </button>
-          
-              <button
-                (click)="declineFriendRequest(request)"
-                class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-              >
-                <i class="fas fa-times"></i>
-                Decline
-              </button>
-            </div>
-          </li>
-          
+                <button
+                  (click)="acceptFriendRequest(request)"
+                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
+                >
+                  <i class="fas fa-check"></i>
+                  Accept
+                </button>
+
+                <button
+                  (click)="declineFriendRequest(request)"
+                  class="flex items-center gap-2 px-5 py-2 mt-5 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
+                >
+                  <i class="fas fa-times"></i>
+                  Ignore
+                </button>
+              </div>
+            </li>
           </ul>
         </div>
         <ng-template #noRequests>
