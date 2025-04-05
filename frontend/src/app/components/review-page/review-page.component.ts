@@ -195,6 +195,7 @@ export class ReviewPageComponent implements OnInit {
   pageSize = 25;
   filterMenuOpen = false;
   activeFilter: string | null = null;
+  showDeleteConfirmation = false;
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollingWrapper', { static: false })
@@ -203,6 +204,7 @@ export class ReviewPageComponent implements OnInit {
   scrollingContent!: ElementRef;
   @ViewChild('reviewsSection') reviewsSection!: ElementRef;
   @ViewChild('reviewsSectionDesktop') reviewsSectionDesktop!: ElementRef;
+  @ViewChild('iPodFront') iPodFront!: ElementRef;
 
   @Input() record!: Album | Artist | Song;
   @Input() songList: Song[] = [];
@@ -266,6 +268,12 @@ export class ReviewPageComponent implements OnInit {
   scrollToReviews(): void {
     if (this.reviewsSection) {
       this.reviewsSection.nativeElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  scrollToTopOfIpod(): void {
+    if (this.iPodFront) {
+      this.iPodFront.nativeElement.scrollIntoView({ behavior: 'smooth' });
     }
   }
 
@@ -542,6 +550,7 @@ export class ReviewPageComponent implements OnInit {
       this.isImageLoaded = false;
 
       this.resetScrollingState();
+      this.scrollToTopOfIpod();
       this.openRecord();
     }
   }
@@ -556,6 +565,7 @@ export class ReviewPageComponent implements OnInit {
       this.isImageLoaded = false;
 
       this.resetScrollingState();
+      this.scrollToTopOfIpod();
       this.openRecord();
     }
   }
@@ -684,6 +694,7 @@ export class ReviewPageComponent implements OnInit {
           this.reviews = this.reviews.filter((r) => r._id !== review._id);
           this.existingUserReview = null;
           this.isDeleteLoading = false;
+          this.showDeleteConfirmation = false;
           this.ratingBarFill = this.getAverageRating() * 10;
           setTimeout(() => {
             this.circleDashOffset =

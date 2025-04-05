@@ -2,8 +2,9 @@ import { animate, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { filter } from 'rxjs';
 import { User } from 'src/app/models/responses/user.response';
 import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
@@ -53,12 +54,14 @@ export class NavbarComponent implements OnInit {
   } as User;
 
   isProfileLoading: boolean = false;
+  activeTab: string = 'home';
 
   constructor(
     private authService: AuthService,
     private toastr: ToastrService,
     private userService: UserService,
-    private eRef: ElementRef
+    private eRef: ElementRef,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -78,6 +81,15 @@ export class NavbarComponent implements OnInit {
         error: () => this.isProfileLoading = false
       });
     }
+
+    this.router.events
+    .pipe(filter(event => event instanceof NavigationEnd))
+    .subscribe((event: NavigationEnd) => {
+      const path = event.urlAfterRedirects;
+      if (path.startsWith('/profile')) this.activeTab = 'profile';
+      else if (path.startsWith('/friends')) this.activeTab = 'friends';
+      else this.activeTab = 'home';
+    });
   }
 
   toggleMenu() {
@@ -108,6 +120,10 @@ export class NavbarComponent implements OnInit {
 
   isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
+  }
+
+  setActiveTab(tab: string) {
+    this.activeTab = tab;
   }
 
   // Detects clicks outside the profile dropdown and closes it

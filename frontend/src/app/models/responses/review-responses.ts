@@ -11,6 +11,14 @@ export interface Review {
   __v: number;
 }
 
+export interface DisplayReview extends Review {
+  albumSongOrArtist: {
+    cover: string;
+    title: string;
+    type: string;
+  };
+}
+
 export interface NewReviewResponse {
   message: string;
   review: Review;

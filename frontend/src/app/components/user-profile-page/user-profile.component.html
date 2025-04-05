@@ -1,46 +1,60 @@
 <div
-  class="flex flex-col items-center justify-center min-h-screen bg-[#161A24] text-white px-6 pt-28 pb-10"
+  class="flex flex-col items-center min-h-screen text-white md:pt-[6rem] pb-5 md:pb-0"
 >
-  <div class="w-full max-w-2xl bg-gray-800 p-6 rounded-lg shadow-md">
-    <!-- Profile Header -->
-    <div class="text-center">
-      <h2 class="text-3xl font-bold">My Profile</h2>
-    </div>
-
-    <!-- Profile Picture Upload -->
-    <div class="flex flex-col items-center mt-6">
-      <label class="relative cursor-pointer">
-        <input
-          type="file"
-          (change)="onProfilePictureChange($event)"
-          class="hidden"
-        />
-        <img
-          [src]="profilePictureUrl"
-          alt="Profile Picture"
-          class="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-2 border-gray-600 object-cover shadow-md hover:opacity-80 transition"
-        />
-      </label>
-      <p class="text-base text-gray-400 mt-2">Click image to change profile picture</p>
-    </div>
-
-    <div class="flex justify-center">
-      <button
-        (click)="viewPublicProfile()"
-        class="w-[15rem] mt-3 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-center text-lg font-medium rounded-md transition flex items-center justify-center gap-2"
+  <div class="w-full p-4 pt-0 mb-[3.5rem] sm:mb-0">
+    <!-- Profile Section -->
+    <div
+      class="flex flex-row md:flex-col items-center justify-center gap-6 mt-6"
+    >
+      <!-- Profile Picture Upload -->
+      <div class="relative shrink-0">
+        <label class="relative cursor-pointer block">
+          <input
+            type="file"
+            (change)="onProfilePictureChange($event)"
+            class="hidden"
+          />
+          <img
+            [src]="profilePictureUrl"
+            alt="Profile Picture"
+            class="w-[8rem] h-[8rem] imageFix sm:w-40 sm:h-40 rounded-full border-2 border-gray-600 object-cover shadow-md hover:opacity-80 transition"
+          />
+          <div
+            class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-gray-700 text-white p-2 rounded-full shadow-md hover:bg-gray-600 transition"
+          >
+            <i class="fa-solid fa-arrow-up-from-bracket md:text-xl"></i>
+          </div>
+        </label>
+      </div>
+      <!-- Buttons -->
+      <div
+        class="flex flex-col gap-3 w-full sm:items-center sm:justify-center md:flex-row md:gap-6"
       >
-        <i class="fas fa-eye"></i>
-        View Public Profile
-      </button>
+        <button
+          (click)="viewPublicProfile()"
+          class="w-[12rem] buttons px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-lg font-medium rounded-full transition flex items-center justify-center gap-2 mx-auto md:mx-0"
+        >
+          <i class="fas fa-eye"></i>
+          Public Profile
+        </button>
+
+        <button
+          (click)="logout()"
+          class="w-[12rem] buttons px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-lg font-medium rounded-full transition flex items-center justify-center gap-2 mx-auto md:mx-0"
+        >
+          <i class="fas fa-sign-out-alt"></i>
+          Logout
+        </button>
+      </div>
     </div>
 
     <!-- Profile Form -->
-    <form class="relative mt-6 space-y-4">
+    <form class="relative mt-6 md:mt-4 space-y-4">
       <!-- Display Name -->
-      <div>
-        <label class="block text-gray-300 text-lg font-semibold mb-1"
-          >Display Name</label
-        >
+      <div class="w-full max-w-[800px] mx-auto">
+        <label class="block text-gray-300 text-lg font-semibold mb-1">
+          Display Name
+        </label>
         <input
           type="text"
           [(ngModel)]="userProfile.username"
@@ -50,10 +64,10 @@
       </div>
 
       <!-- Email -->
-      <div>
-        <label class="block text-gray-300 text-lg font-semibold mb-1"
-          >Email</label
-        >
+      <div class="w-full max-w-[800px] mx-auto">
+        <label class="block text-gray-300 text-lg font-semibold mb-1">
+          Email
+        </label>
         <input
           type="email"
           [(ngModel)]="userProfile.email"
@@ -63,17 +77,16 @@
       </div>
 
       <!-- Change Password (Does not change Google Passwords) -->
-      <div *ngIf="userProfile">
+      <div *ngIf="userProfile" class="w-full max-w-[800px] mx-auto">
         <div class="flex items-center gap-1">
           <label class="block text-gray-300 text-lg font-semibold mb-1">
             New Password
           </label>
           <div class="group inline-flex relative cursor-pointer">
-            <!-- Icon -->
-            <i class="fas fa-question-circle text-gray-400 group-hover:text-gray-200 transition-colors text-xl"></i>
+            <i
+              class="fas fa-question-circle text-gray-400 group-hover:text-gray-200 transition-colors text-xl ml-2 mb-1"
+            ></i>
 
-
-            <!-- Tooltip -->
             <div
               class="hidden group-hover:block absolute left-1/2 top-full transform -translate-x-1/2 mt-2 bg-gray-600 text-gray-100 text-md font-medium rounded px-2 py-2 shadow-lg z-10 whitespace-nowrap border border-gray-500"
             >
@@ -82,42 +95,83 @@
           </div>
         </div>
 
-        <input
-          type="password"
-          [(ngModel)]="newPassword"
-          name="newPassword"
-          class="w-full px-4 py-2 bg-gray-700 border text-2xl border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
-          autocomplete="new-password"
-        />
+        <div class="relative">
+          <input
+            [type]="showNewPassword ? 'text' : 'password'"
+            [(ngModel)]="newPassword"
+            name="newPassword"
+            class="w-full px-4 py-2 bg-gray-700 border text-lg border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
+            autocomplete="new-password"
+          />
+          <i
+            [ngClass]="[
+              showNewPassword ? 'fa-eye-slash' : 'fa-eye',
+              'fas absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-gray-200'
+            ]"
+            (click)="showNewPassword = !showNewPassword"
+          ></i>
+        </div>
         <p class="text-sm text-red-500 mt-1" *ngIf="passwordError">
           {{ passwordError }}
         </p>
+
+        <div class="mt-4">
+          <label class="block text-gray-300 text-lg font-semibold mb-1">
+            Confirm New Password
+          </label>
+          <div class="relative">
+            <input
+              [type]="showConfirmPassword ? 'text' : 'password'"
+              [(ngModel)]="confirmNewPassword"
+              name="confirmNewPassword"
+              class="w-full px-4 py-2 bg-gray-700 border text-lg border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
+              autocomplete="new-password"
+            />
+            <i
+              [ngClass]="[
+                showConfirmPassword ? 'fa-eye-slash' : 'fa-eye',
+                'fas absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-gray-200'
+              ]"
+              (click)="showConfirmPassword = !showConfirmPassword"
+            ></i>
+          </div>
+          <p class="text-sm text-red-500 mt-1" *ngIf="confirmPasswordError">
+            {{ confirmPasswordError }}
+          </p>
+        </div>
       </div>
 
       <!-- Save Button with Loading Indicator -->
       <button
         (click)="saveProfile()"
         [disabled]="isSaving"
-        class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:hover:bg-indigo-600 text-white px-4 py-2 rounded-md font-semibold transition"
+        class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:hover:bg-indigo-600 text-white px-4 py-3 rounded-full font-semibold transition mx-auto"
+        style="max-width: 20rem"
       >
-      <span *ngIf="isSaving">
-        <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M12 2a10 10 0 0110 10h-4a6 6 0 00-6-6V2z"
-          ></path>
-        </svg>
-      </span>
-        <span class="text-xl">{{ isSaving ? "Saving..." : "Save Changes" }}</span>
+        <span *ngIf="isSaving">
+          <svg
+            class="animate-spin h-5 w-5 text-white"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M12 2a10 10 0 0110 10h-4a6 6 0 00-6-6V2z"
+            ></path>
+          </svg>
+        </span>
+        <span class="text-xl">{{
+          isSaving ? "Saving..." : "Save Changes"
+        }}</span>
       </button>
     </form>
 
@@ -125,75 +179,92 @@
     <div class="mt-6 text-center">
       <button
         (click)="confirmDeleteAccount()"
-        class="text-red-500 hover:text-red-400 font-semibold text-xl"
+        class="w-full py-3 text-red-500 border border-red-500 rounded-full max-w-[20rem] font-semibold text-lg hover:bg-red-500 hover:text-white transition-colors duration-200"
       >
         Delete My Account
       </button>
     </div>
   </div>
 
-<!-- Delete Account Confirmation Modal -->
-<div
-  *ngIf="showDeleteConfirm"
-  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 px-4 z-50"
->
+  <!-- Delete Account Confirmation Modal -->
   <div
-    class="bg-gray-800 p-6 w-full max-w-sm sm:max-w-md md:w-[30rem] rounded-lg shadow-xl border border-gray-700"
+    *ngIf="showDeleteConfirm"
+    class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 px-1 z-50"
   >
-    <!-- Title -->
-    <h3 class="text-2xl font-bold text-white mb-2 flex items-center gap-2">
-      <i class="fas fa-exclamation-triangle text-red-500"></i>
-      Confirm Account Deletion
-    </h3>
+    <div
+      class="bg-gray-800 p-5 w-full max-w-lg md:w-[40rem] rounded-lg shadow-xl border border-gray-700"
+    >
+      <!-- Title -->
+      <div
+        class="flex items-center justify-center mb-2 text-white space-x-2 whitespace-nowrap"
+      >
+        <i
+          class="fas fa-exclamation-triangle text-red-500 text-xl sm:text-2xl flex-shrink-0"
+        ></i>
+        <h3 class="text-xl sm:text-2xl font-bold">Confirm Account Deletion</h3>
+      </div>
 
-    <!-- Message -->
-    <p class="text-gray-400 text-lg mb-4 leading-relaxed text-center">
-      Enter your email to confirm. This action is
-      <span class="text-red-400 font-semibold">permanent</span>.
-    </p>
+      <!-- Message -->
+      <p class="text-gray-400 text-lg mb-4 leading-relaxed text-center">
+        Enter your email to confirm. This action is
+        <span class="text-red-400 font-semibold">permanent</span>.
+      </p>
 
-    <!-- Email Input -->
+      <!-- Email Input -->
       <input
         type="email"
         [(ngModel)]="confirmEmail"
         name="confirmEmail"
-        class="text-xl w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:outline-none text-sm"
+        class="w-full px-2 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:outline-none text-base"
         placeholder="Enter your email"
         (input)="validateEmail()"
       />
 
-<!-- Action Buttons -->
-<div class="flex justify-between gap-3 mt-6 text-xl">
-  <!-- Cancel Button -->
-  <button
-    (click)="cancelDelete()"
-    class="w-1/2 px-4 py-2 bg-gray-700 hover:bg-gray-600 transition rounded-md text-white flex items-center justify-center gap-2"
-  >
-    <i class="fas fa-times"></i>
-    Cancel
-  </button>
+      <!-- Action Buttons -->
+      <div class="flex justify-between gap-3 mt-6 text-xl">
+        <!-- Cancel Button -->
+        <button
+          (click)="cancelDelete()"
+          class="w-1/2 px-4 py-2 bg-gray-700 hover:bg-gray-600 transition rounded-md text-white flex items-center justify-center gap-2"
+        >
+          <i class="fas fa-times"></i>
+          Cancel
+        </button>
 
-  <!-- Delete Button -->
-  <button
-    (click)="deleteAccount()"
-    [disabled]="isDeleting || confirmEmail !== userProfile.email"
-    class="w-1/2 px-4 py-2 bg-red-600 hover:bg-red-500 transition rounded-md text-white flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-  >
-    <ng-container *ngIf="isDeleting; else deleteText">
-      <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-      </svg>
-      <span>Deleting...</span>
-    </ng-container>
-    <ng-template #deleteText>
-      <i class="fas fa-trash-alt"></i>
-      Delete
-    </ng-template>
-  </button>
-</div>
-
+        <!-- Delete Button -->
+        <button
+          (click)="deleteAccount()"
+          [disabled]="isDeleting || confirmEmail !== userProfile.email"
+          class="w-1/2 px-4 py-2 bg-red-600 hover:bg-red-500 transition rounded-md text-white flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ng-container *ngIf="isDeleting; else deleteText">
+            <svg
+              class="animate-spin h-5 w-5 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8H4z"
+              />
+            </svg>
+            <span>Deleting...</span>
+          </ng-container>
+          <ng-template #deleteText>
+            <i class="fas fa-trash-alt"></i>
+            Delete
+          </ng-template>
+        </button>
+      </div>
+    </div>
   </div>
-</div>
-
 </div>

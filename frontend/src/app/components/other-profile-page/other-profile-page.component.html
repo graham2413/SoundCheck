@@ -1,41 +1,44 @@
 <div
   *ngIf="user"
   @fadeSlide
-  class="container mx-auto max-w-4xl p-6 bg-[#161A24] text-white rounded-lg pt-24"
+  class="container mx-auto max-w-4xl px-2 pb-6 bg-[#161A24] text-white rounded-lg md:pt-24"
 >
   <!-- Profile Section -->
-  <div class="flex flex-col items-center relative">
-    <div
-      class="absolute top-0 w-full h-32 rounded-t-lg"
-    ></div>
+  <div class="flex items-center gap-6 relative">
+    <div class="absolute top-0 w-full h-32 rounded-t-lg"></div>
     <img
       [src]="user?.profilePicture || 'assets/user.png'"
       alt="Profile Picture"
-      class="w-[10rem] h-[10rem] md:w-[12rem] md:h-[12rem] rounded-md shadow-lg mt-6"
+      class="mt-4 mb-2 ml-2 w-[8rem] h-[8rem] md:w-[12rem] md:h-[12rem] rounded-full"
     />
-    <h2 class="text-4xl font-semibold mt-4">{{ user?.username }}</h2>
-    <p class="text-gray-400 text-base mt-1">
-      Joined {{ user?.createdAt | date }}
-    </p>
+    <div class="flex flex-col">
+      <h2 class="text-2xl md:text-4xl font-semibold">{{ user?.username }}</h2>
+      <p class="text-gray-400 text-sm md:text-lg mt-1">
+        Joined {{ user?.createdAt | date }}
+      </p>
+    </div>
   </div>
 
 <!-- Friends Section -->
-<div class="mt-8 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-3">
+<div class="mt-4 bg-[#152034] border border-gray-700 rounded-lg mb-2">
   <!-- Header Section -->
-  <div class="flex justify-between items-center mb-4">
+  <div class="flex justify-center items-center my-1 p-3">
     <h3 class="text-2xl font-semibold text-white flex items-center gap-2">
       <i class="fas fa-user-friends text-indigo-400 mr-1 text-xl"></i> Friends <span class="text-xl text-gray-500">({{ user?.friends?.length || 0 }})</span>
     </h3>
   </div>
 
   <!-- Search Bar -->
-  <input
-    type="text"
-    [(ngModel)]="searchQuery"
-    (input)="filterFriends()"
-    placeholder="Search friends..."
-    class="w-full p-2 rounded bg-gray-800 text-white placeholder-gray-400 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
-  />
+  <div class="relative mb-3 px-2">
+    <i class="fas fa-search absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+    <input
+      type="text"
+      [(ngModel)]="searchQuery"
+      (input)="filterFriends()"
+      placeholder="Search friends..."
+      class="w-full p-2 pl-10 rounded-lg bg-[#152034] text-white placeholder-gray-400 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+  </div>
 
   <!-- Conditional Messages -->
   <div *ngIf="user?.friends?.length === 0" class="text-center text-gray-400 py-4">
@@ -50,7 +53,7 @@
   </div>
 
   <!-- Scrollable Friends List -->
-  <div *ngIf="filteredFriends.length > 0" class="max-h-[16.5rem] overflow-y-auto bg-gray-700 rounded-lg shadow-md custom-scrollbar">
+  <div *ngIf="filteredFriends.length > 0" class="max-h-[16.5rem] overflow-y-auto bg-[#152034] rounded-lg custom-scrollbar">
     <div
       *ngFor="let friend of filteredFriends"
       (click)="goToFriendsPage(friend)"
@@ -60,7 +63,7 @@
       <img
         [src]="friend.profilePicture || 'assets/user.png'"
         alt="Friend"
-        class="w-[4.5rem] h-[4.5rem] rounded-md shadow-sm"
+        class="w-[4.5rem] h-[4.5rem] rounded-full"
       />
       
       <!-- Username -->
@@ -71,11 +74,11 @@
 </div>
 
   <!-- Reviews Section -->
-  <div class="mt-5 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-3">
-    <h3 class="text-2xl font-semibold mb-2">
+  <div class="mt-5 mb-[5rem] bg-[#152034] border border-gray-700 rounded-lg">
+    <h3 class="text-2xl font-semibold my-1 p-3 text-center">
       <i class="fas fas fa-comment-alt text-amber-400 mr-1 text-xl"></i> Reviews
       <span *ngIf="user?.reviews?.length > 0" class="text-xl text-gray-500">
-        ({{ user.reviews.length }})
+      ({{ user.reviews.length }})
       </span>
     </h3>
     
@@ -83,8 +86,7 @@
       <div
         *ngFor="let review of user?.reviews; let last = last"
         (click)="openReview(review.albumSongOrArtist)"
-        [ngClass]="{ 'border-b border-gray-500': !last }"
-        class="flex items-start p-4 bg-[#18191B] border-b border-gray-500 shadow-md relative transition-all cursor-pointer group hover:bg-gray-700  hover:p-4 hover:rounded-md"
+        class="flex items-start p-4 bg-[#0D1320]  shadow-md relative transition-all cursor-pointer group hover:bg-gray-700  hover:p-4 hover:rounded-md"
       >
         <!-- Album Cover or Default Image -->
         <div class="relative h-[4.5rem] w-[4.5rem] md:w-[7rem] md:h-[7rem] flex-shrink-0">

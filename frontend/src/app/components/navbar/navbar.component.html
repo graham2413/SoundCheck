@@ -1,5 +1,5 @@
 <nav
-  class="bg-[#393D45] bg-opacity-50 backdrop-blur-lg text-white px-6 py-6 flex items-center justify-between fixed w-full top-0 left-0 shadow-lg z-50 h-24"
+  class="hidden md:flex bg-[#0E1829] bg-opacity-50 backdrop-blur-lg text-white px-6 py-6 flex items-center justify-between fixed w-full top-0 left-0  z-50 h-24 border-b border-b-gray-600"
   (click)="closeProfileMenuOnOutsideClick($event)"
 >
   <div class="flex items-center gap-3">
@@ -164,5 +164,73 @@
     class="flex items-center gap-3 bg-red-500 px-8 py-4 rounded-lg text-2xl font-semibold text-white hover:brightness-110 transition shadow-md mb-10"
   >
     <i class="fas fa-sign-out-alt"></i> Logout
+  </button>
+</div>
+
+<!-- Bottom Navigation for Mobile -->
+<div
+  class="bg-[#0E1829] p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-10 justify-around items-center h-[5rem] rounded-t-xl border-t border-t-gray-600"
+>
+  <button
+    routerLink="/"
+    (click)="setActiveTab('home')"
+    [ngClass]="{
+      'text-[#4C79F4]': activeTab === 'home',
+      'text-gray-400': activeTab !== 'home'
+    }"
+    class="flex flex-col items-center justify-center h-full flex-1 rounded-r"
+  >
+    <i
+      class="fas fa-search text-2xl mb-1"
+      [ngClass]="{
+        'text-[#4C79F4]': activeTab === 'home',
+        'text-gray-400': activeTab !== 'home'
+      }"
+    ></i>
+    <span>Search</span>
+  </button>
+
+  <button
+    routerLink="/friends"
+    (click)="setActiveTab('friends')"
+    [ngClass]="{
+      'text-[#4C79F4]': activeTab === 'friends',
+      'text-gray-400': activeTab !== 'friends'
+    }"
+    class="flex flex-col items-center justify-center h-full flex-1 rounded"
+  >
+    <i
+      class="fas fa-users text-2xl mb-1"
+      [ngClass]="{
+        'text-[#4C79F4]': activeTab === 'friends',
+        'text-gray-400': activeTab !== 'friends'
+      }"
+    ></i>
+    <span>Friends</span>
+  </button>
+
+  <button
+    routerLink="/profile"
+    (click)="setActiveTab('profile')"
+    [ngClass]="{
+      'text-[#4C79F4]': activeTab === 'profile',
+      'text-gray-400': activeTab !== 'profile'
+    }"
+    class="flex flex-col items-center justify-center relative h-full flex-1 rounded-l"
+  >
+    <i
+      class="fas fa-user text-2xl mb-1"
+      [ngClass]="{
+        'text-[#4C79F4]': activeTab === 'profile',
+        'text-gray-400': activeTab !== 'profile'
+      }"
+    ></i>
+    <span>Profile</span>
+    <span
+      *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
+      class="absolute top-2 right-5 bg-red-500 text-white text-[0.9rem] font-bold px-[5px] py-[1px] rounded-full leading-none flex items-center justify-center w-[1.5rem] h-[1.5rem]"
+    >
+      {{ userProfile.friendInfo.friendRequestsReceived.length }}
+    </span>
   </button>
 </div>

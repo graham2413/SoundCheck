@@ -9,3 +9,13 @@
     }
   }
   
+  
+  @media (max-width: 380px) {
+    .tab-title {
+      font-size: 1.5rem;
+    }
+    .tab-title-count {
+      font-size: 1.2rem; 
+    }
+  }
+  

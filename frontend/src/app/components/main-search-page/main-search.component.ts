@@ -172,7 +172,7 @@ export class MainSearchComponent {
       const searchBarEl = this.searchBar.nativeElement;
       const elementTop =
         searchBarEl.getBoundingClientRect().top + window.pageYOffset;
-      const offset = elementTop - 110;
+      const offset = elementTop - 15;
       window.scrollTo({ top: offset, behavior: 'smooth' });
     }, 0);
 

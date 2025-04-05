@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { User } from 'src/app/models/responses/user.response';
+import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
 
 @Component({
   selector: 'app-user-profile',
   templateUrl: './user-profile.component.html',
   standalone: true,
+  styleUrls: ['./user-profile.component.css'],
   imports: [CommonModule, FormsModule]
 })
 export class ProfileComponent implements OnInit {
@@ -27,6 +29,10 @@ export class ProfileComponent implements OnInit {
     } as User;
 
   newPassword: string = '';
+  confirmNewPassword: string = '';
+  confirmPasswordError: string = '';
+  showNewPassword: boolean = false;
+  showConfirmPassword: boolean = false;
   showDeleteConfirm: boolean = false;
   selectedFile: File | null = null;
   passwordError: string = '';
@@ -36,7 +42,7 @@ export class ProfileComponent implements OnInit {
   isSaving: boolean = false;
   isDeleting: boolean = false;
 
-  constructor(private userService: UserService, private toastr: ToastrService, private router: Router) {}
+  constructor(private userService: UserService, private toastr: ToastrService, private router: Router, private authService: AuthService) {}
 
   ngOnInit(): void {
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -62,6 +68,11 @@ export class ProfileComponent implements OnInit {
         this.profilePictureUrl = 'assets/user.png';
     }
 }
+
+logout() {
+  this.authService.logout();
+  this.toastr.success('Logged out successfully');
+}
   
   onProfilePictureChange(event: any) {
     const file = event.target.files[0];
@@ -79,6 +90,7 @@ export class ProfileComponent implements OnInit {
 
   saveProfile() {
     this.passwordError = '';
+    this.confirmPasswordError = '';
     this.isSaving = true;
   
     const formData = new FormData();
@@ -91,27 +103,40 @@ export class ProfileComponent implements OnInit {
     if (this.newPassword) {
       formData.append('newPassword', this.newPassword);
     }
+
+    if (this.newPassword) {
+      if (this.newPassword !== this.confirmNewPassword) {
+        this.confirmPasswordError = 'Passwords do not match';
+        this.isSaving = false;
+        return;
+      }
+    }
   
     this.userService.updateUserProfile(formData).subscribe({
       next: (response) => {
         this.toastr.success('Profile updated!', 'Success');
         this.newPassword = '';
+        this.confirmNewPassword = '';
   
         // Refresh user profile to show new image
-        this.userService.setUserProfile(response);
-        this.isSaving = false;
+        this.userService.setUserProfile({
+          ...this.userProfile,
+          email: response.email,
+          profilePicture: response.profilePicture
+        });   
+
+      this.isSaving = false;
       },
       error: (err) => {
         console.error('Error updating profile:', err);
         this.isSaving = false;
         if (err.error && err.error.message) {
-          this.passwordError = err.error.message;
+          this.confirmPasswordError = err.error.message;
         }
       },
     });
   }
   
-
   confirmDeleteAccount() {
     this.showDeleteConfirm = true;
   }

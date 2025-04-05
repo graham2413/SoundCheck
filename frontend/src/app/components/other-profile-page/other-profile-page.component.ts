@@ -11,6 +11,7 @@ import { ReviewPageComponent } from '../review-page/review-page.component';
 import { Album } from 'src/app/models/responses/album-response';
 import { Artist } from 'src/app/models/responses/artist-response';
 import { Song } from 'src/app/models/responses/song-response';
+import { DisplayReview, Review } from 'src/app/models/responses/review-responses';
 
 @Component({
   selector: 'app-view-profile-page',
@@ -51,9 +52,9 @@ export class ViewProfilePageComponent implements OnInit {
     this.userService.getOtherUserProfileInfo(this.userId).subscribe({
       next: (response) => {
        this.user = response;
-      //  this.user.friends = this.generateMockFriends(30);
-
        this.filteredFriends = [...this.user.friends];
+      //  this.user.friends = this.generateMockFriends(30);
+      // this.user.reviews = this.generateMockReviews(10);
 
       },
       error: () => {
@@ -64,6 +65,39 @@ export class ViewProfilePageComponent implements OnInit {
       },
     });
   }
+
+  // generateMockReviews(count: number): Review[] {
+  //   const dummyTitles = ['Roses', 'Blinding Lights', 'Circles', 'Peaches', 'Levitating'];
+  //   const dummyImages = Array(5).fill('https://via.placeholder.com/150');
+  
+  //   const reviews: DisplayReview[] = [];
+
+  //   for (let i = 0; i < count; i++) {
+  //     reviews.push({
+  //       _id: `mock-${i}`,
+  //       rating: Math.floor(Math.random() * 10) + 1,
+  //       reviewText: `This is a dummy review for ${dummyTitles[i % dummyTitles.length]}.`,
+  //       createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+  //       albumOrSongId: `mock-song-${i}`,
+  //       type: 'Song',
+  //       __v: 0,
+  //       user: {
+  //         _id: this.user._id,
+  //         username: this.user.username,
+  //         email: this.user.email,
+  //         friendInfo: this.user.friendInfo,
+  //         googleId: this.user.googleId,
+  //         profilePicture: this.user.profilePicture || 'default-profile.png'
+  //       },
+  //       albumSongOrArtist: {
+  //         cover: dummyImages[i % dummyImages.length],
+  //         title: dummyTitles[i % dummyTitles.length],
+  //         type: 'Album' // or 'Song' or 'Artist'
+  //       }
+  //     });
+  //   }
+  //   return reviews;
+  // } 
 
   // generateMockFriends(count: number): any[] {
   //   return Array.from({ length: count }, (_, i) => ({
