@@ -191,14 +191,15 @@
   </button>
 
   <button
-    routerLink="/friends"
-    (click)="setActiveTab('friends')"
-    [ngClass]="{
-      'text-[#4C79F4]': activeTab === 'friends',
-      'text-gray-400': activeTab !== 'friends'
-    }"
-    class="flex flex-col items-center justify-center h-full flex-1 rounded"
-  >
+  routerLink="/friends"
+  (click)="setActiveTab('friends')"
+  [ngClass]="{
+    'text-[#4C79F4]': activeTab === 'friends',
+    'text-gray-400': activeTab !== 'friends'
+  }"
+  class="flex flex-col items-center justify-center h-full flex-1 rounded"
+>
+  <div class="relative">
     <i
       class="fas fa-users text-2xl mb-1"
       [ngClass]="{
@@ -206,8 +207,17 @@
         'text-gray-400': activeTab !== 'friends'
       }"
     ></i>
-    <span>Friends</span>
-  </button>
+
+    <span
+      *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
+      class="absolute -top-1 -right-[2rem] bg-red-500 text-white text-[0.8rem] font-bold px-[5px] py-[1px] rounded-full leading-none flex items-center justify-center w-[1.3rem] h-[1.3rem]"
+    >
+      {{ userProfile.friendInfo.friendRequestsReceived.length }}
+    </span>
+  </div>
+
+  <span>Friends</span>
+</button>
 
   <button
     routerLink="/profile"
@@ -226,11 +236,5 @@
       }"
     ></i>
     <span>Profile</span>
-    <span
-      *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
-      class="absolute top-2 right-5 bg-red-500 text-white text-[0.9rem] font-bold px-[5px] py-[1px] rounded-full leading-none flex items-center justify-center w-[1.5rem] h-[1.5rem]"
-    >
-      {{ userProfile.friendInfo.friendRequestsReceived.length }}
-    </span>
   </button>
 </div>

@@ -16,7 +16,7 @@ import { ConfirmationModalComponent } from './confirmation-modal/confirmation-mo
   imports: [CommonModule, FormsModule, RouterModule],
 })
 export class FriendsComponent implements OnInit {
-  activeTab: string = 'myFriends';
+  activeTab: string = 'friendRequests';
   searchQuery: string = '';
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
