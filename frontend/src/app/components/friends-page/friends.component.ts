@@ -58,8 +58,6 @@ export class FriendsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.retrievingFriendInfo = true;
-
     window.scrollTo({ top: 0, behavior: 'auto' });
 
     this.getFriendData();
@@ -121,6 +119,8 @@ export class FriendsComponent implements OnInit {
   }
 
   getFriendData() {
+    this.retrievingFriendInfo = true;
+
     this.userService.getAuthenticatedUserProfile().subscribe({
       next: (freshProfile) => {
         this.userService.setUserProfile(freshProfile); // Push fresh profile into BehaviorSubject
@@ -182,7 +182,9 @@ export class FriendsComponent implements OnInit {
         //     })),
         //   },
         // };
-        this.retrievingFriendInfo = false;
+        setTimeout(() => {
+          this.retrievingFriendInfo = false;
+        }, 500);
         this.changeDetectorRef.detectChanges();
       },
     });
