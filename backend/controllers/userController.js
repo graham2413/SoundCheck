@@ -313,6 +313,21 @@ exports.unfriendUser = async (req, res) => {
     user.friends = user.friends.filter((id) => id.toString() !== friendId);
     friend.friends = friend.friends.filter((id) => !id.equals(userId));
 
+    // Also clean up any residual friend requests (if any)
+    user.friendRequestsReceived = user.friendRequestsReceived.filter(
+      (id) => id.toString() !== friendId
+    );
+    user.friendRequestsSent = user.friendRequestsSent.filter(
+      (id) => id.toString() !== friendId
+    );
+
+    friend.friendRequestsReceived = friend.friendRequestsReceived.filter(
+      (id) => id.toString() !== userId
+    );
+    friend.friendRequestsSent = friend.friendRequestsSent.filter(
+      (id) => id.toString() !== userId
+    );
+
     await user.save();
     await friend.save();
 
