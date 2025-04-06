@@ -1,5 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
@@ -16,7 +22,7 @@ import { ConfirmationModalComponent } from './confirmation-modal/confirmation-mo
   imports: [CommonModule, FormsModule, RouterModule],
 })
 export class FriendsComponent implements OnInit {
-  activeTab: string = 'friendRequests';
+  activeTab: string = 'myFriends';
   searchQuery: string = '';
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
@@ -29,6 +35,7 @@ export class FriendsComponent implements OnInit {
   addFriendsSearchLoading = false;
   friendActionLoading = false;
   removingFriendId: string | null = null;
+  retrievingFriendInfo = false;
 
   userProfile: User = {
     _id: '',
@@ -39,10 +46,10 @@ export class FriendsComponent implements OnInit {
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],
-      friendRequestsSent: []
-    }
+      friendRequestsSent: [],
+    },
   } as User;
-  
+
   constructor(
     private userService: UserService,
     private toastrService: ToastrService,
@@ -51,6 +58,8 @@ export class FriendsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.retrievingFriendInfo = true;
+
     window.scrollTo({ top: 0, behavior: 'auto' });
 
     this.getFriendData();
@@ -63,6 +72,7 @@ export class FriendsComponent implements OnInit {
     setTimeout(() => {
       this.scrollToTop();
     }, 0);
+    this.getFriendData();
   }
 
   scrollToTop() {
@@ -103,24 +113,28 @@ export class FriendsComponent implements OnInit {
   filteredFriends() {
     return this.userProfile?.friendInfo?.friends?.length
       ? this.userProfile.friendInfo.friends.filter((friend) =>
-          friend.username?.toLowerCase().includes(this.searchQuery?.toLowerCase() || '')
+          friend.username
+            ?.toLowerCase()
+            .includes(this.searchQuery?.toLowerCase() || '')
         )
       : [];
-  }  
+  }
 
   getFriendData() {
     this.userService.getAuthenticatedUserProfile().subscribe({
       next: (freshProfile) => {
         this.userService.setUserProfile(freshProfile); // Push fresh profile into BehaviorSubject
-  
+
         // Also update local state if you still want to keep this.userProfile for filtering
         this.userProfile = {
           ...freshProfile,
           friendInfo: {
             friends: freshProfile.friendInfo?.friends || [],
-            friendRequestsReceived: freshProfile.friendInfo?.friendRequestsReceived || [],
-            friendRequestsSent: freshProfile.friendInfo?.friendRequestsSent || []
-          }
+            friendRequestsReceived:
+              freshProfile.friendInfo?.friendRequestsReceived || [],
+            friendRequestsSent:
+              freshProfile.friendInfo?.friendRequestsSent || [],
+          },
         };
 
         // this.userProfile = {
@@ -168,12 +182,12 @@ export class FriendsComponent implements OnInit {
         //     })),
         //   },
         // };
-
+        this.retrievingFriendInfo = false;
         this.changeDetectorRef.detectChanges();
-      }
+      },
     });
   }
-  
+
   searchUsers() {
     if (!this.searchQuery.trim() || this.activeTab === 'myFriends') return;
 
@@ -197,27 +211,28 @@ export class FriendsComponent implements OnInit {
             isFriend: this.userProfile?.friendInfo?.friends?.some(
               (friend) => friend._id === user._id
             ),
-            hasPendingRequestSent: this.userProfile?.friendInfo?.friendRequestsSent?.some(
-              (request) => request._id === user._id
-            ),
+            hasPendingRequestSent:
+              this.userProfile?.friendInfo?.friendRequestsSent?.some(
+                (request) => request._id === user._id
+              ),
             hasPendingRequestReceived:
               this.userProfile?.friendInfo?.friendRequestsReceived?.some(
                 (request) => request._id === user._id
               ),
           };
         });
-      //  this.usersToAdd = Array.from({ length: 10 }, (_, i) => ({
-      //     _id: `user-${i + 1}`,
-      //     username: `User ${i + 1}`,
-      //     email: `user${i + 1}@test.com`,
-      //     profilePicture: `https://i.pravatar.cc/150?img=${i + 1}`,
-      //     googleId: `google-user-${i + 1}`,
-      //     friendInfo: {
-      //       friends: [],
-      //       friendRequestsReceived: [],
-      //       friendRequestsSent: [],
-      //     },
-      //   }));
+        //  this.usersToAdd = Array.from({ length: 10 }, (_, i) => ({
+        //     _id: `user-${i + 1}`,
+        //     username: `User ${i + 1}`,
+        //     email: `user${i + 1}@test.com`,
+        //     profilePicture: `https://i.pravatar.cc/150?img=${i + 1}`,
+        //     googleId: `google-user-${i + 1}`,
+        //     friendInfo: {
+        //       friends: [],
+        //       friendRequestsReceived: [],
+        //       friendRequestsSent: [],
+        //     },
+        //   }));
 
         setTimeout(() => {
           this.addFriendsSearchLoading = false;
@@ -266,7 +281,11 @@ export class FriendsComponent implements OnInit {
               (r) => r._id !== fromUser._id
             ) || [];
         }
-        this.userProfile?.friendInfo?.friends.push(fromUser);
+
+        const alreadyFriend = this.userProfile.friendInfo.friends.some(f => f._id === fromUser._id);
+        if (!alreadyFriend) {
+          this.userProfile.friendInfo.friends.push(fromUser);
+        }
         this.friendActionLoading = false;
         this.toastrService.success(response.message, 'Success');
 
@@ -288,16 +307,21 @@ export class FriendsComponent implements OnInit {
 
     this.userService.declineFriendRequest(fromUser._id).subscribe({
       next: (response: any) => {
-        if (this.userProfile && this.userProfile.friendInfo.friendRequestsReceived) {
-          this.userProfile.friendInfo.friendRequestsReceived = this.userProfile.friendInfo.friendRequestsReceived.filter(
-            (r) => r._id !== fromUser._id
-          );
+        if (
+          this.userProfile &&
+          this.userProfile.friendInfo.friendRequestsReceived
+        ) {
+          this.userProfile.friendInfo.friendRequestsReceived =
+            this.userProfile.friendInfo.friendRequestsReceived.filter(
+              (r) => r._id !== fromUser._id
+            );
         }
-
+      
         // update the global profile
-        this.friendActionLoading = false;
         this.userService.setUserProfile(this.userProfile);
-      },
+        this.friendActionLoading = false;
+        this.toastrService.success('Friend request declined', 'Success');
+      },      
       error: (error: any) => {
         this.friendActionLoading = false;
         this.toastrService.error(
@@ -315,10 +339,26 @@ export class FriendsComponent implements OnInit {
     this.userService.removeFriend(friend._id).subscribe({
       next: (response: any) => {
         if (this.userProfile && this.userProfile.friendInfo.friends) {
-          this.userProfile.friendInfo.friends = this.userProfile.friendInfo.friends.filter(
-            (friendItem) => friendItem._id !== friend._id
-          );
-        }        
+          this.userProfile.friendInfo.friends =
+            this.userProfile.friendInfo.friends.filter(
+              (friendItem) => friendItem._id !== friend._id
+            );
+        }
+
+        // Also clean up stale friend request entries
+        if (this.userProfile.friendInfo.friendRequestsSent) {
+          this.userProfile.friendInfo.friendRequestsSent =
+            this.userProfile.friendInfo.friendRequestsSent.filter(
+              (req) => req._id !== friend._id
+            );
+        }
+
+        if (this.userProfile.friendInfo.friendRequestsReceived) {
+          this.userProfile.friendInfo.friendRequestsReceived =
+            this.userProfile.friendInfo.friendRequestsReceived.filter(
+              (req) => req._id !== friend._id
+            );
+        }
 
         // update the global profile
         this.userService.setUserProfile(this.userProfile);
@@ -337,21 +377,21 @@ export class FriendsComponent implements OnInit {
     });
   }
 
-    openModal(friend: any) {
-      const modalOptions: NgbModalOptions = {
-        backdrop: false,
-        centered: true,
-      };
-    
-      const modalRef = this.modal.open(ConfirmationModalComponent, modalOptions);
+  openModal(friend: any) {
+    const modalOptions: NgbModalOptions = {
+      backdrop: false,
+      centered: true,
+    };
 
-      modalRef.componentInstance.confirm.subscribe(() => {
-        this.removeFriend(friend);
-        modalRef.close();
-      });
+    const modalRef = this.modal.open(ConfirmationModalComponent, modalOptions);
 
-      modalRef.componentInstance.cancel.subscribe(() => {
-        modalRef.close();
-      });
-    }
+    modalRef.componentInstance.confirm.subscribe(() => {
+      this.removeFriend(friend);
+      modalRef.close();
+    });
+
+    modalRef.componentInstance.cancel.subscribe(() => {
+      modalRef.close();
+    });
+  }
 }

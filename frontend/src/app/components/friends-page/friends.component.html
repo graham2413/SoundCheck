@@ -262,77 +262,114 @@
     <!-- Friend Requests Section -->
     <div #friendRequestsSection *ngIf="activeTab === 'friendRequests'">
       <div class="bg-[#161A24] mx-auto sm:rounded-lg sm:max-w-[800px]">
-        <h2
-          class="hidden md:block text-3xl font-semibold mb-5 pt-14 items-center text-center"
-        >
-         Requests
-          <span class="text-gray-400 text-2xl ml-2">
-            ({{ userProfile.friendInfo.friendRequestsReceived.length || 0 }})
-          </span>
-        </h2>
+      <h2
+        class="hidden md:block text-3xl font-semibold mb-5 pt-14 items-center text-center"
+      >
+        Requests
+        <span class="text-gray-400 text-2xl ml-2">
+        ({{ userProfile.friendInfo.friendRequestsReceived.length || 0 }})
+        </span>
+      </h2>
+
+      <!-- Skeleton Loader -->
+      <div *ngIf="retrievingFriendInfo" class="space-y-4">
         <div
-          *ngIf="
-            userProfile?.friendInfo?.friendRequestsReceived?.length;
-            else noRequests
-          "
+        *ngFor="let _ of [0, 1, 2, 3]; let i = index; let last = last"
+        [ngClass]="[
+          'flex items-center bg-[#161A24] p-3 w-full',
+          i !== 0 ? '' : 'sm:rounded-t-xl',
+          last ? 'sm:rounded-b-xl' : ''
+        ]"
         >
-          <ul class="pt-[3rem] md:pt-0">
-            <li
-              *ngFor="
-              let request of userProfile.friendInfo.friendRequestsReceived;
-              let i = index;
-              let last = last
-              "
-              [routerLink]="['/profile', request._id]"
-              [ngClass]="[
-              'flex items-center bg-[#161A24] p-3 w-full',
-              i !== 0 ? '' : 'sm:rounded-t-xl',
-              !last ? '' : 'sm:rounded-b-xl'
-              ]"
-            >
-              <!-- Left: Profile Image -->
-              <img
-                [src]="request.profilePicture || 'assets/user.png'"
-                alt="Profile"
-                class="w-20 h-20 rounded-full object-cover shadow-md mr-4"
-              />
+        <!-- Skeleton Profile Image -->
+        <div
+          class="w-20 h-20 bg-gray-600 rounded-full animate-pulse mr-4"
+        ></div>
 
-              <!-- Middle: Username -->
-              <div class="flex-1">
-                <span class="text-lg font-semibold text-gray-200">
-                  {{ request.username }}
-                </span>
-              </div>
-
-              <!-- Right: Action Buttons -->
-              <div
-                class="flex flex-col gap-2 items-end py-2"
-                (click)="$event.stopPropagation()"
-              >
-                <button
-                  (click)="acceptFriendRequest(request)"
-                  class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-                >
-                  <i class="fas fa-check"></i>
-                  Accept
-                </button>
-
-                <button
-                  (click)="declineFriendRequest(request)"
-                  class="flex items-center gap-2 px-5 py-2 mt-5 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-                >
-                  <i class="fas fa-times"></i>
-                  Ignore
-                </button>
-              </div>
-            </li>
-          </ul>
+        <!-- Skeleton Username -->
+        <div class="flex-1">
+          <div
+          class="w-32 h-5 bg-gray-600 rounded mb-3 animate-pulse"
+          ></div>
         </div>
-        <ng-template #noRequests>
-          <p class="text-gray-400 text-center text-xl bg-[#161A24] pt-[5rem] md:pt-0">
-            No pending friend requests.
-          </p>
-        </ng-template>
+
+        <!-- Skeleton Buttons -->
+        <div class="flex flex-col gap-2">
+          <div
+          class="w-24 h-8 bg-gray-600 rounded-full animate-pulse"
+          ></div>
+          <div
+          class="w-24 h-8 bg-gray-600 rounded-full animate-pulse"
+          ></div>
+        </div>
+        </div>
+      </div>
+
+      <!-- Friend Requests List -->
+      <div
+        *ngIf="
+        !retrievingFriendInfo &&
+        userProfile?.friendInfo?.friendRequestsReceived?.length;
+        else noRequests
+        "
+      >
+        <ul class="pt-[3rem] md:pt-0">
+        <li
+          *ngFor="
+          let request of userProfile.friendInfo.friendRequestsReceived;
+          let i = index;
+          let last = last
+          "
+          [routerLink]="['/profile', request._id]"
+          [ngClass]="[
+          'flex items-center bg-[#161A24] p-3 w-full',
+          i !== 0 ? '' : 'sm:rounded-t-xl',
+          !last ? '' : 'sm:rounded-b-xl'
+          ]"
+        >
+          <!-- Left: Profile Image -->
+          <img
+          [src]="request.profilePicture || 'assets/user.png'"
+          alt="Profile"
+          class="w-20 h-20 rounded-full object-cover shadow-md mr-4"
+          />
+
+          <!-- Middle: Username -->
+          <div class="flex-1">
+          <span class="text-lg font-semibold text-gray-200">
+            {{ request.username }}
+          </span>
+          </div>
+
+          <!-- Right: Action Buttons -->
+          <div
+          class="flex flex-col gap-2 items-end py-2"
+          (click)="$event.stopPropagation()"
+          >
+          <button
+            (click)="acceptFriendRequest(request)"
+            class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
+          >
+            <i class="fas fa-check"></i>
+            Accept
+          </button>
+
+          <button
+            (click)="declineFriendRequest(request)"
+            class="flex items-center gap-2 px-5 py-2 mt-5 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
+          >
+            <i class="fas fa-times"></i>
+            Ignore
+          </button>
+          </div>
+        </li>
+        </ul>
+      </div>
+      <ng-template #noRequests>
+        <p class="text-gray-400 text-center text-xl bg-[#161A24] pt-[5rem] md:pt-0">
+        No pending friend requests.
+        </p>
+      </ng-template>
       </div>
     </div>
 

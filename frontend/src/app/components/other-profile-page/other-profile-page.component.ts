@@ -111,21 +111,41 @@ export class ViewProfilePageComponent implements OnInit {
     });
   }  
 
-    sendFriendRequest(user: User) {
-      this.isLoadingFriendAction = true;
-      this.userService.sendFriendRequest(user._id).subscribe({
-        next: (response) => {
-          this.isLoadingFriendAction = false;
-          this.toastr.success(response.message, 'Success');
-          user.hasPendingRequestSent = true;
-          
-        },
-        error: (error) => {
-          this.isLoadingFriendAction = false;
-          this.toastr.error('Error sending request', 'Error');
-        },
-      });
-    }
+  sendFriendRequest(user: User) {
+    this.isLoadingFriendAction = true;
+  
+    this.userService.sendFriendRequest(user._id).subscribe({
+      next: (response) => {
+        this.toastr.success(response.message, 'Success');
+        this.isLoadingFriendAction = false;
+  
+        // Update UI flags
+        user.hasPendingRequestSent = true;
+        user.hasPendingRequestReceived = false;
+        user.isFriend = false;
+  
+        // Add to current user's sent requests
+        this.loggedInUser.friendInfo.friendRequestsSent.push({
+          _id: user._id,
+          username: user.username,
+          profilePicture: user.profilePicture,
+          email: '',
+          googleId: '',
+          friendInfo: {
+            friends: [],
+            friendRequestsSent: [],
+            friendRequestsReceived: []
+          }
+        });
+  
+        this.userService.setUserProfile(this.loggedInUser);
+      },
+      error: (error) => {
+        this.isLoadingFriendAction = false;
+        this.toastr.error(error.error?.message || 'Error sending request', 'Error');
+      },
+    });
+  }  
 
     acceptFriendRequest(fromUser: User) {
       this.isLoadingFriendAction = true;
@@ -136,12 +156,36 @@ export class ViewProfilePageComponent implements OnInit {
               this.loggedInUser.friendInfo.friendRequestsReceived?.filter(
                 (r) => r._id !== fromUser._id
               ) || [];
+        
+            const alreadyFriend = this.loggedInUser.friendInfo.friends.some(
+              (f) => f._id === fromUser._id
+            );
+        
+            if (!alreadyFriend) {
+              this.loggedInUser.friendInfo.friends.push({
+                _id: fromUser._id,
+                username: fromUser.username,
+                profilePicture: fromUser.profilePicture,
+                email: '',
+                googleId: '',
+                friendInfo: {
+                  friends: [],
+                  friendRequestsSent: [],
+                  friendRequestsReceived: []
+                }
+              });
+            }
           }
-          this.loggedInUser?.friendInfo?.friends.push(fromUser);
+        
+          if (this.user && this.user._id === fromUser._id) {
+            this.user.isFriend = true;
+            this.user.hasPendingRequestReceived = false;
+            this.user.hasPendingRequestSent = false;
+          }
+        
           this.isLoadingFriendAction = false;
           this.toastr.success(response.message, 'Success');
-  
-          // update the global profile
+        
           this.userService.setUserProfile(this.loggedInUser);
         },
         error: (error) => {
@@ -156,22 +200,19 @@ export class ViewProfilePageComponent implements OnInit {
 
     removeFriend(friend: User) {
       this.isLoadingFriendAction = true;
+    
       this.userService.removeFriend(friend._id).subscribe({
         next: (response: any) => {
-          if (this.loggedInUser && this.loggedInUser.friendInfo.friends) {
-            this.loggedInUser.friendInfo.friends = this.loggedInUser.friendInfo.friends.filter(
-              (friendItem) => friendItem._id !== friend._id
-            );
-            this.loggedInUser.friendInfo.friendRequestsSent = this.loggedInUser.friendInfo.friendRequestsSent.filter(
-              (req) => req._id !== friend._id
-            );
-          
-            this.loggedInUser.friendInfo.friendRequestsReceived = this.loggedInUser.friendInfo.friendRequestsReceived.filter(
-              (req) => req._id !== friend._id
-            );
-          }
+          const { friendInfo } = this.loggedInUser;
     
-          // Update target user object so UI reflects change
+          // Remove from friends
+          friendInfo.friends = friendInfo.friends.filter(f => f._id !== friend._id);
+    
+          // Remove from sent/received requests just in case
+          friendInfo.friendRequestsSent = friendInfo.friendRequestsSent.filter(r => r._id !== friend._id);
+          friendInfo.friendRequestsReceived = friendInfo.friendRequestsReceived.filter(r => r._id !== friend._id);
+    
+          // Reflect in viewed profile
           if (this.user && this.user._id === friend._id) {
             this.user.isFriend = false;
             this.user.hasPendingRequestSent = false;
@@ -179,15 +220,12 @@ export class ViewProfilePageComponent implements OnInit {
           }
     
           this.userService.setUserProfile(this.loggedInUser);
-          this.isLoadingFriendAction = false;
           this.toastr.success('Removed friend', 'Success');
+          this.isLoadingFriendAction = false;
         },
         error: (error: any) => {
+          this.toastr.error(error.error?.message || 'Error removing friend', 'Error');
           this.isLoadingFriendAction = false;
-          this.toastr.error(
-            error.error?.message || 'Error removing friend',
-            'Error'
-          );
         },
       });
     }    
