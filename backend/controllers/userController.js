@@ -232,8 +232,8 @@ exports.acceptFriendRequest = async (req, res) => {
       (id) => id.toString() !== fromUserId
     );
     fromUser.friendRequestsSent = fromUser.friendRequestsSent.filter(
-      (id) => id.toString() !== userId
-    );
+      (id) => id.toString() !== userId.toString()
+    );    
 
     // Add to friends list
     user.friends.push(fromUserId);

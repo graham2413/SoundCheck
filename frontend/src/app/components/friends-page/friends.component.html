@@ -52,7 +52,7 @@
   <div class="md:hidden fixed top-0 pt-5 w-full z-20 bg-[#0F1722] shadow-lg">
     <!-- Heading -->
     <div class="h-[3rem] flex items-center justify-center">
-      <h1 class="text-white text-4xl font-bold flex items-center">
+      <h1 class="text-white text-3xl font-bold flex items-center">
         <ng-container [ngSwitch]="activeTab">
           <span *ngSwitchCase="'myFriends'" class="tab-title">My Friends</span>
           <span *ngSwitchCase="'friendRequests'" class="tab-title"
@@ -186,7 +186,7 @@
       </div>
 
       <!-- Loader -->
-      <div *ngIf="retrievingFriendInfo" class="space-y-4 mt-[2rem]">
+      <div *ngIf="retrievingFriendInfo" class="space-y-4 mt-[1.5rem]">
         <div
         *ngFor="let _ of [0, 1, 2, 3]; let i = index; let last = last"
         [ngClass]="[
@@ -253,7 +253,7 @@
           <button
             (click)="openModal(friend); $event.stopPropagation()"
             [disabled]="removingFriendId === friend._id"
-            class="p-2 px-3 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white sm:hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="p-2 px-3 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white sm:hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed ml-1"
           >
             <ng-container *ngIf="removingFriendId === friend._id; else buttonContent">
             <i class="fas fa-spinner fa-spin"></i> Removing...
@@ -306,7 +306,7 @@
       </h2>
 
       <!-- Skeleton Loader -->
-      <div *ngIf="retrievingFriendInfo" class="space-y-4">
+      <div *ngIf="retrievingFriendInfo" class="space-y-4 mt-[3.5rem]">
         <div
         *ngFor="let _ of [0, 1, 2, 3]; let i = index; let last = last"
         [ngClass]="[
@@ -328,12 +328,12 @@
         </div>
 
         <!-- Skeleton Buttons -->
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 py-2">
           <div
           class="w-24 h-8 bg-gray-600 rounded-full animate-pulse"
           ></div>
           <div
-          class="w-24 h-8 bg-gray-600 rounded-full animate-pulse"
+          class="w-24 h-8 bg-gray-600 rounded-full animate-pulse mt-5"
           ></div>
         </div>
         </div>
@@ -400,7 +400,7 @@
         </ul>
       </div>
       <ng-template #noRequests>
-        <p class="text-gray-400 text-center text-xl bg-[#161A24] pt-[5rem] md:pt-0">
+        <p *ngIf="!retrievingFriendInfo" class="text-gray-400 text-center text-xl bg-[#161A24] pt-[5rem] md:pt-0">
         No pending friend requests.
         </p>
       </ng-template>
