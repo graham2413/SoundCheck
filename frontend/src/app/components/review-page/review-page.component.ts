@@ -292,11 +292,20 @@ export class ReviewPageComponent implements OnInit {
     const wrapper = this.scrollingWrapper?.nativeElement;
     const content = this.scrollingContent?.nativeElement;
     if (!wrapper || !content) return;
-
-    // Use full viewport width as the cutoff threshold
+  
+    const wrapperWidth = wrapper.offsetWidth;
+    const contentWidth = content.scrollWidth;
+  
     const buffer = 0.95;
-    const isOverflowing = content.scrollWidth > wrapper.clientWidth * buffer;
+    const isOverflowing = contentWidth > wrapperWidth * buffer;
     this.isTextOverflowing = isOverflowing;
+  
+    if (isOverflowing) {
+      // Set --start-offset to wrapper's width so scroll starts just off-screen
+      content.style.setProperty('--start-offset', `${wrapperWidth}px`);
+    } else {
+      content.style.removeProperty('--start-offset');
+    }
   }
 
   get flipState() {

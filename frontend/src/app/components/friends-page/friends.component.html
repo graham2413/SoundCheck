@@ -56,7 +56,7 @@
         <ng-container [ngSwitch]="activeTab">
           <span *ngSwitchCase="'myFriends'" class="tab-title">My Friends</span>
           <span *ngSwitchCase="'friendRequests'" class="tab-title"
-            >Friend Requests</span
+            >Requests</span
           >
           <span *ngSwitchCase="'addFriends'" class="tab-title"
             >Add Friends</span
@@ -219,12 +219,18 @@
               <!-- Buttons on the far right, stacked -->
               <div class="flex flex-col gap-2">
                 <button
-                  (click)="openModal(friend); $event.stopPropagation()"
-                  class="p-2 px-3 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white sm:hover:bg-red-700"
-                >
-                  <i class="fas fa-user-minus mr-1"></i>
-                  Unfriend
-                </button>
+                (click)="openModal(friend); $event.stopPropagation()"
+                [disabled]="removingFriendId === friend._id"
+                class="p-2 px-3 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white sm:hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ng-container *ngIf="removingFriendId === friend._id; else buttonContent">
+                  <i class="fas fa-spinner fa-spin"></i> Removing...
+                </ng-container>
+                <ng-template #buttonContent>
+                  <i class="fas fa-user-minus mr-1"></i> Unfriend
+                </ng-template>
+              </button>
+              
               </div>
             </li>
           </ul>
@@ -259,7 +265,7 @@
         <h2
           class="hidden md:block text-3xl font-semibold mb-5 pt-14 items-center text-center"
         >
-          Friend Requests
+         Requests
           <span class="text-gray-400 text-2xl ml-2">
             ({{ userProfile.friendInfo.friendRequestsReceived.length || 0 }})
           </span>
@@ -428,21 +434,27 @@
                   [disabled]="
                     user.isFriend ||
                     user.hasPendingRequestSent ||
-                    user.hasPendingRequestReceived
-                  "
-                  class="p-2 px-5 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white sm:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <i class="fas fa-user-plus mr-1"></i>
-                  {{
+                    user.hasPendingRequestReceived ||
+                    friendActionLoading
+                    "
+                    class="p-2 px-5 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white sm:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ng-container *ngIf="friendActionLoading; else buttonContent">
+                    <i class="fas fa-spinner fa-spin"></i> Adding...
+                    </ng-container>
+                    <ng-template #buttonContent>
+                    <i class="fas fa-user-plus mr-1"></i>
+                    {{
                     user.isFriend
-                      ? "Added"
-                      : user.hasPendingRequestSent
-                      ? "Request Sent"
-                      : user.hasPendingRequestReceived
-                      ? "Check Requests!"
-                      : "Add"
-                  }}
-                </button>
+                    ? "Added"
+                    : user.hasPendingRequestSent
+                    ? "Requested"
+                    : user.hasPendingRequestReceived
+                    ? "Check Requests!"
+                    : "Add"
+                    }}
+                    </ng-template>
+                  </button>
               </div>
             </li>
           </ul>

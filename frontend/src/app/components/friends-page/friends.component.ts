@@ -27,6 +27,8 @@ export class FriendsComponent implements OnInit {
   usersToAdd: User[] = [];
   addFriendsSearchInitiated = false;
   addFriendsSearchLoading = false;
+  friendActionLoading = false;
+  removingFriendId: string | null = null;
 
   userProfile: User = {
     _id: '',
@@ -107,14 +109,17 @@ export class FriendsComponent implements OnInit {
   }  
 
   getFriendData() {
-    this.userService.userProfile$.subscribe((profile) => {
-      if (profile) {
+    this.userService.getAuthenticatedUserProfile().subscribe({
+      next: (freshProfile) => {
+        this.userService.setUserProfile(freshProfile); // Push fresh profile into BehaviorSubject
+  
+        // Also update local state if you still want to keep this.userProfile for filtering
         this.userProfile = {
-          ...profile,
+          ...freshProfile,
           friendInfo: {
-            friends: profile.friendInfo?.friends || [],
-            friendRequestsReceived: profile.friendInfo?.friendRequestsReceived || [],
-            friendRequestsSent: profile.friendInfo?.friendRequestsSent || []
+            friends: freshProfile.friendInfo?.friends || [],
+            friendRequestsReceived: freshProfile.friendInfo?.friendRequestsReceived || [],
+            friendRequestsSent: freshProfile.friendInfo?.friendRequestsSent || []
           }
         };
 
@@ -229,6 +234,7 @@ export class FriendsComponent implements OnInit {
   }
 
   sendFriendRequest(toUser: User) {
+    this.friendActionLoading = true;
     this.userService.sendFriendRequest(toUser._id).subscribe({
       next: (response) => {
         this.toastrService.success(response.message, 'Success');
@@ -238,17 +244,20 @@ export class FriendsComponent implements OnInit {
           ...(this.userProfile?.friendInfo?.friendRequestsSent || []),
           toUser,
         ];
+        this.friendActionLoading = false;
 
         // update the global profile
         this.userService.setUserProfile(this.userProfile);
       },
       error: (error) => {
+        this.friendActionLoading = false;
         this.toastrService.error('Error sending request', 'Error');
       },
     });
   }
 
   acceptFriendRequest(fromUser: User) {
+    this.friendActionLoading = true;
     this.userService.acceptFriendRequest(fromUser._id).subscribe({
       next: (response) => {
         if (this.userProfile) {
@@ -258,12 +267,14 @@ export class FriendsComponent implements OnInit {
             ) || [];
         }
         this.userProfile?.friendInfo?.friends.push(fromUser);
+        this.friendActionLoading = false;
         this.toastrService.success(response.message, 'Success');
 
         // update the global profile
         this.userService.setUserProfile(this.userProfile);
       },
       error: (error) => {
+        this.friendActionLoading = false;
         this.toastrService.error(
           error.error?.message || 'Error sending request',
           'Error'
@@ -273,6 +284,8 @@ export class FriendsComponent implements OnInit {
   }
 
   declineFriendRequest(fromUser: User) {
+    this.friendActionLoading = true;
+
     this.userService.declineFriendRequest(fromUser._id).subscribe({
       next: (response: any) => {
         if (this.userProfile && this.userProfile.friendInfo.friendRequestsReceived) {
@@ -282,9 +295,11 @@ export class FriendsComponent implements OnInit {
         }
 
         // update the global profile
+        this.friendActionLoading = false;
         this.userService.setUserProfile(this.userProfile);
       },
       error: (error: any) => {
+        this.friendActionLoading = false;
         this.toastrService.error(
           error.error?.message || 'Error removing request',
           'Error'
@@ -294,6 +309,9 @@ export class FriendsComponent implements OnInit {
   }
 
   removeFriend(friend: User) {
+    this.friendActionLoading = true;
+    this.removingFriendId = friend._id;
+
     this.userService.removeFriend(friend._id).subscribe({
       next: (response: any) => {
         if (this.userProfile && this.userProfile.friendInfo.friends) {
@@ -304,9 +322,13 @@ export class FriendsComponent implements OnInit {
 
         // update the global profile
         this.userService.setUserProfile(this.userProfile);
+        this.friendActionLoading = false;
+        this.removingFriendId = null;
         this.toastrService.success('Removed friend', 'Success');
       },
       error: (error: any) => {
+        this.friendActionLoading = false;
+        this.removingFriendId = null;
         this.toastrService.error(
           error.error?.message || 'Error removing friend',
           'Error'

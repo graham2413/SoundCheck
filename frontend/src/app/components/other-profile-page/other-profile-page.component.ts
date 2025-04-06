@@ -12,6 +12,7 @@ import { Album } from 'src/app/models/responses/album-response';
 import { Artist } from 'src/app/models/responses/artist-response';
 import { Song } from 'src/app/models/responses/song-response';
 import { DisplayReview, Review } from 'src/app/models/responses/review-responses';
+import { User } from 'src/app/models/responses/user.response';
 
 @Component({
   selector: 'app-view-profile-page',
@@ -36,6 +37,19 @@ export class ViewProfilePageComponent implements OnInit {
   user: any = null;
   searchQuery: string = '';
   filteredFriends: any[] = [];
+  loggedInUser: User = {
+    _id: '',
+    username: '',
+    googleId: '',
+    email: '',
+    profilePicture: '',
+    friendInfo: {
+      friends: [],
+      friendRequestsReceived: [],
+      friendRequestsSent: []
+    }
+  } as User;
+  isLoadingFriendAction: boolean = false;
 
   constructor(private route: ActivatedRoute, private userService: UserService, private toastr: ToastrService, private router: Router,private modal: NgbModal) {}
 
@@ -44,27 +58,139 @@ export class ViewProfilePageComponent implements OnInit {
       this.userId = params['userId'];
       this.user = null;
       window.scrollTo(0, 0);
-      this.fetchUserDetails();
-    });
-  }
   
-  public fetchUserDetails(){
+      this.userService.userProfile$.subscribe(profile => {
+        this.loggedInUser = profile;
+  
+        // Fetch only after loggedInUser is available
+        if (this.loggedInUser) {
+          this.fetchUserDetails();
+        }
+      });
+    });
+  }  
+  
+  public fetchUserDetails() {
     this.userService.getOtherUserProfileInfo(this.userId).subscribe({
       next: (response) => {
-       this.user = response;
-       this.filteredFriends = [...this.user.friends];
-      //  this.user.friends = this.generateMockFriends(30);
-      // this.user.reviews = this.generateMockReviews(10);
-
+        // Check if the logged-in user is already friends with the viewed user
+        const isFriend = this.loggedInUser?.friendInfo?.friends?.some(
+          (friend) => friend._id === response._id
+        );
+  
+        // Only true if a request was sent and they aren't already friends
+        const hasPendingRequestSent =
+          !isFriend &&
+          this.loggedInUser?.friendInfo?.friendRequestsSent?.some(
+            (req) => req._id === response._id
+          );
+  
+        // Only true if a request was received and they aren't already friends
+        const hasPendingRequestReceived =
+          !isFriend &&
+          this.loggedInUser?.friendInfo?.friendRequestsReceived?.some(
+            (req) => req._id === response._id
+          );
+  
+        this.user = {
+          ...response,
+          isFriend,
+          hasPendingRequestSent,
+          hasPendingRequestReceived,
+        };
+  
+        this.filteredFriends = [...this.user.friends];
+  
+        // Uncomment for mock data testing
+        // this.user.friends = this.generateMockFriends(30);
+        // this.user.reviews = this.generateMockReviews(10);
       },
       error: () => {
-        this.toastr.error(
-         'Error retrieving User Profile',
-          'Error'
-        );
+        this.toastr.error('Error retrieving User Profile', 'Error');
       },
     });
-  }
+  }  
+
+    sendFriendRequest(user: User) {
+      this.isLoadingFriendAction = true;
+      this.userService.sendFriendRequest(user._id).subscribe({
+        next: (response) => {
+          this.isLoadingFriendAction = false;
+          this.toastr.success(response.message, 'Success');
+          user.hasPendingRequestSent = true;
+          
+        },
+        error: (error) => {
+          this.isLoadingFriendAction = false;
+          this.toastr.error('Error sending request', 'Error');
+        },
+      });
+    }
+
+    acceptFriendRequest(fromUser: User) {
+      this.isLoadingFriendAction = true;
+      this.userService.acceptFriendRequest(fromUser._id).subscribe({
+        next: (response) => {
+          if (this.loggedInUser) {
+            this.loggedInUser.friendInfo.friendRequestsReceived =
+              this.loggedInUser.friendInfo.friendRequestsReceived?.filter(
+                (r) => r._id !== fromUser._id
+              ) || [];
+          }
+          this.loggedInUser?.friendInfo?.friends.push(fromUser);
+          this.isLoadingFriendAction = false;
+          this.toastr.success(response.message, 'Success');
+  
+          // update the global profile
+          this.userService.setUserProfile(this.loggedInUser);
+        },
+        error: (error) => {
+          this.isLoadingFriendAction = false;
+          this.toastr.error(
+            error.error?.message || 'Error sending request',
+            'Error'
+          );
+        },
+      });
+    }
+
+    removeFriend(friend: User) {
+      this.isLoadingFriendAction = true;
+      this.userService.removeFriend(friend._id).subscribe({
+        next: (response: any) => {
+          if (this.loggedInUser && this.loggedInUser.friendInfo.friends) {
+            this.loggedInUser.friendInfo.friends = this.loggedInUser.friendInfo.friends.filter(
+              (friendItem) => friendItem._id !== friend._id
+            );
+            this.loggedInUser.friendInfo.friendRequestsSent = this.loggedInUser.friendInfo.friendRequestsSent.filter(
+              (req) => req._id !== friend._id
+            );
+          
+            this.loggedInUser.friendInfo.friendRequestsReceived = this.loggedInUser.friendInfo.friendRequestsReceived.filter(
+              (req) => req._id !== friend._id
+            );
+          }
+    
+          // Update target user object so UI reflects change
+          if (this.user && this.user._id === friend._id) {
+            this.user.isFriend = false;
+            this.user.hasPendingRequestSent = false;
+            this.user.hasPendingRequestReceived = false;
+          }
+    
+          this.userService.setUserProfile(this.loggedInUser);
+          this.isLoadingFriendAction = false;
+          this.toastr.success('Removed friend', 'Success');
+        },
+        error: (error: any) => {
+          this.isLoadingFriendAction = false;
+          this.toastr.error(
+            error.error?.message || 'Error removing friend',
+            'Error'
+          );
+        },
+      });
+    }    
 
   // generateMockReviews(count: number): Review[] {
   //   const dummyTitles = ['Roses', 'Blinding Lights', 'Circles', 'Peaches', 'Levitating'];

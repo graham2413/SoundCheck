@@ -164,13 +164,12 @@
 
 @keyframes scroll-left {
   0% {
-    transform: translateX(50%);
+    transform: translateX(var(--start-offset, 100%));
   }
   100% {
     transform: translateX(-100%);
   }
 }
-
 
 @keyframes skeleton-loading {
   0% {

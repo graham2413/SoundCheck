@@ -151,7 +151,7 @@
           <!-- Left Button -->
           <button
             (click)="showSecondIpod = true"
-            class="bg-gray-800 text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white"
+            class="bg-[#161A24] text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white"
           >
             <i class="fa-solid fa-info text-lg"></i>
           </button>
@@ -241,7 +241,7 @@
           <!-- Close Button -->
           <button
             (click)="close()"
-            class="bg-gray-800 text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white"
+            class="bg-[#161A24] text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white"
           >
             <i class="fas fa-times text-lg"></i>
           </button>
@@ -736,7 +736,7 @@
                     <!-- Profile Picture -->
                     <img
                       [src]="
-                        review.user.profilePicture || 'default-profile.png'
+                        review.user.profilePicture || 'assets/user.png'
                       "
                       alt="Profile Picture"
                       class="w-[4rem] h-[4rem] rounded-full object-cover"
@@ -1699,7 +1699,7 @@
                             <img
                               [src]="
                                 review.user.profilePicture ||
-                                'default-profile.png'
+                                'assets/user.png'
                               "
                               alt="Profile Picture"
                               class="w-[4rem] h-[4rem] rounded-full object-cover"

@@ -19,7 +19,7 @@ exports.getUserProfile = async (req, res) => {
     // Fetch user's reviews separately
     const reviews = await Review.find({ user: user._id })
       .select("reviewText rating type createdAt albumSongOrArtist")
-      .sort({ createdAt: -1 }) // Sort reviews by newest first
+      .sort({ createdAt: -1 }); // Sort reviews by newest first
 
     res.json({
       _id: user._id,
@@ -34,10 +34,10 @@ exports.getUserProfile = async (req, res) => {
   }
 };
 
-
 exports.getAuthenticatedUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("-password")
+    const user = await User.findById(req.user._id)
+      .select("-password")
       .populate("friendRequestsSent", "username profilePicture")
       .populate("friendRequestsReceived", "username profilePicture")
       .populate("friends", "username profilePicture");
@@ -53,22 +53,22 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
       profilePicture: user.profilePicture,
       createdAt: user.createdAt,
       friendInfo: {
-        friends: user.friends.map(friend => ({
+        friends: user.friends.map((friend) => ({
           _id: friend._id,
           username: friend.username,
-          profilePicture: friend.profilePicture
+          profilePicture: friend.profilePicture,
         })),
-        friendRequestsSent: user.friendRequestsSent.map(request => ({
+        friendRequestsSent: user.friendRequestsSent.map((request) => ({
           _id: request._id,
           username: request.username,
-          profilePicture: request.profilePicture
+          profilePicture: request.profilePicture,
         })),
-        friendRequestsReceived: user.friendRequestsReceived.map(request => ({
+        friendRequestsReceived: user.friendRequestsReceived.map((request) => ({
           _id: request._id,
           username: request.username,
-          profilePicture: request.profilePicture
-        }))
-      }
+          profilePicture: request.profilePicture,
+        })),
+      },
     };
 
     res.json(formattedUser);
@@ -77,7 +77,6 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
-
 
 exports.updateUserProfile = async (req, res) => {
   try {
@@ -105,20 +104,17 @@ exports.updateUserProfile = async (req, res) => {
     // Handle Password Update (If a new password is provided)
     if (req.body.newPassword && req.body.newPassword.trim() !== "") {
       if (user.password) {
-
-      const isSamePassword = await bcrypt.compare(
-        req.body.newPassword,
-        user.password
-      );
-      if (isSamePassword) {
-        return res
-          .status(400)
-          .json({
+        const isSamePassword = await bcrypt.compare(
+          req.body.newPassword,
+          user.password
+        );
+        if (isSamePassword) {
+          return res.status(400).json({
             message:
               "New password must be different from the current password.",
           });
+        }
       }
-    }
 
       // Hash and save the new password
       const salt = await bcrypt.genSalt(10);
@@ -146,7 +142,7 @@ exports.updateUserProfile = async (req, res) => {
 };
 
 exports.sendFriendRequest = async (req, res) => {
-  const userId  = req.user._id; // Authenticated user (sender)
+  const userId = req.user._id; // Authenticated user (sender)
   const { toUserId } = req.params; // Target user (receiver)
 
   // Prevent sending a friend request to yourself
@@ -170,6 +166,19 @@ exports.sendFriendRequest = async (req, res) => {
 
     if (user.friendRequestsSent.includes(toUserId)) {
       return res.status(400).json({ message: "Friend request already sent." });
+    }
+
+    if (user.friendRequestsReceived.includes(toUserId)) {
+      return res
+        .status(400)
+        .json({ message: "This user has already sent you a request." });
+    }
+
+    if (toUser.friendRequestsSent.includes(userId)) {
+      return res.status(400).json({
+        message:
+          "This user has already sent you a request. You can accept it instead.",
+      });
     }
 
     // Add friend request to both users
@@ -200,6 +209,22 @@ exports.acceptFriendRequest = async (req, res) => {
     // Check if a request actually exists
     if (!user.friendRequestsReceived.includes(fromUserId)) {
       return res.status(400).json({ message: "No friend request found." });
+    }
+
+    if (
+      user.friends.includes(fromUserId) ||
+      fromUser.friends.includes(userId)
+    ) {
+      return res.status(400).json({ message: "You are already friends." });
+    }
+
+    const requestReceived = user.friendRequestsReceived.includes(fromUserId);
+    const requestSent = fromUser.friendRequestsSent.includes(userId);
+
+    if (!requestReceived || !requestSent) {
+      return res
+        .status(400)
+        .json({ message: "No valid friend request found." });
     }
 
     // Remove from friend requests
@@ -240,12 +265,21 @@ exports.declineFriendRequest = async (req, res) => {
       return res.status(400).json({ message: "No friend request found." });
     }
 
+    if (
+      user.friends.includes(fromUserId) ||
+      fromUser.friends.includes(userId)
+    ) {
+      return res.status(400).json({ message: "You are already friends." });
+    }
+
     // Remove from friend request lists
     user.friendRequestsReceived = user.friendRequestsReceived.filter(
-      (id) => id.toString() !== fromUserId);
-      
+      (id) => id.toString() !== fromUserId
+    );
+
     fromUser.friendRequestsSent = fromUser.friendRequestsSent.filter(
-      (id) => !id.equals(userId));
+      (id) => !id.equals(userId)
+    );
 
     await user.save();
     await fromUser.save();
@@ -287,7 +321,7 @@ exports.unfriendUser = async (req, res) => {
     res.status(500).json({ message: "Error unfriending user.", error });
   }
 };
-  
+
 exports.searchUsers = async (req, res) => {
   try {
     const searchQuery = req.query.q;
@@ -300,7 +334,7 @@ exports.searchUsers = async (req, res) => {
       $or: [
         { username: { $regex: searchQuery, $options: "i" } }, // Case-insensitive search
       ],
-      _id: { $ne: req.user.id } // Exclude the logged-in user
+      _id: { $ne: req.user.id }, // Exclude the logged-in user
     }).select("username email profilePicture");
 
     res.status(200).json(users);
@@ -321,10 +355,7 @@ exports.deleteUserProfile = async (req, res) => {
     }
 
     // Remove the user from their friends' lists
-    await User.updateMany(
-      { friends: userId },
-      { $pull: { friends: userId } }
-    );
+    await User.updateMany({ friends: userId }, { $pull: { friends: userId } });
 
     // Remove user from friend requests
     await User.updateMany(
