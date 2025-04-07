@@ -122,7 +122,14 @@ exports.updateUserProfile = async (req, res) => {
     }
 
     // Update user fields
-    user.username = req.body.username || user.username;
+    if (req.body.username && req.body.username !== user.username) {
+      const existingUser = await User.findOne({ username: req.body.username });
+      if (existingUser) {
+        return res.status(400).json({ message: "Username is already taken." });
+      }
+      user.username = req.body.username;
+    }
+
     user.profilePicture = profilePictureUrl;
 
     // Save updated user data
@@ -233,7 +240,7 @@ exports.acceptFriendRequest = async (req, res) => {
     );
     fromUser.friendRequestsSent = fromUser.friendRequestsSent.filter(
       (id) => id.toString() !== userId.toString()
-    );    
+    );
 
     // Add to friends list
     user.friends.push(fromUserId);

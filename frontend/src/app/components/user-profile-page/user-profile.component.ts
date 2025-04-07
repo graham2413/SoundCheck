@@ -136,10 +136,9 @@ export class ProfileComponent implements OnInit {
         this.isSaving = false;
       },
       error: (err) => {
-        console.error('Error updating profile:', err);
         this.isSaving = false;
         if (err.error && err.error.message) {
-          this.confirmPasswordError = err.error.message;
+          this.toastr.error(err.error.message, 'Error')
         }
       },
     });
