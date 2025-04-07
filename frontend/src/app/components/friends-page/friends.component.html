@@ -380,21 +380,33 @@
           class="flex flex-col gap-2 items-end py-2"
           (click)="$event.stopPropagation()"
           >
-          <button
+            <button
             (click)="acceptFriendRequest(request)"
-            class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-          >
-            <i class="fas fa-check"></i>
-            Accept
-          </button>
+            [disabled]="acceptLoadingMap[request._id]"
+            class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+            <ng-container *ngIf="acceptLoadingMap[request._id]; else buttonContent">
+              <i class="fas fa-spinner fa-spin"></i> Loading...
+            </ng-container>
+            <ng-template #buttonContent>
+              <i class="fas fa-check"></i>
+              Accept
+            </ng-template>
+            </button>
 
-          <button
+            <button
             (click)="declineFriendRequest(request)"
-            class="flex items-center gap-2 px-5 py-2 mt-5 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg"
-          >
-            <i class="fas fa-times"></i>
-            Ignore
-          </button>
+            [disabled]="declineLoadingMap[request._id]"
+            class="flex items-center gap-2 px-5 py-2 mt-5 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-105 transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+            <ng-container *ngIf="declineLoadingMap[request._id]; else declineButtonContent">
+              <i class="fas fa-spinner fa-spin"></i> Loading...
+            </ng-container>
+            <ng-template #declineButtonContent>
+              <i class="fas fa-times"></i>
+              Ignore
+            </ng-template>
+            </button>
           </div>
         </li>
         </ul>
@@ -503,28 +515,28 @@
                 <button
                   (click)="sendFriendRequest(user); $event.stopPropagation()"
                   [disabled]="
-                    user.isFriend ||
-                    user.hasPendingRequestSent ||
-                    user.hasPendingRequestReceived ||
-                    friendActionLoading
-                    "
-                    class="p-2 px-5 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white sm:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  user.isFriend ||
+                  user.hasPendingRequestSent ||
+                  user.hasPendingRequestReceived ||
+                  addFriendLoadingMap[user._id]
+                  "
+                  class="p-2 px-5 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white sm:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <ng-container *ngIf="friendActionLoading; else buttonContent">
-                    <i class="fas fa-spinner fa-spin"></i> Adding...
-                    </ng-container>
-                    <ng-template #buttonContent>
-                    <i class="fas fa-user-plus mr-1"></i>
-                    {{
-                    user.isFriend
-                    ? "Added"
-                    : user.hasPendingRequestSent
-                    ? "Requested"
-                    : user.hasPendingRequestReceived
-                    ? "Check Requests!"
-                    : "Add"
-                    }}
-                    </ng-template>
+                  <ng-container *ngIf="friendActionLoading || addFriendLoadingMap[user._id]; else buttonContent">
+                  <i class="fas fa-spinner fa-spin"></i> Loading...
+                  </ng-container>
+                  <ng-template #buttonContent>
+                  <i class="fas fa-user-plus mr-1"></i>
+                  {{
+                  user.isFriend
+                  ? "Added"
+                  : user.hasPendingRequestSent
+                  ? "Requested"
+                  : user.hasPendingRequestReceived
+                  ? "Check Requests!"
+                  : "Add"
+                  }}
+                  </ng-template>
                   </button>
               </div>
             </li>

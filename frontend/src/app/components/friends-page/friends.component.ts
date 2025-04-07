@@ -50,6 +50,10 @@ export class FriendsComponent implements OnInit {
     },
   } as User;
 
+  declineLoadingMap: { [userId: string]: boolean } = {};
+  acceptLoadingMap: { [userId: string]: boolean } = {};
+  addFriendLoadingMap: { [userId: string]: boolean } = {};
+
   constructor(
     private userService: UserService,
     private toastrService: ToastrService,
@@ -251,7 +255,7 @@ export class FriendsComponent implements OnInit {
   }
 
   sendFriendRequest(toUser: User) {
-    this.friendActionLoading = true;
+    this.addFriendLoadingMap[toUser._id] = true;
     this.userService.sendFriendRequest(toUser._id).subscribe({
       next: (response) => {
         this.toastrService.success(response.message, 'Success');
@@ -261,20 +265,20 @@ export class FriendsComponent implements OnInit {
           ...(this.userProfile?.friendInfo?.friendRequestsSent || []),
           toUser,
         ];
-        this.friendActionLoading = false;
+        this.addFriendLoadingMap[toUser._id] = false;
 
         // update the global profile
         this.userService.setUserProfile(this.userProfile);
       },
       error: (error) => {
-        this.friendActionLoading = false;
+        this.addFriendLoadingMap[toUser._id] = false;
         this.toastrService.error('Error sending request', 'Error');
       },
     });
   }
 
   acceptFriendRequest(fromUser: User) {
-    this.friendActionLoading = true;
+    this.acceptLoadingMap[fromUser._id] = true;
     this.userService.acceptFriendRequest(fromUser._id).subscribe({
       next: (response) => {
         if (this.userProfile) {
@@ -288,14 +292,14 @@ export class FriendsComponent implements OnInit {
         if (!alreadyFriend) {
           this.userProfile.friendInfo.friends.push(fromUser);
         }
-        this.friendActionLoading = false;
+        this.acceptLoadingMap[fromUser._id] = false;
         this.toastrService.success(response.message, 'Success');
 
         // update the global profile
         this.userService.setUserProfile(this.userProfile);
       },
       error: (error) => {
-        this.friendActionLoading = false;
+        this.acceptLoadingMap[fromUser._id] = false;
         this.toastrService.error(
           error.error?.message || 'Error sending request',
           'Error'
@@ -305,7 +309,7 @@ export class FriendsComponent implements OnInit {
   }
 
   declineFriendRequest(fromUser: User) {
-    this.friendActionLoading = true;
+  this.declineLoadingMap[fromUser._id] = true;
 
     this.userService.declineFriendRequest(fromUser._id).subscribe({
       next: (response: any) => {
@@ -321,11 +325,11 @@ export class FriendsComponent implements OnInit {
       
         // update the global profile
         this.userService.setUserProfile(this.userProfile);
-        this.friendActionLoading = false;
+        this.declineLoadingMap[fromUser._id] = false;
         this.toastrService.success('Friend request declined', 'Success');
       },      
       error: (error: any) => {
-        this.friendActionLoading = false;
+        this.declineLoadingMap[fromUser._id] = false;
         this.toastrService.error(
           error.error?.message || 'Error removing request',
           'Error'
