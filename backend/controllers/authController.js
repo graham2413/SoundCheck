@@ -104,7 +104,6 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-
 // LOGOUT (JWT - Client-side should remove token)
 exports.logoutUser = (req, res) => {
   res.json({
