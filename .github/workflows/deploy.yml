@@ -3,7 +3,8 @@ name: Deploy Frontend to S3
 on:
   push:
     branches: [master]
-
+    paths:
+      - 'frontend/**'
 jobs:
   deploy:
     runs-on: ubuntu-latest
