@@ -259,7 +259,7 @@
             <i class="fas fa-spinner fa-spin"></i> Removing...
             </ng-container>
             <ng-template #buttonContent>
-            <i class="fas fa-user-minus mr-1"></i> Unfriend
+            <i class="fas fa-user-minus mr-1"></i> Remove
           </ng-template>
           </button>
           
@@ -503,11 +503,11 @@
               />
 
               <!-- Username -->
-              <div class="flex-1">
-                <h2 class="text-lg font-semibold text-gray-200 mb-3">
+              <div class="flex-1 min-w-0">
+                <h2 class="text-lg font-semibold text-gray-200 mb-3 break-words whitespace-normal">
                   {{ user.username }}
                 </h2>
-              </div>
+              </div>              
 
               <!-- Button -->
               <div class="flex flex-col gap-2 items-end">
@@ -520,7 +520,7 @@
                   user.hasPendingRequestReceived ||
                   addFriendLoadingMap[user._id]
                   "
-                  class="p-2 px-5 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white sm:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="p-2 px-5 ml-2 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white sm:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                   <ng-container *ngIf="friendActionLoading || addFriendLoadingMap[user._id]; else buttonContent">
                   <i class="fas fa-spinner fa-spin"></i> Loading...
@@ -531,7 +531,7 @@
                   user.isFriend
                   ? "Added"
                   : user.hasPendingRequestSent
-                  ? "Requested"
+                  ? "Pending"
                   : user.hasPendingRequestReceived
                   ? "Check Requests!"
                   : "Add"
