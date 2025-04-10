@@ -20,6 +20,7 @@ jest.mock('ioredis', () => {
     }),
     get: jest.fn().mockResolvedValue(null),
     set: jest.fn().mockResolvedValue(null),
+    tls: jest.fn().mockReturnValue({}),
   }));
 });
 
