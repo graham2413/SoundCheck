@@ -7,7 +7,10 @@ jest.mock('../utils/callDeezer', () => ({
 }));
 const { callDeezer: mockCallDeezer } = require('../utils/callDeezer');
 
-// Mock Redis to avoid ETIMEDOUT
+jest.mock('fs', () => ({
+  readFileSync: jest.fn().mockReturnValue('fake-certificate'),
+}));
+
 jest.mock('ioredis', () => {
   return jest.fn().mockImplementation(() => ({
     on: jest.fn(),
@@ -20,7 +23,7 @@ jest.mock('ioredis', () => {
     }),
     get: jest.fn().mockResolvedValue(null),
     set: jest.fn().mockResolvedValue(null),
-    tls: jest.fn().mockReturnValue({}),
+    tls: jest.fn().mockReturnValue({ ca: 'fake-certificate' }), // Mock tls config
   }));
 });
 
