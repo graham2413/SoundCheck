@@ -198,10 +198,12 @@ export class ReviewPageComponent implements OnInit {
   showDeleteConfirmation = false;
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
-  @ViewChild('scrollingWrapper', { static: false })
-  scrollingWrapper!: ElementRef;
-  @ViewChild('scrollingContent', { static: false })
-  scrollingContent!: ElementRef;
+  @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
+  @ViewChild('scrollingContent', { static: false }) scrollingContent!: ElementRef;
+
+  @ViewChild('scrollingWrapperDesktop', { static: false }) scrollingWrapperDesktop!: ElementRef;
+  @ViewChild('scrollingContentDesktop', { static: false }) scrollingContentDesktop!: ElementRef;
+  
   @ViewChild('reviewsSection') reviewsSection!: ElementRef;
   @ViewChild('reviewsSectionDesktop') reviewsSectionDesktop!: ElementRef;
   @ViewChild('iPodFront') iPodFront!: ElementRef;
@@ -289,8 +291,12 @@ export class ReviewPageComponent implements OnInit {
   }
 
   checkOverflow() {
-    const wrapper = this.scrollingWrapper?.nativeElement;
-    const content = this.scrollingContent?.nativeElement;
+    const isDesktop = window.innerWidth >= 768; // Assuming 768px as the desktop breakpoint
+  
+    // Select the appropriate wrapper and content based on screen size
+    const wrapper = isDesktop ? this.scrollingWrapperDesktop?.nativeElement : this.scrollingWrapper?.nativeElement;
+    const content = isDesktop ? this.scrollingContentDesktop?.nativeElement : this.scrollingContent?.nativeElement;
+  
     if (!wrapper || !content) return;
   
     const wrapperWidth = wrapper.offsetWidth;
@@ -300,6 +306,8 @@ export class ReviewPageComponent implements OnInit {
     const isOverflowing = contentWidth > wrapperWidth * buffer;
     this.isTextOverflowing = isOverflowing;
   
+    console.log('Overflow:', isOverflowing, 'Wrapper width:', wrapperWidth, 'Content width:', contentWidth);
+  
     if (isOverflowing) {
       // Set --start-offset to wrapper's width so scroll starts just off-screen
       content.style.setProperty('--start-offset', `${wrapperWidth}px`);
@@ -307,6 +315,7 @@ export class ReviewPageComponent implements OnInit {
       content.style.removeProperty('--start-offset');
     }
   }
+  
 
   get flipState() {
     return this.showSecondIpod ? 'back' : 'front';

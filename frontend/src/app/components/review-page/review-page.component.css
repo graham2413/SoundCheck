@@ -147,6 +147,13 @@
   text-align: center;
 }
 
+/* Desktop */
+@media screen and (min-width: 768px) {
+  .title-wrapper {
+    width: 95%;
+  }
+}
+
 .title-wrapper.masked {
   mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
