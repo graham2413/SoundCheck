@@ -7,18 +7,18 @@ const passport = require("passport");
 router.post("/register", authController.registerUser);
 router.post("/login", authController.loginUser);
 router.post("/logout", authController.logoutUser);
-router.get("/spotify/logout", authController.logoutSpotify);
 router.post("/forgot-password", authController.forgotPassword)
 router.post("/reset-password", authController.resetPassword)
+// router.get("/spotify/logout", authController.logoutSpotify);
 
 // Spotify Authentication Route
 router.get("/spotify", (req, res, next) => {
     passport.authenticate("spotify", { scope: ["user-read-email", "playlist-read-private"] })(req, res, next);
 });
 
-// Spotify OAuth Callback Route
-router.get("/spotify/callback", (req, res, next) => {
-    next();
-}, passport.authenticate("spotify", { failureRedirect: "/" }), authController.spotifyCallback);
+// // Spotify OAuth Callback Route
+// router.get("/spotify/callback", (req, res, next) => {
+//     next();
+// }, passport.authenticate("spotify", { failureRedirect: "/" }), authController.spotifyCallback);
 
 module.exports = router;

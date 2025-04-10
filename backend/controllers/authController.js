@@ -2,7 +2,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { Resend } = require("resend");
-const resend = new Resend(process.env.RESEND_API_KEY);
 const crypto = require("crypto");
 
 // REGISTER (Signup for non spotify registering users)
@@ -111,66 +110,48 @@ exports.logoutUser = (req, res) => {
   });
 };
 
-// LOGOUT (Spotify - Session-based logout)
-exports.logoutSpotify = (req, res) => {
-  req.logout(function (err) {
-    if (err) {
-      console.error("Logout error:", err);
-      return res.status(500).json({ message: "Logout failed" });
-    }
 
-    req.session.destroy((err) => {
-      if (err) {
-        console.error("Session destroy error:", err);
-        return res.status(500).json({ message: "Error destroying session" });
-      }
-      res.clearCookie("connect.sid");
-      res.json({ message: "Logged out from Spotify successfully" });
-    });
-  });
-};
+// exports.spotifyCallback = async (req, res) => {
+//   try {
+//     if (!req.user) {
+//       console.error("Spotify authentication failed - No user found.");
+//       return res.status(401).json({ message: "Spotify authentication failed" });
+//     }
 
-exports.spotifyCallback = async (req, res) => {
-  try {
-    if (!req.user) {
-      console.error("Spotify authentication failed - No user found.");
-      return res.status(401).json({ message: "Spotify authentication failed" });
-    }
+//     // Find the user in MongoDB (by Spotify ID)
+//     let user = await User.findOne({ spotifyId: req.user.spotifyId });
 
-    // Find the user in MongoDB (by Spotify ID)
-    let user = await User.findOne({ spotifyId: req.user.spotifyId });
+//     if (!user) {
+//       // If user does not exist, create a new one
+//       user = new User({
+//         spotifyId: req.user.spotifyId,
+//         username: req.user.displayName || "Spotify User",
+//         email: req.user.email || "",
+//         profilePicture: req.user.profilePicture || "",
+//         spotifyAccessToken: req.user.spotifyAccessToken,
+//         spotifyRefreshToken: req.user.spotifyRefreshToken,
+//       });
 
-    if (!user) {
-      // If user does not exist, create a new one
-      user = new User({
-        spotifyId: req.user.spotifyId,
-        username: req.user.displayName || "Spotify User",
-        email: req.user.email || "",
-        profilePicture: req.user.profilePicture || "",
-        spotifyAccessToken: req.user.spotifyAccessToken,
-        spotifyRefreshToken: req.user.spotifyRefreshToken,
-      });
+//       await user.save();
+//     } else {
+//       // Update existing user's tokens
+//       user.spotifyAccessToken = req.user.spotifyAccessToken;
+//       user.spotifyRefreshToken = req.user.spotifyRefreshToken;
+//       await user.save();
+//     }
 
-      await user.save();
-    } else {
-      // Update existing user's tokens
-      user.spotifyAccessToken = req.user.spotifyAccessToken;
-      user.spotifyRefreshToken = req.user.spotifyRefreshToken;
-      await user.save();
-    }
+//     // Generate JWT token
+//     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+//       expiresIn: "7d",
+//     });
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
-    // Redirect user to frontend with token
-    res.redirect(`http://localhost:4200/dashboard?token=${token}`);
-  } catch (error) {
-    console.error("Error in Spotify callback:", error);
-    res.status(500).json({ message: "Server Error" });
-  }
-};
+//     // Redirect user to frontend with token
+//     res.redirect(`http://localhost:4200/dashboard?token=${token}`);
+//   } catch (error) {
+//     console.error("Error in Spotify callback:", error);
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// };
 
 exports.forgotPassword = async (req, res) => {
   try {
@@ -189,6 +170,8 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 

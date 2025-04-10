@@ -1068,43 +1068,62 @@
                 </div>
 
                 <!-- Info and Audio Player -->
-                <div class="mt-4 text-center">
-                  <p
-                    class="text-gray-200 text-2xl font-semibold flex items-center justify-center gap-2"
+                <div class="flex flex-col items-center justify-center flex-1 pb-4 pt-2">
+                  <div class="text-center text-2xl mb-4 text-gray-200 font-semibold">
+                    <div
+                      class="title-wrapper"
+                      [class.masked]="isTextOverflowing"
+                      #scrollingWrapper
+                    >
+                      <div
+                        class="title-content"
+                        #scrollingContent
+                        [class.scroll-animate]="isTextOverflowing"
+                      >
+                        <span
+                          *ngIf="record.type !== 'Artist'"
+                          class="inline-block align-middle"
+                        >
+                          {{ record.title }}
+                        </span>
+                        <span *ngIf="record.type === 'Artist'">
+                          {{ record.name }}
+                        </span>
+                      </div>
+                    </div>
+        
+                    <p
+                      class="text-gray-400 flex items-center justify-center mt-2"
+                    >
+                      <span
+                        *ngIf="isExplicit"
+                        class="bg-gray-600 text-white text-base w-[1.2em] h-[1.2em] flex items-center justify-center font-bold rounded leading-none mr-1"
+                      >
+                        E
+                      </span>
+                      <span
+                        class="truncate overflow-hidden text-base whitespace-nowrap max-w-full px-2"
+                      >
+                        {{ record.type !== "Artist" ? record.artist : "" }}
+                      </span>
+                    </p>
+                  </div>
+                  <div
+                    class="h-auto flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
                   >
-                    <span
-                      *ngIf="record.type != 'Artist'"
-                      class="inline-block align-middle"
-                    >
-                      {{ record.title }}
-                    </span>
-                    <span *ngIf="record.type == 'Artist'">{{
-                      record.name
-                    }}</span>
-                  </p>
-                  <p class="text-gray-400 text-lg">
-                    <span
-                      *ngIf="isExplicit"
-                      class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] mr-1 font-bold w-5 h-5 px-[1px] rounded leading-none align-middle"
-                      title="Explicit"
-                    >
-                      E
-                    </span>
-                    {{ record.type !== "Artist" ? record.artist : "" }}
-                  </p>
-                  <app-audio-player
-                    *ngIf="record.type == 'Song'"
-                    [record]="record"
-                    [showForwardAndBackwardButtons]="
-                      showForwardAndBackwardButtons
-                    "
-                    #audioPlayer
-                    (playStatus)="updatePlayStatus($event)"
-                    (next)="nextSong()"
-                    (previous)="prevSong()"
-                    [currentIndex]="currentIndex"
-                    [songList]="songList"
-                  ></app-audio-player>
+                    <app-audio-player
+                      class="pt-1"
+                      *ngIf="record.type == 'Song'"
+                      [record]="record"
+                      [hidden]="showSecondIpod"
+                      [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
+                      #audioPlayer
+                      (next)="nextSong()"
+                      (previous)="prevSong()"
+                      [currentIndex]="currentIndex"
+                      [songList]="songList"
+                    ></app-audio-player>
+                  </div>
                 </div>
               </div>
             </div>

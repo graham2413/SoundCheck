@@ -356,7 +356,7 @@ exports.searchUsers = async (req, res) => {
       $or: [
         { username: { $regex: searchQuery, $options: "i" } }, // Case-insensitive search
       ],
-      _id: { $ne: req.user.id }, // Exclude the logged-in user
+      _id: { $ne: req.user._id }, // Exclude the logged-in user
     }).select("username email profilePicture");
 
     res.status(200).json(users);
