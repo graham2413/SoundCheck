@@ -13,44 +13,13 @@
     <span class="text-2xl font-semibold title">Sound Check</span>
   </div>
 
-  <div class="relative flex-1 flex justify-center">
-    <div class="hidden md:flex gap-10">
-      <a
-        routerLink="/"
-        routerLinkActive="active-link"
-        [routerLinkActiveOptions]="{ exact: true }"
-        class="link rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-        (click)="closeProfileMenu()"
-      >
-        Search
-      </a>
-  
-      <a
-        routerLink="/friends"
-        routerLinkActive="active-link"
-        class="link rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-        (click)="closeProfileMenu()"
-      >
-        Friends
-      </a>
-      <a
-        routerLink="/profile"
-        routerLinkActive="active-link"
-        class="link rounded-md px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-        (click)="closeProfileMenu()"
-      >
-        Profile
-      </a>
-    </div>
-  </div>  
-
   <div class="hidden md:flex items-center gap-4 relative">
     <div class="relative">
       <button
         (click)="toggleProfileMenu($event)"
         class="flex items-center rounded-full focus:outline-none"
       >
-        <div class="h-16 w-16 relative">
+        <div class="h-[5rem] w-[5rem] relative">
            <!-- Skeleton Loader (When Loading) -->
            <div
            *ngIf="isProfileLoading"
@@ -74,6 +43,15 @@
       @fadeScale
       class="absolute font-semibold right-0 mt-2 w-56 bg-[#161A24] text-gray-300 rounded-lg shadow-lg z-50 border border-gray-700"
       >
+      <a
+        routerLink="/"
+        class="flex items-center px-5 py-5 text-lg hover:bg-gray-700/60 hover:text-white rounded-lg transition-all duration-200"
+        (click)="closeProfileMenu()"
+      >
+        <i class="fas fa-search w-6 text-center"></i>
+        <span class="ml-3">Search</span>
+      </a>
+
       <a
         routerLink="/profile"
         class="flex items-center px-5 py-5 text-lg hover:bg-gray-700/60 hover:text-white rounded-lg transition-all duration-200"
