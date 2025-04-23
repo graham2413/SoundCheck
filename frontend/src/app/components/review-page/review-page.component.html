@@ -328,7 +328,7 @@
   <div
     #reviewsSection
     *ngIf="!showSecondIpod"
-    class="bg-[#262729] shadow-md w-full mx-auto mt-3"
+    class="bg-[#161A24] shadow-md w-full mx-auto mt-3"
   >
     <div
       class="sticky top-0 z-30 bg-[#000000] px-3 py-2 rounded-t-sm shadow-[rgba(0,0,0,0.2)_0px_2px_6px]"
@@ -390,7 +390,7 @@
             (click)="toggleReviewForm()"
             [disabled]="existingUserReview"
             [ngClass]="{
-              'bg-indigo-500 text-white': !existingUserReview,
+              'bg-[#0F5EE4] text-white': !existingUserReview,
               'bg-gray-500 text-gray-300': existingUserReview
             }"
             class="flex items-center gap-1 px-3 py-1 rounded-md font-medium text-lg"
@@ -510,7 +510,7 @@
                 <button
                   [disabled]="isCreateLoading"
                   (click)="submitReview()"
-                  class="bg-indigo-600 text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
+                  class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
                 >
                   <ng-container *ngIf="!isCreateLoading">
                     <i class="fas fa-paper-plane"></i> Create
@@ -532,14 +532,14 @@
               else noReviewsMobile
             "
           >
-            <ul class="space-y-4 mt-1 bg-[#262729] px-2" @fadeIn>
+            <ul class="space-y-4 mt-1 bg-[#161A24] px-2" @fadeIn>
               <li
                 *ngFor="
                   let review of pagedReviews;
                   let i = index;
                   trackBy: trackById
                 "
-                class="review-card p-2 flex flex-col gap-2 relative bg-[#262729]"
+                class="review-card p-2 flex flex-col gap-2 relative bg-[#161A24]"
                 [ngClass]="{
                   'border-b border-gray-500': i < pagedReviews.length - 1
                 }"
@@ -682,13 +682,13 @@
                   >
                     <button
                       (click)="toggleEditReview(review)"
-                      class="absolute top-2 right-[5rem] text-gray-400 transition"
+                      class="absolute bottom-3.5 right-[1rem] text-gray-400 transition"
                     >
                       <i class="fas fa-edit text-2xl"></i>
                     </button>
                     <button
                       (click)="showDeleteConfirmation = true"
-                      class="absolute top-3.5 right-3 text-gray-400 transition"
+                      class="absolute bottom-3.5 left-[1rem] text-gray-400 transition"
                     >
                       <i class="fas fa-trash text-[1.3rem]"></i>
                     </button>
@@ -722,17 +722,7 @@
                     </div>
                   </ng-container>
 
-                    <div
-                    class="flex items-start"
-                    [ngClass]="{
-                      'mt-[3rem]':
-                      existingUserReview &&
-                      review._id === existingUserReview._id,
-                      'mt-[1rem]':
-                      !existingUserReview &&
-                      i === 0
-                    }"
-                  >
+                    <div class="flex items-start mt-[1rem]">
                     <!-- Profile Picture -->
                     <img
                       [src]="
@@ -770,11 +760,11 @@
                   </div>
 
                   <!-- Review Text -->
-                  <div class="mt-3 px-2">
+                    <div class="mt-3 px-1" [ngClass]="{ 'pb-[4rem]': existingUserReview && review._id === existingUserReview._id }">
                     <p class="text-gray-400 text-lg break-words">
                       {{ review.reviewText }}
                     </p>
-                  </div>
+                    </div>
                 </ng-container>
 
                 <ng-template #deletingReviewLoaderMobile>
@@ -842,7 +832,7 @@
 
     <button
       (click)="applyFilter('newest')"
-      class="w-full bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white py-3 rounded-lg text-base font-semibold transition flex items-center justify-center gap-2"
+      class="w-full bg-[#0F5EE4] hover:bg-[#0D51CC] active:scale-95 text-white py-3 rounded-lg text-base font-semibold transition flex items-center justify-center gap-2"
     >
       <i class="fas fa-clock"></i> Newest First
     </button>
@@ -1324,7 +1314,7 @@
                     [disabled]="existingUserReview"
                     (click)="toggleReviewForm()"
                     [ngClass]="{
-                      'bg-indigo-500 text-white': !existingUserReview,
+                      'bg-[#0F5EE4] text-white': !existingUserReview,
                       'bg-gray-500 text-gray-300': existingUserReview
                     }"
                     class="flex items-center gap-1 px-3 py-1 rounded-md font-medium"
@@ -1462,7 +1452,7 @@
                       <button
                         [disabled]="isCreateLoading"
                         (click)="submitReview()"
-                        class="bg-indigo-600 text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
+                        class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
                       >
                         <ng-container *ngIf="!isCreateLoading">
                           <i class="fas fa-paper-plane"></i> Create
@@ -1663,13 +1653,13 @@
                           >
                             <button
                               (click)="toggleEditReview(review)"
-                              class="absolute top-2 right-[4rem] text-gray-400 transition"
+                              class="absolute bottom-3.5 right-[1rem] text-gray-400 transition"
                             >
                               <i class="fas fa-edit text-2xl"></i>
                             </button>
                             <button
                               (click)="showDeleteConfirmation = true"
-                              class="absolute top-3.5 right-3 text-gray-400 transition"
+                              class="absolute bottom-3.5 left-[1rem] text-gray-400 transition"
                             >
                               <i class="fas fa-trash text-[1.3rem]"></i>
                             </button>
@@ -1704,16 +1694,7 @@
                           </ng-container>
 
                           <div
-                            class="flex items-start"
-                            [ngClass]="{
-                              'mt-[3rem]':
-                              existingUserReview &&
-                              review._id === existingUserReview._id,
-                              'mt-[1rem]':
-                              !existingUserReview &&
-                              i === 0
-                            }"
-                          >
+                            class="flex items-start mt-[1rem]">
                             <!-- Profile Picture -->
                             <img
                               [src]="
@@ -1755,7 +1736,7 @@
                           </div>
 
                           <!-- Review Text -->
-                          <div class="mt-3 px-2">
+                          <div class="mt-3 px-2" [ngClass]="{ 'pb-[4rem]': existingUserReview && review._id === existingUserReview._id }">
                             <p class="text-gray-400 text-lg break-words">
                               {{ review.reviewText }}
                             </p>

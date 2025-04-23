@@ -67,5 +67,38 @@ export class ReviewService {
   
     return this.http.delete<any>(`${this.apiUrl}/${reviewId}`, { headers });
   }  
+
+  getTopReviewsByType(type: 'Song' | 'Album' | 'Artist'): Observable<any> {
+    const token = localStorage.getItem('token');
+  
+    if (!token) {
+      console.error("No authentication token found");
+      return new Observable();
+    }
+  
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const endpoint =
+      type === 'Song'
+        ? 'top-songs'
+        : type === 'Album'
+        ? 'top-albums'
+        : 'top-artists';
+
+    return this.http.get(`${this.apiUrl}/${endpoint}`, { headers });
+  }
+
+  getActivityFeed(): Observable<any> {
+    const token = localStorage.getItem('token');
+  
+    if (!token) {
+      console.error("No authentication token found");
+      return new Observable();
+    }
+  
+    const headers = { Authorization: `Bearer ${token}` };
+
+    return this.http.get(`${this.apiUrl}/activityFeed`, { headers });
+  }
   
 }

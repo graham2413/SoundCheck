@@ -306,8 +306,6 @@ export class ReviewPageComponent implements OnInit {
     const isOverflowing = contentWidth > wrapperWidth * buffer;
     this.isTextOverflowing = isOverflowing;
   
-    console.log('Overflow:', isOverflowing, 'Wrapper width:', wrapperWidth, 'Content width:', contentWidth);
-  
     if (isOverflowing) {
       // Set --start-offset to wrapper's width so scroll starts just off-screen
       content.style.setProperty('--start-offset', `${wrapperWidth}px`);
@@ -766,7 +764,7 @@ export class ReviewPageComponent implements OnInit {
 
     const adjustedPercent = Math.min(Math.max(rawPercent + correction, 0), 100);
 
-    return `linear-gradient(to right, #5D41D4 0%, #5D41D4 ${adjustedPercent}%, #858585 ${adjustedPercent}%, #858585 100%)`;
+    return `linear-gradient(to right, #0F5EE4 0%, #0F5EE4 ${adjustedPercent}%, #858585 ${adjustedPercent}%, #858585 100%)`;
   }
 
   get isTracklistArray(): boolean {

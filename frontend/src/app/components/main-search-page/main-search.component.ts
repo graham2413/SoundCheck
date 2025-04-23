@@ -9,13 +9,16 @@ import { Song } from 'src/app/models/responses/song-response';
 import { Album } from 'src/app/models/responses/album-response';
 import { Artist } from 'src/app/models/responses/artist-response';
 import { SearchResponse } from 'src/app/models/responses/search-response';
+import { ReviewService } from 'src/app/services/review.service';
+import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-main-search',
   templateUrl: './main-search.component.html',
   styleUrls: ['./main-search.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule, TimeAgoPipe]
 })
 export class MainSearchComponent {
   @ViewChild('marqueeContainer') marqueeContainer!: ElementRef<HTMLDivElement>;
@@ -28,6 +31,7 @@ export class MainSearchComponent {
   query: string = '';
   isLoading: boolean = false;
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
+  activeDiscoverTab: 'mainSearch' | 'popular' | 'recentActivity' = 'mainSearch';
   private trackX = 0;
   private speed = 0.8;
   isModalOpen = false;
@@ -50,10 +54,19 @@ export class MainSearchComponent {
 
   skeletonArray = Array(15).fill(0);
   isMarqueeLoading = true;
+  popularRecords: any[] = [];
+  expandedReviews: { [reviewId: string]: boolean } = {};
+  activePopularType: 'Song' | 'Album' | 'Artist' = 'Song';
+  readonly popularTypes: Array<'Song' | 'Album' | 'Artist'> = ['Song', 'Album', 'Artist'];
+  isDiscoverContentLoading: boolean = false;
+  isActivityLoading: boolean = false;
+  activityFeed: any[] = [];
 
   constructor(private searchService: SearchService,
     private modal: NgbModal,
     private toastr: ToastrService,
+    private reviewService: ReviewService,
+    private router: Router
   ) { }
 
   ngAfterViewInit(): void {
@@ -74,43 +87,45 @@ export class MainSearchComponent {
     this.showGenreDropdown = { songs: false, albums: false };
   }
 
-  private loadAlbumImages() {  
+  private loadAlbumImages() {
+    this.isMarqueeLoading = true; // trigger skeletons
+  
     const trackEl = this.marqueeTrack.nativeElement;
+    const storedAlbums = localStorage.getItem("albumImages");
+  
+    let albums: any[] = [];
+  
+    if (storedAlbums) {
+      try {
+        albums = JSON.parse(storedAlbums).albums || [];
+      } catch (error) {
+        console.error("Error parsing stored album images:", error);
+        albums = [];
+      }
+    }
+  
+    if (albums.length === 0) {
+      albums = Array.from({ length: 15 }, (_, i) => ({
+        imageUrl: `assets/album${i + 1}.jpg`,
+        name: `Static Album ${i + 1}`
+      }));
+    }
+  
+    // Delay to simulate loading
     setTimeout(() => {
-      const storedAlbums = localStorage.getItem("albumImages");
-      let albums: any[] = [];
-  
-      if (storedAlbums) {
-        try {
-          albums = JSON.parse(storedAlbums).albums || [];
-        } catch (error) {
-          console.error("Error parsing stored album images:", error);
-          albums = [];
-        }
-      }
-  
-      // If no albums found, use fallback static images
-      if (albums.length === 0) {
-        albums = Array.from({ length: 15 }, (_, i) => ({
-          imageUrl: `assets/album${i + 1}.jpg`,
-          name: `Static Album ${i + 1}`
-        }));
-      }
-  
-      // Add images to the marquee track
       albums.forEach((album) => {
         const imgEl = document.createElement("img");
         imgEl.src = album.imageUrl;
         imgEl.alt = album.name;
         imgEl.className =
-          "w-[12rem] h-[12rem] md:w-[15rem] md:h-[15rem] object-cover mr-4 rounded";
+          "w-[10rem] h-[10rem] md:w-[15rem] md:h-[15rem] object-cover mr-4 rounded";
         trackEl.appendChild(imgEl);
       });
   
       this.isMarqueeLoading = false;
       this.initializeMarquee();
-    }, 1000); // Delay fetching images for 1 second
-  }
+    }, 500); // show skeletons for 0.5s
+  }  
   
   private initializeMarquee() {
     const containerEl = this.marqueeContainer.nativeElement;
@@ -277,7 +292,65 @@ export class MainSearchComponent {
   setActiveTab(tab: 'songs' | 'albums' | 'artists') {
     this.activeTab = tab;
   }
-  
+
+  setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
+    this.activeDiscoverTab = tab;
+
+    if(tab === 'popular') {
+      this.setPopularType('Song')
+      this.loadPopularReviews('Song');
+    }
+    if(tab === 'recentActivity') {
+      this.loadAcitivityFeed();
+    }
+  }
+
+  setPopularType(type: 'Song' | 'Album' | 'Artist') {
+    this.isDiscoverContentLoading = true;
+    if (type !== this.activePopularType) {
+      this.activePopularType = type;
+      this.loadPopularReviews(type);
+    }
+  }
+
+    loadPopularReviews(type: 'Song' | 'Album' | 'Artist') {
+    this.reviewService.getTopReviewsByType(type).subscribe({
+      next: (res) => {
+        this.popularRecords =
+          res.songs || res.albums || res.artists || [];
+        setTimeout(() => {
+          this.isDiscoverContentLoading = false;
+        }, 250);
+      },
+      error: (err) => {
+        this.toastr.error('Failed to load popular reviews:', err);
+        this.popularRecords = [];
+        this.isDiscoverContentLoading = false;
+      }
+    });
+  }
+
+  loadAcitivityFeed() {
+    this.isActivityLoading = true;
+    this.reviewService.getActivityFeed().subscribe({
+      next: (res) => {
+        this.activityFeed = res.reviews || [];
+
+        setTimeout(() => {
+          this.isActivityLoading = false;
+        }, 250);
+      },
+      error: (err) => {
+        this.activityFeed = [];
+        this.toastr.error('Failed to load User activity feed:', err);
+        this.isActivityLoading = false;
+      }
+    });
+  }
+
+  toggleReviewExpansion(reviewId: string) {
+    this.expandedReviews[reviewId] = !this.expandedReviews[reviewId];
+  }
 
   openModal(record: Album | Artist | Song) {
     const modalOptions: NgbModalOptions = {
@@ -317,5 +390,9 @@ export class MainSearchComponent {
   closeModal() {
     this.isModalOpen = false;
     this.selectedRecord = null;
+  }
+
+  goToUserProfile(userId: string) {
+    this.router.navigate([`/profile/${userId}`]);
   }
 }

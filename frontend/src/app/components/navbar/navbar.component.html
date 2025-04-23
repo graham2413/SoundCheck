@@ -1,16 +1,15 @@
 <nav
-  class="hidden md:flex bg-[#0E1829] bg-opacity-50 backdrop-blur-lg text-white px-6 py-6 flex items-center justify-between fixed w-full top-0 left-0  z-50 h-24 border-b border-b-gray-600"
+  class="hidden md:flex bg-[#0E1829] bg-opacity-50 backdrop-blur-lg text-white px-6 py-6 flex items-center justify-between fixed w-full top-0 left-0  z-50 h-[6rem] border-b border-b-gray-700"
   (click)="closeProfileMenuOnOutsideClick($event)"
 >
   <div class="flex items-center gap-3">
-    <div class="h-12 w-12 relative">
+    <div class="h-[6rem] w-[6rem] relative ml-4 mt-2">
       <img
         src="../assets/music.png"
         alt="Logo"
         class="absolute inset-0 h-full w-full object-contain"
       />
     </div>
-    <span class="text-2xl font-semibold title">Sound Check</span>
   </div>
 
   <div class="hidden md:flex items-center gap-4 relative">
@@ -49,7 +48,7 @@
         (click)="closeProfileMenu()"
       >
         <i class="fas fa-search w-6 text-center"></i>
-        <span class="ml-3">Search</span>
+        <span class="ml-3">Discover</span>
       </a>
 
       <a
@@ -116,7 +115,7 @@
       (click)="toggleMenu()"
       class="flex items-center gap-3 text-4xl font-semibold text-gray-300 hover:text-white transition"
     >
-      <i class="fas fa-search"></i> Search
+      <i class="fas fa-search"></i> Discover
     </a>
 
     <a
@@ -147,7 +146,7 @@
 
 <!-- Bottom Navigation for Mobile -->
 <div
-  class="bg-[#0E1829] p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-10 justify-around items-center h-[5rem] rounded-t-xl border-t border-t-gray-600"
+  class="bg-[#0F1722] p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-10 justify-around items-center h-[4.5rem] rounded-t-xl border-t border-t-gray-700"
 >
   <button
     routerLink="/"
@@ -159,13 +158,13 @@
     class="flex flex-col items-center justify-center h-full flex-1 rounded-r"
   >
     <i
-      class="fas fa-search text-2xl mb-1"
+      class="fas fa-search text-xl mb-1"
       [ngClass]="{
         'text-[#4C79F4]': activeTab === 'home',
         'text-gray-400': activeTab !== 'home'
       }"
     ></i>
-    <span>Search</span>
+    <span>Discover</span>
   </button>
 
   <button
@@ -179,7 +178,7 @@
 >
   <div class="relative">
     <i
-      class="fas fa-users text-2xl mb-1"
+      class="fas fa-users text-xl mb-1"
       [ngClass]="{
         'text-[#4C79F4]': activeTab === 'friends',
         'text-gray-400': activeTab !== 'friends'
@@ -207,7 +206,7 @@
     class="flex flex-col items-center justify-center relative h-full flex-1 rounded-l"
   >
     <i
-      class="fas fa-user text-2xl mb-1"
+      class="fas fa-user text-xl mb-1"
       [ngClass]="{
         'text-[#4C79F4]': activeTab === 'profile',
         'text-gray-400': activeTab !== 'profile'

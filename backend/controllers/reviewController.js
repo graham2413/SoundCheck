@@ -1,4 +1,5 @@
 const Review = require("../models/Review");
+const User = require("../models/User");
 
 // Create a new review
 exports.createReview = async (req, res) => {
@@ -122,3 +123,106 @@ exports.deleteReview = async (req, res) => {
         res.status(500).json({ message: "Server Error", error: error });
     }
 };
+
+// Get all reviews from user's friends (user's activity feed)
+exports.getActivityFeed = async (req, res) => {
+    try {
+      const userId = req.user._id;
+  
+      // Get user's friends list
+      const user = await User.findById(userId).select("friends");
+  
+      if (!user || user.friends.length === 0) {
+        return res.status(200).json({ reviews: [] });
+      }
+  
+      const friendAndSelfIds = [...user.friends, userId];
+
+      const reviews = await Review.find({ user: { $in: friendAndSelfIds } })
+      .populate("user", "username profilePicture")
+      .sort({ createdAt: -1 });
+  
+      res.status(200).json({ reviews });
+    } catch (error) {
+      console.error("Error fetching friends' reviews:", error);
+      res.status(500).json({ message: "Server error while fetching friends' reviews." });
+    }
+  };
+
+  
+  // Methods to get top review by type (Album, Song, Artist)
+  exports.getTopAlbums = async (req, res) => {
+    try {
+      const albums = await getTopByType("Album");
+      res.status(200).json({ albums });
+    } catch (error) {
+      console.error("Top Albums Error:", error);
+      res.status(500).json({ message: "Failed to fetch top albums." });
+    }
+  };
+  
+  exports.getTopSongs = async (req, res) => {
+    try {
+      const songs = await getTopByType("Song");
+      res.status(200).json({ songs });
+    } catch (error) {
+      console.error("Top Songs Error:", error);
+      res.status(500).json({ message: "Failed to fetch top songs." });
+    }
+  };
+  
+  exports.getTopArtists = async (req, res) => {
+    try {
+      const artists = await getTopByType("Artist");
+      res.status(200).json({ artists });
+    } catch (error) {
+      console.error("Top Artists Error:", error);
+      res.status(500).json({ message: "Failed to fetch top artists." });
+    }
+  };
+  
+// Helper function to get top reviews by type
+const getTopByType = async (type) => {
+    return await Review.aggregate([
+      {
+        $match: {
+          "albumSongOrArtist.type": type,
+          rating: { $ne: null }
+        }
+      },
+      {
+        $group: {
+          _id: "$albumSongOrArtist.id",
+          avgRating: { $avg: "$rating" },
+          count: { $sum: 1 },
+          info: { $first: "$albumSongOrArtist" }
+        }
+      },
+      {
+        $match: { count: { $gte: 2 } } // Filter for at least 2 reviews (once more users update this)
+      },
+      {
+        $sort: { avgRating: -1, count: -1 }
+      },
+      {
+        $limit: 10 // Only shows the top 10 for now (can increment once more users)
+      },
+      {
+        $project: {
+          _id: 0,
+          id: "$info.id",
+          title: "$info.title",
+          name: "$info.name",
+          cover: "$info.cover",
+          picture: "$info.picture",
+          artist: "$info.artist",
+          album: "$info.album",
+          isExplicit: "$info.isExplicit",
+          type: type,
+          avgRating: { $round: ["$avgRating", 1] },
+          reviewCount: "$count"
+        }
+      }
+    ]);
+  };
+  

@@ -1,358 +1,648 @@
-<div class="bg-[#161A24] text-white pb-8 pt-5 md:pt-32">
-  <!-- Marquee Container -->
-  <div #marqueeContainer class="marquee-container">
-    <div #marqueeTrack class="marquee-track">
-      <!-- Skeleton Loaders -->
-      <ng-container *ngIf="isMarqueeLoading; else albumImages">
-        <div
-          *ngFor="let _ of skeletonArray"
-          class="skeleton w-[12rem] h-[12rem] md:w-[15rem] md:h-[15rem]"
-        ></div>
-      </ng-container>
-
-      <!-- Actual Images (Rendered after loading) -->
-      <ng-template #albumImages></ng-template>
-    </div>
-  </div>
-</div>
-
-<!-- Heading -->
-<div class="text-center max-w-5xl mx-auto px-4">
-  <h1 class=" text-4xl md:text-5xl font-extrabold tracking-tight">
-    Explore Your Favorite Music
-  </h1>
-  <p class="mt-2 text-lg text-gray-300">
-    The banner above updates with new Spotify releases every Friday to help inspire your next search.
-  </p>
-</div>
-
-<!-- Search Bar -->
-<div #searchBar class="relative mt-8 w-full max-w-md sm:max-w-lg mx-auto px-4">
-  <input
-    type="search"
-    autofocus
-    [(ngModel)]="query"
-    (keydown.enter)="onSearch()"
-    placeholder="Search music & artists"
-    class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg text-ellipsis overflow-hidden"
-    style="direction: ltr; text-align: left"
-  />
-  <button
-    *ngIf="!isLoading"
-    (click)="onSearch()"
-    class="absolute inset-y-0 right-10 flex items-center"
-  >
-    <svg
-      class="h-6 w-6 text-indigo-500 md:hover:text-white transition"
-      fill="currentColor"
-      viewBox="0 0 24 24"
+<div class="md:pt-[6rem] w-full z-500 bg-[#0F1722] shadow-lg">
+  <!-- Buttons Row with shared border -->
+  <div class="relative bg-[#0F1722]">
+    <div
+      class="flex justify-around items-center h-[3.5rem] border-b border-gray-700 relative"
     >
-      <path
-        d="M21 21l-5.2-5.2m2.2-6a7 7 0 11-14 0 7 7 0 0114 0z"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </svg>
-  </button>
-</div>
-
-<!-- Loading Indicator -->
-<div
-  *ngIf="isLoading"
-  class="mt-6 w-full max-w-3xl mx-auto flex justify-center"
->
-  <div
-    class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
-  ></div>
-</div>
-
-<!-- Skeleton Loader -->
-<div
-  *ngIf="isLoading"
-  class="mt-6 mx-auto mb-6 bg-gray-800 pt-6  rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-3xl"
->
-  <div class="animate-pulse space-y-4">
-    <div class="h-6 bg-gray-700 rounded w-1/4 mx-auto"></div>
-    <div class="h-6 bg-gray-700 rounded w-3/4 mx-auto"></div>
-
-    <!-- Skeleton Loader for Songs -->
-    <div class="mt-4 space-y-4">
+      <!-- Highlight Underline -->
       <div
-        *ngFor="let i of [1, 2, 3, 4, 5]"
-        class="flex items-center bg-gray-800 p-4 rounded-lg"
+        class="absolute bottom-[-.04rem] h-[2px] bg-[#4C79F4] transition-all duration-300"
+        [ngStyle]="{
+          width:
+            activeDiscoverTab === 'mainSearch'
+              ? '60px'
+              : activeDiscoverTab === 'popular'
+              ? '85px'
+              : '90px',
+          left:
+            activeDiscoverTab === 'mainSearch'
+              ? 'calc(16.66% - 30px)'
+              : activeDiscoverTab === 'popular'
+              ? 'calc(50% - 42.5px)'
+              : 'calc(83.33% - 45px)'
+        }"
+      ></div>
+
+      <!-- Main Search -->
+      <button
+        (click)="setActiveDiscoverTab('mainSearch')"
+        class="flex flex-col items-center justify-center flex-1"
       >
-        <div class="h-24 w-24 md:h-28 md:w-28 bg-gray-700 rounded-md"></div>
-        <div class="flex flex-col justify-center flex-grow pl-4 space-y-2">
-          <div class="h-5 bg-gray-700 rounded w-1/2"></div>
-          <div class="h-4 bg-gray-600 rounded w-1/3"></div>
-        </div>
-      </div>
+        <span
+          [ngClass]="{
+            'text-[#4C79F4] font-extrabold': activeDiscoverTab === 'mainSearch',
+            'text-gray-400': activeDiscoverTab !== 'mainSearch'
+          }"
+          class="text-lg md:text-2xl"
+        >
+          Search
+        </span>
+      </button>
+
+      <!-- Popular -->
+      <button
+        (click)="setActiveDiscoverTab('popular')"
+        class="flex flex-col items-center justify-center flex-1"
+      >
+        <span
+          [ngClass]="{
+            'text-[#4C79F4] font-extrabold': activeDiscoverTab === 'popular',
+            'text-gray-400': activeDiscoverTab !== 'popular'
+          }"
+          class="text-lg md:text-2xl"
+        >
+          Popular
+        </span>
+      </button>
+
+      <!--  Activity -->
+      <button
+        (click)="setActiveDiscoverTab('recentActivity')"
+        class="flex flex-col items-center justify-center flex-1"
+      >
+        <span
+          [ngClass]="{
+            'text-[#4C79F4] font-extrabold':
+              activeDiscoverTab === 'recentActivity',
+            'text-gray-400': activeDiscoverTab !== 'recentActivity'
+          }"
+          class="text-lg md:text-2xl"
+        >
+          Activity
+        </span>
+      </button>
     </div>
   </div>
 </div>
 
-<!-- No Results Found -->
-<div
-  *ngIf="searchAttempted && !isLoading && !resultsHasValues()"
-  class="mt-12 text-center text-gray-400 text-lg"
->
-  <i class="fas fa-search-minus text-4xl mb-2"></i>
-  <p>No results found. Try searching for something else.</p>
-</div>
+<div [hidden]="activeDiscoverTab !== 'mainSearch'">
+  <div class="bg-[#161A24] text-white pb-8 pt-[2rem]">
+    <!-- Marquee Container -->
+    <div #marqueeContainer class="marquee-container">
+      <div #marqueeTrack class="marquee-track">
+        <!-- Skeleton Loaders -->
+        <ng-container *ngIf="isMarqueeLoading; else albumImages">
+          <div
+            *ngFor="let _ of skeletonArray"
+            class="skeleton w-[10rem] h-[10rem] md:w-[15rem] md:h-[15rem]"
+          ></div>
+        </ng-container>
 
-<!-- Toggle Buttons -->
-<div
-  *ngIf="
-    results &&
-    !isLoading &&
-    ((results.songs?.length ?? 0) > 0 ||
-      (results.albums?.length ?? 0) > 0 ||
-      (results.artists?.length ?? 0) > 0)
-  "
-  class="mt-6 flex !gap-1 sm:!gap-4 justify-center"
->
-  <button
-    (click)="setActiveTab('songs')"
-    [class.bg-indigo-600]="activeTab === 'songs'"
-    class="px-4 py-2 rounded-md md:hover:bg-indigo-500 transition text-xl font-bold "
-  >
-    Songs
-  </button>
-  <button
-    *ngIf="results && (results.albums?.length ?? 0) > 0"
-    (click)="setActiveTab('albums')"
-    [class.bg-indigo-600]="activeTab === 'albums'"
-    class="px-4 py-2 rounded-md md:hover:bg-indigo-500 transition text-xl font-bold "
-  >
-    Albums
-  </button>
-  <button
-    *ngIf="results && (results.artists?.length ?? 0) > 0"
-    (click)="setActiveTab('artists')"
-    [class.bg-indigo-600]="activeTab === 'artists'"
-    class="px-4 py-2 rounded-md md:hover:bg-indigo-500 transition text-xl font-bold "
-  >
-    Artists
-  </button>
-</div>
-
-<!-- Search Results -->
-<div
-  *ngIf="resultsHasValues() && !isLoading"
-  class="mt-6 w-full max-w-3xl mx-auto pb-[4rem] sm:pb-1"
->
-  <!-- Songs -->
-  <div
-    *ngIf="activeTab === 'songs'"
-    class="mt-6 mx-auto mb-6 bg-gray-800 p-1 pt-6 sm:p-3 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
-  >
-    <div class="relative mb-6">
-      <h2 class="text-2xl font-bold text-white text-center">Songs</h2>
-
-      <!-- Filter Button Wrapper -->
-      <div class="absolute right-0 top-0 pr-1">
-        <button
-          #filterButton
-          (click)="toggleGenreFilter('songs')"
-          class="p-2 rounded-md transition flex items-center gap-2"
-          [ngClass]="
-            selectedGenre.songs
-              ? 'bg-blue-600 md:hover:bg-blue-500'
-              : 'bg-gray-700 md:hover:bg-gray-600'
-          "
-        >
-          <i class="fas fa-filter text-lg"></i>
-          <span class="inline">
-            {{ selectedGenre.songs ? selectedGenre.songs : "Filter" }}
-          </span>
-        </button>
-
-        <!-- Genre Filter Dropdown (Songs) -->
-        <div
-          #dropdownContainer
-          *ngIf="showGenreDropdown.songs"
-          class="absolute right-0 mt-2 w-48 bg-[#161A24]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
-        >
-          <!-- "Clear Filter" Option (Only Shows When a Filter is Applied) -->
-          <button
-            *ngIf="selectedGenre.songs"
-            (click)="clearFilter('songs')"
-            class="flex items-center justify-center w-full text-left text-white py-1 rounded-md transition border border-red-500 text-red-500 md:hover:bg-red-500 md:hover:text-white font-medium mb-2"
-          >
-            <i class="fas fa-times mr-2"></i> Clear
-          </button>
-
-          <!-- Smooth Scroll for Many Items -->
-          <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
-            <button
-              *ngFor="let genre of genres.songs"
-              (click)="filterByGenre('songs', genre)"
-              class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium text-lg"
-              [ngClass]="
-                selectedGenre.songs === genre
-                  ? 'bg-blue-500 text-white shadow-md md:hover:bg-blue-400'
-                  : 'md:hover:bg-gray-600/80'
-              "
-            >
-              {{ genre }}
-            </button>
-          </div>
-        </div>
+        <!-- Actual Images (Rendered after loading) -->
+        <ng-template #albumImages></ng-template>
       </div>
     </div>
-
-    <ul class="mt-2 space-y-4">
-      <li
-        *ngFor="let song of filteredResults.songs"
-        class="flex flex-row cursor-pointer items-center bg-gray-700 p-2 rounded-lg transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400"
-        (click)="openModal(song)"
-      >
-        <!-- Image -->
-        <img
-          [src]="song.cover"
-          alt="Cover"
-          class="h-28 w-28 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-600 flex-shrink-0"
-        />
-
-        <!-- Text Container -->
-        <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
-          <p
-            class="text-lg md:text-xl font-semibold text-white leading-tight  break-words overflow-hidden whitespace-normal break-words"
-          >
-            {{ song.title }}
-          </p>
-
-          <p class="text-sm md:text-base text-gray-400 mt-1">
-            <span
-              *ngIf="song?.isExplicit"
-              class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
-              title="Explicit"
-            >
-              E
-            </span>
-            {{ song.artist }}
-          </p>
-        </div>
-      </li>
-    </ul>
   </div>
 
-  <!-- Albums -->
+  <!-- Heading -->
+  <div class="text-center max-w-5xl mx-auto px-4">
+    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">
+      Explore Music
+    </h1>
+    <p class="mt-2 text-lg text-gray-300">
+      The banner above updates with new Spotify releases every Friday to help
+      inspire your next search.
+    </p>
+  </div>
+
+  <!-- Search Bar -->
   <div
-    *ngIf="activeTab === 'albums'"
-    class="mt-6 mx-auto mb-6 bg-gray-800 p-2 pt-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
+    #searchBar
+    class="relative mt-8 w-full max-w-md sm:max-w-lg mx-auto px-4"
   >
-    <div class="relative mb-6">
-      <h2 class="text-2xl font-bold text-white text-center">Albums</h2>
-
-      <!-- Filter Button Wrapper -->
-      <div class="absolute right-0 top-0">
-        <button
-          #filterButton
-          (click)="toggleGenreFilter('albums')"
-          class="p-2 rounded-md transition flex items-center gap-2"
-          [ngClass]="
-            selectedGenre.albums
-              ? 'bg-blue-600 md:hover:bg-blue-500'
-              : 'bg-gray-700 md:hover:bg-gray-600'
-          "
-        >
-          <i class="fas fa-filter text-lg"></i>
-          <span class="inline">
-            {{ selectedGenre.albums ? selectedGenre.albums : "Filter" }}
-          </span>
-        </button>
-
-        <!-- Genre Filter Dropdown (Albums) -->
-        <div
-          #dropdownContainer
-          *ngIf="showGenreDropdown.albums"
-          class="absolute right-0 mt-2 w-48 bg-[#161A24]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
-        >
-          <!-- "Clear Filter" Option (Only Shows When a Filter is Applied) -->
-          <button
-            *ngIf="selectedGenre.albums"
-            (click)="clearFilter('albums')"
-            class="flex items-center justify-center w-full text-left text-white py-1 rounded-md transition border border-red-500 text-red-500 md:hover:bg-red-500 md:hover:text-white font-medium mb-2"
-          >
-            <i class="fas fa-times mr-2"></i> Clear
-          </button>
-
-          <!-- Smooth Scroll for Many Items -->
-          <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
-            <button
-              *ngFor="let genre of genres.albums"
-              (click)="filterByGenre('albums', genre)"
-              class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium"
-              [ngClass]="
-                selectedGenre.albums === genre
-                  ? 'bg-blue-500 text-white shadow-md md:hover:bg-blue-400'
-                  : 'md:hover:bg-gray-600/80'
-              "
-            >
-              {{ genre }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <ul
-      class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-6 justify-center"
+    <input
+      type="search"
+      autofocus
+      [(ngModel)]="query"
+      (keydown.enter)="onSearch()"
+      placeholder="Search music & artists"
+      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-white-500 focus:border-white-500 outline-none text-lg text-ellipsis overflow-hidden"
+      style="direction: ltr; text-align: left"
+    />
+    <button
+      *ngIf="!isLoading"
+      (click)="onSearch()"
+      class="absolute inset-y-0 right-10 flex items-center"
     >
-      <li
-        *ngFor="let album of filteredResults.albums"
-        class="group flex flex-col cursor-pointer items-center p-4 rounded-md transition-transform duration-300 ease-in-out md:hover:translate-y-1 md:hover:scale-105 md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400"
-        (click)="openModal(album)"
+      <svg
+        class="h-6 w-6 text-[#4C79F4] md:hover:text-white transition"
+        fill="currentColor"
+        viewBox="0 0 24 24"
       >
-        <img
-          [src]="album.cover"
-          alt="Album Cover"
-          class="h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 lg:h-40 lg:w-40 xl:h-44 xl:w-44 rounded-md object-cover shadow-md border-2 border-gray-600"
+        <path
+          d="M21 21l-5.2-5.2m2.2-6a7 7 0 11-14 0 7 7 0 0114 0z"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
         />
-        <p
-        class=" mt-2 text-lg text-white text-center font-semibold w-full max-w-xs sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap group-md:hover:whitespace-normal group-md:hover:overflow-visible group-md:hover:max-w-none break-words"
-      >
-        {{ album.title }}
-      </p>      
-        <p
-          class="text-base text-gray-400 text-center w-full max-w-xs sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap group-md:hover:whitespace-normal group-md:hover:overflow-visible group-md:hover:max-w-none break-words"
-        >
-          {{ album.artist }}
-        </p>
-      </li>
-    </ul>
+      </svg>
+    </button>
   </div>
 
-  <!-- Artists -->
+  <!-- Loading Indicator -->
   <div
-    *ngIf="activeTab === 'artists'"
-    class="mt-6 mx-auto mb-6 bg-gray-800 p-6 rounded-lg shadow-lg w-[calc(100%-1rem)] sm:w-full max-w-5xl"
+    *ngIf="isLoading"
+    class="mt-6 w-full max-w-3xl mx-auto flex justify-center"
   >
-    <div class="relative mb-6">
-      <h2 class="text-2xl font-bold text-white text-center mb-5">Artists</h2>
-      <ul
-        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-6 justify-center"
-      >
-        <li
-          *ngFor="let artist of filteredResults.artists"
-          class="group flex flex-col cursor-pointer items-center p-4 rounded-md transition-transform duration-300 ease-in-out md:hover:translate-y-1 md:hover:scale-105 md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400"
-          (click)="openModal(artist)"
+    <div
+      class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
+    ></div>
+  </div>
+
+  <!-- Skeleton Loader -->
+  <div
+    *ngIf="isLoading"
+    class="mt-6 mx-auto mb-6 pt-6 rounded-lg shadow-lg sm:w-full max-w-3xl"
+  >
+    <div class="animate-pulse space-y-4">
+      <!-- Skeleton Loader for Songs -->
+      <div class="space-y-4">
+        <div
+          *ngFor="let i of [1, 2, 3, 4, 5]"
+          class="flex items-center p-4 rounded-lg"
         >
-          <img
-            [src]="artist.picture"
-            alt="Artist"
-            class="h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 lg:h-40 lg:w-40 xl:h-44 xl:w-44 rounded-md object-cover shadow-md border-2 border-gray-600"
-            />
-          <p
-            class="mt-2 text-lg text-white text-center max-w-full font-semibold  sm:overflow-hidden sm:text-ellipsis sm:whitespace-nowrap group-md:hover:whitespace-normal group-md:hover:overflow-visible group-md:hover:max-w-none break-words"
+          <div class="h-20 w-20 md:h-32 md:w-32 bg-gray-700 rounded-md"></div>
+          <div class="flex flex-col justify-center flex-grow pl-4 space-y-2">
+            <div class="h-5 bg-gray-700 rounded w-1/2"></div>
+            <div class="h-4 bg-gray-600 rounded w-1/3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Results Found -->
+  <div
+    *ngIf="searchAttempted && !isLoading && !resultsHasValues()"
+    class="mt-12 text-center text-gray-400 text-lg"
+  >
+    <i class="fas fa-search-minus text-4xl mb-2"></i>
+    <p>No results found. Try searching for something else.</p>
+  </div>
+
+  <!-- Toggle Buttons -->
+  <div
+    *ngIf="
+      results &&
+      !isLoading &&
+      ((results.songs?.length ?? 0) > 0 ||
+        (results.albums?.length ?? 0) > 0 ||
+        (results.artists?.length ?? 0) > 0)
+    "
+    class="mt-6 flex !gap-1 sm:!gap-4 justify-center"
+  >
+    <button
+      (click)="setActiveTab('songs')"
+      [class.bg-[#0F5EE4]]="activeTab === 'songs'"
+      class="px-4 py-2 rounded-md md:hover:bg-indigo-500 transition text-xl font-bold"
+    >
+      Songs
+    </button>
+    <button
+      *ngIf="results && (results.albums?.length ?? 0) > 0"
+      (click)="setActiveTab('albums')"
+      [class.bg-[#0F5EE4]]="activeTab === 'albums'"
+      class="px-4 py-2 rounded-md md:hover:bg-indigo-500 transition text-xl font-bold"
+    >
+      Albums
+    </button>
+    <button
+      *ngIf="results && (results.artists?.length ?? 0) > 0"
+      (click)="setActiveTab('artists')"
+      [class.bg-[#0F5EE4]]="activeTab === 'artists'"
+      class="px-4 py-2 rounded-md md:hover:bg-indigo-500 transition text-xl font-bold"
+    >
+      Artists
+    </button>
+  </div>
+
+  <!-- Search Results -->
+  <div
+    *ngIf="resultsHasValues() && !isLoading"
+    class="mt-6 w-full max-w-3xl mx-auto pb-[4rem] sm:pb-1"
+  >
+    <!-- Songs -->
+    <div
+      *ngIf="activeTab === 'songs'"
+      class="mt-6 mx-auto mb-6 p-1 pt-1 sm:p-3 rounded-lg shadow-lg sm:w-full max-w-5xl"
+    >
+      <div class="relative mb-[2.8rem]">
+        <!-- Filter Button Wrapper -->
+        <div class="absolute right-0 top-0 pr-1">
+          <button
+            #filterButton
+            (click)="toggleGenreFilter('songs')"
+            class="p-2 rounded-md transition flex items-center gap-2 md:text-xl"
+            [ngClass]="
+              selectedGenre.songs ? 'bg-blue-600 md:hover:bg-blue-500' : ''
+            "
           >
-            {{ artist.name }}
-          </p>
+            <span class="inline">
+              {{ selectedGenre.songs ? selectedGenre.songs : "Filter" }}
+            </span>
+            <i class="fas fa-filter text-md"></i>
+          </button>
+
+          <!-- Genre Filter Dropdown (Songs) -->
+          <div
+            #dropdownContainer
+            *ngIf="showGenreDropdown.songs"
+            class="absolute right-0 mt-2 w-48 bg-[#161A24]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
+          >
+            <!-- "Clear Filter" Option (Only Shows When a Filter is Applied) -->
+            <button
+              *ngIf="selectedGenre.songs"
+              (click)="clearFilter('songs')"
+              class="flex items-center justify-center w-full text-left text-white py-1 rounded-md transition border border-red-500 text-red-500 md:hover:bg-red-500 md:hover:text-white font-medium mb-2"
+            >
+              <i class="fas fa-times mr-2"></i> Clear
+            </button>
+
+            <!-- Smooth Scroll for Many Items -->
+            <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
+              <button
+                *ngFor="let genre of genres.songs"
+                (click)="filterByGenre('songs', genre)"
+                class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium text-lg"
+                [ngClass]="
+                  selectedGenre.songs === genre
+                    ? 'bg-blue-500 text-white shadow-md md:hover:bg-blue-400'
+                    : 'md:hover:bg-gray-600/80'
+                "
+              >
+                {{ genre }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ul class="mt-2 space-y-4">
+        <li
+          *ngFor="let song of filteredResults.songs"
+          class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
+          (click)="openModal(song)"
+        >
+          <!-- Image -->
+          <img
+            [src]="song.cover"
+            alt="Cover"
+            class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-600 flex-shrink-0"
+          />
+
+          <!-- Text Container -->
+          <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
+            <p
+              class="text-lg md:text-xl font-semibold text-white leading-tight truncate overflow-hidden whitespace-nowrap"
+              title="{{ song.title }}"
+            >
+              {{ song.title }}
+            </p>
+
+            <p
+              class="text-sm md:text-base text-gray-400 mt-1 truncate overflow-hidden whitespace-nowrap"
+              title="{{ song.artist }}"
+            >
+              <span
+                *ngIf="song?.isExplicit"
+                class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+                title="Explicit"
+              >
+                E
+              </span>
+              {{ song.artist }}
+            </p>
+          </div>
         </li>
       </ul>
     </div>
+
+    <!-- Albums -->
+    <div
+      *ngIf="activeTab === 'albums'"
+      class="mt-6 mx-auto mb-6 p-1 rounded-lg shadow-lg sm:w-full max-w-5xl"
+    >
+      <div class="relative mb-[2.8rem]">
+        <!-- Filter Button Wrapper -->
+        <div class="absolute right-0 top-0 pr-1">
+          <button
+            #filterButton
+            (click)="toggleGenreFilter('albums')"
+            class="p-2 rounded-md transition flex items-center gap-2 md:text-xl"
+            [ngClass]="
+              selectedGenre.albums ? 'bg-blue-600 md:hover:bg-blue-500' : ''
+            "
+          >
+            <span class="inline">
+              {{ selectedGenre.albums ? selectedGenre.albums : "Filter" }}
+            </span>
+            <i class="fas fa-filter text-md"></i>
+          </button>
+
+          <!-- Genre Filter Dropdown (Albums) -->
+          <div
+            #dropdownContainer
+            *ngIf="showGenreDropdown.albums"
+            class="absolute right-0 mt-2 w-48 bg-[#161A24]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
+          >
+            <!-- "Clear Filter" Option (Only Shows When a Filter is Applied) -->
+            <button
+              *ngIf="selectedGenre.albums"
+              (click)="clearFilter('albums')"
+              class="flex items-center justify-center w-full text-left text-white py-1 rounded-md transition border border-red-500 text-red-500 md:hover:bg-red-500 md:hover:text-white font-medium mb-2"
+            >
+              <i class="fas fa-times mr-2"></i> Clear
+            </button>
+
+            <!-- Smooth Scroll for Many Items -->
+            <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
+              <button
+                *ngFor="let genre of genres.albums"
+                (click)="filterByGenre('albums', genre)"
+                class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium"
+                [ngClass]="
+                  selectedGenre.albums === genre
+                    ? 'bg-blue-500 text-white shadow-md md:hover:bg-blue-400'
+                    : 'md:hover:bg-gray-600/80'
+                "
+              >
+                {{ genre }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ul class="mt-2 space-y-4">
+        <li
+          *ngFor="let album of filteredResults.albums"
+          class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
+          (click)="openModal(album)"
+        >
+          <!-- Image -->
+          <img
+            [src]="album.cover"
+            alt="Album Cover"
+            class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-600 flex-shrink-0"
+          />
+
+          <!-- Text Container -->
+          <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
+            <p
+              class="text-lg md:text-xl font-semibold text-white leading-tight truncate"
+              title="{{ album.title }}"
+            >
+              {{ album.title }}
+            </p>
+            <p
+              class="text-sm md:text-base text-gray-400 mt-1 truncate"
+              title="{{ album.artist }}"
+            >
+              {{ album.artist }}
+            </p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Artists -->
+    <div
+      *ngIf="activeTab === 'artists'"
+      class="mt-6 mx-auto mb-6 p-1 rounded-lg shadow-lg sm:w-full max-w-5xl"
+    >
+      <div class="relative mb-[2.8rem]">
+        <ul class="mt-2 space-y-4">
+          <li
+            *ngFor="let artist of filteredResults.artists"
+            class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
+            (click)="openModal(artist)"
+          >
+            <!-- Image -->
+            <img
+              [src]="artist.picture"
+              alt="Artist"
+              class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-600 flex-shrink-0"
+            />
+
+            <!-- Text Container -->
+            <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
+              <p
+                class="text-lg md:text-xl font-semibold text-white leading-tight truncate overflow-hidden whitespace-nowrap"
+                title="{{ artist.name }}"
+              >
+                {{ artist.name }}
+              </p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Popular Section -->
+<div [hidden]="activeDiscoverTab !== 'popular'">
+  <div class="bg-[#161A24] text-white min-h-screen pt-[1rem] pb-[6rem] px-1">
+    <div class="md:max-w-[1000px] md:mx-auto">
+    <!-- Loading Indicator -->
+    <div
+      *ngIf="isDiscoverContentLoading"
+      class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
+    >
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
+      ></div>
+      <p class="mt-4 text-gray-400 text-lg">Loading Charts...</p>
+    </div>
+
+    <!-- Loaded Content -->
+    <div *ngIf="!isDiscoverContentLoading">
+      <!-- Type Selector -->
+      <div class="flex justify-center gap-4">
+        <button
+          *ngFor="let type of popularTypes"
+          (click)="setPopularType(type)"
+          class="px-4 py-2 rounded-md text-lg font-semibold"
+          [ngClass]="{
+            'bg-[#0F5EE4] text-white': activePopularType === type,
+            'text-gray-400 hover:text-white': activePopularType !== type
+          }"
+        >
+          {{ type }}s
+        </button>
+      </div>
+
+      <!-- Ranked List -->
+      <div class="pl-[.2rem] pr-2 py-4">
+        <!-- Headers -->
+        <div
+          class="flex items-center mb-3 border-t-[.1rem] border-b-[.1rem] border-gray-600 py-2"
+        >
+          <!-- Rank Header -->
+          <div
+            class="text-lg md:text-xl font-semibold text-gray-400 w-6 mr-2 text-center"
+          >
+            #
+          </div>
+
+          <!-- Album Cover Placeholder -->
+          <div class="w-16 sm:w-20"></div>
+
+          <!-- Info Header -->
+          <div class="ml-4 flex-1 overflow-hidden">
+            <p class="text-lg md:text-xl font-semibold text-gray-400">
+              {{ activePopularType === "Artist" ? "Name" : "Title" }}
+            </p>
+          </div>
+
+          <!-- Rating Header -->
+          <div class="text-lg md:text-xl font-semibold text-gray-400 pl-2">
+            <i class="fas fa-star text-yellow-500"></i> / 10
+          </div>
+        </div>
+
+        <!-- Records -->
+        <div
+          *ngFor="let record of popularRecords; let i = index"
+          class="flex items-center mb-3 last:mb-0"
+          (click)="openModal(record)"
+        >
+          <!-- Rank -->
+          <div class="text-2xl text-[#0F5EE4] w-6 mr-2 text-center">
+            {{ i + 1 }}.
+          </div>
+
+          <!-- Album Cover -->
+          <img
+            [src]="record.cover || record.picture || 'assets/fallback.jpg'"
+            alt="Media"
+            class="w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] object-cover rounded border border-gray-600"
+          />
+
+          <!-- Info -->
+          <div class="ml-4 flex-1 overflow-hidden">
+            <p
+              class="text-lg md:text-2xl font-semibold truncate whitespace-nowrap"
+            >
+              {{ record.title || record.name }}
+            </p>
+            <p
+              class="text-sm text-gray-400 capitalize truncate whitespace-nowrap"
+            >
+              <span
+                *ngIf="record?.isExplicit"
+                class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+                title="Explicit"
+              >
+                E
+              </span>
+             <span class="md:text-lg">{{ record.artist }}</span>
+            </p>
+          </div>
+
+          <!-- Rating -->
+          <div class="text-2xl font-semibold text-gray-white pl-2">
+            {{ record.avgRating }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- Activity Section -->
+<div [hidden]="activeDiscoverTab !== 'recentActivity'">
+  <div class="bg-[#161A24] text-white min-h-screen pt-4 pb-24 px-2">
+    <div class="md:max-w-[1000px] md:mx-auto">
+
+    <!-- Loading Spinner -->
+    <div
+      *ngIf="isActivityLoading"
+      class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
+    >
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
+      ></div>
+      <p class="mt-4 text-gray-400 text-lg">Loading Feed...</p>
+    </div>
+
+    <!-- Activity Feed Loaded -->
+    <div *ngIf="!isActivityLoading">
+      <div class="space-y-4 md:space-y-8">
+        <div
+          *ngFor="let activity of activityFeed; last as isLast"
+          class="px-1 pb-4 md:pb-[5rem]"
+          [ngClass]="{ 'border-b border-gray-600': !isLast }"
+        >
+          <!-- Review + Album layout -->
+          <div class="block clearfix">
+            <!-- Float Right: Album Art + Rating -->
+            <div class="float-right flex flex-col items-end ml-4 w-[6rem] md:w-[12rem] pb-1">
+              <img
+                [src]="
+                  activity.albumSongOrArtist.cover ||
+                  activity.albumSongOrArtist.picture
+                "
+                (click)="openModal(activity.albumSongOrArtist)"
+                alt="Album Cover"
+                class="w-full h-[6rem] md:h-[12rem] rounded object-cover border border-gray-600"
+              />
+            
+              <!-- Star + Rating on one line, no wrap -->
+              <span class="text-[1.4rem] md:text-3xl font-bold text-[#0F5EE4] mt-2 inline-flex items-center whitespace-nowrap">
+                <i class="fas fa-star text-yellow-500 text-xl md:text-2xl mr-1"></i>
+                {{ activity.rating }}
+                <span class="text-gray-400 text-[1rem] md:text-xl ml-1">/ 10</span>
+              </span>
+            </div>            
+
+            <!-- Review block wraps beside or under album -->
+            <div>
+              <p class="text-[#0F5EE4] text-lg md:text-2xl font-semibold line-clamp-2">
+                {{
+                  activity.albumSongOrArtist.title ||
+                    activity.albumSongOrArtist.name
+                }}
+              </p>
+              <p
+                class="text-sm text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis"
+              >
+                <span
+                  *ngIf="activity.albumSongOrArtist?.isExplicit"
+                  class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded md:mr-2 leading-none mr-1 align-middle"
+                  title="Explicit"
+                >
+                  E
+                </span>
+               <span class="md:text-xl">{{ activity.albumSongOrArtist.artist }}</span> 
+              </p>
+              <p class="text-white text-md md:text-xl mt-2">
+                {{ activity.reviewText }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Bottom: Profile Info -->
+          <div class="flex items-center gap-2 mt-[3rem]" (click)="goToUserProfile(activity.user._id)">
+            <img
+              [src]="activity.user.profilePicture || 'assets/user.png'"
+              alt="User"
+              class="w-[4rem] h-[4rem] rounded-full object-cover"
+            />
+            <div class="text-md md:text-xl text-gray-400">
+              <p class="font-semibold text-white leading-tight">
+                {{ activity.user.username }}
+              </p>
+              <p class="text-sm md:text-lg mt-1">
+                {{ activity.createdAt | timeAgo }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   </div>
 </div>

@@ -15,4 +15,12 @@ router.patch("/:id", authenticateUser, reviewController.editReview);
 // Protected - Delete a review (Only the review owner)
 router.delete("/:id", authenticateUser, reviewController.deleteReview);
 
+// Get all reviews from user's friends
+router.get("/activityFeed", authenticateUser, reviewController.getActivityFeed);
+
+// Get top 10 songs, albums, artists in DB
+router.get("/top-albums", authenticateUser, reviewController.getTopAlbums);
+router.get("/top-songs", authenticateUser, reviewController.getTopSongs);
+router.get("/top-artists", authenticateUser, reviewController.getTopArtists);
+
 module.exports = router;

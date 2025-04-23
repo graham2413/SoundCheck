@@ -1,5 +1,12 @@
 {
     "postman.settings.dotenv-detection-notification-visibility": false,
-    "search.useIgnoreFiles": false,
-    "search.useGlobalIgnoreFiles": false
-}
+    "search.useIgnoreFiles": true,
+    "search.useGlobalIgnoreFiles": true,
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.angular": true,
+      "**/build": true
+    }
+  }
+  
