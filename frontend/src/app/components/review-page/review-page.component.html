@@ -734,7 +734,7 @@
 
                     <!-- Username and Review Info -->
                     <div class="ml-3 flex-1">
-                      <p class="text-white text-lg font-medium pr-[.8rem]">
+                      <p class="text-white text-lg font-semibold pr-[.8rem]">
                         {{
                           existingUserReview &&
                           review._id === existingUserReview._id
@@ -761,7 +761,7 @@
 
                   <!-- Review Text -->
                     <div class="mt-3 px-1" [ngClass]="{ 'pb-[4rem]': existingUserReview && review._id === existingUserReview._id }">
-                    <p class="text-gray-400 text-lg break-words">
+                    <p class="text-white text-lg break-words">
                       {{ review.reviewText }}
                     </p>
                     </div>
