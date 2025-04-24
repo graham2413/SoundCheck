@@ -445,110 +445,110 @@
 <div [hidden]="activeDiscoverTab !== 'popular'">
   <div class="bg-[#161A24] text-white min-h-screen pt-[1rem] pb-[6rem] px-1">
     <div class="md:max-w-[1000px] md:mx-auto">
-    <!-- Loading Indicator -->
-    <div
-      *ngIf="isDiscoverContentLoading"
-      class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
-    >
+      <!-- Loading Indicator -->
       <div
-        class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
-      ></div>
-      <p class="mt-4 text-gray-400 text-lg">Loading Charts...</p>
-    </div>
-
-    <!-- Loaded Content -->
-    <div *ngIf="!isDiscoverContentLoading">
-      <!-- Type Selector -->
-      <div class="flex justify-center gap-4">
-        <button
-          *ngFor="let type of popularTypes"
-          (click)="setPopularType(type)"
-          class="px-4 py-2 rounded-md text-lg font-semibold"
-          [ngClass]="{
-            'bg-[#0F5EE4] text-white': activePopularType === type,
-            'text-gray-400 hover:text-white': activePopularType !== type
-          }"
-        >
-          {{ type }}s
-        </button>
+        *ngIf="isDiscoverContentLoading"
+        class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
+        ></div>
+        <p class="mt-4 text-gray-400 text-lg">Loading Top Charts...</p>
       </div>
 
-      <!-- Ranked List -->
-      <div class="pl-[.2rem] pr-2 py-4">
-        <!-- Headers -->
-        <div
-          class="flex items-center mb-3 border-t-[.1rem] border-b-[.1rem] border-gray-600 py-2"
-        >
-          <!-- Rank Header -->
-          <div
-            class="text-lg md:text-xl font-semibold text-gray-400 w-6 mr-2 text-center"
+      <!-- Loaded Content -->
+      <div *ngIf="!isDiscoverContentLoading">
+        <!-- Type Selector -->
+        <div class="flex justify-center gap-4">
+          <button
+            *ngFor="let type of popularTypes"
+            (click)="setPopularType(type)"
+            class="px-4 py-2 rounded-md text-lg font-semibold"
+            [ngClass]="{
+              'bg-[#0F5EE4] text-white': activePopularType === type,
+              'text-gray-400 hover:text-white': activePopularType !== type
+            }"
           >
-            #
-          </div>
-
-          <!-- Album Cover Placeholder -->
-          <div class="w-16 sm:w-20"></div>
-
-          <!-- Info Header -->
-          <div class="ml-4 flex-1 overflow-hidden">
-            <p class="text-lg md:text-xl font-semibold text-gray-400">
-              {{ activePopularType === "Artist" ? "Name" : "Title" }}
-            </p>
-          </div>
-
-          <!-- Rating Header -->
-          <div class="text-lg md:text-xl font-semibold text-gray-400 pl-2">
-            <i class="fas fa-star text-yellow-500"></i> / 10
-          </div>
+            {{ type }}s
+          </button>
         </div>
 
-        <!-- Records -->
-        <div
-          *ngFor="let record of popularRecords; let i = index"
-          class="flex items-center mb-3 last:mb-0"
-          (click)="openModal(record)"
-        >
-          <!-- Rank -->
-          <div class="text-2xl text-[#0F5EE4] w-6 mr-2 text-center">
-            {{ i + 1 }}.
+        <!-- Ranked List -->
+        <div class="pl-[.2rem] pr-2 py-4">
+          <!-- Headers -->
+          <div
+            class="flex items-center mb-3 border-t-[.1rem] border-b-[.1rem] border-gray-600 py-2"
+          >
+            <!-- Rank Header -->
+            <div
+              class="text-lg md:text-xl font-semibold text-gray-400 w-6 mr-2 text-center"
+            >
+              #
+            </div>
+
+            <!-- Album Cover Placeholder -->
+            <div class="w-16 sm:w-20"></div>
+
+            <!-- Info Header -->
+            <div class="ml-4 flex-1 overflow-hidden">
+              <p class="text-lg md:text-xl font-semibold text-gray-400">
+                {{ activePopularType === "Artist" ? "Name" : "Title" }}
+              </p>
+            </div>
+
+            <!-- Rating Header -->
+            <div class="text-lg md:text-xl font-semibold text-gray-400 pl-2">
+              <i class="fas fa-star text-yellow-500"></i> / 10
+            </div>
           </div>
 
-          <!-- Album Cover -->
-          <img
-            [src]="record.cover || record.picture || 'assets/fallback.jpg'"
-            alt="Media"
-            class="w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] object-cover rounded border border-gray-600"
-          />
+          <!-- Records -->
+          <div
+            *ngFor="let record of popularRecords; let i = index"
+            class="flex items-center mb-3 last:mb-0"
+            (click)="openModal(record, popularRecords, i)"
+          >
+            <!-- Rank -->
+            <div class="text-2xl text-[#0F5EE4] w-6 mr-2 text-center">
+              {{ i + 1 }}.
+            </div>
 
-          <!-- Info -->
-          <div class="ml-4 flex-1 overflow-hidden">
-            <p
-              class="text-lg md:text-2xl font-semibold truncate whitespace-nowrap"
-            >
-              {{ record.title || record.name }}
-            </p>
-            <p
-              class="text-sm text-gray-400 capitalize truncate whitespace-nowrap"
-            >
-              <span
-                *ngIf="record?.isExplicit"
-                class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
-                title="Explicit"
+            <!-- Album Cover -->
+            <img
+              [src]="record.cover || record.picture || 'assets/fallback.jpg'"
+              alt="Media"
+              class="w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] object-cover rounded border border-gray-600"
+            />
+
+            <!-- Info -->
+            <div class="ml-4 flex-1 overflow-hidden">
+              <p
+                class="text-lg md:text-2xl font-semibold truncate whitespace-nowrap"
               >
-                E
-              </span>
-             <span class="md:text-lg">{{ record.artist }}</span>
-            </p>
-          </div>
+                {{ record.title || record.name }}
+              </p>
+              <p
+                class="text-sm text-gray-400 capitalize truncate whitespace-nowrap"
+              >
+                <span
+                  *ngIf="record?.isExplicit"
+                  class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+                  title="Explicit"
+                >
+                  E
+                </span>
+                <span class="md:text-lg">{{ record.artist }}</span>
+              </p>
+            </div>
 
-          <!-- Rating -->
-          <div class="text-2xl font-semibold text-gray-white pl-2">
-            {{ record.avgRating }}
+            <!-- Rating -->
+            <div class="text-2xl font-semibold text-gray-white pl-2">
+              {{ record.avgRating }}
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
   </div>
 </div>
 
@@ -556,93 +556,119 @@
 <div [hidden]="activeDiscoverTab !== 'recentActivity'">
   <div class="bg-[#161A24] text-white min-h-screen pt-4 pb-24 px-2">
     <div class="md:max-w-[1000px] md:mx-auto">
-
-    <!-- Loading Spinner -->
-    <div
-      *ngIf="isActivityLoading"
-      class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
-    >
+      <!-- Loading Spinner -->
       <div
-        class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
-      ></div>
-      <p class="mt-4 text-gray-400 text-lg">Loading Feed...</p>
-    </div>
-
-    <!-- Activity Feed Loaded -->
-    <div *ngIf="!isActivityLoading">
-      <div class="space-y-4 md:space-y-8">
+        *ngIf="isActivityLoading"
+        class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
+      >
         <div
-          *ngFor="let activity of activityFeed; last as isLast"
-          class="px-1 pb-4 md:pb-[5rem]"
-          [ngClass]="{ 'border-b border-gray-600': !isLast }"
-        >
-          <!-- Review + Album layout -->
-          <div class="block clearfix">
-            <!-- Float Right: Album Art + Rating -->
-            <div class="float-right flex flex-col items-end ml-4 w-[6rem] md:w-[12rem] pb-1">
-              <img
-                [src]="
-                  activity.albumSongOrArtist.cover ||
-                  activity.albumSongOrArtist.picture
-                "
-                (click)="openModal(activity.albumSongOrArtist)"
-                alt="Album Cover"
-                class="w-full h-[6rem] md:h-[12rem] rounded object-cover border border-gray-600"
-              />
-            
-              <!-- Star + Rating on one line, no wrap -->
-              <span class="text-[1.4rem] md:text-3xl font-bold text-[#0F5EE4] mt-2 inline-flex items-center whitespace-nowrap">
-                <i class="fas fa-star text-yellow-500 text-xl md:text-2xl mr-1"></i>
-                {{ activity.rating }}
-                <span class="text-gray-400 text-[1rem] md:text-xl ml-1">/ 10</span>
-              </span>
-            </div>            
+          class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
+        ></div>
+        <p class="mt-4 text-gray-400 text-lg">Loading Feed...</p>
+      </div>
 
-            <!-- Review block wraps beside or under album -->
-            <div>
-              <p class="text-[#0F5EE4] text-lg md:text-2xl font-semibold line-clamp-2">
-                {{
+      <!-- Activity Feed Loaded -->
+      <div *ngIf="!isActivityLoading">
+        <div class="space-y-4 md:space-y-8">
+          <div
+            *ngFor="let activity of activityFeed; let i = index; last as isLast"
+            class="px-1 pb-4"
+            [ngClass]="{ 'border-b border-gray-600': !isLast, 'mt-1': i === 0 }"
+          >
+            <!-- Review + Album layout -->
+            <div class="block md:pb-[3rem]">
+              <!-- Float Right: Album Art + Rating -->
+              <div
+                class="float-right flex flex-col items-end ml-4 w-[6rem] md:w-[10rem] pb-1 relative"
+              >
+                <!-- Review Type Icon -->
+                <div
+                  class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2"
+                >
+                  <i
+                    class="fas text-sm md:text-xl"
+                    [ngClass]="{
+                      'fa-music text-blue-400':
+                        activity.albumSongOrArtist.type === 'Song',
+                      'fa-compact-disc text-green-400':
+                        activity.albumSongOrArtist.type === 'Album',
+                      'fa-user text-purple-400':
+                        activity.albumSongOrArtist.type === 'Artist'
+                    }"
+                    title="{{ activity.albumSongOrArtist.type }}"
+                  ></i>
+                </div>
+                <img
+                  [src]="activity.albumSongOrArtist.cover || activity.albumSongOrArtist.picture"
+                  (click)="openModal(activity.albumSongOrArtist, activityRecords, i)"
+                  alt="Album Cover"
+                  class="w-full h-[6rem] md:h-[10rem] rounded object-cover border border-gray-600"
+                />
+
+                <!-- Star + Rating on one line, no wrap -->
+                <span
+                  class="text-[1.4rem] md:text-3xl font-bold text-[#0F5EE4] mt-2 inline-flex items-center whitespace-nowrap "
+                >
+                  <i
+                    class="fas fa-star text-yellow-500 text-xl md:text-2xl mr-1"
+                  ></i>
+                  {{ activity.rating }}
+                  <span class="text-gray-400 text-[1rem] md:text-xl ml-1"
+                    >/ 10</span
+                  >
+                </span>
+              </div>
+
+              <!-- Review block wraps beside or under album -->
+              <div>
+                <p class="text-[#0F5EE4] text-lg md:text-2xl font-semibold line-clamp-2">
+                <span (click)="openModal(activity.albumSongOrArtist, activityRecords, i)">{{
                   activity.albumSongOrArtist.title ||
                     activity.albumSongOrArtist.name
-                }}
-              </p>
-              <p
-                class="text-sm text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis"
-              >
-                <span
-                  *ngIf="activity.albumSongOrArtist?.isExplicit"
-                  class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded md:mr-2 leading-none mr-1 align-middle"
-                  title="Explicit"
+                }}</span>
+                </p>
+                <p
+                  class="text-sm text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis"
                 >
-                  E
-                </span>
-               <span class="md:text-xl">{{ activity.albumSongOrArtist.artist }}</span> 
-              </p>
-              <p class="text-white text-md md:text-xl mt-2">
-                {{ activity.reviewText }}
-              </p>
+                  <span
+                    *ngIf="activity.albumSongOrArtist?.isExplicit"
+                    class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded md:mr-2 leading-none mr-1 align-middle"
+                    title="Explicit"
+                  >
+                    E
+                  </span>
+                  <span class="md:text-xl" (click)="openModal(activity.albumSongOrArtist, activityRecords, i)">{{
+                    activity.albumSongOrArtist.artist
+                  }}</span>
+                </p>
+                <p class="text-white text-md md:text-xl mt-2">
+                  {{ activity.reviewText }}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <!-- Bottom: Profile Info -->
-          <div class="flex items-center gap-2 mt-[3rem]" (click)="goToUserProfile(activity.user._id)">
-            <img
-              [src]="activity.user.profilePicture || 'assets/user.png'"
-              alt="User"
-              class="w-[4rem] h-[4rem] rounded-full object-cover"
-            />
-            <div class="text-md md:text-xl text-gray-400">
-              <p class="font-semibold text-white leading-tight">
-                {{ activity.user.username }}
-              </p>
-              <p class="text-sm md:text-lg mt-1">
-                {{ activity.createdAt | timeAgo }}
-              </p>
+            <!-- Bottom: Profile Info -->
+            <div
+              class="flex items-center gap-2 mt-[3rem]"
+              (click)="goToUserProfile(activity.user._id)"
+            >
+              <img
+                [src]="activity.user.profilePicture || 'assets/user.png'"
+                alt="User"
+                class="w-[4rem] h-[4rem] rounded-full object-cover"
+              />
+              <div class="text-md md:text-xl text-gray-400">
+                <p class="font-semibold text-white leading-tight">
+                  {{ activity.user.username }}
+                </p>
+                <p class="text-sm md:text-lg mt-1">
+                  {{ activity.createdAt | timeAgo }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
   </div>
 </div>

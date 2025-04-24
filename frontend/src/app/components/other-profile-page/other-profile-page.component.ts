@@ -13,6 +13,7 @@ import { Artist } from 'src/app/models/responses/artist-response';
 import { Song } from 'src/app/models/responses/song-response';
 import { DisplayReview, Review } from 'src/app/models/responses/review-responses';
 import { User } from 'src/app/models/responses/user.response';
+import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
 
 @Component({
   selector: 'app-view-profile-page',
@@ -198,6 +199,26 @@ export class ViewProfilePageComponent implements OnInit {
       });
     }
 
+      openModal(friend: any) {
+        const modalOptions: NgbModalOptions = {
+          backdrop: false,
+          centered: true,
+        };
+
+        const modalRef = this.modal.open(ConfirmationModalComponent, modalOptions);
+        modalRef.componentInstance.title = `Unfollow friend`;
+        modalRef.componentInstance.bodyText = `Are you sure you want to unfollow ${friend.username}?`;
+
+        modalRef.componentInstance.confirm.subscribe(() => {
+          this.removeFriend(friend);
+          modalRef.close();
+        });
+
+        modalRef.componentInstance.cancel.subscribe(() => {
+          modalRef.close();
+        });
+      }
+  
     removeFriend(friend: User) {
       this.isLoadingFriendAction = true;
     

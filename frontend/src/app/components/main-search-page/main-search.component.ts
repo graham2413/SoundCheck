@@ -12,6 +12,7 @@ import { SearchResponse } from 'src/app/models/responses/search-response';
 import { ReviewService } from 'src/app/services/review.service';
 import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 import { Router } from '@angular/router';
+import { Review } from 'src/app/models/responses/review-responses';
 
 @Component({
   selector: 'app-main-search',
@@ -306,11 +307,9 @@ export class MainSearchComponent {
   }
 
   setPopularType(type: 'Song' | 'Album' | 'Artist') {
-    this.isDiscoverContentLoading = true;
-    if (type !== this.activePopularType) {
+      this.isDiscoverContentLoading = true;
       this.activePopularType = type;
       this.loadPopularReviews(type);
-    }
   }
 
     loadPopularReviews(type: 'Song' | 'Album' | 'Artist') {
@@ -352,7 +351,7 @@ export class MainSearchComponent {
     this.expandedReviews[reviewId] = !this.expandedReviews[reviewId];
   }
 
-  openModal(record: Album | Artist | Song) {
+  openModal(record: Album | Artist | Song, recordList?: (Album | Artist | Song)[], index?: number) {
     const modalOptions: NgbModalOptions = {
       backdrop: false,
       keyboard: true,
@@ -362,15 +361,56 @@ export class MainSearchComponent {
   
     const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
 
-    if (record.type == 'Song') {
-      const index = this.filteredResults.songs.findIndex(s => s === record);
-      modalRef.componentInstance.songList = this.filteredResults.songs;
-      modalRef.componentInstance.currentIndex = index;
-    }
+        // Use passed list/index if available
+      if (recordList && index !== undefined) {
+        modalRef.componentInstance.recordList = recordList;
+        modalRef.componentInstance.currentIndex = index;
+      } else {
+         // Fallback for main search
+        if (record.type === 'Song') {
+          const idx = this.filteredResults.songs.findIndex(s => s === record);
+          modalRef.componentInstance.recordList = this.filteredResults.songs;
+          modalRef.componentInstance.currentIndex = idx;
+        }
 
+        if (record.type === 'Album') {
+          const idx = this.filteredResults.albums.findIndex(a => a === record);
+          modalRef.componentInstance.recordList = this.filteredResults.albums;
+          modalRef.componentInstance.currentIndex = idx;
+        }
+
+        if (record.type === 'Artist') {
+          const idx = this.filteredResults.artists.findIndex(a => a === record);
+          modalRef.componentInstance.recordList = this.filteredResults.artists;
+          modalRef.componentInstance.currentIndex = idx;
+        }
+      }
+    
     modalRef.componentInstance.record = record;
+
+    // Update activity feed whenver I update a review
+    modalRef.componentInstance.reviewEdited.subscribe((updatedReview: Review) => {
+      const i = this.activityFeed.findIndex(a => a._id === updatedReview._id);
+      if (i !== -1) {
+        const updated = {
+          ...this.activityFeed[i],
+          reviewText: updatedReview.reviewText,
+          rating: updatedReview.rating,
+          createdAt: updatedReview.createdAt,
+        };
+      
+        this.activityFeed.splice(i, 1); // remove old position
+        this.activityFeed.unshift(updated); // insert at top
+      }      
+      if (this.activeDiscoverTab === 'popular') {
+        this.loadPopularReviews(this.activePopularType);
+      }      
+    });
   }
 
+  get activityRecords(): (Album | Artist | Song)[] {
+    return this.activityFeed.map(a => a.albumSongOrArtist);
+  }  
 
   getHighQualityImage(imageUrl: string): string {
     if (!imageUrl) return '';

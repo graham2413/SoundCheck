@@ -50,3 +50,11 @@ textarea:-webkit-autofill {
     transform: rotate(360deg);
   }
 }
+
+
+@media (max-height: 710px) {
+ .logoQuery{
+  width: 10rem;
+  height: 7.5rem
+ }
+}

@@ -12,7 +12,7 @@
       class="larger-desktop-icons flex flex-col items-center justify-center p-8 text-white text-xl transition transform relative"
     >
       <i class="fas fa-users text-3xl"></i>
-      <span class="hidden md:inline mt-1">My Friends</span>
+      <span class="hidden md:inline mt-1">Friends</span>
     </button>
 
     <button
@@ -24,7 +24,7 @@
       class="larger-desktop-icons flex flex-col items-center justify-center p-8 text-white text-xl transition transform"
     >
       <i class="fas fa-user-plus text-3xl"></i>
-      <span class="hidden md:inline mt-1">Add Friends</span>
+      <span class="hidden md:inline mt-1">Search</span>
     </button>
 
     <button
@@ -56,7 +56,7 @@
         <ng-container [ngSwitch]="activeTab">
           <span *ngSwitchCase="'myFriends'" class="tab-title">My Friends</span>
           <span *ngSwitchCase="'friendRequests'" class="tab-title"
-            >Requests</span
+            >Friend Requests</span
           >
           <span *ngSwitchCase="'addFriends'" class="tab-title"
             >Add Friends</span
@@ -108,7 +108,7 @@
         >
           <span
             [ngClass]="{
-              'text-[#4C79F4] font-medium': activeTab === 'myFriends',
+              'text-[#4C79F4] font-extrabold': activeTab === 'myFriends',
               'text-gray-400': activeTab !== 'myFriends'
             }"
             class="text-lg"
@@ -124,7 +124,7 @@
         >
           <span
             [ngClass]="{
-              'text-[#4C79F4] font-medium': activeTab === 'friendRequests',
+              'text-[#4C79F4] font-extrabold': activeTab === 'friendRequests',
               'text-gray-400': activeTab !== 'friendRequests'
             }"
             class="text-lg"
@@ -140,12 +140,12 @@
         >
           <span
             [ngClass]="{
-              'text-[#4C79F4] font-medium': activeTab === 'addFriends',
+              'text-[#4C79F4] font-extrabold': activeTab === 'addFriends',
               'text-gray-400': activeTab !== 'addFriends'
             }"
             class="text-lg"
           >
-            Add Friend
+            Search
           </span>
         </button>
       </div>
@@ -217,33 +217,31 @@
               <img
                 [src]="friend.profilePicture || 'assets/user.png'"
                 alt="Profile"
-                class="w-[4rem] h-[4rem] rounded-full object-cover shadow-md mr-4"
+                class="w-[3.5rem] h-[3.5rem] rounded-full object-cover shadow-md mr-4"
               />
 
               <!-- Username in the middle -->
               <div class="flex-1">
-                <h2 class="text-lg font-semibold text-gray-200">
+                <h2 class="text-base font-semibold text-gray-200">
                   {{ friend.username }}
                 </h2>
               </div>
 
-              <!-- Buttons on the far right, stacked -->
-              <div class="flex flex-col gap-2">
-                <button
-                  (click)="openModal(friend); $event.stopPropagation()"
-                  [disabled]="removingFriendId === friend._id"
-                  class="p-2 px-3 text-sm font-medium rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white sm:hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed ml-1"
-                >
-                  <ng-container
-                    *ngIf="removingFriendId === friend._id; else buttonContent"
-                  >
-                    <i class="fas fa-spinner fa-spin"></i> Removing...
-                  </ng-container>
-                  <ng-template #buttonContent>
-                    <i class="fas fa-user-minus mr-1"></i> Remove
-                  </ng-template>
-                </button>
-              </div>
+            <!-- Buttons on the far right, stacked -->
+            <div class="flex flex-col gap-2">
+              <button
+                (click)="openModal(friend); $event.stopPropagation()"
+                [disabled]="removingFriendId === friend._id"
+                class="p-2 px-3 text-xs font-medium rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed ml-1 transition"
+              >
+                <ng-container *ngIf="removingFriendId === friend._id; else buttonContent">
+                  <i class="fas fa-spinner fa-spin"></i> Removing...
+                </ng-container>
+                <ng-template #buttonContent>
+                  <i class="fas fa-user-check mr-1"></i> Following
+                </ng-template>
+              </button>
+            </div>
             </li>
           </ul>
         </div>
@@ -254,7 +252,7 @@
               userProfile.friendInfo.friends.length === 0)
           "
         >
-          <p class="text-gray-400 text-center text-lg">
+          <p class="text-gray-400 text-center text-lg mt-[5.5rem]">
             You have no friends yet.
           </p>
         </div>
@@ -279,7 +277,7 @@
         <h2
           class="hidden md:block text-3xl font-semibold mb-5 pt-14 items-center text-center"
         >
-          Requests
+          Friend Requests
           <span class="text-gray-400 text-2xl ml-2">
             ({{ userProfile.friendInfo.friendRequestsReceived.length || 0 }})
           </span>
@@ -377,7 +375,7 @@
         <ng-template #noRequests>
           <p
             *ngIf="!retrievingFriendInfo"
-            class="text-gray-400 text-center text-xl bg-[#161A24] pt-[5rem] md:pt-0"
+            class="text-gray-400 text-center text-xl bg-[#161A24] pt-[5rem] md:pt-0 mt-[4rem]"
           >
             No pending friend requests.
           </p>
@@ -445,52 +443,16 @@
               <img
                 [src]="user.profilePicture || 'assets/user.png'"
                 alt="Profile"
-                class="w-[4rem] h-[4rem] rounded-full object-cover shadow-md mr-4"
+                class="w-[3.5rem] h-[3.5rem] rounded-full object-cover shadow-md mr-4"
               />
 
               <!-- Username -->
               <div class="flex-1 min-w-0">
                 <h2
-                  class="text-lg font-semibold text-gray-200 mb-3 break-words whitespace-normal"
+                  class="text-base font-semibold text-gray-200 mb-3 break-words whitespace-normal"
                 >
                   {{ user.username }}
                 </h2>
-              </div>
-
-              <!-- Button -->
-              <div class="flex flex-col gap-2 items-end">
-                <!-- Add Friend -->
-                <button
-                  (click)="sendFriendRequest(user); $event.stopPropagation()"
-                  [disabled]="
-                    user.isFriend ||
-                    user.hasPendingRequestSent ||
-                    user.hasPendingRequestReceived ||
-                    addFriendLoadingMap[user._id]
-                  "
-                  class="p-2 px-5 ml-2 text-sm font-medium rounded-full bg-gradient-to-r from-green-500 to-green-700 text-white sm:hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ng-container
-                    *ngIf="
-                      friendActionLoading || addFriendLoadingMap[user._id];
-                      else buttonContent
-                    "
-                  >
-                    <i class="fas fa-spinner fa-spin"></i> Loading...
-                  </ng-container>
-                  <ng-template #buttonContent>
-                    <i class="fas fa-user-plus mr-1"></i>
-                    {{
-                      user.isFriend
-                        ? "Added"
-                        : user.hasPendingRequestSent
-                        ? "Pending"
-                        : user.hasPendingRequestReceived
-                        ? "Check Requests!"
-                        : "Add"
-                    }}
-                  </ng-template>
-                </button>
               </div>
             </li>
           </ul>
@@ -503,7 +465,7 @@
             !addFriendsSearchLoading &&
             usersToAdd.length === 0
           "
-          class="text-gray-400 text-center text-lg"
+          class="text-gray-400 text-center text-lg mt-[5.5rem]"
         >
           No users found.
         </p>

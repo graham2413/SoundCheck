@@ -242,3 +242,18 @@ input[type='number'] {
     font-size: 1.45rem;
   }
 }
+
+
+@media screen and (min-width: 768px) and (max-width: 800px) {
+  .textFixUsername {
+    font-size: 1rem;
+  }
+  .textFixCreatedAtDate {
+    font-size: .8rem;
+  }
+  .rating-badge {
+    font-size: 1rem;
+    padding-left: 0rem;
+    padding-right: 0rem;
+  }
+}

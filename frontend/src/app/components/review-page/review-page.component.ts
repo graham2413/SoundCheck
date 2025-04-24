@@ -2,14 +2,16 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   ElementRef,
+  EventEmitter,
   Input,
   OnInit,
+  Output,
   QueryList,
   ViewChild,
   ViewChildren,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal, NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import {
   Review,
@@ -30,6 +32,7 @@ import { Album } from 'src/app/models/responses/album-response';
 import { Artist } from 'src/app/models/responses/artist-response';
 import { Song } from 'src/app/models/responses/song-response';
 import { CreateReviewCommandModel } from 'src/app/models/command-models/create-review-commandmodel';
+import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
 
 @Component({
   selector: 'app-review-page',
@@ -195,7 +198,6 @@ export class ReviewPageComponent implements OnInit {
   pageSize = 25;
   filterMenuOpen = false;
   activeFilter: string | null = null;
-  showDeleteConfirmation = false;
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
@@ -208,18 +210,22 @@ export class ReviewPageComponent implements OnInit {
   @ViewChild('reviewsSectionDesktop') reviewsSectionDesktop!: ElementRef;
   @ViewChild('iPodFront') iPodFront!: ElementRef;
 
-  @Input() record!: Album | Artist | Song;
-  @Input() songList: Song[] = [];
-  @Input() currentIndex: number = 0;
-  @Input() showForwardAndBackwardButtons: boolean = true;
   @ViewChildren(AudioPlayerComponent)
   audioPlayers!: QueryList<AudioPlayerComponent>;
+
+  @Input() record!: Album | Artist | Song;
+  @Input() recordList: (Album | Artist | Song)[] = [];
+  @Input() currentIndex: number = 0;
+  @Input() showForwardAndBackwardButtons: boolean = true;
+  @Output() reviewEdited = new EventEmitter<Review>();
+  @Output() reviewCreated = new EventEmitter<Review>();
 
   constructor(
     private activeModal: NgbActiveModal,
     private reviewService: ReviewService,
     private toastr: ToastrService,
-    private searchService: SearchService
+    private searchService: SearchService,
+    private modal: NgbModal
   ) {}
 
   ngOnInit(): void {
@@ -539,6 +545,11 @@ export class ReviewPageComponent implements OnInit {
           album.releaseDate = 'Unknown';
           album.tracklist = [];
         },
+        complete: () => {
+          this.audioPlayers.forEach((player: AudioPlayerComponent) =>
+            player.stopLoading()
+          );
+        }
       });
     }
 
@@ -552,14 +563,19 @@ export class ReviewPageComponent implements OnInit {
           const artist = this.record as Artist;
           artist.tracklist = [];
         },
+        complete: () => {
+          this.audioPlayers.forEach((player: AudioPlayerComponent) =>
+            player.stopLoading()
+          );
+        }
       });
     }
   }
 
   nextSong() {
-    if (this.currentIndex < this.songList.length - 1) {
+    if (this.currentIndex < this.recordList.length - 1) {
       this.currentIndex++;
-      this.record = this.songList[this.currentIndex];
+      this.record = this.recordList[this.currentIndex];
 
       this.isReviewsLoaded = false;
       this.isRatingLoaded = false;
@@ -574,7 +590,7 @@ export class ReviewPageComponent implements OnInit {
   prevSong() {
     if (this.currentIndex > 0) {
       this.currentIndex--;
-      this.record = this.songList[this.currentIndex];
+      this.record = this.recordList[this.currentIndex];
 
       this.isReviewsLoaded = false;
       this.isRatingLoaded = false;
@@ -637,14 +653,18 @@ export class ReviewPageComponent implements OnInit {
       reviewText: this.newReview,
     };
 
-    // Call the API with the command object
     this.reviewService.createReview(reviewCommand).subscribe({
       next: (data: NewReviewResponse) => {
         this.existingUserReview = data.review;
+        this.reviewCreated.emit(data.review);
+
         this.reviews = [...this.reviews, data.review];
+
         this.isAddingReview = false;
         this.isCreateLoading = false;
+        
         this.ratingBarFill = this.getAverageRating() * 10;
+        
         setTimeout(() => {
           this.circleDashOffset =
             113.1 - (this.getAverageRating() / 10) * 113.1;
@@ -681,6 +701,8 @@ export class ReviewPageComponent implements OnInit {
           next: (data: NewReviewResponse) => {
             this.existingUserReview = data.review;
 
+            this.reviewEdited.emit(data.review);
+
             this.reviews = this.reviews.map((review) =>
               review._id === data.review._id ? data.review : review
             );
@@ -710,7 +732,6 @@ export class ReviewPageComponent implements OnInit {
           this.reviews = this.reviews.filter((r) => r._id !== review._id);
           this.existingUserReview = null;
           this.isDeleteLoading = false;
-          this.showDeleteConfirmation = false;
           this.ratingBarFill = this.getAverageRating() * 10;
           setTimeout(() => {
             this.circleDashOffset =
@@ -725,6 +746,26 @@ export class ReviewPageComponent implements OnInit {
       });
     }
   }
+
+  showdeleteConfirmation(review: Review) {
+        const modalOptions: NgbModalOptions = {
+          backdrop: false,
+          centered: true,
+        };
+    
+        const modalRef = this.modal.open(ConfirmationModalComponent, modalOptions);
+        modalRef.componentInstance.title = `Remove review`;
+        modalRef.componentInstance.bodyText = `Are you sure you want to delete this review?`;
+    
+        modalRef.componentInstance.confirm.subscribe(() => {
+          this.deleteReview(review);
+          modalRef.close();
+        });
+    
+        modalRef.componentInstance.cancel.subscribe(() => {
+          modalRef.close();
+        });
+      }
 
   updatePlayStatus(status: boolean) {
     this.isPlaying = status;

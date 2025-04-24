@@ -390,6 +390,8 @@ export class FriendsComponent implements OnInit {
     };
 
     const modalRef = this.modal.open(ConfirmationModalComponent, modalOptions);
+    modalRef.componentInstance.title = `Unfollow friend`;
+    modalRef.componentInstance.bodyText = `Are you sure you want to unfollow ${friend.username}?`;
 
     modalRef.componentInstance.confirm.subscribe(() => {
       this.removeFriend(friend);

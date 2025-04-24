@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, Input } from '@angular/core';
 
 @Component({
   selector: 'app-confirmation-modal',
@@ -10,6 +10,9 @@ export class ConfirmationModalComponent {
   @Output() confirm = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
 
+  @Input() title: string = '';
+  @Input() bodyText: string = '';
+  
   onConfirm() {
     this.confirm.emit();
   }

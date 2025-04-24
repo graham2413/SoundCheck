@@ -265,6 +265,16 @@
         <!-- Info and Audio Player Section -->
         <div class="flex flex-col items-center justify-center flex-1 pb-4">
           <div class="text-center text-3xl mb-4 text-gray-200 font-semibold">
+            <ng-container *ngIf="record.type === 'Artist'">
+              <span class="text-gray-400 text-xl block uppercase mb-2">
+              Artist
+              </span>
+            </ng-container>
+            <ng-container *ngIf="record.type === 'Album'">
+              <span class="text-gray-400 text-xl block uppercase mb-2">
+              Album
+              </span>
+            </ng-container>
             <div
               class="title-wrapper"
               [class.masked]="isTextOverflowing"
@@ -308,7 +318,7 @@
           >
             <app-audio-player
               class="pt-1"
-              *ngIf="record.type == 'Song'"
+              *ngIf="record"
               [record]="record"
               [hidden]="showSecondIpod"
               [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
@@ -316,7 +326,7 @@
               (next)="nextSong()"
               (previous)="prevSong()"
               [currentIndex]="currentIndex"
-              [songList]="songList"
+              [recordList]="recordList"
             ></app-audio-player>
           </div>
         </div>
@@ -649,7 +659,7 @@
                         <button
                           [disabled]="isEditLoading"
                           (click)="submitEditReview()"
-                          class="bg-[#5B3FCF] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
+                          class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
                         >
                           <ng-container *ngIf="!isEditLoading">
                             <i class="fas fa-save mr-1"></i> Save
@@ -687,39 +697,11 @@
                       <i class="fas fa-edit text-2xl"></i>
                     </button>
                     <button
-                      (click)="showDeleteConfirmation = true"
+                      (click)="showdeleteConfirmation(review)"
                       class="absolute bottom-3.5 left-[1rem] text-gray-400 transition"
                     >
                       <i class="fas fa-trash text-[1.3rem]"></i>
                     </button>
-
-                    <!-- Delete Confirmation Overlay -->
-                    <div
-                      *ngIf="showDeleteConfirmation"
-                      class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
-                    >
-                      <div
-                        class="bg-[#262729] p-6 rounded-lg shadow-lg text-center"
-                      >
-                        <p class="text-white text-lg mb-4">
-                          Are you sure you want to delete this review?
-                        </p>
-                        <div class="flex justify-center gap-4">
-                          <button
-                            (click)="deleteReview(review)"
-                            class="bg-red-500 text-white px-4 py-2 rounded-md"
-                          >
-                            Delete
-                          </button>
-                          <button
-                            (click)="showDeleteConfirmation = false"
-                            class="bg-gray-500 text-white px-4 py-2 rounded-md"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    </div>
                   </ng-container>
 
                     <div class="flex items-start mt-[1rem]">
@@ -749,13 +731,11 @@
 
                     <!-- Rating Badge -->
                     <p
-                      [ngStyle]="{
-                        background: getRatingBackground(review.rating)
-                      }"
+
                       class="rating-badge text-white text-lg rounded-md px-3 py-1.5 text-center"
                       style="width: 6.95rem"
                     >
-                      <i class="fas fa-star"></i> {{ review.rating }} / 10
+                      <i class="fas fa-star text-yellow-400"></i> {{ review.rating }} / 10
                     </p>
                   </div>
 
@@ -857,6 +837,7 @@
 
 <!-- DESKTOP/TABLET MODAL -->
 <div
+@slideUp
   *ngIf="isModalOpen"
   class="hidden md:flex min-h-[90vh] fixed inset-0 items-center justify-center bg-black bg-opacity-50 overflow-y-auto custom-scrollbar z-50"
 >
@@ -952,6 +933,7 @@
               [attr.style]="
                 getAverageRating() === 0 ? 'stroke-opacity: 0;' : ''
               "
+              stroke-linecap="butt"
             />
           </svg>
 
@@ -1060,6 +1042,11 @@
                 <!-- Info and Audio Player -->
                 <div class="flex flex-col items-center justify-center flex-1 pb-4 pt-2 w-full">
                   <div class="text-center text-2xl mb-4 text-gray-200 font-semibold w-full">
+                    <ng-container *ngIf="record.type === 'Artist'">
+                      <span class="text-gray-400 text-xl block uppercase mt-2">
+                      Artist
+                      </span>
+                    </ng-container>
                     <div
                       class="title-wrapper"
                       [class.masked]="isTextOverflowing"
@@ -1072,7 +1059,7 @@
                       >
                         <span
                           *ngIf="record.type !== 'Artist'"
-                          class="inline-block align-middle"
+                          class="inline-block align-middle mt-3"
                         >
                           {{ record.title }}
                         </span>
@@ -1081,7 +1068,6 @@
                         </span>
                       </div>
                     </div>
-        
                     <p
                       class="text-gray-400 flex items-center justify-center mt-2"
                     >
@@ -1103,7 +1089,7 @@
                   >
                     <app-audio-player
                       class="pt-1"
-                      *ngIf="record.type == 'Song'"
+                      *ngIf="record"
                       [record]="record"
                       [hidden]="showSecondIpod"
                       [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
@@ -1111,7 +1097,7 @@
                       (next)="nextSong()"
                       (previous)="prevSong()"
                       [currentIndex]="currentIndex"
-                      [songList]="songList"
+                      [recordList]="recordList"
                     ></app-audio-player>
                   </div>
                 </div>
@@ -1223,7 +1209,7 @@
                     </p>
                   </div>
 
-                  <ul class="space-y-3">
+                  <ul *ngIf="isTracklistArray" class="space-y-3">
                     <li
                       *ngFor="let track of record.tracklist; let i = index"
                       class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md w-full"
@@ -1243,6 +1229,9 @@
                       </span>
                     </li>
                   </ul>
+                  <p *ngIf="!isTracklistArray" class="text-gray-400 text-center">
+                    No tracklist available.
+                  </p>
                 </div>
               </div>
             </div>
@@ -1619,7 +1608,7 @@
                                 <button
                                   [disabled]="isEditLoading"
                                   (click)="submitEditReview()"
-                                  class="bg-[#5B3FCF] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
+                                  class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
                                 >
                                   <ng-container *ngIf="!isEditLoading">
                                     <i class="fas fa-save mr-1"></i> Save
@@ -1658,39 +1647,11 @@
                               <i class="fas fa-edit text-2xl"></i>
                             </button>
                             <button
-                              (click)="showDeleteConfirmation = true"
+                              (click)="showdeleteConfirmation(review)"
                               class="absolute bottom-3.5 left-[1rem] text-gray-400 transition"
                             >
                               <i class="fas fa-trash text-[1.3rem]"></i>
                             </button>
-
-                            <!-- Delete Confirmation Overlay -->
-                            <div
-                              *ngIf="showDeleteConfirmation"
-                              class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
-                            >
-                              <div
-                                class="bg-[#262729] p-8 rounded-lg shadow-lg text-center"
-                              >
-                                <p class="text-white text-2xl mb-4">
-                                  Are you sure you want to delete this review?
-                                </p>
-                                <div class="flex justify-center gap-4">
-                                  <button
-                                    (click)="deleteReview(review)"
-                                    class="bg-red-500 text-white px-4 py-2 rounded-md"
-                                  >
-                                    Delete
-                                  </button>
-                                  <button
-                                    (click)="showDeleteConfirmation = false"
-                                    class="bg-gray-500 text-white px-4 py-2 rounded-md"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
                           </ng-container>
 
                           <div
@@ -1708,7 +1669,7 @@
                             <!-- Username and Review Info -->
                             <div class="ml-3 flex-1">
                               <p
-                                class="text-white text-lg font-medium pr-[.8rem]"
+                                class="text-white text-lg textFixUsername font-medium pr-[.8rem]"
                               >
                                 {{
                                   existingUserReview &&
@@ -1717,20 +1678,17 @@
                                     : review.user.username
                                 }}
                               </p>
-                              <p class="text-gray-400 text-sm">
+                              <p class="text-gray-400 text-sm textFixCreatedAtDate">
                                 {{ review.createdAt | date : "short" }}
                               </p>
                             </div>
 
                             <!-- Rating Badge -->
                             <p
-                              [ngStyle]="{
-                                background: getRatingBackground(review.rating)
-                              }"
                               class="rating-badge text-white text-lg rounded-md px-3 py-1.5 text-center"
                               style="width: 6.95rem"
                             >
-                              <i class="fas fa-star"></i> {{ review.rating }} /
+                              <i class="fas fa-star text-yellow-400"></i> {{ review.rating }} /
                               10
                             </p>
                           </div>

@@ -41,3 +41,13 @@ button[disabled] {
   border-top-color: transparent;
   animation: spin 0.6s linear infinite;
 }
+
+@media (max-height: 820px) {
+  .logoQuery{
+   width: 10rem;
+   height: 7.5rem
+  }
+  .registerMargin {
+    margin-top: .3rem;
+  }
+ }
