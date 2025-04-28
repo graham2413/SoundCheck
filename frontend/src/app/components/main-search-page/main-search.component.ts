@@ -369,6 +369,7 @@ export class MainSearchComponent implements OnInit {
     };
   
     const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+    modalRef.componentInstance.activeDiscoverTab = this.activeDiscoverTab;
 
         // Use passed list/index if available
       if (recordList && index !== undefined) {

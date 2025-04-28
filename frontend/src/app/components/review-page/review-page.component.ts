@@ -35,6 +35,7 @@ import { CreateReviewCommandModel } from 'src/app/models/command-models/create-r
 import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
 import { UserService } from 'src/app/services/user.service';
 import { ListItem, User } from 'src/app/models/responses/user.response';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-review-page',
@@ -239,9 +240,12 @@ export class ReviewPageComponent implements OnInit {
   @Input() recordList: (Album | Artist | Song)[] = [];
   @Input() currentIndex: number = 0;
   @Input() showForwardAndBackwardButtons: boolean = true;
+  @Input() activeDiscoverTab!: string;
+  
   @Output() reviewEdited = new EventEmitter<Review>();
   @Output() reviewCreated = new EventEmitter<Review>();
   @Output() reviewDeleted = new EventEmitter<Review>();
+  @Output() userNavigated = new EventEmitter<void>();
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -249,7 +253,8 @@ export class ReviewPageComponent implements OnInit {
     private toastr: ToastrService,
     private searchService: SearchService,
     private modal: NgbModal,
-    private userService: UserService
+    private userService: UserService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -981,5 +986,12 @@ export class ReviewPageComponent implements OnInit {
     });
   }
   
+  goToProfile(userId: string){
+    this.userNavigated.emit();
+    this.close();
+    this.router.navigate(['/profile', userId], {
+      state: { section: this.activeDiscoverTab }
+    });
+    }
   
 }

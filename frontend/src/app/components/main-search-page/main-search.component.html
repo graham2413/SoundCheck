@@ -453,7 +453,7 @@
         <div
           class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
         ></div>
-        <p class="mt-4 text-gray-400 text-lg">Loading Top Charts...</p>
+        <p class="mt-4 text-gray-400 text-lg md:text-2xl">Loading Top Charts...</p>
       </div>
 
       <!-- Loaded Content -->
@@ -463,7 +463,7 @@
           <button
             *ngFor="let type of popularTypes"
             (click)="setPopularType(type)"
-            class="px-4 py-2 rounded-md text-lg font-semibold"
+            class="px-4 py-2 rounded-md text-lg md:text-2xl font-semibold"
             [ngClass]="{
               'bg-[#0F5EE4] text-white': activePopularType === type,
               'text-gray-400 hover:text-white': activePopularType !== type
@@ -481,23 +481,23 @@
           >
             <!-- Rank Header -->
             <div
-              class="text-lg md:text-xl font-semibold text-gray-400 w-6 mr-2 text-center"
+              class="text-lg md:text-2xl font-semibold text-gray-400 w-6 mr-2 text-center"
             >
               #
             </div>
 
             <!-- Album Cover Placeholder -->
-            <div class="w-16 sm:w-20"></div>
+            <div class="w-16 sm:w-20 md:w-[7rem]"></div>
 
             <!-- Info Header -->
             <div class="ml-4 flex-1 overflow-hidden">
-              <p class="text-lg md:text-xl font-semibold text-gray-400">
+              <p class="text-lg md:text-2xl font-semibold text-gray-400">
                 {{ activePopularType === "Artist" ? "Name" : "Title" }}
               </p>
             </div>
 
             <!-- Rating Header -->
-            <div class="text-lg md:text-xl font-semibold text-gray-400 pl-2">
+            <div class="text-lg md:text-2xl font-semibold text-gray-400 pl-2">
               <i class="fas fa-star text-yellow-500"></i> / 10
             </div>
           </div>
@@ -509,7 +509,7 @@
             (click)="openModal(record, popularRecords, i)"
           >
             <!-- Rank -->
-            <div class="text-2xl text-[#0F5EE4] w-6 mr-2 text-center">
+            <div class="text-3xl text-[#0F5EE4] w-6 mr-2 text-center">
               {{ i + 1 }}.
             </div>
 
@@ -523,7 +523,7 @@
             <!-- Info -->
             <div class="ml-4 flex-1 overflow-hidden">
               <p
-                class="text-lg md:text-2xl font-semibold truncate whitespace-nowrap"
+                class="text-lg md:text-3xl font-semibold truncate whitespace-nowrap"
               >
                 {{ record.title || record.name }}
               </p>
@@ -537,7 +537,7 @@
                 >
                   E
                 </span>
-                <span class="md:text-lg">{{ record.artist }}</span>
+                <span class="md:text-xl">{{ record.artist }}</span>
               </p>
             </div>
 
@@ -564,7 +564,7 @@
         <div
           class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
         ></div>
-        <p class="mt-4 text-gray-400 text-lg">Loading Feed...</p>
+        <p class="mt-4 text-gray-400 text-lg md:text-2xl">Loading Feed...</p>
       </div>
 
       <!-- Activity Feed Loaded -->

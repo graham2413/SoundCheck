@@ -744,6 +744,7 @@
                       [src]="review.user.profilePicture || 'assets/user.png'"
                       alt="Profile Picture"
                       class="w-[4rem] h-[4rem] rounded-full object-cover"
+                      (click)="goToProfile(review.user._id)"
                     />
 
                     <!-- Username and Review Info -->
@@ -1743,6 +1744,7 @@
                                 review.user.profilePicture || 'assets/user.png'
                               "
                               alt="Profile Picture"
+                              (click)="goToProfile(review.user._id)"
                               class="w-[4rem] h-[4rem] rounded-full object-cover"
                             />
 

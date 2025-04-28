@@ -8,6 +8,7 @@ import { ToastrService } from 'ngx-toastr';
 import { UserService } from './services/user.service';
 import { SpotifyService } from './services/spotify.service';
 import { jwtDecode } from 'jwt-decode';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -36,7 +37,11 @@ export class AppComponent implements OnInit {
   title = 'Sound Check';
   currentUrl: string = '';
 
-  constructor(private router: Router, private toastr: ToastrService, private userService: UserService, private spotifyService: SpotifyService) {
+  constructor(private router: Router, 
+              private toastr: ToastrService, 
+              private userService: UserService, 
+              private spotifyService: SpotifyService, 
+              private authService: AuthService) {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
@@ -48,26 +53,51 @@ export class AppComponent implements OnInit {
     this.fetchAndStoreAlbums();
   
     const queryParams = new URLSearchParams(window.location.search);
-    const token = queryParams.get('token');
+    const tokenFromUrl = queryParams.get('token');
   
-    if (token) {
-      localStorage.setItem('token', token);
+    if (tokenFromUrl) {
+      localStorage.setItem('token', tokenFromUrl);
+      this.handleToken(tokenFromUrl);
   
-      // Decode user directly from token
-      const decoded: any = jwtDecode(token);
-      if (decoded?.user) {
-        this.userService.setUserProfile(decoded.user);
-      }
-  
-      // Clear URL params to prevent looping issues
+      // Clear URL params
       window.history.replaceState({}, document.title, window.location.pathname);
-  
-      // Redirect to home page
       this.router.navigate(['/']);
       this.toastr.success('Logged in successfully!', 'Success');
+    } else {
+      // No token in URL, maybe one exists already
+      const tokenFromStorage = localStorage.getItem('token');
+      if (tokenFromStorage) {
+        this.handleToken(tokenFromStorage);
+      }
     }
   }
-
+  
+  private handleToken(token: string) {
+    try {
+      const decoded: any = jwtDecode(token);
+  
+      if (!decoded?.userId || !decoded.exp) {
+        throw new Error('Invalid token structure');
+      }
+  
+      const currentTime = Math.floor(Date.now() / 1000);
+  
+      if (decoded.exp < currentTime) {
+        this.logout();
+      }
+      
+    } catch (error) {
+      this.logout();
+    }
+  }
+  
+  private logout() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+    this.toastr.error('Session expired. Please log in again.', 'Error');
+  }
+  
+  
   private fetchAndStoreAlbums(): void {
     this.spotifyService.getAlbumImages().subscribe({
       next: (data) => {

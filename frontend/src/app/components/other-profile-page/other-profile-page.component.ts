@@ -799,7 +799,12 @@ export class ViewProfilePageComponent implements OnInit {
           this.otherUser.reviews.unshift(newReview);
           this.updateUserStats();
         }
-    });    
+    });   
+    
+    // 4. Navigating to another profile
+    modalRef.componentInstance.userNavigated.subscribe(() => {
+      this.showPanel = null;
+    });
     
   }
 
@@ -847,7 +852,7 @@ export class ViewProfilePageComponent implements OnInit {
     if (section) {
       if (['addFriends', 'requests', 'myFriends'].includes(section)) {
         this.router.navigate(['/friends'], { state: { section } });
-      } else if (['recentActivity'].includes(section)) {
+      } else if (['recentActivity', 'popular'].includes(section)) {
         this.router.navigate(['/'], { state: { section } });
       } else {
         this.router.navigate(['/']);
