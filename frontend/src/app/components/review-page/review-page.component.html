@@ -1,7 +1,7 @@
 <!-- MOBILE MODAL -->
 <div
   *ngIf="isModalOpen"
-  class="fixed inset-0 flex flex-col bg-[#161A24] text-white overflow-y-auto md:hidden z-50"
+  class="fixed inset-0 flex flex-col bg-[#09101F] text-white overflow-y-auto md:hidden z-50"
   @slideUp
 >
   <!--iPod Container -->
@@ -13,7 +13,7 @@
     <div
       [@slideAnimation]="showSecondIpod ? 'back' : 'hidden'"
       [ngClass]="{ 'invisible-view': !showSecondIpod }"
-      class="absolute left-0 right-0 w-full max-w-lg mx-auto flex flex-col h-full bg-[#161A24] px-3 pb-3 overflow-hidden items-center"
+      class="absolute left-0 right-0 w-full max-w-lg mx-auto flex flex-col h-full bg-[#09101F] px-3 pb-3 overflow-hidden items-center"
     >
       <button
         (click)="showSecondIpod = false"
@@ -142,7 +142,7 @@
       #iPodFront
     >
       <div
-        class="bg-[#161A24] w-full flex flex-col flex-grow min-h-0"
+        class="bg-[#09101F] w-full flex flex-col flex-grow min-h-0"
         style="height: 100dvh"
       >
         <div
@@ -151,7 +151,7 @@
           <!-- Left Button -->
           <button
             (click)="showSecondIpod = true"
-            class="bg-[#161A24] text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white"
+            class="bg-[#09101F] text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white"
           >
             <i class="fa-solid fa-info text-lg"></i>
           </button>
@@ -241,7 +241,7 @@
           <!-- Close Button -->
           <button
             (click)="close()"
-            class="bg-[#161A24] text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white"
+            class="bg-[#09101F] text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white"
           >
             <i class="fas fa-times text-lg"></i>
           </button>
@@ -372,7 +372,7 @@
   <div
     #reviewsSection
     *ngIf="!showSecondIpod"
-    class="bg-[#161A24] shadow-md w-full mx-auto mt-3"
+    class="bg-[#09101F] shadow-md w-full mx-auto mt-3"
   >
     <div
       class="sticky top-0 z-30 bg-[#000000] px-3 py-2 rounded-t-sm shadow-[rgba(0,0,0,0.2)_0px_2px_6px]"
@@ -576,14 +576,14 @@
               else noReviewsMobile
             "
           >
-            <ul class="space-y-4 mt-1 bg-[#161A24] px-2" @fadeIn>
+            <ul class="space-y-4 mt-1 bg-[#09101F] px-2" @fadeIn>
               <li
                 *ngFor="
                   let review of pagedReviews;
                   let i = index;
                   trackBy: trackById
                 "
-                class="review-card p-2 flex flex-col gap-2 relative bg-[#161A24]"
+                class="review-card p-2 flex flex-col gap-2 relative bg-[#09101F]"
                 [ngClass]="{
                   'border-b border-gray-500': i < pagedReviews.length - 1
                 }"
@@ -1047,7 +1047,7 @@
             [@iPodTransition]="iPodState"
           >
             <div
-              class="bg-[#161A24] border border-gray-700 rounded-lg p-3 md:p-4 w-full overflow-hidden"
+              class="bg-[#09101F] border border-gray-700 rounded-lg p-3 md:p-4 w-full overflow-hidden"
             >
               <div class="flex flex-col h-full">
                 <!-- Image Area -->
@@ -1194,7 +1194,7 @@
             }"
           >
             <div
-              class="bg-[#161A24] rounded-lg px-2 pb-4 w-full flex flex-col h-full max-h-[80vh] overflow-y-auto custom-scrollbar items-center"
+              class="bg-[#09101F] rounded-lg px-2 pb-4 w-full flex flex-col h-full max-h-[80vh] overflow-y-auto custom-scrollbar items-center"
             >
               <!-- Close Button -->
               <button

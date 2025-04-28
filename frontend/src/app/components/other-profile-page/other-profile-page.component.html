@@ -2,7 +2,7 @@
 <div
   *ngIf="otherUser"
   @fadeSlide
-  class="container mx-auto max-w-[1000px] pb-6 bg-[#161A24] text-white rounded-lg"
+  class="container mx-auto max-w-[1000px] pb-6 bg-[#09101F] text-white rounded-lg"
 >
   <!-- Top Gradient Banner -->
   <div
@@ -77,7 +77,7 @@
       <img
         [src]="otherUser.profilePicture || 'assets/otherUser?.png'"
         alt="Profile Picture"
-        class="w-[9rem] h-[9rem] rounded-full border-[.5rem] border-[#161A24]"
+        class="w-[9rem] h-[9rem] rounded-full border-[.5rem] border-[#09101F]"
         (click)="isImageModalOpen = true"
       />
 
@@ -234,10 +234,10 @@
       [class.translate-y-0]="showPanel"
       [class.translate-y-8]="!showPanel"
       [class.pointer-events-none]="!showPanel"
-      class="fixed inset-0 bg-[#161A24] text-white z-50 overflow-y-auto transition-all duration-300 ease-in-out transform"
+      class="fixed inset-0 bg-[#09101F] text-white z-50 overflow-y-auto transition-all duration-300 ease-in-out transform"
     >
       <div
-        class="p-4 flex justify-center items-center border-b border-gray-700 relative sticky top-0 bg-[#161A24] z-10"
+        class="p-4 flex justify-center items-center border-b border-gray-700 relative sticky top-0 bg-[#09101F] z-10"
       >
         <h2 class="text-xl md:text-2xl font-semibold capitalize">
           {{ showPanel }}
@@ -433,7 +433,7 @@
                   <div
                     *ngFor="let friend of filteredFriends"
                     (click)="goToUserProfile(friend._id)"
-                    class="flex items-center gap-4 p-3 last:border-none transition-all hover:bg-[#161A24] cursor-pointer group hover:rounded-md"
+                    class="flex items-center gap-4 p-3 last:border-none transition-all hover:bg-[#09101F] cursor-pointer group hover:rounded-md"
                   >
                     <!-- Profile Picture (No Hover Effect) -->
                     <img
@@ -470,7 +470,7 @@
                 <!-- Type Filter Dropdown -->
                 <div
                   *ngIf="showTypeDropdown"
-                  class="absolute right-0 mt-2 w-48 bg-[#161A24]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
+                  class="absolute right-0 mt-2 w-48 bg-[#09101F]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
                 >
                   <!-- Clear Filter Button -->
                   <button
