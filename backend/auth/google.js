@@ -55,37 +55,8 @@ router.get('/google/callback', passport.authenticate('google', { session: false 
             .populate("friendRequestsReceived", "username profilePicture")
             .populate("friends", "username profilePicture");
     
-        const formattedUser = {
-            _id: user._id,
-            username: user.username || user.name,
-            email: user.email,
-            profilePicture: user.profilePicture,
-            createdAt: user.createdAt,
-            friendInfo: {
-                friends: user.friends?.map(friend => ({
-                    _id: friend._id,
-                    username: friend.username,
-                    profilePicture: friend.profilePicture
-                })) || [],
-                friendRequestsSent: user.friendRequestsSent?.map(request => ({
-                    _id: request._id,
-                    username: request.username,
-                    profilePicture: request.profilePicture
-                })) || [],
-                friendRequestsReceived: user.friendRequestsReceived?.map(request => ({
-                    _id: request._id,
-                    username: request.username,
-                    profilePicture: request.profilePicture
-                })) || []
-            }
-        };
-    
         // Embed formatted user directly in JWT payload
-        const token = jwt.sign(
-            { user: formattedUser },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     
         res.redirect(`${process.env.FRONTEND_URL}/?token=${token}`);
     } catch (error) {
