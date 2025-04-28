@@ -18,14 +18,19 @@ export class ProfileComponent implements OnInit {
   userProfile: User = {
     _id: '',
     username: '',
+    gradient: '',
+    createdAt: '',
+    reviews: [],
     googleId: '',
     email: '',
+    friends: [],
     profilePicture: '',
+    list: [],
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],
-      friendRequestsSent: [],
-    },
+      friendRequestsSent: []
+    }
   } as User;
 
   newPassword: string = '';
@@ -38,6 +43,7 @@ export class ProfileComponent implements OnInit {
   passwordError: string = '';
   confirmEmail: string = '';
   profilePictureUrl: string = '';
+  isTooltipOpen: boolean = false;
 
   isSaving: boolean = false;
   isDeleting: boolean = false;
@@ -172,6 +178,14 @@ export class ProfileComponent implements OnInit {
       });
     }
   }
+
+toggleTooltip() {
+  this.isTooltipOpen = !this.isTooltipOpen;
+}
+
+closeTooltip() {
+  this.isTooltipOpen = false;
+}
 
   viewPublicProfile() {
     this.router.navigate([`/profile/${this.userProfile._id}`]);

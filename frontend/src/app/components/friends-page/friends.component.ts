@@ -40,19 +40,25 @@ export class FriendsComponent implements OnInit {
   userProfile: User = {
     _id: '',
     username: '',
+    gradient: '',
+    createdAt: '',
+    reviews: [],
     googleId: '',
     email: '',
+    friends: [],
     profilePicture: '',
+    list: [],
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],
-      friendRequestsSent: [],
-    },
+      friendRequestsSent: []
+    }
   } as User;
 
   declineLoadingMap: { [userId: string]: boolean } = {};
   acceptLoadingMap: { [userId: string]: boolean } = {};
   addFriendLoadingMap: { [userId: string]: boolean } = {};
+  section: string | null = null;
 
   constructor(
     private userService: UserService,
@@ -63,6 +69,12 @@ export class FriendsComponent implements OnInit {
 
   ngOnInit(): void {
     window.scrollTo({ top: 0, behavior: 'auto' });
+
+    this.section = history.state.section || null;
+
+    if (this.section) {
+      this.setActiveTab(this.section);
+    }
 
     this.getFriendData();
   }

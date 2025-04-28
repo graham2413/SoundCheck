@@ -146,4 +146,37 @@ export class UserService {
         { headers }
       );
     }
+
+    addToList(item: any) {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        console.error('No authentication token found');
+        return new Observable();
+      }
+    
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+    
+      return this.http.post<{ message: string }>(`${this.apiUrl}/list`, item, { headers });
+    }    
+
+    removeFromList(item: any) {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        console.error('No authentication token found');
+        return new Observable();
+      }
+    
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+    
+      return this.http.post<{ message: string }>(`${this.apiUrl}/list/remove`, item, { headers });
+    }
+    
 }

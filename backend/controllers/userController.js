@@ -28,6 +28,8 @@ exports.getUserProfile = async (req, res) => {
       friends: user.friends,
       reviews: reviews,
       createdAt: user.createdAt,
+      gradient: user.gradient,
+      list: user.list || []
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
@@ -50,6 +52,8 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
       _id: user._id,
       username: user.username,
       email: user.email,
+      gradient: user.gradient,
+      list: user.list || [],
       profilePicture: user.profilePicture,
       createdAt: user.createdAt,
       friendInfo: {
@@ -130,6 +134,10 @@ exports.updateUserProfile = async (req, res) => {
       user.username = req.body.username;
     }
 
+    if (req.body.gradient) {
+      user.gradient = req.body.gradient;
+    }
+
     user.profilePicture = profilePictureUrl;
 
     // Save updated user data
@@ -141,6 +149,7 @@ exports.updateUserProfile = async (req, res) => {
       email: updatedUser.email,
       profilePicture: updatedUser.profilePicture,
       createdAt: updatedUser.createdAt,
+      gradient: updatedUser.gradient
     });
   } catch (error) {
     console.error("Error updating profile:", error);
@@ -399,5 +408,103 @@ exports.deleteUserProfile = async (req, res) => {
   } catch (error) {
     console.error("Error deleting profile:", error);
     res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+exports.addToList = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized. User not found in request." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const item = req.body;
+
+    // Basic validation
+    if (!item || !item.id || !item.type) {
+      return res.status(400).json({ message: "Invalid item data." });
+    }
+
+    // Force id to string
+    item.id = item.id.toString();
+
+    // Initialize list if missing
+    if (!user.list) {
+      user.list = [];
+    }
+
+    // Check if already exists
+    const exists = user.list.some(
+      (listItem) => listItem.id === item.id && listItem.type === item.type
+    );
+
+    if (exists) {
+      return res.status(400).json({ message: "Item already exists in your list." });
+    }
+
+    // Clean new item
+    const newItem = {
+      id: item.id,
+      type: item.type,
+      title: item.title,
+      name: item.name,
+      artist: item.artist,
+      cover: item.cover,
+      picture: item.picture,
+      album: item.album,
+      genre: item.genre,
+      preview: item.preview,
+      duration: item.duration,
+      isExplicit: item.isExplicit,
+      releaseDate: item.releaseDate,
+      contributors: item.contributors,
+      tracklist: item.tracklist,
+      addedAt: item.addedAt || new Date()
+    };
+
+    // Push clean item
+    user.list.push(newItem);
+
+    await user.save();
+
+    return res.status(200).json({ message: "Item added to list successfully." });
+  } catch (error) {
+    console.error("Error adding item to list:", error);
+    return res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+exports.removeFromList = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized. User not found." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const { id, type } = req.body;
+
+    if (!id || !type) {
+      return res.status(400).json({ message: "Invalid request. Missing id or type." });
+    }
+
+    // Filter out the item
+    user.list = user.list.filter(item => !(item.id === id && item.type === type));
+
+    await user.save();
+
+    return res.status(200).json({ message: "Item removed from list successfully." });
+  } catch (error) {
+    console.error("Error removing item from list:", error);
+    return res.status(500).json({ message: "Server Error" });
   }
 };

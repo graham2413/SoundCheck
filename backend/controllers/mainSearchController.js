@@ -185,6 +185,13 @@ exports.getTrackDetails = async (req, res) => {
 
     // Extract relevant details
     const trackData = trackResponse.data;
+
+    // Check if album ID is available to fetch genre
+    let genre = "Unknown";
+    if (trackData.album?.id) {
+      genre = await getAlbumGenre(trackData.album.id);
+    }
+
     const trackDetails = {
       id: trackData.id,
       preview: trackData.preview,
@@ -194,6 +201,7 @@ exports.getTrackDetails = async (req, res) => {
       contributors: trackData.contributors
         ? trackData.contributors.map((c) => c.name)
         : [],
+        genre: genre,
     };
 
     return res.json(trackDetails);
@@ -236,6 +244,7 @@ exports.getAlbumDetails = async (req, res) => {
           title: track.title,
           duration: track.duration,
         })) || [],
+        genre: albumData.genres?.data?.[0]?.name || "Unknown",
     };
 
     return res.json(albumDetails);

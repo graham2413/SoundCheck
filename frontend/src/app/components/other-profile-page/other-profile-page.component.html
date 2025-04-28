@@ -1,226 +1,781 @@
+<!-- Outer Container -->
 <div
-  *ngIf="user"
+  *ngIf="otherUser"
   @fadeSlide
-  class="container mx-auto max-w-4xl px-2 pb-6 bg-[#161A24] text-white rounded-lg md:pt-24"
+  class="container mx-auto max-w-[1000px] pb-6 bg-[#161A24] text-white rounded-lg"
 >
-  <!-- Profile Section -->
-  <div class="flex items-center gap-6 relative">
-    <div
-      class="absolute top-0 w-full h-32 rounded-t-lg pointer-events-none"
-    ></div>
-    <img
-      [src]="user?.profilePicture || 'assets/user.png'"
-      alt="Profile Picture"
-      class="mt-4 mb-2 ml-2 w-[7.5rem] h-[7.5rem] md:w-[12rem] md:h-[12rem] rounded-full"
-    />
-    <div class="flex flex-col">
-      <h2 class="text-xl md:text-4xl font-semibold break-words">
-        {{ user?.username }}
-      </h2>
-      <p class="text-gray-400 text-sm md:text-lg mt-1">
-        Joined {{ user?.createdAt | date }}
-      </p>
+  <!-- Top Gradient Banner -->
+  <div
+  class="w-full h-24 md:mt-[5.8rem] relative"
+  [class]="getGradientClass()"
+>
 
-      <!-- Friendship Action Button -->
-      <ng-container *ngIf="user._id !== loggedInUser._id">
-        <!-- Show Remove Button if already friends -->
-        <button
-        *ngIf="user.isFriend"
-        (click)="openModal(user); $event.stopPropagation()"
-        [disabled]="isLoadingFriendAction"
-        class="p-2 mt-3 px-5 text-sm font-medium rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+  <!-- Back Button -->
+  <button
+    (click)="goBack()"
+    class="absolute top-2 left-2 p-2 text-white transition text-[1.3rem]"
+  >
+    <i class="fas fa-chevron-left"></i>
+  </button>
+
+  <!-- Change Background Button -->
+  <button
+    *ngIf="otherUser._id === loggedInUser._id"
+    (click)="openGradientModal()"
+    class="absolute top-2 right-2 p-2 text-white transition text-[1.3rem]"
+  >
+    <i class="fas fa-paint-brush"></i>
+  </button>
+</div>
+
+<div
+  *ngIf="isGradientModalOpen"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  (click)="closeGradientModal()"
+>
+  <div
+    class="bg-gray-900 rounded-lg shadow-lg p-6 max-w-[600px] w-[90%] relative text-white"
+    (click)="$event.stopPropagation()"
+  >
+    <h3 class="text-2xl font-bold mb-4 text-center">Choose Background Gradient</h3>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <button
+        *ngFor="let gradient of gradientPresets"
+        (click)="selectGradient(gradient.value)"
+        [ngClass]="
+          tempSelectedGradient === gradient.value
+            ? 'border-4 border-blue-400'
+            : 'border border-gray-700'
+        "
+        class="p-4 py-6 rounded-lg bg-gradient-to-r {{ gradient.value }} text-white font-semibold"
       >
-        <ng-container *ngIf="isLoadingFriendAction; else removeIcon">
-          <i class="fas fa-spinner fa-spin"></i>
-        </ng-container>
-        <ng-template #removeIcon>
-          <i class="fas fa-user-check mr-1"></i> Following
-        </ng-template>
-      </button>      
+      </button>
+    </div>    
 
-        <!-- Show Add / Pending / Received Status if not friends -->
+    <div class="flex justify-end gap-4">
+      <button
+        (click)="closeGradientModal()"
+        class="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-700"
+      >
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button
+        (click)="saveGradient()"
+        class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700"
+      >
+        <i class="fas fa-save"></i> Save
+      </button>
+    </div>
+  </div>
+</div>
+
+  <!-- Profile Section -->
+  <div class="relative px-4 -mt-12">
+    <div class="flex items-center justify-between">
+      <!-- Profile Picture -->
+      <img
+        [src]="otherUser.profilePicture || 'assets/otherUser?.png'"
+        alt="Profile Picture"
+        class="w-[9rem] h-[9rem] rounded-full border-[.5rem] border-[#161A24]"
+        (click)="isImageModalOpen = true"
+      />
+
+      <!-- Fullscreen Image Modal -->
+      <div
+        class="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center transition-all duration-300 ease-in-out transform"
+        [class.opacity-100]="isImageModalOpen"
+        [class.opacity-0]="!isImageModalOpen"
+        [class.pointer-events-none]="!isImageModalOpen"
+        [class.scale-100]="isImageModalOpen"
+        [class.scale-75]="!isImageModalOpen"
+        [class.translate-y-0]="isImageModalOpen"
+        [class.-translate-y-10]="!isImageModalOpen"
+      >
+        <!-- Close Button -->
         <button
-          *ngIf="!user.isFriend"
-          (click)="
-            user.hasPendingRequestReceived
-              ? acceptFriendRequest(user)
-              : sendFriendRequest(user);
-            $event.stopPropagation()
-          "
-          [disabled]="isLoadingFriendAction || user.hasPendingRequestSent"
-          class="p-2 mt-3 px-5 text-md font-medium rounded-full bg-gray-800 text-white-300 md:hover:bg-gray-700 disabled md:disabled:cursor-not-allowed transition"
+          (click)="isImageModalOpen = false"
+          class="absolute top-4 left-4 text-white text-[4rem] focus:outline-none"
         >
-          <ng-container *ngIf="isLoadingFriendAction; else addIcon">
-            <i class="fas fa-spinner fa-spin"></i>
+          &times;
+        </button>
+
+        <!-- Full Image -->
+        <img
+          [src]="otherUser.profilePicture || 'assets/otherUser?.png'"
+          alt="Profile Picture"
+          class="max-w-[90vw] max-h-[90vh] rounded-full shadow-lg transform transition-all duration-300"
+          [class.scale-100]="isImageModalOpen"
+          [class.scale-95]="!isImageModalOpen"
+        />
+      </div>
+
+      <!-- Friend/Follow or Edit Profile Button -->
+      <ng-container *ngIf="otherUser && loggedInUser">
+        <!-- If it's another user -->
+        <ng-container *ngIf="otherUser._id !== loggedInUser._id; else editProfileButton">
+          <div class="flex flex-col items-center gap-2 mt-[3rem] md:mt-[4rem]">
+            <button
+              (click)="
+                otherUser.isFriend
+                  ? openModal(otherUser)
+                  : otherUser.hasPendingRequestReceived
+                  ? acceptFriendRequest(otherUser)
+                  : sendFriendRequest(otherUser);
+                $event.stopPropagation()
+              "
+              [disabled]="
+                isLoadingFriendAction || otherUser.hasPendingRequestSent
+              "
+              class="p-2 px-4 text-sm md:text-lg font-medium rounded-lg bg-[#3E364D] text-gray-100 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <ng-container *ngIf="isLoadingFriendAction; else actionIcon">
+                <i class="fas fa-spinner fa-spin"></i>
+              </ng-container>
+              <ng-template #actionIcon>
+                <i
+                  class="fas mr-1"
+                  [ngClass]="{
+                    'fa-user-check': otherUser.isFriend,
+                    'fa-hourglass-half':
+                      !otherUser.isFriend && otherUser.hasPendingRequestSent,
+                    'fa-user-plus':
+                      !otherUser.isFriend &&
+                      (otherUser.hasPendingRequestReceived ||
+                        (!otherUser.hasPendingRequestSent &&
+                          !otherUser.hasPendingRequestReceived))
+                  }"
+                ></i>
+                {{
+                  otherUser.isFriend
+                    ? "Friends"
+                    : otherUser.hasPendingRequestSent
+                    ? "Pending"
+                    : otherUser.hasPendingRequestReceived
+                    ? "Accept"
+                    : "Add"
+                }}
+              </ng-template>
+            </button>
+        
+            <!-- Decline button below accept -->
+            <button
+            *ngIf="otherUser.hasPendingRequestReceived"
+            (click)="declineFriendRequest(otherUser)"
+            [disabled]="decliningFriendRequest"
+            class="p-2 px-[1.1rem] text-sm md:text-lg font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+          >
+            <ng-container *ngIf="decliningFriendRequest; else declineButtonContent">
+              <i class="fas fa-spinner fa-spin"></i>
+              Loading...
+            </ng-container>
+            <ng-template #declineButtonContent>
+              <i class="fas fa-times"></i>
+              Decline
+            </ng-template>
+          </button>
+          
+          </div>
+        </ng-container>
+        
+
+        <!-- Else (you're viewing your own profile) -->
+        <ng-template #editProfileButton>
+          <button
+          (click)="goToUserProfile()"
+          [disabled]="decliningFriendRequest"
+          class="p-2 px-4 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition mt-[3rem] flex items-center gap-2"
+        >
+          <ng-container *ngIf="!decliningFriendRequest; else loadingIcon">
+            <i class="fas fa-user-edit"></i> Edit Profile
           </ng-container>
-          <ng-template #addIcon>
-            <i class="fas fa-user-plus mr-1"></i>
-            {{
-              user.hasPendingRequestSent
-                ? "Pending"
-                : user.hasPendingRequestReceived
-                ? "Accept"
-                : "Add"
-            }}
+          <ng-template #loadingIcon>
+            <i class="fas fa-spinner fa-spin"></i>
           </ng-template>
         </button>
+        </ng-template>
       </ng-container>
     </div>
-  </div>
 
-  <!-- Friends Section -->
-  <div class="mt-4 bg-[#152034] border border-gray-700 rounded-lg mb-2">
-    <!-- Header Section -->
-    <div class="flex justify-center items-center my-1 p-3">
-      <h3 class="text-2xl font-semibold text-white flex items-center gap-2">
-        <i class="fas fa-user-friends text-indigo-400 mr-1 text-xl"></i> Friends
-        <span class="text-xl text-gray-500"
-          >({{ user?.friends?.length || 0 }})</span
-        >
-      </h3>
-    </div>
-
-    <!-- Search Bar -->
-    <div class="relative mb-3 px-2">
-      <i
-        class="fas fa-search absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400"
-      ></i>
-      <input
-        type="text"
-        [(ngModel)]="searchQuery"
-        (input)="filterFriends()"
-        placeholder="Search friends..."
-        class="w-full p-2 pl-10 rounded-lg bg-[#152034] text-white placeholder-gray-400 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      />
-    </div>
-
-    <!-- Conditional Messages -->
-    <div
-      *ngIf="user?.friends?.length === 0"
-      class="text-center text-gray-400 py-4"
-    >
-      No friends available.
-    </div>
-
-    <div
-      *ngIf="filteredFriends.length === 0 && user?.friends?.length > 0"
-      class="text-center text-gray-400 py-4"
-    >
-      No friends found for "{{ searchQuery }}".
-    </div>
-
-    <!-- Scrollable Friends List -->
-    <div
-      *ngIf="filteredFriends.length > 0"
-      class="max-h-[16.5rem] overflow-y-auto bg-[#0D1320] rounded-lg custom-scrollbar"
-    >
-      <div
-        *ngFor="let friend of filteredFriends"
-        (click)="goToFriendsPage(friend)"
-        class="flex items-center gap-4 p-3 last:border-none transition-all hover:bg-[#161A24] cursor-pointer group hover:rounded-md"
-      >
-        <!-- Profile Picture (No Hover Effect) -->
-        <img
-          [src]="friend.profilePicture || 'assets/user.png'"
-          alt="Friend"
-          class="w-[4.5rem] h-[4.5rem] rounded-full"
-        />
-
-        <!-- Username -->
-        <p class="text-lg font-medium text-white">{{ friend.username }}</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Reviews Section -->
-  <div class="mt-5 mb-[5rem] bg-[#152034] border border-gray-700 rounded-lg">
-    <h3 class="text-2xl font-semibold my-1 p-3 text-center">
-      <i class="fas fas fa-comment-alt text-amber-400 mr-1 text-xl"></i> Reviews
-      <span *ngIf="user?.reviews?.length > 0" class="text-xl text-gray-500">
-        ({{ user.reviews.length }})
-      </span>
-    </h3>
-
-    <div
-      *ngIf="user?.reviews?.length; else noReviews"
-      class="max-h-[17.5rem] md:max-h-[36.2rem] overflow-y-auto custom-scrollbar rounded-b-lg"
-    >
-      <div
-        *ngFor="let review of user?.reviews; let last = last"
-        (click)="openReview(review.albumSongOrArtist)"
-        class="flex items-start p-4 bg-[#0D1320] shadow-md relative transition-all cursor-pointer group hover:bg-[#161A24] hover:p-4 hover:rounded-md"
-      >
-        <!-- Album Cover or Default Image -->
-        <div
-          class="relative h-[4.5rem] w-[4.5rem] md:w-[7rem] md:h-[7rem] flex-shrink-0"
-        >
-          <img
-            [src]="review.albumSongOrArtist.cover"
-            [src]="
-              review.albumSongOrArtist.type === 'Artist'
-                ? review.albumSongOrArtist.picture
-                : review.albumSongOrArtist.cover
-            "
-            [alt]="
-              review.albumSongOrArtist.type === 'Artist'
-                ? review.albumSongOrArtist.name
-                : review.albumSongOrArtist.title
-            "
-            class="h-[4.5rem] w-[4.5rem] md:w-[7rem] md:h-[7rem] rounded-md border-2 border-gray-600 shadow-sm"
-          />
-
-          <!-- Review Type Icon -->
-          <div
-            class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2"
-          >
-            <i
-              class="fas text-sm md:text-xl"
-              [ngClass]="{
-                'fa-music text-blue-400':
-                  review.albumSongOrArtist.type === 'Song',
-                'fa-compact-disc text-green-400':
-                  review.albumSongOrArtist.type === 'Album',
-                'fa-user text-purple-400':
-                  review.albumSongOrArtist.type === 'Artist'
-              }"
-              title="{{ review.type }}"
-            ></i>
-          </div>
-        </div>
-
-        <!-- Review Content -->
-        <div class="flex flex-col w-full ml-3 overflow-hidden w-full">
-          <h4
-            class="font-medium text-lg md:text-2xl truncate"
-            style="max-width: calc(100%)"
-          >
-            {{
-              review.albumSongOrArtist.type === "Artist"
-                ? review.albumSongOrArtist.name
-                : review.albumSongOrArtist.title || "Unknown Title"
-            }}
-          </h4>
-
-          <p
-            class="text-gray-300 text-sm md:text-lg w-full overflow-hidden text-ellipsis whitespace-nowrap"
-            style="max-width: calc(100%)"
-          >
-            {{ review.reviewText }}
-          </p>
-
-          <!-- Rating -->
-          <span class="text-yellow-400 font-semibold text-sm md:text-lg mt-2">
-            ⭐ {{ review.rating }}/10
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- No Reviews Message -->
-    <ng-template #noReviews>
-      <p class="text-gray-400 text-center p-4 bg-[#152034] rounded-lg text-lg">
-        This user hasn't reviewed anything yet.
+    <!-- Name + Join Date -->
+    <div class="mt-2">
+      <h2 class="text-xl md:text-2xl font-semibold">
+        {{ otherUser.username }}
+      </h2>
+      <p class="text-gray-400 text-sm">
+        Joined {{ otherUser.createdAt | date }}
       </p>
+    </div>
+
+    <!-- Headers -->
+    <div
+      class="flex justify-around mt-3 text-white text-base md:text-lg font-semibold border-b border-gray-700 pb-2"
+    >
+      <div class="p-1" (click)="openReviews()">
+        <span class="block text-center">{{ otherUser.reviews.length }}</span>
+        <span class="block text-center text-gray-400">Reviews</span>
+      </div>
+      <div class="p-1" (click)="openFriends()">
+        <span class="block text-center">{{
+          otherUser.friends.length || 0
+        }}</span>
+        <span class="block text-center text-gray-400">Friends</span>
+      </div>
+      <div class="p-1" (click)="openList()">
+        <span class="block text-center">{{ otherUser.list?.length || 0 }}</span>
+        <span class="block text-center text-gray-400">List</span>
+      </div>
+    </div>
+
+    <!-- Fullscreen Overlay Panel -->
+    <div
+      [class.opacity-100]="showPanel"
+      [class.opacity-0]="!showPanel"
+      [class.translate-y-0]="showPanel"
+      [class.translate-y-8]="!showPanel"
+      [class.pointer-events-none]="!showPanel"
+      class="fixed inset-0 bg-[#161A24] text-white z-50 overflow-y-auto transition-all duration-300 ease-in-out transform"
+    >
+      <div
+        class="p-4 flex justify-center items-center border-b border-gray-700 relative sticky top-0 bg-[#161A24] z-10"
+      >
+        <h2 class="text-xl md:text-2xl font-semibold capitalize">
+          {{ showPanel }}
+          <span class="text-lg md:text-xl text-gray-500 ml-2">
+            <span *ngIf="showPanel === 'reviews'">
+              ({{ otherUser.reviews?.length || 0 }})
+            </span>
+            <span *ngIf="showPanel === 'friends'"
+              >({{ otherUser.friends?.length || 0 }})</span
+            >
+            <span *ngIf="showPanel === 'list'">
+              ({{ otherUser.list?.length || 0 }})
+            </span>
+          </span>
+        </h2>
+        <button
+          (click)="closePanel()"
+          class="absolute right-[2rem] text-gray-400 hover:text-white text-4xl"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="p-4">
+        <ng-container [ngSwitch]="showPanel">
+          <ng-container *ngSwitchCase="'reviews'">
+            <div
+              *ngFor="
+                let review of otherUser.reviews;
+                let i = index;
+                last as isLast
+              "
+              class="px-1 pb-4 max-w-[540px] md:max-w-[1000px] mx-auto"
+              [ngClass]="{
+                'mt-5': i !== 0,
+                'mt-1': i === 0,
+                'border-b border-gray-600': !isLast
+              }"
+            >
+              <!-- Review + Album layout -->
+              <div class="block md:pb-[3rem]">
+                <!-- Float Right: Album Art + Rating -->
+                <div
+                  class="float-right flex flex-col items-end ml-4 w-[6rem] md:w-[10rem] pb-1 relative"
+                >
+                  <!-- Review Type Icon -->
+                  <div
+                    class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2"
+                  >
+                    <i
+                      class="fas text-sm md:text-xl"
+                      [ngClass]="{
+                        'fa-music text-blue-400':
+                          review.albumSongOrArtist.type === 'Song',
+                        'fa-compact-disc text-green-400':
+                          review.albumSongOrArtist.type === 'Album',
+                        'fa-user text-purple-400':
+                          review.albumSongOrArtist.type === 'Artist'
+                      }"
+                      title="{{ review.albumSongOrArtist.type }}"
+                    ></i>
+                  </div>
+                  <img
+                    [src]="
+                      review.albumSongOrArtist.type === 'Artist'
+                        ? review.albumSongOrArtist.picture
+                        : review.albumSongOrArtist.cover
+                    "
+                    (click)="
+                      openReview(review.albumSongOrArtist, reviewList, i)
+                    "
+                    alt="Album Cover"
+                    class="w-full h-[6rem] md:h-[10rem] rounded object-cover border border-gray-600"
+                  />
+
+                  <span
+                    class="text-[1.4rem] md:text-3xl font-bold text-[#0F5EE4] mt-2 inline-flex items-center whitespace-nowrap"
+                  >
+                    <i
+                      class="fas fa-star text-yellow-500 text-xl md:text-2xl mr-1"
+                    ></i>
+                    {{ review.rating }}
+                    <span class="text-gray-400 text-[1rem] md:text-xl ml-1"
+                      >/ 10</span
+                    >
+                  </span>
+                </div>
+
+                <!-- Review Text -->
+                <div>
+                  <p
+                    class="text-[#0F5EE4] text-lg md:text-2xl font-semibold line-clamp-2"
+                  >
+                    <span
+                      (click)="
+                        openReview(review.albumSongOrArtist, reviewList, i)
+                      "
+                    >
+                      {{
+                        review.albumSongOrArtist.type === "Artist"
+                          ? review.albumSongOrArtist.name
+                          : review.albumSongOrArtist.title
+                      }}
+                    </span>
+                  </p>
+
+                  <p
+                    class="text-sm text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis"
+                  >
+                    <span
+                      *ngIf="
+                        review.albumSongOrArtist.type === 'Song' &&
+                        review.albumSongOrArtist.isExplicit
+                      "
+                      class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded md:mr-2 leading-none mr-1 align-middle"
+                      title="Explicit"
+                    >
+                      E
+                    </span>
+                    <span
+                      *ngIf="review.albumSongOrArtist.type !== 'Artist'"
+                      class="md:text-xl"
+                      (click)="
+                        openReview(review.albumSongOrArtist, reviewList, i)
+                      "
+                    >
+                      {{ review.albumSongOrArtist.artist }}
+                    </span>
+                  </p>
+
+                  <p class="text-white text-base md:text-xl mt-2">
+                    <ng-container *ngIf="review.reviewText; else noReview">
+                      {{ review.reviewText }}
+                    </ng-container>
+                    <ng-template #noReview>
+                      <p
+                        class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
+                      >
+                        “ No review written ”
+                      </p>
+                    </ng-template>
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 mt-[3rem]">
+                <p class="text-sm md:text-lg mt-1">
+                  {{ review.createdAt | timeAgo }}
+                </p>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Friends List Section -->
+          <ng-container *ngSwitchCase="'friends'">
+            <!-- Search Bar -->
+            <div class="flex justify-center px-2 mb-3">
+              <div class="relative w-full max-w-[500px] md:max-w-[760px]">
+                <i
+                  class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                ></i>
+                <input
+                  type="text"
+                  [(ngModel)]="searchQuery"
+                  (input)="filterFriends()"
+                  placeholder="Search friends..."
+                  class="w-full p-2 pl-10 text-base md:text-xl rounded-lg bg-gray-800 text-white placeholder-gray-300 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <!-- Conditional Messages -->
+            <div
+              *ngIf="otherUser?.friends?.length === 0"
+              class="text-center text-gray-400 py-4"
+            >
+              No friends available.
+            </div>
+
+            <div
+              *ngIf="
+                filteredFriends.length === 0 && otherUser.friends.length > 0
+              "
+              class="text-center text-gray-400 py-4"
+            >
+              No friends found for "{{ searchQuery }}".
+            </div>
+
+            <!-- Scrollable Friends List -->
+            <div class="flex justify-center">
+              <div class="w-full max-w-[540px] md:max-w-[800px]">
+                <div *ngIf="filteredFriends.length > 0">
+                  <div
+                    *ngFor="let friend of filteredFriends"
+                    (click)="goToUserProfile(friend._id)"
+                    class="flex items-center gap-4 p-3 last:border-none transition-all hover:bg-[#161A24] cursor-pointer group hover:rounded-md"
+                  >
+                    <!-- Profile Picture (No Hover Effect) -->
+                    <img
+                      [src]="friend.profilePicture || 'assets/user.png'"
+                      alt="Friend"
+                      class="w-[4rem] h-[4rem] md:w-[6rem] md:h-[6rem] rounded-full"
+                    />
+
+                    <!-- Username -->
+                    <p class="text-base md:text-xl font-semibold text-white">
+                      {{ friend.username }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-container *ngSwitchCase="'list'">
+            <div class="relative mb-6">
+              <!-- Filter Button Wrapper -->
+              <div class="absolute right-0 top-0 pr-1">
+                <button
+                  (click)="toggleTypeDropdown()"
+                  class="p-2 rounded-md transition flex items-center gap-2 md:text-xl"
+                  [ngClass]="selectedType !== 'All' ? 'bg-blue-600 md:hover:bg-blue-500' : ''"
+                >
+                  <span class="inline">
+                    {{ selectedType !== 'All' ? selectedType : "Filter" }}
+                  </span>
+                  <i class="fas fa-filter text-base"></i>
+                </button>
+            
+                <!-- Type Filter Dropdown -->
+                <div
+                  *ngIf="showTypeDropdown"
+                  class="absolute right-0 mt-2 w-48 bg-[#161A24]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
+                >
+                  <!-- Clear Filter Button -->
+                  <button
+                    *ngIf="selectedType !== 'All'"
+                    (click)="clearTypeFilter()"
+                    class="flex items-center justify-center w-full text-left text-white py-1 rounded-md transition border border-red-500 text-red-500 md:hover:bg-red-500 md:hover:text-white font-medium mb-2"
+                  >
+                    <i class="fas fa-times mr-2"></i> Clear
+                  </button>
+            
+                  <!-- Record Type Options -->
+                  <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
+                    <button
+                    *ngFor="let type of recordTypes"
+                    (click)="filterByType(type)"
+                      class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium text-lg"
+                      [ngClass]="
+                        selectedType === type
+                          ? 'bg-blue-500 text-white shadow-md md:hover:bg-blue-400'
+                          : 'md:hover:bg-gray-600/80'
+                      "
+                    >
+                      {{ type }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+      
+            <ul class="mt-2 space-y-4">
+              <li
+              *ngFor="let item of filteredList; let i = index"
+              class="relative flex flex-row cursor-pointer items-center p-2"
+              (click)="openReview(buildFullRecord(item), filteredFullRecordList, i)"
+              >
+                <!-- Type Icon on Top Left -->
+                <div
+                  class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2"
+                >
+                  <i
+                    class="fas text-sm md:text-xl"
+                    [ngClass]="{
+                      'fa-music text-blue-400': item.type === 'Song',
+                      'fa-compact-disc text-green-400': item.type === 'Album',
+                      'fa-user text-purple-400': item.type === 'Artist'
+                    }"
+                    [title]="item.type"
+                  ></i>
+                </div>
+            
+                <!-- Cover or Picture -->
+                <img
+                  [src]="item.cover || item.picture"
+                  alt="Cover"
+                  class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-600 flex-shrink-0"
+                />
+            
+                <!-- Text Info -->
+                <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
+                  <p
+                    class="text-lg md:text-xl font-semibold text-white leading-tight truncate overflow-hidden whitespace-nowrap"
+                    [title]="item.title || item.name"
+                  >
+                    {{ item.title || item.name }}
+                  </p>
+            
+                  <p
+                    *ngIf="item.artist"
+                    class="text-sm md:text-base text-gray-400 mt-1 truncate overflow-hidden whitespace-nowrap flex items-center"
+                    [title]="item.artist"
+                  >
+                    <!-- Explicit Icon -->
+                    <span
+                      *ngIf="item.isExplicit"
+                      class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded md:mr-2 leading-none mr-1 align-middle"
+                      title="Explicit"
+                    >
+                      E
+                    </span>
+                    {{ item.artist }}
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </ng-container>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+  <!-- Statistics Section -->
+  <div class="px-4 pt-4 pb-2">
+    <div class="border-b border-gray-700 pb-4">
+      <h2 class="text-xl font-bold mb-4">Statistics</h2>
+      <ng-container *ngIf="otherUser.reviews.length > 0; else noReviews">
+        <ul class="space-y-3 text-base md:text-lg">
+          <li class="w-full">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-list-ul text-blue-400 mr-2 text-xl"></i>
+              <span class="text-left font-semibold text-lg">Reviews by Type</span>
+            </div>
+          
+            <div class="flex justify-between w-full bg-gray-800 p-3 rounded-lg text-center">
+              <div class="w-1/3 flex flex-col items-center">
+                <div class="text-gray-300 text-base mb-1">Songs</div>
+                <div class="text-[#4C79F4] font-semibold text-xl">
+                  {{ reviewsByType.songs }}
+                </div>
+              </div>
+              <div class="w-1/3 flex flex-col items-center">
+                <div class="text-gray-300 text-base mb-1">Albums</div>
+                <div class="text-[#4C79F4] font-semibold text-xl">
+                  {{ reviewsByType.albums }}
+                </div>
+              </div>
+              <div class="w-1/3 flex flex-col items-center">
+                <div class="text-gray-300 text-base mb-1">Artists</div>
+                <div class="text-[#4C79F4] font-semibold text-xl">
+                  {{ reviewsByType.artists }}
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="w-full">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-compact-disc text-blue-400 mr-2 text-xl"></i>
+              <span class="text-left font-semibold text-lg">Most Reviewed Genre</span>
+            </div>
+            <div class="bg-gray-800 p-3 rounded-lg text-center">
+              <span class="font-bold text-[#4C79F4] text-lg">
+                {{ mostReviewedGenre }}
+              </span>
+            </div>
+          </li>          
+
+          <li class="w-full">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-microphone-alt text-blue-400 mr-2 text-xl"></i>
+              <span class="text-left font-semibold text-lg">Most Reviewed Artist</span>
+            </div>
+            <div class="bg-gray-800 p-3 rounded-lg text-center">
+              <span class="font-bold text-[#4C79F4] text-lg">
+                {{ mostReviewedArtist }}
+              </span>
+            </div>
+          </li>
+          
+          <li class="w-full">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-align-left text-blue-400 mr-2 text-xl"></i>
+              <span class="text-left font-semibold text-lg">Words Written</span>
+            </div>
+          
+            <div class="flex justify-between w-full bg-gray-800 p-3 rounded-lg text-center">
+              <div class="w-1/2">
+                <div class="text-gray-300 text-base mb-1">Total</div>
+                <div class="text-[#4C79F4] font-semibold text-xl">
+                  {{ formatNumber(totalWordsWritten) }}
+                </div>
+              </div>
+              <div class="w-1/2">
+                <div class="text-gray-300 text-base mb-1">Average</div>
+                <div class="text-[#4C79F4] font-semibold text-xl">
+                  {{ averageWordsPerReview }}
+                </div>
+              </div>
+            </div>
+          </li>          
+
+          <li class="w-full">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-star text-blue-400 mr-2 text-xl"></i>
+              <span class="text-left font-semibold text-lg">Average Rating</span>
+            </div>
+            <div class="bg-gray-800 p-3 rounded-lg text-center">
+              <div class="text-[#4C79F4] font-semibold text-xl">
+                {{ averageRating }}
+                <span class="text-gray-400 text-base">/10</span>
+              </div>
+            </div>
+          </li>
+          
+          <li class="w-full">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-tags text-blue-400 mr-2 text-xl"></i>
+              <span class="text-left font-semibold text-lg">Genres Reviewed</span>
+            </div>
+            <div class="bg-gray-800 p-3 rounded-lg text-center">
+              <div class="text-[#4C79F4] font-semibold text-xl">
+                {{ totalGenresReviewed }}
+              </div>
+            </div>
+          </li>
+          
+          <li class="w-full">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-fire text-blue-400 mr-2 text-xl"></i>
+              <span class="text-left font-semibold text-lg">Longest Review Streak</span>
+            </div>
+            <div class="bg-gray-800 p-3 rounded-lg text-center">
+              <div class="text-[#4C79F4] font-semibold text-xl">
+                {{ longestReviewStreak }} Day{{ longestReviewStreak > 1 ? "s" : "" }}
+              </div>
+            </div>
+          </li>
+          
+        </ul>
+      </ng-container>
+      <ng-template #noReviews>
+        <div
+          class="bg-gray-800 p-4 rounded-lg text-center text-gray-400 text-lg mt-2"
+        >
+          Start reviewing to view your stats
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Badges Section -->
+  <div class="px-4 pb-[6rem]">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-bold">Badges</h2>
+      <button
+        class="px-3 py-2 mt-2 rounded-lg bg-[#3E364D] text-white hover:bg-gray-700 transition text-sm md:text-base"
+        (click)="openBadgesOverlay()"
+      >
+        View Badges
+      </button>
+    </div>
+
+    <div
+      *ngIf="unlockedBadges.length > 0; else noBadgesYet"
+      class="flex flex-wrap gap-2 text-base md:text-lg"
+    >
+      <button
+        *ngFor="let badge of unlockedBadges"
+        class="px-3 py-1 rounded-full flex items-center gap-2 bg-blue-600 text-white"
+        (click)="openBadgesOverlay(badge)"
+      >
+        {{ badge.name }}
+      </button>
+    </div>
+
+    <ng-template #noBadgesYet>
+      <div
+        class="bg-gray-800 p-4 rounded-lg text-center text-gray-400 text-lg mt-2"
+      >
+        No badges earned yet.
+      </div>
     </ng-template>
+  </div>
+
+  <!-- Badge Info Overlay -->
+  <div
+    *ngIf="isBadgesOverlayOpen"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    (click)="closeBadgesOverlay()"
+  >
+    <div
+      class="bg-gray-900 rounded-lg shadow-lg p-6 max-w-[600px] w-[90%] relative text-white"
+      (click)="$event.stopPropagation()"
+    >
+      <h3 class="text-2xl font-bold mb-4 text-center">All Badges</h3>
+
+      <div class="flex flex-wrap gap-3 justify-center">
+        <button
+          *ngFor="let badge of allBadges"
+          class="px-3 py-1 rounded-full flex items-center gap-2"
+          [ngClass]="
+            badge.unlocked
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-400 text-gray-700'
+          "
+          (click)="showBadgeInfo(badge)"
+        >
+          <i *ngIf="!badge.unlocked" class="fas fa-lock"></i>
+          {{ badge.name }}
+        </button>
+      </div>
+
+      <div
+        *ngIf="selectedBadge"
+        class="mt-8 bg-gray-800 p-4 rounded-lg shadow-inner"
+      >
+        <h4 class="text-xl font-semibold mb-2">{{ selectedBadge.name }}</h4>
+        <p class="text-gray-300 mb-2">{{ selectedBadge.description }}</p>
+        <p
+          class="flex items-center gap-2"
+          [ngClass]="selectedBadge.unlocked ? 'text-green-400' : 'text-red-400'"
+        >
+          <i
+            class="fas"
+            [ngClass]="selectedBadge.unlocked ? 'fa-check-circle' : 'fa-lock'"
+          ></i>
+          {{ selectedBadge.unlocked ? "Earned" : "Locked" }}
+        </p>
+      </div>
+
+      <!-- Close button with icon -->
+      <button
+        class="absolute top-2 right-2 text-gray-400 hover:text-white text-2xl"
+        (click)="closeBadgesOverlay()"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
   </div>
 </div>

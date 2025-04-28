@@ -4,7 +4,7 @@
   <div class="w-full p-4 pt-0 mb-[3.5rem] sm:mb-0">
     <!-- Profile Section -->
     <div
-      class="flex flex-row md:flex-col items-center justify-center gap-6 mt-6"
+      class="flex flex-row md:flex-col items-center justify-center gap-6 mt-2"
     >
       <!-- Profile Picture Upload -->
       <div class="relative shrink-0">
@@ -19,12 +19,11 @@
             alt="Profile Picture"
             class="w-[8rem] h-[8rem] imageFix sm:w-40 sm:h-40 rounded-full border-2 border-gray-600 object-cover shadow-md hover:opacity-80 transition"
           />
-            <div
-            class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-gray-700 text-white p-2 rounded-full shadow-md hover:bg-gray-600 transition"
-            style="width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center;"
-            >
-            <i class="fa-solid fa-arrow-up-from-bracket md:text-xl"></i>
-            </div>
+          <div
+          class="absolute bottom-2 right-[2rem] iconPlacementFix transform translate-x-1/2 translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-full shadow-md hover:bg-gray-600 transition flex items-center justify-center"
+        >
+            <i class="fas fa-camera iconSizeFix text-white text-sm"></i>
+          </div>
         </label>
       </div>
       <!-- Buttons -->
@@ -35,8 +34,8 @@
           (click)="viewPublicProfile()"
           class="w-[12rem] buttons px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-lg font-medium rounded-full transition flex items-center justify-center gap-2 mx-auto md:mx-0"
         >
-          <i class="fas fa-eye"></i>
-          Public Profile
+        <i class="fas fa-user text-white"></i>
+        Public Profile
         </button>
 
         <button
@@ -53,47 +52,59 @@
     <form class="relative mt-6 md:mt-4 space-y-4">
       <!-- Display Name -->
       <div class="w-full max-w-[800px] mx-auto">
-        <label class="block text-gray-300 text-lg font-semibold mb-1">
+        <label class="block text-gray-300 text-base md:text-lg font-semibold mb-1">
           Display Name
         </label>
         <input
           type="text"
           [(ngModel)]="userProfile.username"
           name="username"
-          class="w-full px-4 py-2 bg-gray-700 text-lg border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
+          class="w-full px-4 py-2 bg-gray-700 text-base md:text-lg border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
       <!-- Email -->
       <div class="w-full max-w-[800px] mx-auto">
-        <label class="block text-gray-300 text-lg font-semibold mb-1">
+        <label class="block text-gray-300 text-base md:text-lg font-semibold mb-1">
           Email
         </label>
         <input
           type="email"
           [(ngModel)]="userProfile.email"
           name="email"
-          class="w-full px-4 py-2 bg-gray-700 text-lg border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
+          class="w-full px-4 py-2 bg-gray-700 text-base md:text-lg border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
       <!-- Change Password (Does not change Google Passwords) -->
       <div *ngIf="userProfile" class="w-full max-w-[800px] mx-auto">
         <div class="flex items-center gap-1">
-          <label class="block text-gray-300 text-lg font-semibold mb-1">
+          <label class="block text-gray-300 text-base md:text-lg font-semibold mb-1">
             New Password
           </label>
-          <div class="group inline-flex relative cursor-pointer">
+          <div class="relative inline-flex cursor-pointer">
+            <!-- Click only on the icon -->
             <i
-              class="fas fa-question-circle text-gray-400 group-hover:text-gray-200 transition-colors text-xl ml-2 mb-1"
+              class="fas fa-question-circle text-gray-400 hover:text-gray-200 transition-colors text-lg ml-2 mb-1"
+              (click)="toggleTooltip()"
             ></i>
-
+          
+            <!-- Fullscreen overlay + Tooltip -->
             <div
-              class="hidden group-hover:block absolute left-1/2 top-full transform -translate-x-1/2 mt-2 bg-gray-600 text-gray-100 text-md font-medium rounded px-2 py-2 shadow-lg z-10 whitespace-nowrap border border-gray-500"
+              *ngIf="isTooltipOpen"
+              class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center"
+              (click)="closeTooltip()"
             >
-              Does not change your Google password
+              <!-- Tooltip Box -->
+              <div
+                class="bg-gray-700 text-gray-100 text-base font-medium rounded px-4 py-3 shadow-2xl z-50 border border-gray-500 max-w-[80%] text-center"
+                (click)="$event.stopPropagation(); closeTooltip()"
+              >
+                Does not change your Google password
+              </div>
             </div>
           </div>
+               
         </div>
 
         <div class="relative">
@@ -101,7 +112,7 @@
             [type]="showNewPassword ? 'text' : 'password'"
             [(ngModel)]="newPassword"
             name="newPassword"
-            class="w-full px-4 py-2 bg-gray-700 border text-lg border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
+            class="w-full px-4 py-2 bg-gray-700 border text-base md:text-lg border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
             autocomplete="new-password"
           />
           <i
@@ -117,7 +128,7 @@
         </p>
 
         <div class="mt-4">
-          <label class="block text-gray-300 text-lg font-semibold mb-1">
+          <label class="block text-gray-300 text-base md:text-lg font-semibold mb-1">
             Confirm New Password
           </label>
           <div class="relative">
@@ -125,7 +136,7 @@
               [type]="showConfirmPassword ? 'text' : 'password'"
               [(ngModel)]="confirmNewPassword"
               name="confirmNewPassword"
-              class="w-full px-4 py-2 bg-gray-700 border text-lg border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
+              class="w-full px-4 py-2 bg-gray-700 border text-base md:text-lg border-gray-600 rounded-md text-white focus:ring-2 focus:ring-indigo-500"
               autocomplete="new-password"
             />
             <i
@@ -136,7 +147,7 @@
               (click)="showConfirmPassword = !showConfirmPassword"
             ></i>
           </div>
-          <p class="text-md text-red-500 mt-1 ml-2" *ngIf="confirmPasswordError">
+          <p class="text-base text-red-500 mt-1 ml-2" *ngIf="confirmPasswordError">
             {{ confirmPasswordError }}
           </p>
         </div>
@@ -170,14 +181,14 @@
             ></path>
           </svg>
         </span>
-        <span class="text-xl">{{
+        <span class="text-lg md:text-xl">{{
           isSaving ? "Saving..." : "Save Changes"
         }}</span>
       </button>
     </form>
 
     <!-- Delete Account -->
-    <div class="mt-6 text-center">
+    <div class="mt-4 text-center">
       <button
         (click)="confirmDeleteAccount()"
         class="w-full py-3 text-red-500 border border-red-500 rounded-full max-w-[20rem] font-semibold text-lg hover:bg-red-500 hover:text-white transition-colors duration-200"

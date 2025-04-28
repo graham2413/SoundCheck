@@ -16,6 +16,12 @@ router.put("/profile", authenticateUser, upload.single("profilePicture"), userCo
 // Delete User Profile (Protected)
 router.delete("/profile", authenticateUser, userController.deleteUserProfile);
 
+// User list methods
+router.post('/list', authenticateUser, userController.addToList);
+
+router.post('/list/remove', authenticateUser, userController.removeFromList);
+
+
 /*
 FRIENDSHIP ROUTES
 */

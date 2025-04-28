@@ -10,6 +10,14 @@
         width: 12rem;
         height: 12rem;
     }
+    .iconPlacementFix {
+        right: 3rem;
+        padding: .75rem;
+        height: 2rem;
+    }
+    .iconSizeFix {
+    font-size: 1.3rem;
+    }
 }
 
 @media screen and (min-width: 480px) and (max-width: 767px) {

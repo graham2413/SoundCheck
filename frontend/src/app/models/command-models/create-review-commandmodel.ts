@@ -9,6 +9,7 @@ export interface CreateReviewCommandModel {
     isExplicit?: boolean; // Song
     artist?: string;
     album?: string;
+    genre?: string; // Album/Song
   };
   rating: number;
   reviewText: string;

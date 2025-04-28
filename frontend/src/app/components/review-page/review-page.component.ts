@@ -33,6 +33,8 @@ import { Artist } from 'src/app/models/responses/artist-response';
 import { Song } from 'src/app/models/responses/song-response';
 import { CreateReviewCommandModel } from 'src/app/models/command-models/create-review-commandmodel';
 import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
+import { UserService } from 'src/app/services/user.service';
+import { ListItem, User } from 'src/app/models/responses/user.response';
 
 @Component({
   selector: 'app-review-page',
@@ -198,6 +200,26 @@ export class ReviewPageComponent implements OnInit {
   pageSize = 25;
   filterMenuOpen = false;
   activeFilter: string | null = null;
+  addingToList: boolean = false;
+    userProfile: User = {
+      _id: '',
+      username: '',
+      gradient: '',
+      createdAt: '',
+      reviews: [],
+      googleId: '',
+      email: '',
+      friends: [],
+      profilePicture: '',
+      list: [],
+      friendInfo: {
+        friends: [],
+        friendRequestsReceived: [],
+        friendRequestsSent: []
+      }
+    } as User;
+    isProfileLoading: boolean = false;
+    isInList: boolean = false;
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
@@ -219,23 +241,55 @@ export class ReviewPageComponent implements OnInit {
   @Input() showForwardAndBackwardButtons: boolean = true;
   @Output() reviewEdited = new EventEmitter<Review>();
   @Output() reviewCreated = new EventEmitter<Review>();
+  @Output() reviewDeleted = new EventEmitter<Review>();
 
   constructor(
     private activeModal: NgbActiveModal,
     private reviewService: ReviewService,
     private toastr: ToastrService,
     private searchService: SearchService,
-    private modal: NgbModal
+    private modal: NgbModal,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
+    this.isProfileLoading = true;
     this.openRecord();
+    this.checkList();
     this.checkIfCompactView();
     window.addEventListener('resize', this.checkIfCompactView.bind(this));
   }
 
   checkIfCompactView() {
     this.isCompactView = window.innerHeight < 705;
+  }
+
+  checkList() {
+    this.userService.userProfile$.subscribe((profile) => {
+      if (profile) {
+        this.userProfile = profile;
+        this.isProfileLoading = false;
+        this.updateIsInList();
+      }
+    });
+  
+    if (!this.userProfile || !this.userProfile.username) {
+      this.userService.getAuthenticatedUserProfile().subscribe({
+        next: () => {
+          this.isProfileLoading = false;
+          this.updateIsInList();
+        },
+        error: () => {
+          this.isProfileLoading = false;
+        }
+      });
+    }
+  }  
+
+  updateIsInList() {
+    this.isInList = this.userProfile.list?.some(
+      (item) => item.id === this.record.id.toString() && item.type === this.record.type
+    ) ?? false;
   }
 
   ngAfterViewInit() {
@@ -584,6 +638,7 @@ export class ReviewPageComponent implements OnInit {
       this.resetScrollingState();
       this.scrollToTopOfIpod();
       this.openRecord();
+      this.updateIsInList();
     }
   }
 
@@ -599,6 +654,7 @@ export class ReviewPageComponent implements OnInit {
       this.resetScrollingState();
       this.scrollToTopOfIpod();
       this.openRecord();
+      this.updateIsInList();
     }
   }
 
@@ -648,6 +704,7 @@ export class ReviewPageComponent implements OnInit {
         isExplicit:
           this.record.type === 'Song' ? this.record.isExplicit : undefined, // Only for Songs
         album: this.record.type === 'Song' ? this.record.album : undefined, // Only for Songs
+        genre: this.record.type === 'Song' || this.record.type === 'Album' ? this.record.genre || 'Unknown' : undefined  // Only attach genre if it's a Song or Album
       },
       rating: this.newRating,
       reviewText: this.newReview,
@@ -732,6 +789,7 @@ export class ReviewPageComponent implements OnInit {
           this.reviews = this.reviews.filter((r) => r._id !== review._id);
           this.existingUserReview = null;
           this.isDeleteLoading = false;
+          this.reviewDeleted.emit(review);
           this.ratingBarFill = this.getAverageRating() * 10;
           setTimeout(() => {
             this.circleDashOffset =
@@ -865,4 +923,63 @@ export class ReviewPageComponent implements OnInit {
     if (rating >= star - 0.5) return 'half';
     return 'empty';
   }
+
+  addToList(record: Album | Artist | Song) {
+    this.addingToList = true;
+    const itemToAdd: ListItem = {
+      ...record,
+      id: record.id.toString(),
+      addedAt: new Date()
+    };
+  
+    this.userService.addToList(itemToAdd).subscribe({
+      next: () => {
+        this.toastr.success('Added to your list!', 'Success');
+
+        // Update local userProfile.list immediately
+        this.userProfile.list.push(itemToAdd);
+  
+        // Update the global userProfile observable
+        this.userService.setUserProfile(this.userProfile);
+  
+        this.isInList = true; // ✅ Update flag
+        this.addingToList = false;
+      },
+      error: () => {
+        this.toastr.error('Failed to add item to list.', 'Error');
+        this.addingToList = false;
+      }
+    });
+  }
+
+  removeFromList(record: Album | Artist | Song) {
+    this.addingToList = true;
+  
+    const itemToRemove = {
+      id: record.id,
+      type: record.type
+    };
+  
+    this.userService.removeFromList(itemToRemove).subscribe({
+      next: () => {
+        this.toastr.success('Removed from your list!', 'Success');
+        this.isInList = false;
+        this.addingToList = false;
+
+        // Update local userProfile.list immediately
+        this.userProfile.list = this.userProfile.list.filter(
+          (item) => !(item.id === record.id.toString() && item.type === record.type)
+        );
+
+        // Update the global userProfile if needed
+        this.userService.setUserProfile(this.userProfile);
+      },
+      error: () => {
+        this.toastr.error('Failed to remove item from list.', 'Error');
+        this.addingToList = false;
+      }
+    });
+  }
+  
+  
 }

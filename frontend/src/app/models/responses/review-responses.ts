@@ -1,3 +1,6 @@
+import { Album } from "./album-response";
+import { Artist } from "./artist-response";
+import { Song } from "./song-response";
 import { User } from "./user.response";
 
 export interface Review {
@@ -9,14 +12,7 @@ export interface Review {
   reviewText: string;
   type: string;
   __v: number;
-}
-
-export interface DisplayReview extends Review {
-  albumSongOrArtist: {
-    cover: string;
-    title: string;
-    type: string;
-  };
+  albumSongOrArtist: Album | Artist | Song;
 }
 
 export interface NewReviewResponse {

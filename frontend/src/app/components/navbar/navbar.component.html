@@ -1,5 +1,5 @@
 <nav
-  class="hidden md:flex bg-[#0E1829] bg-opacity-50 backdrop-blur-lg text-white px-6 py-6 flex items-center justify-between fixed w-full top-0 left-0  z-50 h-[6rem] border-b border-b-gray-700"
+  class="hidden md:flex bg-[#0E1829] bg-opacity-50 backdrop-blur-lg text-white px-6 py-6 flex items-center justify-between fixed w-full top-0 left-0 z-50 h-[6rem] border-b border-b-gray-700"
   (click)="closeProfileMenuOnOutsideClick($event)"
 >
   <div class="flex items-center gap-3">
@@ -20,65 +20,64 @@
         class="flex items-center rounded-full focus:outline-none"
       >
         <div class="h-[5rem] w-[5rem] relative">
-           <!-- Skeleton Loader (When Loading) -->
-           <div
-           *ngIf="isProfileLoading"
-           class="absolute inset-0 flex items-center justify-center h-full w-full rounded-full border-2 border-gray-700 bg-gray-800"
-         >
-           <div class="w-6 h-6 border-t-2 border-white rounded-full animate-spin"></div>
-         </div>
-         
-          <!-- Profile Image (When Loaded) -->
-          <img
-          *ngIf="!isProfileLoading"
-          [src]="userProfile.profilePicture || 'assets/user.png'"
-            alt="User Profile"
-            class="absolute inset-0 h-full w-full rounded-full border-2 border-gray-700 shadow-md object-cover"
-          />
+          <!-- Skeleton Loader (When Loading) -->
+          <div
+            *ngIf="isProfileLoading"
+            class="absolute inset-0 flex items-center justify-center h-full w-full rounded-full border-2 border-gray-700 bg-gray-800"
+          >
+            <div
+              class="w-6 h-6 border-t-2 border-white rounded-full animate-spin"
+            ></div>
+          </div>
+
+          <!-- Profile Icon -->
+          <i
+            *ngIf="!isProfileLoading"
+            class="fas fa-user-circle absolute inset-0 text-gray-300 text-6xl flex items-center justify-center"
+          ></i>
         </div>
       </button>
 
       <div
-      *ngIf="isProfileMenuOpen"
-      @fadeScale
-      class="absolute font-semibold right-0 mt-2 w-56 bg-[#161A24] text-gray-300 rounded-lg shadow-lg z-50 border border-gray-700"
+        *ngIf="isProfileMenuOpen"
+        @fadeScale
+        class="absolute font-semibold right-0 mt-2 w-56 bg-[#161A24] text-gray-300 rounded-lg shadow-lg z-50 border border-gray-700"
       >
-      <a
-        routerLink="/"
-        class="flex items-center px-5 py-5 text-lg hover:bg-gray-700/60 hover:text-white rounded-lg transition-all duration-200"
-        (click)="closeProfileMenu()"
-      >
-        <i class="fas fa-search w-6 text-center"></i>
-        <span class="ml-3">Discover</span>
-      </a>
+        <a
+          routerLink="/"
+          class="flex items-center px-5 py-5 text-lg hover:bg-gray-700/60 hover:text-white rounded-lg transition-all duration-200"
+          (click)="closeProfileMenu()"
+        >
+          <i class="fas fa-search w-6 text-center"></i>
+          <span class="ml-3">Discover</span>
+        </a>
 
-      <a
-        routerLink="/profile"
+        <a
+        [routerLink]="['/profile', userProfile._id]"
         class="flex items-center px-5 py-5 text-lg hover:bg-gray-700/60 hover:text-white rounded-lg transition-all duration-200"
         (click)="closeProfileMenu()"
-      >
-        <i class="fas fa-user w-6 text-center"></i>
-        <span class="ml-3">Profile</span>
-      </a>
-    
-      <a
-        routerLink="/friends"
-        class="flex items-center px-5 py-5 text-lg hover:bg-gray-700/60 hover:text-white rounded-lg transition-all duration-200"
-        (click)="closeProfileMenu()"
-      >
-        <i class="fas fa-users w-6 text-center"></i>
-        <span class="ml-3">Friends</span>
-      </a>
-    
-      <button
-        (click)="logout()"
-        class="flex items-center w-full text-left px-5 py-5 text-lg text-red-400 hover:bg-gray-700/60 hover:text-red-300 rounded-lg transition-all duration-200"
-      >
-        <i class="fas fa-sign-out-alt w-6 text-center"></i>
-        <span class="ml-3">Logout</span>
-      </button>
-    </div>    
-    
+        >
+          <i class="fas fa-user w-6 text-center"></i>
+          <span class="ml-3">Profile</span>
+        </a>
+
+        <a
+          routerLink="/friends"
+          class="flex items-center px-5 py-5 text-lg hover:bg-gray-700/60 hover:text-white rounded-lg transition-all duration-200"
+          (click)="closeProfileMenu()"
+        >
+          <i class="fas fa-users w-6 text-center"></i>
+          <span class="ml-3">Friends</span>
+        </a>
+
+        <button
+          (click)="logout()"
+          class="flex items-center w-full text-left px-5 py-5 text-lg text-red-400 hover:bg-gray-700/60 hover:text-red-300 rounded-lg transition-all duration-200"
+        >
+          <i class="fas fa-sign-out-alt w-6 text-center"></i>
+          <span class="ml-3">Logout</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -110,7 +109,9 @@
   </button>
 
   <!-- Navigation Links Wrapper -->
-  <div class="flex flex-col items-center justify-center flex-1 w-full space-y-[5rem]">
+  <div
+    class="flex flex-col items-center justify-center flex-1 w-full space-y-[5rem]"
+  >
     <a
       routerLink="/"
       (click)="toggleMenu()"
@@ -169,42 +170,42 @@
   </button>
 
   <button
-  routerLink="/friends"
-  (click)="setActiveTab('friends')"
-  [ngClass]="{
-    'text-[#4C79F4]': activeTab === 'friends',
-    'text-gray-400': activeTab !== 'friends'
-  }"
-  class="flex flex-col items-center justify-center h-full flex-1 rounded"
->
-  <div class="relative">
-    <i
-      class="fas fa-users text-xl mb-1"
-      [ngClass]="{
-        'text-[#4C79F4]': activeTab === 'friends',
-        'text-gray-400': activeTab !== 'friends'
-      }"
-    ></i>
+    routerLink="/friends"
+    (click)="setActiveTab('friends')"
+    [ngClass]="{
+      'text-[#4C79F4]': activeTab === 'friends',
+      'text-gray-400': activeTab !== 'friends'
+    }"
+    class="flex flex-col items-center justify-center h-full flex-1 rounded"
+  >
+    <div class="relative">
+      <i
+        class="fas fa-users text-xl mb-1"
+        [ngClass]="{
+          'text-[#4C79F4]': activeTab === 'friends',
+          'text-gray-400': activeTab !== 'friends'
+        }"
+      ></i>
 
-    <span
-      *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
-      class="absolute -top-1 -right-[2rem] bg-red-500 text-white text-[0.8rem] font-bold px-[5px] py-[1px] rounded-full leading-none flex items-center justify-center w-[1.3rem] h-[1.3rem]"
-    >
-      {{ userProfile.friendInfo.friendRequestsReceived.length }}
-    </span>
-  </div>
+      <span
+        *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
+        class="absolute -top-1 -right-[2rem] bg-red-500 text-white text-[0.8rem] font-bold px-[5px] py-[1px] rounded-full leading-none flex items-center justify-center w-[1.3rem] h-[1.3rem]"
+      >
+        {{ userProfile.friendInfo.friendRequestsReceived.length }}
+      </span>
+    </div>
 
-  <span>Friends</span>
-</button>
+    <span>Friends</span>
+  </button>
 
   <button
-    routerLink="/profile"
-    (click)="setActiveTab('profile')"
-    [ngClass]="{
+  [routerLink]="['/profile', userProfile._id]"
+  (click)="setActiveTab('profile')"
+  [ngClass]="{
       'text-[#4C79F4]': activeTab === 'profile',
       'text-gray-400': activeTab !== 'profile'
     }"
-    class="flex flex-col items-center justify-center relative h-full flex-1 rounded-l"
+  class="flex flex-col items-center justify-center relative h-full flex-1 rounded-l"
   >
     <i
       class="fas fa-user text-xl mb-1"

@@ -43,14 +43,19 @@ export class NavbarComponent implements OnInit {
   userProfile: User = {
     _id: '',
     username: '',
-    email: '',
+    gradient: '',
+    createdAt: '',
+    reviews: [],
     googleId: '',
+    email: '',
+    friends: [],
     profilePicture: '',
+    list: [],
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],
-      friendRequestsSent: [],
-    },
+      friendRequestsSent: []
+    }
   } as User;
 
   isProfileLoading: boolean = false;

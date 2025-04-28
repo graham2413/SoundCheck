@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { SearchService } from 'src/app/services/search.service';
 import { ReviewPageComponent } from '../review-page/review-page.component';
@@ -21,7 +21,7 @@ import { Review } from 'src/app/models/responses/review-responses';
   standalone: true,
   imports: [CommonModule, FormsModule, TimeAgoPipe]
 })
-export class MainSearchComponent {
+export class MainSearchComponent implements OnInit {
   @ViewChild('marqueeContainer') marqueeContainer!: ElementRef<HTMLDivElement>;
   @ViewChild('marqueeTrack') marqueeTrack!: ElementRef<HTMLDivElement>;
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
@@ -62,6 +62,7 @@ export class MainSearchComponent {
   isDiscoverContentLoading: boolean = false;
   isActivityLoading: boolean = false;
   activityFeed: any[] = [];
+  section: string | null = null;
 
   constructor(private searchService: SearchService,
     private modal: NgbModal,
@@ -69,6 +70,14 @@ export class MainSearchComponent {
     private reviewService: ReviewService,
     private router: Router
   ) { }
+
+  ngOnInit(): void {
+    this.section = history.state.section || null;
+
+    if (this.section === 'mainSearch' || this.section === 'popular' || this.section === 'recentActivity') {
+      this.setActiveDiscoverTab(this.section);
+    }
+  }
 
   ngAfterViewInit(): void {
     this.isMarqueeLoading = true;
@@ -388,7 +397,19 @@ export class MainSearchComponent {
     
     modalRef.componentInstance.record = record;
 
-    // Update activity feed whenver I update a review
+
+    // 1. Handle when a review is created
+    modalRef.componentInstance.reviewCreated?.subscribe((newReview: Review) => {
+      this.activityFeed.unshift(newReview); // Add new review at top
+    });
+
+    // 2. Handle when a review is deleted
+    modalRef.componentInstance.reviewDeleted?.subscribe((deletedReview: Review) => {
+      this.activityFeed = this.activityFeed.filter(
+        (review) => review._id !== deletedReview._id
+      );
+    });
+    // 3. Handle when a review is edited
     modalRef.componentInstance.reviewEdited.subscribe((updatedReview: Review) => {
       const i = this.activityFeed.findIndex(a => a._id === updatedReview._id);
       if (i !== -1) {
@@ -433,6 +454,6 @@ export class MainSearchComponent {
   }
 
   goToUserProfile(userId: string) {
-    this.router.navigate([`/profile/${userId}`]);
+    this.router.navigate(['/profile', userId], { state: { section: 'recentActivity' } });
   }
 }
