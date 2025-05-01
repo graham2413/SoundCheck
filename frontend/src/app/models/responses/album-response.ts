@@ -9,4 +9,6 @@ export interface Album {
     tracklist: Song[];
     genre: string;
     type: 'Album';
+    isExplicit: boolean;
+    preview: string;
   }

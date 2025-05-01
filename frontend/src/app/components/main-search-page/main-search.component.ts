@@ -235,7 +235,7 @@ export class MainSearchComponent implements OnInit {
         setTimeout(() => {
           this.setActiveTab('songs');
           this.isLoading = false;
-        }, 250);
+        }, 50);
       },
       error: (error) => {
         this.toastr.error(`Error occurred while searching for "${this.query}"`, 'Error');
@@ -427,6 +427,17 @@ export class MainSearchComponent implements OnInit {
       if (this.activeDiscoverTab === 'popular') {
         this.loadPopularReviews(this.activePopularType);
       }      
+    });
+
+    // 4. Handle opening a song frmo an artist or album review
+    modalRef.componentInstance.openNewReview.subscribe((record: Song) => {
+      modalRef.close();
+    
+      // Upgrade the image before opening the modal
+      const highResCover = this.getHighQualityImage(record.cover);
+      const updatedRecord = { ...record, cover: highResCover };
+    
+      this.openModal(updatedRecord, [], 1);
     });
   }
 

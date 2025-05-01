@@ -85,6 +85,7 @@ exports.searchMusic = async (req, res) => {
       artist: album?.artist?.name || "Unknown",
       cover: album?.cover,
       genre: albumGenres[index],
+      isExplicit: album?.explicit_lyrics,
     }));
 
     /** Process Artists */
@@ -235,6 +236,8 @@ exports.getAlbumDetails = async (req, res) => {
 
     // Extract relevant details
     const albumData = albumResponse.data;
+    const firstTrack = albumData.tracks?.data?.[0];
+
     const albumDetails = {
       id: albumData.id,
       releaseDate: albumData.release_date || "Unknown",
@@ -242,9 +245,17 @@ exports.getAlbumDetails = async (req, res) => {
         albumData.tracks?.data?.map((track) => ({
           id: track.id,
           title: track.title,
+          artist: track.artist?.name || "Unknown",
+          album: track.album?.title || "Unknown",
           duration: track.duration,
+          preview: track.preview,
+          isExplicit: track.explicit_lyrics,
+          cover: track.album?.cover,
+          type: 'Song'
         })) || [],
         genre: albumData.genres?.data?.[0]?.name || "Unknown",
+        isExplicit: albumData.explicit_lyrics,
+        preview: firstTrack?.preview || null
     };
 
     return res.json(albumDetails);
@@ -287,9 +298,14 @@ exports.getArtistTopTracks = async (req, res) => {
     const artistTopTrackData = artistsResponse.data.data;
     const artistTopTrackDetails = artistTopTrackData.map((track) => ({
       id: track.id,
-      title: track.title ?? "Unknown Title",
-      duration: track.duration ?? 0,
+      title: track.title,
+      artist: track.artist?.name || "Unknown",
+      album: track.album?.title || "Unknown",
+      duration: track.duration,
+      preview: track.preview,
       isExplicit: track.explicit_lyrics,
+      cover: track.album?.cover,
+      type: 'Song'
     }));
 
     return res.json(artistTopTrackDetails);

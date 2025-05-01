@@ -805,7 +805,29 @@ export class ViewProfilePageComponent implements OnInit {
     modalRef.componentInstance.userNavigated.subscribe(() => {
       this.showPanel = null;
     });
+
+    // 5. Handle opening a song frmo an artist or album review
+    modalRef.componentInstance.openNewReview.subscribe((record: Song) => {
+      modalRef.close();
     
+      // Upgrade the image before opening the modal
+      const highResCover = this.getHighQualityImage(record.cover);
+      const updatedRecord = { ...record, cover: highResCover };
+    
+      this.openReview(updatedRecord, [], 1);
+    });
+    
+  }
+
+  getHighQualityImage(imageUrl: string): string {
+    if (!imageUrl) return '';
+
+    // Ensure we're requesting the highest resolution available
+    if (imageUrl.includes('api.deezer.com')) {
+      return `${imageUrl}?size=xl`;
+    }
+
+    return imageUrl;
   }
 
   updateUserStats() {

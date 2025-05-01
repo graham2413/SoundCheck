@@ -109,6 +109,7 @@
               <li
                 *ngFor="let track of record.tracklist; let i = index"
                 class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md"
+                (click)="openSong(track)"
               >
                 <div class="flex items-center gap-3 flex-1 min-w-0 text-xl">
                   <span class="text-gray-400 font-semibold">
@@ -157,10 +158,7 @@
           </button>
 
           <!-- Overall Rating -->
-          <div
-            (click)="scrollToReviews()"
-            class="flex justify-center w-full mb-4 mt-4"
-          >
+          <div class="flex justify-center w-full mb-4 mt-4">
             <div
               class="relative w-[75%] flex flex-col items-center justify-center"
             >
@@ -187,6 +185,7 @@
                 >
                   <!-- Rating Badge -->
                   <div
+                    (click)="scrollToReviews()"
                     class="rating-badge-bg px-3 py-1 rounded-full text-white text-3xl font-bold tracking-wide shadow mb-2 flex items-center justify-center"
                   >
                     <ng-container
@@ -302,7 +301,7 @@
             >
               <span
                 *ngIf="isExplicit"
-                class="bg-gray-600 text-white text-lg w-[1.2em] h-[1.2em] flex items-center justify-center font-bold rounded leading-none mr-1"
+                class="bg-gray-600 text-white text-base w-[1.5em] h-[1.5em] flex items-center justify-center font-bold rounded leading-none mr-1"
               >
                 E
               </span>
@@ -335,38 +334,40 @@
   </div>
 
   <!-- Add to List Button -->
-  <button
-    *ngIf="!isProfileLoading && !isInList"
-    class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
-    [disabled]="addingToList"
-    (click)="addToList(record)"
-  >
-    <ng-container *ngIf="!addingToList; else addingState">
-      <i class="fas fa-plus-circle mr-2 text-2xl"></i>
-      Add to List
-    </ng-container>
-  </button>
+  <div *ngIf="!showSecondIpod">
+    <button
+      *ngIf="!isProfileLoading && !isInList"
+      class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+      [disabled]="addingToList"
+      (click)="addToList(record)"
+    >
+      <ng-container *ngIf="!addingToList; else addingState">
+        <i class="fas fa-plus-circle mr-2 text-2xl"></i>
+        Add to List
+      </ng-container>
+    </button>
 
-  <!-- Remove from List Button -->
-  <button
-    *ngIf="!isProfileLoading && isInList"
-    class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
-    [disabled]="addingToList"
-    (click)="removeFromList(record)"
-  >
-    <ng-container *ngIf="!addingToList; else removingState">
-      <i class="fas fa-trash text-2xl mr-2"></i> Remove from List
-    </ng-container>
-  </button>
+    <!-- Remove from List Button -->
+    <button
+      *ngIf="!isProfileLoading && isInList"
+      class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+      [disabled]="addingToList"
+      (click)="removeFromList(record)"
+    >
+      <ng-container *ngIf="!addingToList; else removingState">
+        <i class="fas fa-trash text-2xl mr-2"></i> Remove from List
+      </ng-container>
+    </button>
 
-  <!-- Loading templates -->
-  <ng-template #addingState>
-    <i class="fas fa-spinner fa-spin mr-2"></i> Adding...
-  </ng-template>
+    <!-- Loading templates -->
+    <ng-template #addingState>
+      <i class="fas fa-spinner fa-spin mr-2"></i> Adding...
+    </ng-template>
 
-  <ng-template #removingState>
-    <i class="fas fa-spinner fa-spin mr-2"></i> Removing...
-  </ng-template>
+    <ng-template #removingState>
+      <i class="fas fa-spinner fa-spin mr-2"></i> Removing...
+    </ng-template>
+  </div>
 
   <!-- Reviews Section -->
   <div
@@ -1117,7 +1118,7 @@
                     >
                       <span
                         *ngIf="isExplicit"
-                        class="bg-gray-600 text-white text-base w-[1.2em] h-[1.2em] flex items-center justify-center font-bold rounded leading-none mr-1"
+                        class="bg-gray-600 text-white text-base w-[1.5em] h-[1.5em] flex items-center justify-center font-bold rounded leading-none mr-1"
                       >
                         E
                       </span>
@@ -1149,7 +1150,7 @@
                   <!-- Add to List Button -->
                   <button
                     *ngIf="!isProfileLoading && !isInList"
-                    class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                    class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
                     [disabled]="addingToList"
                     (click)="addToList(record)"
                   >
@@ -1292,6 +1293,7 @@
                   <ul *ngIf="isTracklistArray" class="space-y-3">
                     <li
                       *ngFor="let track of record.tracklist; let i = index"
+                      (click)="openSong(track)"
                       class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md w-full"
                     >
                       <div class="flex items-center gap-2 flex-1 min-w-0">

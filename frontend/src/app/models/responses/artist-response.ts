@@ -6,5 +6,6 @@ export interface Artist {
     picture: string;
     tracklist: Song[];
     type: 'Artist';
+    preview: string;
   }
   

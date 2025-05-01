@@ -246,6 +246,7 @@ export class ReviewPageComponent implements OnInit {
   @Output() reviewCreated = new EventEmitter<Review>();
   @Output() reviewDeleted = new EventEmitter<Review>();
   @Output() userNavigated = new EventEmitter<void>();
+  @Output() openNewReview = new EventEmitter<{ id: number; type: string }>();
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -569,8 +570,8 @@ export class ReviewPageComponent implements OnInit {
   }
 
   get isExplicit(): boolean {
-    return this.record?.type === 'Song' && 'isExplicit' in this.record
-      ? (this.record as Song).isExplicit
+    return (this.record?.type === 'Song' || this.record?.type === 'Album') && 'isExplicit' in this.record
+      ? (this.record as Song | Album).isExplicit
       : false;
   }
 
@@ -598,6 +599,8 @@ export class ReviewPageComponent implements OnInit {
           const album = this.record as Album;
           album.releaseDate = data.releaseDate;
           album.tracklist = data.tracklist;
+          album.preview = data.preview;
+          album.isExplicit = data.isExplicit;
         },
         error: () => {
           const album = this.record as Album;
@@ -617,6 +620,7 @@ export class ReviewPageComponent implements OnInit {
         next: (data: Song[]) => {
           const artist = this.record as Artist;
           artist.tracklist = Array.isArray(data) ? data : [];
+          artist.preview = data[0]?.preview || ''; // set preview to first song's preview or null
         },
         error: () => {
           const artist = this.record as Artist;
@@ -661,6 +665,11 @@ export class ReviewPageComponent implements OnInit {
       this.openRecord();
       this.updateIsInList();
     }
+  }
+
+  openSong(song: Song) {
+    this.activeModal.close();
+    this.openNewReview.emit(song);
   }
 
   formatDuration(seconds: number | undefined): string {

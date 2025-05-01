@@ -174,12 +174,12 @@
 
   <!-- No Results Found -->
   <div
-  *ngIf="searchAttempted && !isLoading && !resultsHasValues()"
-  class="mt-12 mx-4 text-center text-gray-400 text-lg bg-gray-800 p-4 rounded-lg"
->
-  <i class="fas fa-search-minus text-4xl mb-2"></i>
-  <p>No results found. Try searching for something else.</p>
-</div>
+    *ngIf="searchAttempted && !isLoading && !resultsHasValues()"
+    class="mt-12 mx-4 text-center text-gray-400 text-lg bg-gray-800 p-4 rounded-lg"
+  >
+    <i class="fas fa-search-minus text-4xl mb-2"></i>
+    <p>No results found. Try searching for something else.</p>
+  </div>
 
   <!-- Toggle Buttons -->
   <div
@@ -195,7 +195,7 @@
     <button
       (click)="setActiveTab('songs')"
       [class.bg-[#0F5EE4]]="activeTab === 'songs'"
-      class="px-4 py-2 rounded-md md:hover:bg-indigo-500 transition text-xl font-bold"
+      class="px-4 py-2 rounded-full md:hover:bg-indigo-500 transition text-xl font-bold"
     >
       Songs
     </button>
@@ -203,7 +203,7 @@
       *ngIf="results && (results.albums?.length ?? 0) > 0"
       (click)="setActiveTab('albums')"
       [class.bg-[#0F5EE4]]="activeTab === 'albums'"
-      class="px-4 py-2 rounded-md md:hover:bg-indigo-500 transition text-xl font-bold"
+      class="px-4 py-2 rounded-full md:hover:bg-indigo-500 transition text-xl font-bold"
     >
       Albums
     </button>
@@ -211,7 +211,7 @@
       *ngIf="results && (results.artists?.length ?? 0) > 0"
       (click)="setActiveTab('artists')"
       [class.bg-[#0F5EE4]]="activeTab === 'artists'"
-      class="px-4 py-2 rounded-md md:hover:bg-indigo-500 transition text-xl font-bold"
+      class="px-4 py-2 rounded-full md:hover:bg-indigo-500 transition text-xl font-bold"
     >
       Artists
     </button>
@@ -306,7 +306,7 @@
             >
               <span
                 *ngIf="song?.isExplicit"
-                class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+                class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
                 title="Explicit"
               >
                 E
@@ -396,9 +396,16 @@
               {{ album.title }}
             </p>
             <p
-              class="text-sm md:text-base text-gray-400 mt-1 truncate"
+              class="text-sm md:text-base text-gray-400 mt-1 truncate overflow-hidden whitespace-nowrap"
               title="{{ album.artist }}"
             >
+              <span
+                *ngIf="album?.isExplicit"
+                class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+                title="Explicit"
+              >
+                E
+              </span>
               {{ album.artist }}
             </p>
           </div>
@@ -445,25 +452,14 @@
 <div [hidden]="activeDiscoverTab !== 'popular'">
   <div class="bg-[#09101F] text-white min-h-screen pt-[1rem] pb-[6rem] px-1">
     <div class="md:max-w-[1000px] md:mx-auto">
-      <!-- Loading Indicator -->
-      <div
-        *ngIf="isDiscoverContentLoading"
-        class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
-      >
-        <div
-          class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
-        ></div>
-        <p class="mt-4 text-gray-400 text-lg md:text-2xl">Loading Top Charts...</p>
-      </div>
-
       <!-- Loaded Content -->
-      <div *ngIf="!isDiscoverContentLoading">
+      <div>
         <!-- Type Selector -->
         <div class="flex justify-center gap-4">
           <button
             *ngFor="let type of popularTypes"
             (click)="setPopularType(type)"
-            class="px-4 py-2 rounded-md text-lg md:text-2xl font-semibold"
+            class="px-4 py-2 rounded-full text-lg md:text-2xl font-semibold"
             [ngClass]="{
               'bg-[#0F5EE4] text-white': activePopularType === type,
               'text-gray-400 hover:text-white': activePopularType !== type
@@ -502,48 +498,63 @@
             </div>
           </div>
 
-          <!-- Records -->
+          <!-- Loading Indicator -->
           <div
-            *ngFor="let record of popularRecords; let i = index"
-            class="flex items-center mb-3 last:mb-0"
-            (click)="openModal(record, popularRecords, i)"
+            *ngIf="isDiscoverContentLoading"
+            class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
           >
-            <!-- Rank -->
-            <div class="text-3xl text-[#0F5EE4] w-6 mr-2 text-center">
-              {{ i + 1 }}.
-            </div>
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
+            ></div>
+            <p class="mt-4 text-gray-400 text-lg md:text-2xl">
+              Loading Top {{ activePopularType }}s...
+            </p>
+          </div>
 
-            <!-- Album Cover -->
-            <img
-              [src]="record.cover || record.picture || 'assets/fallback.jpg'"
-              alt="Media"
-              class="w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] object-cover rounded border border-gray-600"
-            />
+          <!-- Records -->
+          <div *ngIf="!isDiscoverContentLoading">
+            <div
+              *ngFor="let record of popularRecords; let i = index"
+              class="flex items-center mb-3 last:mb-0"
+              (click)="openModal(record, popularRecords, i)"
+            >
+              <!-- Rank -->
+              <div class="text-3xl text-[#0F5EE4] w-6 mr-2 text-center">
+                {{ i + 1 }}.
+              </div>
 
-            <!-- Info -->
-            <div class="ml-4 flex-1 overflow-hidden">
-              <p
-                class="text-lg md:text-3xl font-semibold truncate whitespace-nowrap"
-              >
-                {{ record.title || record.name }}
-              </p>
-              <p
-                class="text-sm text-gray-400 capitalize truncate whitespace-nowrap"
-              >
-                <span
-                  *ngIf="record?.isExplicit"
-                  class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
-                  title="Explicit"
+              <!-- Album Cover -->
+              <img
+                [src]="record.cover || record.picture || 'assets/fallback.jpg'"
+                alt="Media"
+                class="w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] object-cover rounded border border-gray-600"
+              />
+
+              <!-- Info -->
+              <div class="ml-4 flex-1 overflow-hidden">
+                <p
+                  class="text-lg md:text-3xl font-semibold truncate whitespace-nowrap"
                 >
-                  E
-                </span>
-                <span class="md:text-xl">{{ record.artist }}</span>
-              </p>
-            </div>
+                  {{ record.title || record.name }}
+                </p>
+                <p
+                  class="text-sm text-gray-400 capitalize truncate whitespace-nowrap"
+                >
+                  <span
+                    *ngIf="record?.isExplicit"
+                    class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+                    title="Explicit"
+                  >
+                    E
+                  </span>
+                  <span class="md:text-xl">{{ record.artist }}</span>
+                </p>
+              </div>
 
-            <!-- Rating -->
-            <div class="text-2xl font-semibold text-gray-white pl-2">
-              {{ record.avgRating }}
+              <!-- Rating -->
+              <div class="text-2xl font-semibold text-gray-white pl-2">
+                {{ record.avgRating }}
+              </div>
             </div>
           </div>
         </div>
@@ -656,7 +667,7 @@
                   >
                     <span
                       *ngIf="activity.albumSongOrArtist?.isExplicit"
-                      class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded md:mr-2 leading-none mr-1 align-middle"
+                      class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded md:mr-2 leading-none mr-1 align-middle"
                       title="Explicit"
                     >
                       E
@@ -712,7 +723,9 @@
         </div>
         <!-- Template shown when no activities -->
         <ng-template #noActivity>
-          <div class="text-center text-gray-400 mt-8 text-lg italic bg-gray-800 p-4 rounded-lg"          >
+          <div
+            class="text-center text-gray-400 mt-8 text-lg italic bg-gray-800 p-4 rounded-lg"
+          >
             No activity to display yet.
           </div>
         </ng-template>
