@@ -13,18 +13,18 @@
   <!-- Back Button -->
   <button
     (click)="goBack()"
-    class="absolute top-2 left-2 p-2 text-white transition text-[1.3rem]"
-  >
-    <i class="fas fa-chevron-left"></i>
+    class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md"
+    >
+    <i class="fas fa-chevron-left text-[#09101F] text-lg"></i>
   </button>
 
   <!-- Change Background Button -->
   <button
     *ngIf="otherUser._id === loggedInUser._id"
     (click)="openGradientModal()"
-    class="absolute top-2 right-2 p-2 text-white transition text-[1.3rem]"
+    class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md"
   >
-    <i class="fas fa-paint-brush"></i>
+    <i class="fas fa-paint-brush text-[#09101F] text-xl"></i>
   </button>
 </div>
 

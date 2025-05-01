@@ -13,20 +13,31 @@
     <div
       [@slideAnimation]="showSecondIpod ? 'back' : 'hidden'"
       [ngClass]="{ 'invisible-view': !showSecondIpod }"
-      class="absolute left-0 right-0 w-full max-w-lg mx-auto flex flex-col h-full bg-[#09101F] px-3 pb-3 overflow-hidden items-center"
+      class="absolute left-0 right-0 w-full max-w-lg mx-auto flex flex-col h-full overflow-hidden items-center"
     >
-      <button
-        (click)="showSecondIpod = false"
-        class="bg-gray-800 text-white w-16 h-10 rounded-full flex items-center justify-center border-2 border-white mt-3 mb-3"
+      <!-- Image background header -->
+      <div
+        class="w-full h-60 bg-contain bg-center"
+        [ngStyle]="{
+          'background-image':
+            'url(' +
+            (record.type === 'Artist' ? record.picture : record.cover) +
+            ')'
+        }"
       >
-        <i class="fas fa-arrow-left text-lg"></i>
-      </button>
-
-      <h3
-        class="record-details-title text-2xl font-bold text-white text-center"
-      >
-        {{ record.type }} Details
-      </h3>
+        <!-- Back Button (top-left) -->
+        <button
+          (click)="showSecondIpod = false"
+          class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md"
+        >
+          <i class="fas fa-chevron-left text-[#09101F] text-lg"></i>
+        </button>
+        <div class="w-full h-full bg-black/40 flex items-end justify-start p-4">
+          <h3 class="text-white text-xl font-bold">
+            {{ record.type }} Details
+          </h3>
+        </div>
+      </div>
 
       <div
         #scrollContainer
@@ -152,9 +163,9 @@
           <!-- Left Button -->
           <button
             (click)="showSecondIpod = true"
-            class="bg-[#09101F] text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white"
+            class="w-[4rem] h-[3rem] rounded-full bg-white/80 flex items-center justify-center shadow-md"
           >
-            <i class="fa-solid fa-info text-lg"></i>
+            <i class="fa-solid fa-info text-[#09101F] text-xl"></i>
           </button>
 
           <!-- Overall Rating -->
@@ -240,9 +251,9 @@
           <!-- Close Button -->
           <button
             (click)="close()"
-            class="bg-[#09101F] text-white w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white"
+            class="w-[4rem] h-[3rem] rounded-full bg-white/80 flex items-center justify-center shadow-md"
           >
-            <i class="fas fa-times text-lg"></i>
+            <i class="fas fa-times text-[#09101F] text-xl"></i>
           </button>
         </div>
 
