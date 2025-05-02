@@ -73,19 +73,26 @@ export class AudioPlayerComponent implements AfterViewInit {
 
   togglePlay(): void {
     if (!this.audio || !this.audio.src) {
-      // If no track is loaded, load current one
       if (this.song?.preview) {
         this.setSource(this.song.preview);
-        return;
       }
+      return;
     }
   
-    this.isPlaying = !this.isPlaying;
-    this.isPlaying ? this.audio.play() : this.audio.pause();
-    this.playStatus.emit(this.isPlaying);
-  
-    if (this.isPlaying && this.record?.type !== 'Song') {
-      this.playStarted.emit(this.song?.preview || '');
+    if (this.audio.paused) {
+      this.audio.play().then(() => {
+        this.isPlaying = true;
+        this.playStatus.emit(true);
+        if (this.record?.type !== 'Song') {
+          this.playStarted.emit(this.song?.preview || '');
+        }
+      }).catch(err => {
+        console.error('Failed to play:', err);
+      });
+    } else {
+      this.audio.pause();
+      this.isPlaying = false;
+      this.playStatus.emit(false);
     }
   }
 
