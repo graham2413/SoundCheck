@@ -13,134 +13,272 @@
     <div
       [@slideAnimation]="showSecondIpod ? 'back' : 'hidden'"
       [ngClass]="{ 'invisible-view': !showSecondIpod }"
-      class="absolute left-0 right-0 w-full max-w-lg mx-auto flex flex-col h-full overflow-hidden items-center"
     >
-      <!-- Image background header -->
-      <div
-        class="w-full h-60 bg-contain bg-center"
-        [ngStyle]="{
-          'background-image':
-            'url(' +
-            (record.type === 'Artist' ? record.picture : record.cover) +
-            ')'
-        }"
+      <!-- Back Button (top-left) -->
+      <button
+        (click)="onBackClick()"
+        class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md z-50"
       >
-        <!-- Back Button (top-left) -->
-        <button
-          (click)="showSecondIpod = false"
-          class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md"
-        >
-          <i class="fas fa-chevron-left text-[#09101F] text-lg"></i>
-        </button>
-        <div class="w-full h-full bg-black/40 flex items-end justify-start p-4">
-          <h3 class="text-white text-xl font-bold">
-            {{ record.type }} Details
-          </h3>
+        <i class="fas fa-chevron-left text-[#09101F] text-lg"></i>
+      </button>
+
+      <!-- Artist Section -->
+      <div *ngIf="record.type === 'Artist'">
+        <!-- Image background layer -->
+        <div class="absolute top-0 left-0 right-0 w-full z-0">
+          <img
+            [src]="record.type === 'Artist' ? record.picture : ''"
+            class="w-full h-auto"
+            alt="Record Image"
+          />
+          <div class="absolute inset-0 bg-black/40"></div>
+        </div>
+        <div class="relative mt-[10rem] left-0 right-0 px-2 py-2 z-50">
+          <div class="bg-white/30 rounded-md p-3 w-full text-left">
+            <p *ngIf="record.type === 'Artist'" class="text-xl font-semibold">
+              Top Tracks
+            </p>
+          </div>
+          <!-- Album Tracklist -->
+          <ul
+            *ngIf="isTracklistArray"
+            class="space-y-3 w-full mt-3 bg-[rgba(33,46,67,0.55)] p-2 rounded-lg"
+          >
+            <li
+              *ngFor="let track of record.tracklist; let i = index"
+              class="flex items-center justify-between py-4 pr-4 pl-2 bg-[#09101F] rounded-xl transition-all duration-300 border border-[#142249]"
+              [ngClass]="{
+                'opacity-50': !track.preview || track.preview.length <= 1,
+                'shadow-[0_0_8px_rgba(59,130,246,0.5)]': track.isPlaying
+              }"
+            >
+              <!-- Play Button -->
+              <ng-container *ngIf="track.preview && track.preview.length > 1">
+                <div
+                  class="flex items-center justify-center w-12 h-12 bg-[#1F273A] text-white rounded-full mr-3 px-3 transition-all duration-300"
+                  [ngClass]="{
+                    'transition-all duration-300 border border-[#1E3A8A] shadow-[0_0_6px_rgba(59,130,246,0.5)]':
+                      track.isPlaying
+                  }"
+                  (click)="playTrack(track)"
+                >
+                  <i
+                    [ngClass]="{
+                      fas: true,
+                      'fa-pause': track.isPlaying,
+                      'fa-play': !track.isPlaying
+                    }"
+                    class="text-lg transition-all duration-300"
+                  >
+                  </i>
+                </div>
+              </ng-container>
+
+              <!-- Title and album info -->
+              <div
+                class="flex flex-col gap-1 flex-1 min-w-0 text-left font-semibold"
+              >
+                <div class="flex items-center gap-2 min-w-0 text-xl">
+                  <span
+                    (click)="openSong(track)"
+                    class="text-white text-base truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0 flex items-center gap-1"
+                  >
+                    <span
+                      *ngIf="track.isExplicit"
+                      class="bg-gray-600 text-white text-sm w-[1.2em] h-[1.2em] flex items-center justify-center font-bold rounded leading-none shrink-0"
+                    >
+                      E
+                    </span>
+                    <span
+                      class="pl-1 truncate overflow-hidden whitespace-nowrap text-ellipsis"
+                      >{{ track.title }}</span
+                    >
+                  </span>
+                </div>
+                <div
+                  (click)="openSong(track)"
+                  class="flex items-center gap-2 text-gray-400 text-sm"
+                >
+                  <span
+                    class="truncate overflow-hidden whitespace-nowrap block flex-1"
+                    [ngClass]="{ 'pl-[.3rem]': !track.isExplicit }"
+                  >
+                    Album: <span class="pl-2">{{ track.album }}</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Duration -->
+              <span
+                (click)="openSong(track)"
+                class="text-gray-300 bg-[#172438] text-base shrink-0 ml-2.5 p-1 px-1.5 rounded-md"
+              >
+                {{ formatDuration(track.duration) || "?" }}
+              </span>
+            </li>
+          </ul>
+
+          <!-- Loading state -->
+          <div
+            *ngIf="isLoadingExtraDetails"
+            class="w-full bg-[#09101F] p-6 rounded-lg flex flex-col items-center justify-center mt-[2rem]"
+          >
+            <p class="text-gray-400 text-center mb-4">Loading tracklist...</p>
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
+            ></div>
+          </div>
+
+          <!-- No tracklist -->
+          <div
+            *ngIf="!isLoadingExtraDetails && !isTracklistArray"
+            class="w-full bg-[#09101F] p-6 rounded-lg text-center"
+          >
+            <p class="text-gray-400">No tracklist available.</p>
+          </div>
         </div>
       </div>
 
-      <div
-        #scrollContainer
-        [ngClass]="{
-          'justify-center': !isScrollable,
-          'justify-start': isScrollable
-        }"
-        class="record-details-card flex-grow overflow-y-auto w-full flex flex-col items-center space-y-10 px-4 pb-4"
-        style="min-height: 0; height: calc(100dvh - 125px)"
-      >
-        <div
-          class="flex flex-col items-center justify-center w-full space-y-10"
-        >
-          <!-- (Type: Song) Album -->
-          <div
-            *ngIf="record.type === 'Song'"
-            class="flex flex-col items-center"
-          >
-            <i class="fas fa-compact-disc text-blue-400 pb-2 text-2xl"></i>
-            <p class="text-white font-bold text-2xl">Album</p>
-            <p class="text-gray-300 text-xl">{{ record.album || "Unknown" }}</p>
-          </div>
-
-          <!-- (Type: Song) Release Date -->
-          <div
-            *ngIf="record.type !== 'Artist'"
-            class="flex flex-col items-center"
-          >
-            <i class="fas fa-calendar-alt text-yellow-400 pb-2 text-2xl"></i>
-            <p class="text-white font-bold text-2xl">Release Date</p>
-            <p class="text-gray-300 text-xl">
-              {{ formatDate(record.releaseDate) }}
-            </p>
-          </div>
-
-          <!-- (Type: Song) Duration -->
-          <div
-            *ngIf="record.type === 'Song'"
-            class="flex flex-col items-center"
-          >
-            <i class="fas fa-clock text-red-400 pb-2 text-2xl"></i>
-            <p class="text-white font-bold text-2xl">Duration</p>
-            <p class="text-gray-300 text-xl">
-              {{ formatDuration(record.duration) }}
-            </p>
-          </div>
-
-          <!-- (Type: Song) Contributors -->
-          <div
-            *ngIf="record.type === 'Song'"
-            class="w-full flex flex-col items-center"
-          >
-            <i class="fas fa-microphone text-purple-400 pb-2 text-2xl"></i>
-            <p class="text-white font-bold text-2xl">Contributors</p>
-            <ul class="text-gray-300 text-center text-xl">
-              <li *ngFor="let contributor of record.contributors" class="mt-2">
-                {{ contributor }}
-              </li>
-            </ul>
-          </div>
-
-          <!-- Album  AND Artist Tracklist -->
-          <div *ngIf="record.type !== 'Song'" class="w-full">
-            <div class="flex flex-col items-center text-center mb-3">
-              <i class="fas fa-music text-blue-400 text-2xl pb-2"></i>
-              <p
-                *ngIf="record.type === 'Album'"
-                class="text-white font-semibold text-2xl"
-              >
-                Tracklist
-              </p>
-              <p
-                *ngIf="record.type === 'Artist'"
-                class="text-white font-semibold text-2xl"
-              >
-                Top Tracks
-              </p>
+      <!-- Album and Song Section  -->
+      <div *ngIf="record.type !== 'Artist'">
+        <div class="relative flex justify-center items-center">
+          <img
+            [src]="record.cover || ''"
+            class="w-[55%] h-auto rounded-md mt-[2rem] border-2 border-gray-500"
+            alt="Record Image"
+          />
+        </div>
+        <div class="px-2">
+          <div class="p-4 text-white w-full mt-[1rem] px-3">
+            <div class="text-xl font-bold leading-snug mb-1">
+              {{ record.title }}
             </div>
-            <ul *ngIf="isTracklistArray" class="space-y-3">
-              <li
-                *ngFor="let track of record.tracklist; let i = index"
-                class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md"
-                (click)="openSong(track)"
+            <div
+              *ngIf="record.type === 'Album'"
+              class="text-base text-gray-400 pt-1"
+            >
+              {{ record.artist }}
+            </div>
+            <div class="text-base text-gray-400 pt-1">
+              Released:
+              <span class="text-white">{{
+                formatDate(record.releaseDate)
+              }}</span>
+            </div>
+            <div class="text-base text-gray-400 pt-1">
+              Genre: <span class="text-white">{{ record.genre }}</span>
+            </div>
+
+            <!-- (Type: Song) Contributors -->
+            <div *ngIf="record.type === 'Song' && record.contributors?.length">
+              <div
+                *ngFor="let contributor of record.contributors"
+                class="text-base text-gray-400 pt-1"
               >
-                <div class="flex items-center gap-3 flex-1 min-w-0 text-xl">
-                  <span class="text-gray-400 font-semibold">
-                    {{ i + 1 }}
-                  </span>
-                  <span
-                    class="text-white truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0"
+                Contributor: <span class="text-white">{{ contributor }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- Album Tracklist -->
+          <ul
+            *ngIf="isTracklistArray && record.type === 'Album'"
+            class="space-y-3 w-full mt-3 p-2 pb-3 rounded-lg"
+          >
+            <li
+              *ngFor="let track of record.tracklist; let i = index"
+              class="flex items-center justify-between py-4 pr-4 pl-2 bg-[#09101F] rounded-xl transition-all duration-300 border border-[#142249]"
+              [ngClass]="{
+                'opacity-50': !track.preview || track.preview.length <= 1,
+                'shadow-[0_0_8px_rgba(59,130,246,0.5)]': track.isPlaying
+              }"
+            >
+              <!-- Play Button -->
+              <ng-container *ngIf="track.preview && track.preview.length > 1">
+                <div
+                  class="flex items-center justify-center w-12 h-12 bg-[#1F273A] text-white rounded-full mr-3 px-3 transition-all duration-300"
+                  [ngClass]="{
+                    'transition-all duration-700 border border-[#1E3A8A] shadow-[0_0_6px_rgba(59,130,246,0.5)]':
+                      track.isPlaying
+                  }"
+                  (click)="playTrack(track)"
+                >
+                  <i
+                    [ngClass]="{
+                      fas: true,
+                      'fa-pause': track.isPlaying,
+                      'fa-play': !track.isPlaying
+                    }"
+                    class="text-lg transition-all duration-700"
                   >
-                    {{ track.title }}
+                  </i>
+                </div>
+              </ng-container>
+
+              <!-- Title and album info -->
+              <div
+                class="flex flex-col gap-1 flex-1 min-w-0 text-left font-semibold"
+              >
+                <div class="flex items-center gap-2 min-w-0 text-xl">
+                  <span
+                    (click)="openSong(track)"
+                    class="text-white text-base truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0 flex items-center gap-1"
+                  >
+                    <span
+                      class="pl-1 truncate overflow-hidden whitespace-nowrap text-ellipsis"
+                      >{{ track.title }}</span
+                    >
                   </span>
                 </div>
-                <span class="text-gray-300 text-base shrink-0 pl-2.5">
-                  {{ formatDuration(track.duration) || "?" }}
-                </span>
-              </li>
-            </ul>
+                <div
+                  (click)="openSong(track)"
+                  class="flex items-center gap-2 text-gray-400 text-sm"
+                >
+                  <span
+                    *ngIf="track.isExplicit"
+                    class="bg-gray-600 text-white text-sm w-[1.2em] h-[1.2em] flex items-center justify-center font-bold rounded leading-none shrink-0"
+                  >
+                    E
+                  </span>
+                  <span
+                    class="truncate overflow-hidden whitespace-nowrap block flex-1"
+                    [ngClass]="{ 'pl-[.3rem]': !track.isExplicit }"
+                  >
+                    {{ track.artist }}
+                  </span>
+                </div>
+              </div>
 
-            <p *ngIf="!isTracklistArray" class="text-gray-400 text-center">
-              No tracklist available.
-            </p>
+              <!-- Duration -->
+              <span
+                (click)="openSong(track)"
+                class="text-gray-300 bg-[#172438] text-base shrink-0 ml-2.5 p-1 px-1.5 rounded-md"
+              >
+                {{ formatDuration(track.duration) || "?" }}
+              </span>
+            </li>
+          </ul>
+
+          <!-- Loading state -->
+          <div
+            *ngIf="isLoadingExtraDetails"
+            class="w-full bg-[#09101F] p-6 rounded-lg flex flex-col items-center justify-center mt-[2rem]"
+          >
+            <p class="text-gray-400 text-center mb-4">Loading...</p>
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
+            ></div>
+          </div>
+
+          <!-- No tracklist -->
+          <div
+            *ngIf="
+              !isLoadingExtraDetails &&
+              !isTracklistArray &&
+              record.type === 'Album'
+            "
+            class="w-full bg-[#09101F] p-6 rounded-lg text-center"
+          >
+            <p class="text-gray-400">No tracklist available.</p>
           </div>
         </div>
       </div>
@@ -332,9 +470,12 @@
               [record]="record"
               [hidden]="showSecondIpod"
               [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
-              #audioPlayer
+              #audioPlayerMobile
+              [song]="currentSong"
               (next)="nextSong()"
               (previous)="prevSong()"
+              (playStatus)="updatePlayStatus($event)"
+              (playStarted)="onAudioPlayStarted($event)"
               [currentIndex]="currentIndex"
               [recordList]="recordList"
             ></app-audio-player>
@@ -1151,9 +1292,12 @@
                       [showForwardAndBackwardButtons]="
                         showForwardAndBackwardButtons
                       "
-                      #audioPlayer
+                      #audioPlayerDesktop
                       (next)="nextSong()"
+                      [song]="currentSong"
                       (previous)="prevSong()"
+                      (playStatus)="updatePlayStatus($event)"
+                      (playStarted)="onAudioPlayStarted($event)"
                       [currentIndex]="currentIndex"
                       [recordList]="recordList"
                     ></app-audio-player>

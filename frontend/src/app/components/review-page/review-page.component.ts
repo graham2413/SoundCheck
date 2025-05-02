@@ -6,12 +6,14 @@ import {
   Input,
   OnInit,
   Output,
-  QueryList,
   ViewChild,
-  ViewChildren,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgbActiveModal, NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
+import {
+  NgbActiveModal,
+  NgbModal,
+  NgbModalOptions,
+} from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import {
   Review,
@@ -202,51 +204,58 @@ export class ReviewPageComponent implements OnInit {
   filterMenuOpen = false;
   activeFilter: string | null = null;
   addingToList: boolean = false;
-    userProfile: User = {
-      _id: '',
-      username: '',
-      gradient: '',
-      createdAt: '',
-      reviews: [],
-      googleId: '',
-      email: '',
+  userProfile: User = {
+    _id: '',
+    username: '',
+    gradient: '',
+    createdAt: '',
+    reviews: [],
+    googleId: '',
+    email: '',
+    friends: [],
+    profilePicture: '',
+    list: [],
+    friendInfo: {
       friends: [],
-      profilePicture: '',
-      list: [],
-      friendInfo: {
-        friends: [],
-        friendRequestsReceived: [],
-        friendRequestsSent: []
-      }
-    } as User;
-    isProfileLoading: boolean = false;
-    isInList: boolean = false;
+      friendRequestsReceived: [],
+      friendRequestsSent: [],
+    },
+  } as User;
+  isProfileLoading: boolean = false;
+  isInList: boolean = false;
+  currentSong: Song | null = null;
+  isMobileView: boolean = false;
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
-  @ViewChild('scrollingWrapper', { static: false }) scrollingWrapper!: ElementRef;
-  @ViewChild('scrollingContent', { static: false }) scrollingContent!: ElementRef;
+  @ViewChild('scrollingWrapper', { static: false })
+  scrollingWrapper!: ElementRef;
+  @ViewChild('scrollingContent', { static: false })
+  scrollingContent!: ElementRef;
 
-  @ViewChild('scrollingWrapperDesktop', { static: false }) scrollingWrapperDesktop!: ElementRef;
-  @ViewChild('scrollingContentDesktop', { static: false }) scrollingContentDesktop!: ElementRef;
-  
+  @ViewChild('scrollingWrapperDesktop', { static: false })
+  scrollingWrapperDesktop!: ElementRef;
+  @ViewChild('scrollingContentDesktop', { static: false })
+  scrollingContentDesktop!: ElementRef;
+
   @ViewChild('reviewsSection') reviewsSection!: ElementRef;
   @ViewChild('reviewsSectionDesktop') reviewsSectionDesktop!: ElementRef;
   @ViewChild('iPodFront') iPodFront!: ElementRef;
 
-  @ViewChildren(AudioPlayerComponent)
-  audioPlayers!: QueryList<AudioPlayerComponent>;
+  @ViewChild('audioPlayerMobile') audioPlayerMobile!: AudioPlayerComponent;
+  @ViewChild('audioPlayerDesktop') audioPlayerDesktop!: AudioPlayerComponent;
 
   @Input() record!: Album | Artist | Song;
   @Input() recordList: (Album | Artist | Song)[] = [];
   @Input() currentIndex: number = 0;
   @Input() showForwardAndBackwardButtons: boolean = true;
   @Input() activeDiscoverTab!: string;
-  
+
   @Output() reviewEdited = new EventEmitter<Review>();
   @Output() reviewCreated = new EventEmitter<Review>();
   @Output() reviewDeleted = new EventEmitter<Review>();
   @Output() userNavigated = new EventEmitter<void>();
   @Output() openNewReview = new EventEmitter<{ id: number; type: string }>();
+  isLoadingExtraDetails: boolean = false;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -259,6 +268,7 @@ export class ReviewPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.isMobileView = window.innerWidth <= 768;
     this.isProfileLoading = true;
     this.openRecord();
     this.checkList();
@@ -278,7 +288,7 @@ export class ReviewPageComponent implements OnInit {
         this.updateIsInList();
       }
     });
-  
+
     if (!this.userProfile || !this.userProfile.username) {
       this.userService.getAuthenticatedUserProfile().subscribe({
         next: () => {
@@ -287,15 +297,18 @@ export class ReviewPageComponent implements OnInit {
         },
         error: () => {
           this.isProfileLoading = false;
-        }
+        },
       });
     }
-  }  
+  }
 
   updateIsInList() {
-    this.isInList = this.userProfile.list?.some(
-      (item) => item.id === this.record.id.toString() && item.type === this.record.type
-    ) ?? false;
+    this.isInList =
+      this.userProfile.list?.some(
+        (item) =>
+          item.id === this.record.id.toString() &&
+          item.type === this.record.type
+      ) ?? false;
   }
 
   ngAfterViewInit() {
@@ -358,20 +371,24 @@ export class ReviewPageComponent implements OnInit {
 
   checkOverflow() {
     const isDesktop = window.innerWidth >= 768; // Assuming 768px as the desktop breakpoint
-  
+
     // Select the appropriate wrapper and content based on screen size
-    const wrapper = isDesktop ? this.scrollingWrapperDesktop?.nativeElement : this.scrollingWrapper?.nativeElement;
-    const content = isDesktop ? this.scrollingContentDesktop?.nativeElement : this.scrollingContent?.nativeElement;
-  
+    const wrapper = isDesktop
+      ? this.scrollingWrapperDesktop?.nativeElement
+      : this.scrollingWrapper?.nativeElement;
+    const content = isDesktop
+      ? this.scrollingContentDesktop?.nativeElement
+      : this.scrollingContent?.nativeElement;
+
     if (!wrapper || !content) return;
-  
+
     const wrapperWidth = wrapper.offsetWidth;
     const contentWidth = content.scrollWidth;
-  
+
     const buffer = 0.95;
     const isOverflowing = contentWidth > wrapperWidth * buffer;
     this.isTextOverflowing = isOverflowing;
-  
+
     if (isOverflowing) {
       // Set --start-offset to wrapper's width so scroll starts just off-screen
       content.style.setProperty('--start-offset', `${wrapperWidth}px`);
@@ -379,7 +396,6 @@ export class ReviewPageComponent implements OnInit {
       content.style.removeProperty('--start-offset');
     }
   }
-  
 
   get flipState() {
     return this.showSecondIpod ? 'back' : 'front';
@@ -474,15 +490,16 @@ export class ReviewPageComponent implements OnInit {
 
   get combinedReviews(): Review[] {
     if (!this.isReviewsLoaded) return [];
-  
+
     // Ensure the existing user review isn't duplicated in filteredReviews
     const filtered = this.filteredReviews.filter(
       (r) => !this.existingUserReview || r._id !== this.existingUserReview._id
     );
-  
-    return this.existingUserReview ? [this.existingUserReview, ...filtered] : filtered;
+
+    return this.existingUserReview
+      ? [this.existingUserReview, ...filtered]
+      : filtered;
   }
-  
 
   get totalPages(): number {
     return Math.ceil(this.combinedReviews.length / this.pageSize);
@@ -537,17 +554,20 @@ export class ReviewPageComponent implements OnInit {
 
   get filteredReviews(): Review[] {
     if (!this.activeFilter) return this.reviews;
-  
+
     switch (this.activeFilter) {
       case 'newest':
-        return [...this.reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  
+        return [...this.reviews].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
       case 'highest':
         return [...this.reviews].sort((a, b) => b.rating - a.rating);
-  
+
       case 'lowest':
         return [...this.reviews].sort((a, b) => a.rating - b.rating);
-  
+
       default:
         return this.reviews;
     }
@@ -570,12 +590,14 @@ export class ReviewPageComponent implements OnInit {
   }
 
   get isExplicit(): boolean {
-    return (this.record?.type === 'Song' || this.record?.type === 'Album') && 'isExplicit' in this.record
+    return (this.record?.type === 'Song' || this.record?.type === 'Album') &&
+      'isExplicit' in this.record
       ? (this.record as Song | Album).isExplicit
       : false;
   }
 
   public getExtraDetails() {
+    this.isLoadingExtraDetails = true;
     if (this.record.type === 'Song') {
       this.searchService.getTrackDetails(this.record.id).subscribe({
         next: (data: Song) => {
@@ -583,12 +605,14 @@ export class ReviewPageComponent implements OnInit {
           (this.record as Song).contributors = data.contributors;
           (this.record as Song).duration = data.duration;
           (this.record as Song).preview = data.preview;
-          this.audioPlayers.forEach((player: AudioPlayerComponent) =>
-            player.stopLoading()
-          );
+          const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+
+          players.forEach((player) => player?.stopLoading());
+          this.isLoadingExtraDetails = false;
         },
         error: () => {
           (this.record as Song).releaseDate = '';
+          this.isLoadingExtraDetails = false;
         },
       });
     }
@@ -598,20 +622,28 @@ export class ReviewPageComponent implements OnInit {
         next: (data: Album) => {
           const album = this.record as Album;
           album.releaseDate = data.releaseDate;
-          album.tracklist = data.tracklist;
+          album.tracklist = data.tracklist.map((track) => ({
+            ...track,
+            isPlaying: false,
+          }));
+          if (album.tracklist.length > 0) {
+            this.currentSong = album.tracklist[0];
+          }
           album.preview = data.preview;
           album.isExplicit = data.isExplicit;
+          this.isLoadingExtraDetails = false;
         },
         error: () => {
           const album = this.record as Album;
           album.releaseDate = 'Unknown';
           album.tracklist = [];
+          this.isLoadingExtraDetails = false;
         },
         complete: () => {
-          this.audioPlayers.forEach((player: AudioPlayerComponent) =>
-            player.stopLoading()
-          );
-        }
+          const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+
+          players.forEach((player) => player?.stopLoading());
+        },
       });
     }
 
@@ -619,23 +651,48 @@ export class ReviewPageComponent implements OnInit {
       this.searchService.getArtistTracks(this.record.id).subscribe({
         next: (data: Song[]) => {
           const artist = this.record as Artist;
-          artist.tracklist = Array.isArray(data) ? data : [];
+          artist.tracklist = Array.isArray(data)
+            ? data.map((track) => ({ ...track, isPlaying: false }))
+            : [];
           artist.preview = data[0]?.preview || ''; // set preview to first song's preview or null
+          if (artist.tracklist.length > 0) {
+            this.currentSong = artist.tracklist[0];
+          }
+          this.isLoadingExtraDetails = false;
         },
         error: () => {
           const artist = this.record as Artist;
           artist.tracklist = [];
+          this.isLoadingExtraDetails = false;
         },
         complete: () => {
-          this.audioPlayers.forEach((player: AudioPlayerComponent) =>
-            player.stopLoading()
-          );
-        }
+          const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+
+          players.forEach((player) => player?.stopLoading());
+        },
       });
     }
   }
 
+  onAudioPlayStarted(previewUrl: string): void {
+    if (this.record?.type !== 'Song' && this.record?.tracklist) {
+      this.record.tracklist.forEach((track) => {
+        track.isPlaying = track.preview === previewUrl;
+      });
+
+      const matched = this.record.tracklist.find(
+        (t) => t.preview === previewUrl
+      );
+      if (matched) {
+        this.currentSong = matched;
+      }
+    }
+  }
+
   nextSong() {
+    this.audioPlayerMobile?.setSource(this.currentSong?.preview || '', false);
+    this.audioPlayerDesktop?.setSource(this.currentSong?.preview || '', false);
+
     if (this.currentIndex < this.recordList.length - 1) {
       this.currentIndex++;
       this.record = this.recordList[this.currentIndex];
@@ -652,6 +709,8 @@ export class ReviewPageComponent implements OnInit {
   }
 
   prevSong() {
+    this.audioPlayerMobile?.setSource(this.currentSong?.preview || '', false);
+    this.audioPlayerDesktop?.setSource(this.currentSong?.preview || '', false);
     if (this.currentIndex > 0) {
       this.currentIndex--;
       this.record = this.recordList[this.currentIndex];
@@ -670,6 +729,31 @@ export class ReviewPageComponent implements OnInit {
   openSong(song: Song) {
     this.activeModal.close();
     this.openNewReview.emit(song);
+  }
+
+  // From the back of ipod (albums and artists)
+  playTrack(song: Song) {
+    if (this.record.type !== 'Song') {
+      const wasPlaying = song.isPlaying;
+
+      // Pause all tracks
+      this.record.tracklist?.forEach((s) => (s.isPlaying = false));
+
+      const targetPlayer = this.isMobileView
+        ? this.audioPlayerMobile
+        : this.audioPlayerDesktop;
+
+      if (!wasPlaying) {
+        song.isPlaying = true;
+        this.currentSong = song;
+
+        setTimeout(() => {
+          targetPlayer?.setSource(song.preview); // handles play internally
+        });
+      } else {
+        targetPlayer?.togglePlay();
+      }
+    }
   }
 
   formatDuration(seconds: number | undefined): string {
@@ -718,7 +802,10 @@ export class ReviewPageComponent implements OnInit {
         isExplicit:
           this.record.type === 'Song' ? this.record.isExplicit : undefined, // Only for Songs
         album: this.record.type === 'Song' ? this.record.album : undefined, // Only for Songs
-        genre: this.record.type === 'Song' || this.record.type === 'Album' ? this.record.genre || 'Unknown' : undefined  // Only attach genre if it's a Song or Album
+        genre:
+          this.record.type === 'Song' || this.record.type === 'Album'
+            ? this.record.genre || 'Unknown'
+            : undefined, // Only attach genre if it's a Song or Album
       },
       rating: this.newRating,
       reviewText: this.newReview,
@@ -733,9 +820,9 @@ export class ReviewPageComponent implements OnInit {
 
         this.isAddingReview = false;
         this.isCreateLoading = false;
-        
+
         this.ratingBarFill = this.getAverageRating() * 10;
-        
+
         setTimeout(() => {
           this.circleDashOffset =
             113.1 - (this.getAverageRating() / 10) * 113.1;
@@ -820,27 +907,38 @@ export class ReviewPageComponent implements OnInit {
   }
 
   showdeleteConfirmation(review: Review) {
-        const modalOptions: NgbModalOptions = {
-          backdrop: false,
-          centered: true,
-        };
-    
-        const modalRef = this.modal.open(ConfirmationModalComponent, modalOptions);
-        modalRef.componentInstance.title = `Remove review`;
-        modalRef.componentInstance.bodyText = `Are you sure you want to delete this review?`;
-    
-        modalRef.componentInstance.confirm.subscribe(() => {
-          this.deleteReview(review);
-          modalRef.close();
-        });
-    
-        modalRef.componentInstance.cancel.subscribe(() => {
-          modalRef.close();
-        });
-      }
+    const modalOptions: NgbModalOptions = {
+      backdrop: false,
+      centered: true,
+    };
+
+    const modalRef = this.modal.open(ConfirmationModalComponent, modalOptions);
+    modalRef.componentInstance.title = `Remove review`;
+    modalRef.componentInstance.bodyText = `Are you sure you want to delete this review?`;
+
+    modalRef.componentInstance.confirm.subscribe(() => {
+      this.deleteReview(review);
+      modalRef.close();
+    });
+
+    modalRef.componentInstance.cancel.subscribe(() => {
+      modalRef.close();
+    });
+  }
 
   updatePlayStatus(status: boolean) {
     this.isPlaying = status;
+
+    if (this.record.type !== 'Song') {
+      this.record.tracklist?.forEach((track) => {
+        track.isPlaying = this.currentSong?.id === track.id && status;
+      });
+    }
+  }
+
+  onBackClick() {
+    console.log('Back clicked', this.showSecondIpod);
+    this.showSecondIpod = false;
   }
 
   getRatingBackground(rating: number): string {
@@ -943,37 +1041,37 @@ export class ReviewPageComponent implements OnInit {
     const itemToAdd: ListItem = {
       ...record,
       id: record.id.toString(),
-      addedAt: new Date()
+      addedAt: new Date(),
     };
-  
+
     this.userService.addToList(itemToAdd).subscribe({
       next: () => {
         this.toastr.success('Added to your list!', 'Success');
 
         // Update local userProfile.list immediately
         this.userProfile.list.push(itemToAdd);
-  
+
         // Update the global userProfile observable
         this.userService.setUserProfile(this.userProfile);
-  
+
         this.isInList = true; // ✅ Update flag
         this.addingToList = false;
       },
       error: () => {
         this.toastr.error('Failed to add item to list.', 'Error');
         this.addingToList = false;
-      }
+      },
     });
   }
 
   removeFromList(record: Album | Artist | Song) {
     this.addingToList = true;
-  
+
     const itemToRemove = {
       id: record.id,
-      type: record.type
+      type: record.type,
     };
-  
+
     this.userService.removeFromList(itemToRemove).subscribe({
       next: () => {
         this.toastr.success('Removed from your list!', 'Success');
@@ -982,7 +1080,8 @@ export class ReviewPageComponent implements OnInit {
 
         // Update local userProfile.list immediately
         this.userProfile.list = this.userProfile.list.filter(
-          (item) => !(item.id === record.id.toString() && item.type === record.type)
+          (item) =>
+            !(item.id === record.id.toString() && item.type === record.type)
         );
 
         // Update the global userProfile if needed
@@ -991,16 +1090,15 @@ export class ReviewPageComponent implements OnInit {
       error: () => {
         this.toastr.error('Failed to remove item from list.', 'Error');
         this.addingToList = false;
-      }
+      },
     });
   }
-  
-  goToProfile(userId: string){
+
+  goToProfile(userId: string) {
     this.userNavigated.emit();
     this.close();
     this.router.navigate(['/profile', userId], {
-      state: { section: this.activeDiscoverTab }
+      state: { section: this.activeDiscoverTab },
     });
-    }
-  
+  }
 }

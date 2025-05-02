@@ -251,7 +251,8 @@ exports.getAlbumDetails = async (req, res) => {
           preview: track.preview,
           isExplicit: track.explicit_lyrics,
           cover: track.album?.cover,
-          type: 'Song'
+          type: 'Song',
+          genre: albumData.genres?.data?.[0]?.name || "Unknown",
         })) || [],
         genre: albumData.genres?.data?.[0]?.name || "Unknown",
         isExplicit: albumData.explicit_lyrics,
@@ -296,17 +297,25 @@ exports.getArtistTopTracks = async (req, res) => {
 
     // Extract relevant details
     const artistTopTrackData = artistsResponse.data.data;
-    const artistTopTrackDetails = artistTopTrackData.map((track) => ({
-      id: track.id,
-      title: track.title,
-      artist: track.artist?.name || "Unknown",
-      album: track.album?.title || "Unknown",
-      duration: track.duration,
-      preview: track.preview,
-      isExplicit: track.explicit_lyrics,
-      cover: track.album?.cover,
-      type: 'Song'
-    }));
+    const artistTopTrackDetails = await Promise.all(
+      artistTopTrackData.map(async (track) => {
+        const albumId = track.album?.id;
+        const genre = albumId ? await getAlbumGenre(albumId) : "Unknown";
+    
+        return {
+          id: track.id,
+          title: track.title,
+          artist: track.artist?.name || "Unknown",
+          album: track.album?.title || "Unknown",
+          duration: track.duration,
+          preview: track.preview,
+          isExplicit: track.explicit_lyrics,
+          cover: track.album?.cover,
+          genre,
+          type: 'Song'
+        };
+      })
+    );    
 
     return res.json(artistTopTrackDetails);
   } catch (error) {

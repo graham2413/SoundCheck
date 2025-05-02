@@ -11,4 +11,5 @@ export interface Song {
     contributors: string[];
     duration: number;
     type: 'Song';
+    isPlaying: boolean;
   }

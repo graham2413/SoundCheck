@@ -28,10 +28,12 @@ export class AudioPlayerComponent implements AfterViewInit {
   @Input() showForwardAndBackwardButtons: boolean = true;
   @Input() currentIndex!: number;
   @Input() recordList: (Album | Artist | Song)[] = [];
+  @Input() song: Song | null = null;
   
   @Output() playStatus = new EventEmitter<boolean>();
   @Output() next = new EventEmitter<void>();
   @Output() previous = new EventEmitter<void>();
+  @Output() playStarted = new EventEmitter<string>(); // string = track ID or URL
 
   audio!: HTMLAudioElement;
   isPlaying: boolean = false;
@@ -69,14 +71,45 @@ export class AudioPlayerComponent implements AfterViewInit {
     }
   }
 
-  togglePlay() {
-    if (this.audio) {
-      this.isPlaying = !this.isPlaying;
-      this.isPlaying ? this.audio.play() : this.audio.pause();
-      this.playStatus.emit(this.isPlaying);
+  togglePlay(): void {
+    if (!this.audio || !this.audio.src) {
+      // If no track is loaded, load current one
+      if (this.song?.preview) {
+        this.setSource(this.song.preview);
+        return;
+      }
+    }
+  
+    this.isPlaying = !this.isPlaying;
+    this.isPlaying ? this.audio.play() : this.audio.pause();
+    this.playStatus.emit(this.isPlaying);
+  
+    if (this.isPlaying && this.record?.type !== 'Song') {
+      this.playStarted.emit(this.song?.preview || '');
     }
   }
 
+  setSource(previewUrl: string, autoPlay: boolean = true) {
+    const audio = this.myAudioRef.nativeElement;
+    audio.pause();
+    audio.src = previewUrl;
+    audio.load();
+  
+    audio.onloadeddata = () => {
+      if (autoPlay) {
+        this.isPlaying = true;
+        audio.play().catch(err => {
+          console.error('Playback failed:', err);
+        });
+        this.playStatus.emit(true);
+        this.playStarted.emit(previewUrl);
+      } else {
+        this.isPlaying = false;
+        this.playStatus.emit(false);
+      }
+    };
+  }
+  
   public stopLoading(): void {
     this.isLoading = false;
   }
