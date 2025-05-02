@@ -149,7 +149,7 @@
           />
         </div>
         <div class="px-2">
-          <div class="p-4 text-white w-full mt-[1rem] px-3">
+          <div class="p-4 text-white w-full mt-[1rem] px-3 border border-[#142249] rounded-lg">
             <div class="text-xl font-bold leading-snug mb-1">
               {{ record.title }}
             </div>
@@ -157,12 +157,19 @@
               *ngIf="record.type === 'Album'"
               class="text-base text-gray-400 pt-1"
             >
-              {{ record.artist }}
-            </div>
+            <div class="text-base text-gray-400 pt-1">
+              Artist: <span class="text-white">{{ record.artist }}</span>
+            </div>            </div>
             <div class="text-base text-gray-400 pt-1">
               Released:
               <span class="text-white">{{
                 formatDate(record.releaseDate)
+              }}</span>
+            </div>
+            <div *ngIf="record.type === 'Song'" class="text-base text-gray-400 pt-1">
+              Album:
+              <span class="text-white">{{
+                record.album
               }}</span>
             </div>
             <div class="text-base text-gray-400 pt-1">
@@ -171,12 +178,9 @@
 
             <!-- (Type: Song) Contributors -->
             <div *ngIf="record.type === 'Song' && record.contributors?.length">
-              <div
-                *ngFor="let contributor of record.contributors"
-                class="text-base text-gray-400 pt-1"
-              >
-                Contributor: <span class="text-white">{{ contributor }}</span>
-              </div>
+                <div class="text-base text-gray-400 pt-1">
+                  Contributors: <span class="text-white">{{ record.contributors.join(', ') }}</span>
+                </div>
             </div>
           </div>
           <!-- Album Tracklist -->

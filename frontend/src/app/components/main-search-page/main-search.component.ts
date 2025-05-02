@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
-import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { SearchService } from 'src/app/services/search.service';
 import { ReviewPageComponent } from '../review-page/review-page.component';
 import { ToastrService } from 'ngx-toastr';
@@ -360,7 +360,7 @@ export class MainSearchComponent implements OnInit {
     this.expandedReviews[reviewId] = !this.expandedReviews[reviewId];
   }
 
-  openModal(record: Album | Artist | Song, recordList?: (Album | Artist | Song)[], index?: number) {
+  openModal(record: Album | Artist | Song, recordList?: (Album | Artist | Song)[], index?: number): NgbModalRef {
     const modalOptions: NgbModalOptions = {
       backdrop: false,
       keyboard: true,
@@ -431,14 +431,16 @@ export class MainSearchComponent implements OnInit {
 
     // 4. Handle opening a song frmo an artist or album review
     modalRef.componentInstance.openNewReview.subscribe((record: Song) => {
-      modalRef.close();
     
       // Upgrade the image before opening the modal
       const highResCover = this.getHighQualityImage(record.cover);
       const updatedRecord = { ...record, cover: highResCover };
     
-      this.openModal(updatedRecord, [], 1);
+      const newModal = this.openModal(updatedRecord, [], 0);
+      newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
+      modalRef.close();
     });
+    return modalRef;
   }
 
   get activityRecords(): (Album | Artist | Song)[] {

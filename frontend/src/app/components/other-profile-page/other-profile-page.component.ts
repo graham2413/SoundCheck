@@ -6,7 +6,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Friend } from 'src/app/models/responses/friend-response';
 import { animate, style, transition, trigger } from '@angular/animations';
 import { FormsModule } from '@angular/forms';
-import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ReviewPageComponent } from '../review-page/review-page.component';
 import { Album } from 'src/app/models/responses/album-response';
 import { Artist } from 'src/app/models/responses/artist-response';
@@ -743,7 +743,7 @@ export class ViewProfilePageComponent implements OnInit {
     record: Album | Artist | Song,
     recordList?: (Album | Artist | Song)[],
     index?: number,
-  ) {
+  ) : NgbModalRef{
     const modalOptions: NgbModalOptions = {
       backdrop: false,
       keyboard: true,
@@ -808,15 +808,16 @@ export class ViewProfilePageComponent implements OnInit {
 
     // 5. Handle opening a song frmo an artist or album review
     modalRef.componentInstance.openNewReview.subscribe((record: Song) => {
-      modalRef.close();
     
       // Upgrade the image before opening the modal
       const highResCover = this.getHighQualityImage(record.cover);
       const updatedRecord = { ...record, cover: highResCover };
     
-      this.openReview(updatedRecord, [], 1);
+      const newModal = this.openReview(updatedRecord, [], 0);
+      newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
+      modalRef.close();
     });
-    
+    return modalRef;
   }
 
   getHighQualityImage(imageUrl: string): string {
