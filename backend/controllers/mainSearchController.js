@@ -104,13 +104,13 @@ exports.searchMusic = async (req, res) => {
 };
 
 async function getAlbumGenre(albumId) {
-  if (!albumId) return "Unknown";
-
-  // Check if genre is cached in Redis
-  const cachedGenre = await redis.get(`album-genre:${albumId}`);
-  if (cachedGenre) {
-    return cachedGenre;
+  if (!albumId || typeof albumId !== 'number' || isNaN(albumId)) {
+    return "Unknown";
   }
+  
+  const albumCacheKey = `album-genre:${albumId}`;
+  const cachedGenre = await redis.get(albumCacheKey);
+  if (cachedGenre) return cachedGenre;
 
   try {
     const albumDetails = await callDeezer(
@@ -122,48 +122,57 @@ async function getAlbumGenre(albumId) {
       return "Unknown";
     }
 
-    // Try to get genre from genres.data
-    const genresArray = albumDetails.data.genres?.data;
-    let genre = genresArray?.length ? genresArray[0].name : null;
+    let genre = null;
 
-    // Fallback: Use genre_id if no genre found and genre_id is valid
-    if (
-      !genre &&
-      albumDetails.data.genre_id &&
-      albumDetails.data.genre_id > 0
-    ) {
-      genre = await getGenreFromId(albumDetails.data.genre_id);
+    // Prefer genre_id (now backed by its own cache)
+    const genreId = albumDetails.data.genre_id;
+    if (genreId && genreId > 0) {
+      genre = await getGenreFromId(genreId);
     }
 
-    // If still no genre, return "Unknown"
+    // Fallback: use .genres.data if no valid genre_id or failed lookup
+    if (!genre) {
+      const genresArray = albumDetails.data.genres?.data;
+      genre = genresArray?.length ? genresArray[0].name : null;
+    }
+
     if (!genre) {
       genre = "Unknown";
     }
 
-    // Store in Redis cache with expiration (e.g., 1 day)
-    await redis.set(`album-genre:${albumId}`, genre, "EX", 86400);
+    // Cache the result per album for 1 day
+    await redis.set(albumCacheKey, genre, "EX", 86400);
 
     return genre;
   } catch (err) {
     console.error(`Failed to fetch genre for album ${albumId}:`, err.message);
     return "Unknown";
   }
-}
+};
 
 async function getGenreFromId(genreId) {
-  if (!genreId || genreId <= 0) return null;
+  if (!genreId || genreId <= 0) return "Unknown";
+
+  const cacheKey = `genre-id:${genreId}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return cached;
 
   try {
     const genreResponse = await callDeezer(
       `https://api.deezer.com/genre/${genreId}`
     );
-    return genreResponse.data?.name || null;
+    const name = genreResponse.data?.name || null;
+
+    await redis.set(cacheKey, name || "Unknown", 'EX', 86400); // cache even if "Unknown"
+    return name || "Unknown";
   } catch (error) {
     console.error(
       `Failed to fetch genre name for ID ${genreId}:`,
       error.message
     );
-    return null;
+    // Cache failure to avoid repeated retries
+    await redis.set(cacheKey, "Unknown", 'EX', 86400);
+    return "Unknown";
   }
 }
 
@@ -189,7 +198,7 @@ exports.getTrackDetails = async (req, res) => {
 
     // Check if album ID is available to fetch genre
     let genre = "Unknown";
-    if (trackData.album?.id) {
+    if (trackData.album?.id && typeof trackData.album.id === 'number') {
       genre = await getAlbumGenre(trackData.album.id);
     }
 
@@ -238,6 +247,14 @@ exports.getAlbumDetails = async (req, res) => {
     const albumData = albumResponse.data;
     const firstTrack = albumData.tracks?.data?.[0];
 
+    let genre = albumData.genres?.data?.[0]?.name || null;
+
+    if (!genre && albumData.genre_id) {
+      genre = await getGenreFromId(albumData.genre_id);
+    }
+
+    if (!genre) genre = "Unknown";
+
     const albumDetails = {
       id: albumData.id,
       releaseDate: albumData.release_date || "Unknown",
@@ -252,9 +269,9 @@ exports.getAlbumDetails = async (req, res) => {
           isExplicit: track.explicit_lyrics,
           cover: track.album?.cover,
           type: 'Song',
-          genre: albumData.genres?.data?.[0]?.name || "Unknown",
+          genre: genre,
         })) || [],
-        genre: albumData.genres?.data?.[0]?.name || "Unknown",
+        genre: genre,
         isExplicit: albumData.explicit_lyrics,
         preview: firstTrack?.preview || null
     };
@@ -295,13 +312,24 @@ exports.getArtistTopTracks = async (req, res) => {
         .json({ message: "Artist not found or no tracks available" });
     }
 
-    // Extract relevant details
+    // In-memory cache for per-request deduplication
+    const genreCache = new Map();
     const artistTopTrackData = artistsResponse.data.data;
+
     const artistTopTrackDetails = await Promise.all(
       artistTopTrackData.map(async (track) => {
         const albumId = track.album?.id;
-        const genre = albumId ? await getAlbumGenre(albumId) : "Unknown";
-    
+        let genre = "Unknown";
+
+        if (albumId && typeof albumId === 'number') {
+          if (genreCache.has(albumId)) {
+            genre = genreCache.get(albumId);
+          } else {
+            genre = await getAlbumGenre(albumId);
+            genreCache.set(albumId, genre);
+          }
+        }
+
         return {
           id: track.id,
           title: track.title,
@@ -315,7 +343,7 @@ exports.getArtistTopTracks = async (req, res) => {
           type: 'Song'
         };
       })
-    );    
+    );
 
     return res.json(artistTopTrackDetails);
   } catch (error) {
