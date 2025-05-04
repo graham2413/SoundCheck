@@ -114,14 +114,14 @@
       type="search"
       autofocus
       [(ngModel)]="query"
-      (keydown.enter)="onSearch()"
+      (keydown.enter)="onSearch('songs')"
       placeholder="Search music & artists"
       class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-white-500 focus:border-white-500 outline-none text-lg text-ellipsis overflow-hidden"
       style="direction: ltr; text-align: left"
     />
     <button
       *ngIf="!isLoading"
-      (click)="onSearch()"
+      (click)="onSearch('songs')"
       class="absolute inset-y-0 right-10 flex items-center"
     >
       <svg
@@ -193,23 +193,21 @@
     class="mt-6 flex !gap-1 sm:!gap-4 justify-center"
   >
     <button
-      (click)="setActiveTab('songs')"
+      (click)="onSearch('songs')"
       [class.bg-[#0F5EE4]]="activeTab === 'songs'"
       class="px-4 py-2 rounded-full md:hover:bg-indigo-500 transition text-xl font-bold"
     >
       Songs
     </button>
     <button
-      *ngIf="results && (results.albums?.length ?? 0) > 0"
-      (click)="setActiveTab('albums')"
+      (click)="onSearch('albums')"
       [class.bg-[#0F5EE4]]="activeTab === 'albums'"
       class="px-4 py-2 rounded-full md:hover:bg-indigo-500 transition text-xl font-bold"
     >
       Albums
     </button>
     <button
-      *ngIf="results && (results.artists?.length ?? 0) > 0"
-      (click)="setActiveTab('artists')"
+      (click)="onSearch('artists')"
       [class.bg-[#0F5EE4]]="activeTab === 'artists'"
       class="px-4 py-2 rounded-full md:hover:bg-indigo-500 transition text-xl font-bold"
     >

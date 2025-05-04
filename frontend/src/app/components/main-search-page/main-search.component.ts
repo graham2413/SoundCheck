@@ -187,8 +187,9 @@ export class MainSearchComponent implements OnInit {
     return parseFloat(style.marginRight || '0');
   }
 
-  onSearch() {
-    if (!this.query.trim()) return;
+  onSearch(type: 'songs' | 'albums' | 'artists') {
+    const query = this.query.trim();
+    if (!query) return;
 
     (document.activeElement as HTMLElement)?.blur();
 
@@ -204,36 +205,49 @@ export class MainSearchComponent implements OnInit {
     this.isLoading = true;
     this.searchAttempted = true;
 
-    this.searchService.searchMusic(this.query).subscribe({
+    // Clear previous results
+    this.results = { songs: [], albums: [], artists: [] };
+    this.filteredResults = { songs: [], albums: [], artists: [] };
+
+    this.searchService.searchMusic(this.query, type).subscribe({
       next: (data: SearchResponse) => {
         // Enhance images for better quality before storing results
         this.results = {
-          ...data,
-          songs: data.songs.map((song: Song) => ({
-            ...song,
-            cover: this.getHighQualityImage(song.cover),
-            type: 'Song' as const,
-          })),
-          albums: data.albums.map((album: Album) => ({
-            ...album,
-            cover: this.getHighQualityImage(album.cover),
-            type: 'Album' as const,
-          })),
-          artists: data.artists.map((artist: Artist) => ({
-            ...artist,
-            picture: this.getHighQualityImage(artist.picture),
-            type: 'Artist' as const,
-          })),
-        };
-      
-
+          ...this.results, // Preserve previously loaded data (important for lazy loading!)
+          songs: data.songs
+            ? data.songs.map((song: Song) => ({
+                ...song,
+                cover: this.getHighQualityImage(song.cover),
+                type: 'Song' as const,
+              }))
+            : this.results.songs,
+        
+          albums: data.albums
+            ? data.albums.map((album: Album) => ({
+                ...album,
+                cover: this.getHighQualityImage(album.cover),
+                type: 'Album' as const,
+              }))
+            : this.results.albums,
+        
+          artists: data.artists
+            ? data.artists.map((artist: Artist) => ({
+                ...artist,
+                picture: this.getHighQualityImage(artist.picture),
+                type: 'Artist' as const,
+              }))
+            : this.results.artists,
+        };        
+    
         this.filteredResults = { ...this.results };
 
-        this.extractGenres();
+        if(type !== 'artists'){
+          this.extractGenres();
+        }
 
         // Allow images to load
         setTimeout(() => {
-          this.setActiveTab('songs');
+          this.setActiveTab(type);
           this.isLoading = false;
         }, 50);
       },

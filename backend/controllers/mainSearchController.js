@@ -3,103 +3,96 @@ const { callDeezer } = require('../utils/callDeezer');
 
 exports.searchMusic = async (req, res) => {
   try {
-    const { query } = req.query;
-    if (!query) {
-      return res.status(400).json({ message: "Query is required" });
+    const { query, type = 'songs' } = req.query;
+    if (!query) return res.status(400).json({ message: "Query is required" });
+
+    const typeKey = type.toLowerCase();
+    const queryKey = query.trim().toLowerCase();
+    const cacheKey = `search:${typeKey}:${queryKey}`;
+
+    // Check Redis cache
+    const cached = await redis.get(cacheKey);
+    if (cached) return res.json(JSON.parse(cached));
+
+    // Prepare response parts
+    let songs = [], albums = [], artists = [];
+
+    /** === SONGS === */
+    if (typeKey === 'songs' || typeKey === 'all') {
+      const songsRes = await callDeezer(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=15`);
+      const songsRaw = songsRes.data?.data || [];
+
+      const uniqueAlbumIds = [...new Set(
+        songsRaw.map(item => item?.album?.id).filter(Boolean)
+      )];
+
+      const albumGenresMap = new Map(
+        await Promise.all(
+          uniqueAlbumIds.map(async albumId => [
+            albumId,
+            await getAlbumGenre(albumId),
+          ])
+        )
+      );
+
+      songs = songsRaw.map(item => ({
+        id: item?.id,
+        title: item?.title,
+        artist: item?.artist?.name,
+        album: item?.album?.title,
+        cover: item?.album?.cover,
+        preview: item?.preview,
+        isExplicit: item?.explicit_lyrics,
+        genre: albumGenresMap.get(item?.album?.id) || "Unknown",
+      }));
     }
 
-    // Run three separate searches in parallel using rate-limited function
-    const [songsResult, albumsResult, artistsResult] = await Promise.allSettled(
-      [
-        callDeezer(
-          `https://api.deezer.com/search?q=${encodeURIComponent(query)}`
-        ), // Songs
-        callDeezer(
-          `https://api.deezer.com/search/album?q=${encodeURIComponent(query)}`
-        ), // Albums
-        callDeezer(
-          `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}`
-        ), // Artists
-      ]
-    );
+    /** === ALBUMS === */
+    if (typeKey === 'albums' || typeKey === 'all') {
+      const albumsRes = await callDeezer(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=10`);
+      const albumsRaw = albumsRes.data?.data || [];
 
-    // Extract only fulfilled values, set empty results for failed requests
-    const songsResponse =
-      songsResult.status === "fulfilled"
-        ? songsResult.value
-        : { data: { data: [] } };
-    const albumsResponse =
-      albumsResult.status === "fulfilled"
-        ? albumsResult.value
-        : { data: { data: [] } };
-    const artistsResponse =
-      artistsResult.status === "fulfilled"
-        ? artistsResult.value
-        : { data: { data: [] } };
+      const albumGenres = await Promise.all(
+        albumsRaw.map(album => album?.id ? getAlbumGenre(album.id) : "Unknown")
+      );
 
-    /** Process Songs */
-    // Fetch album genres once for unique album IDs to avoid redundant API calls
-    const uniqueAlbumIds = [
-      ...new Set(
-        songsResponse.data?.data.map((item) => item?.album?.id).filter(Boolean)
-      ),
-    ];
+      albums = albumsRaw.map((album, index) => ({
+        id: album?.id,
+        title: album?.title,
+        artist: album?.artist?.name || "Unknown",
+        cover: album?.cover,
+        genre: albumGenres[index],
+        isExplicit: album?.explicit_lyrics,
+      }));
+    }
 
-    const albumGenresMap = new Map(
-      await Promise.all(
-        uniqueAlbumIds.map(async (albumId) => [
-          albumId,
-          await getAlbumGenre(albumId),
-        ])
-      )
-    );
+    /** === ARTISTS === */
+    if (typeKey === 'artists' || typeKey === 'all') {
+      const artistsRes = await callDeezer(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=10`);
+      const artistsRaw = artistsRes.data?.data || [];
 
-    const songGenres = songsResponse.data?.data.map(
-      (item) => albumGenresMap.get(item?.album?.id) || "Unknown"
-    );
+      artists = artistsRaw.map(artist => ({
+        id: artist?.id,
+        name: artist?.name,
+        picture: artist?.picture,
+        tracklist: artist?.tracklist,
+      }));
+    }
 
-    // Attach genres to songs
-    const songs = (songsResponse.data?.data || []).map((item, index) => ({
-      id: item?.id,
-      title: item?.title,
-      artist: item?.artist?.name,
-      album: item?.album?.title,
-      cover: item?.album?.cover,
-      preview: item?.preview,
-      isExplicit: item?.explicit_lyrics,
-      genre: songGenres[index],
-    }));
+    // Prepare final payload based on type
+    let responsePayload = {};
+    if (typeKey === 'songs') responsePayload = { songs };
+    else if (typeKey === 'albums') responsePayload = { albums };
+    else if (typeKey === 'artists') responsePayload = { artists };
+    else responsePayload = { songs, albums, artists };
 
-    /** Process Albums */
-    // Parallelize genre fetching for albums
-    const albumGenres = await Promise.all(
-      (albumsResponse.data?.data || []).map((album) =>
-        album?.id ? getAlbumGenre(album.id) : "Unknown"
-      )
-    );
+    // Cache the result
+    await redis.set(cacheKey, JSON.stringify(responsePayload), 'EX', 3600); // 1 hour TTL
 
-    // Attach genres to albums
-    const albums = (albumsResponse.data?.data || []).map((album, index) => ({
-      id: album?.id,
-      title: album?.title,
-      artist: album?.artist?.name || "Unknown",
-      cover: album?.cover,
-      genre: albumGenres[index],
-      isExplicit: album?.explicit_lyrics,
-    }));
-
-    /** Process Artists */
-    const artists = (artistsResponse.data?.data || []).map((artist) => ({
-      id: artist?.id,
-      name: artist?.name,
-      picture: artist?.picture,
-      tracklist: artist?.tracklist,
-    }));
-
-    res.json({ songs, albums, artists });
+    res.json(responsePayload);
   } catch (error) {
-    console.error("Error fetching music:", error.message);
-    res.status(500).json({ message: "Failed to fetch music data" });
+    console.error("Error in searchMusic:", error.message);
+    res.status(500).json({ message: "Search failed" });
   }
 };
 
