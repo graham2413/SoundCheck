@@ -442,9 +442,9 @@ export class ReviewPageComponent implements OnInit {
           //   __v: 0,
           //   user: {
           //     _id: `user${i + 1}`,
-          //     username: `User${i + 1} long de df fd df df df`,
+          //     username: `User${i + 1}`,
           //     email: `user${i + 1}@example.com`,
-          //     profilePicture: `https://i.pravatar.cc/150?img=${i + 1}`,
+          //     profilePicture: `https://i.pravatar.cc/150?img=${(i % 70) + 1}`,
           //     friendInfo: {
           //       friends: [],
           //       pendingRequests: [],
@@ -453,14 +453,34 @@ export class ReviewPageComponent implements OnInit {
           //       friendRequestsReceived: [],
           //     },
           //     googleId: `google-${i + 1}`,
+          //     reviews: [],
+          //     friends: [],
+          //     createdAt: new Date().toISOString(),
+          //     list: [],
+          //     gradient: 'linear-gradient(to right, #ff7e5f, #feb47b)',
           //   },
           //   rating: Math.floor(Math.random() * 10) + 1,
-          //   reviewText: `This is a dummy review number ${i + 1}. Slaps.`,
+          //   reviewText: `This is a mock review #${i + 1}.`,
           //   createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-          //   albumOrSongId: 'dummy123',
+          //   albumOrSongId: `song-${i + 1}`,
           //   type: 'Song',
-          //   title: 'Dummy Song',
-          // }));
+          //   title: `Mock Song Title ${i + 1}`,
+          //   albumSongOrArtist: {
+          //     id: i + 1,
+          //     title: `Mock Song Title ${i + 1}`,
+          //     artist: `Artist ${i + 1}`,
+          //     album: `Album ${i + 1}`,
+          //     cover: `https://via.placeholder.com/150?text=Cover+${i + 1}`,
+          //     preview: '',
+          //     isExplicit: i % 3 === 0,
+          //     genre: 'Pop',
+          //     releaseDate: new Date(2023, 0, 1 + i).toISOString(),
+          //     contributors: [`Contributor ${i + 1}`],
+          //     duration: 200 + i,
+          //     type: 'Song',
+          //     isPlaying: false,
+          //   }
+          // }));          
 
           this.existingUserReview = data.userReview;
 
