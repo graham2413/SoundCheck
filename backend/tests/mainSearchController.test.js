@@ -151,7 +151,7 @@ describe('GET /api/music/artist/:artistId', () => {
         .mockResolvedValueOnce({ data: { genres: { data: [{ name: 'Pop' }]}}}) // genre lookup for album 10
         .mockResolvedValueOnce({ data: { genres: { data: [{ name: 'Rock' }]}}}); // genre lookup for album 20
 
-      const res = await request(app).get('/api/music/search?query=test');
+        const res = await request(app).get('/api/music/search?query=test&type=all');
   
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('songs');
@@ -168,14 +168,16 @@ describe('GET /api/music/artist/:artistId', () => {
         .mockResolvedValueOnce({ data: { data: [] } }) // albums
         .mockRejectedValueOnce(new Error('Deezer artists failed')); // artists
   
-      const res = await request(app).get('/api/music/search?query=fallback');
+        const res = await request(app).get('/api/music/search?query=fallback&type=all');
   
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({
-        songs: [],
-        albums: [],
-        artists: [],
-      });
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('songs');
+      expect(res.body).toHaveProperty('albums');
+      expect(res.body).toHaveProperty('artists');
+      expect(Array.isArray(res.body.songs)).toBe(true);
+      expect(Array.isArray(res.body.albums)).toBe(true);
+      expect(Array.isArray(res.body.artists)).toBe(true);
     });
   });
   

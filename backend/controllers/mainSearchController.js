@@ -17,78 +17,127 @@ exports.searchMusic = async (req, res) => {
     // Prepare response parts
     let songs = [], albums = [], artists = [];
 
-    /** === SONGS === */
-    if (typeKey === 'songs' || typeKey === 'all') {
-      const songsRes = await callDeezer(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=15`);
-      const songsRaw = songsRes.data?.data || [];
+    // === TYPE: ALL ===
+    if (typeKey === 'all') {
+      const [songsResult, albumsResult, artistsResult] = await Promise.allSettled([
+        callDeezer(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=15`),
+        callDeezer(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=10`),
+        callDeezer(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=10`)
+      ]);
 
-      const uniqueAlbumIds = [...new Set(
-        songsRaw.map(item => item?.album?.id).filter(Boolean)
-      )];
+      // SONGS
+      if (songsResult.status === 'fulfilled') {
+        const songsRaw = songsResult.value.data?.data || [];
+        const uniqueAlbumIds = [...new Set(songsRaw.map(item => item?.album?.id).filter(Boolean))];
+        const albumGenresMap = new Map(
+          await Promise.all(
+            uniqueAlbumIds.map(async id => [id, await getAlbumGenre(id)])
+          )
+        );
 
-      const albumGenresMap = new Map(
-        await Promise.all(
-          uniqueAlbumIds.map(async albumId => [
-            albumId,
-            await getAlbumGenre(albumId),
-          ])
-        )
-      );
+        songs = songsRaw.map(item => ({
+          id: item?.id,
+          title: item?.title,
+          artist: item?.artist?.name,
+          album: item?.album?.title,
+          cover: item?.album?.cover,
+          preview: item?.preview,
+          isExplicit: item?.explicit_lyrics,
+          genre: albumGenresMap.get(item?.album?.id) || "Unknown",
+        }));
+      }
 
-      songs = songsRaw.map(item => ({
-        id: item?.id,
-        title: item?.title,
-        artist: item?.artist?.name,
-        album: item?.album?.title,
-        cover: item?.album?.cover,
-        preview: item?.preview,
-        isExplicit: item?.explicit_lyrics,
-        genre: albumGenresMap.get(item?.album?.id) || "Unknown",
-      }));
+      // ALBUMS
+      if (albumsResult.status === 'fulfilled') {
+        const albumsRaw = albumsResult.value.data?.data || [];
+        const albumGenres = await Promise.all(
+          albumsRaw.map(album => album?.id ? getAlbumGenre(album.id) : "Unknown")
+        );
+
+        albums = albumsRaw.map((album, index) => ({
+          id: album?.id,
+          title: album?.title,
+          artist: album?.artist?.name || "Unknown",
+          cover: album?.cover,
+          genre: albumGenres[index],
+          isExplicit: album?.explicit_lyrics,
+        }));
+      }
+
+      // ARTISTS
+      if (artistsResult.status === 'fulfilled') {
+        const artistsRaw = artistsResult.value.data?.data || [];
+        artists = artistsRaw.map(artist => ({
+          id: artist?.id,
+          name: artist?.name,
+          picture: artist?.picture,
+          tracklist: artist?.tracklist,
+        }));
+      }
+
+    } else {
+      // === TYPE: SONGS ===
+      if (typeKey === 'songs') {
+        const songsRes = await callDeezer(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=15`);
+        const songsRaw = songsRes.data?.data || [];
+        const uniqueAlbumIds = [...new Set(songsRaw.map(item => item?.album?.id).filter(Boolean))];
+        const albumGenresMap = new Map(
+          await Promise.all(
+            uniqueAlbumIds.map(async id => [id, await getAlbumGenre(id)])
+          )
+        );
+
+        songs = songsRaw.map(item => ({
+          id: item?.id,
+          title: item?.title,
+          artist: item?.artist?.name,
+          album: item?.album?.title,
+          cover: item?.album?.cover,
+          preview: item?.preview,
+          isExplicit: item?.explicit_lyrics,
+          genre: albumGenresMap.get(item?.album?.id) || "Unknown",
+        }));
+      }
+
+      // === TYPE: ALBUMS ===
+      if (typeKey === 'albums') {
+        const albumsRes = await callDeezer(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=10`);
+        const albumsRaw = albumsRes.data?.data || [];
+        const albumGenres = await Promise.all(
+          albumsRaw.map(album => album?.id ? getAlbumGenre(album.id) : "Unknown")
+        );
+
+        albums = albumsRaw.map((album, index) => ({
+          id: album?.id,
+          title: album?.title,
+          artist: album?.artist?.name || "Unknown",
+          cover: album?.cover,
+          genre: albumGenres[index],
+          isExplicit: album?.explicit_lyrics,
+        }));
+      }
+
+      // === TYPE: ARTISTS ===
+      if (typeKey === 'artists') {
+        const artistsRes = await callDeezer(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=10`);
+        const artistsRaw = artistsRes.data?.data || [];
+
+        artists = artistsRaw.map(artist => ({
+          id: artist?.id,
+          name: artist?.name,
+          picture: artist?.picture,
+          tracklist: artist?.tracklist,
+        }));
+      }
     }
 
-    /** === ALBUMS === */
-    if (typeKey === 'albums' || typeKey === 'all') {
-      const albumsRes = await callDeezer(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=10`);
-      const albumsRaw = albumsRes.data?.data || [];
+    const responsePayload =
+      typeKey === 'songs' ? { songs } :
+      typeKey === 'albums' ? { albums } :
+      typeKey === 'artists' ? { artists } :
+      { songs, albums, artists };
 
-      const albumGenres = await Promise.all(
-        albumsRaw.map(album => album?.id ? getAlbumGenre(album.id) : "Unknown")
-      );
-
-      albums = albumsRaw.map((album, index) => ({
-        id: album?.id,
-        title: album?.title,
-        artist: album?.artist?.name || "Unknown",
-        cover: album?.cover,
-        genre: albumGenres[index],
-        isExplicit: album?.explicit_lyrics,
-      }));
-    }
-
-    /** === ARTISTS === */
-    if (typeKey === 'artists' || typeKey === 'all') {
-      const artistsRes = await callDeezer(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=10`);
-      const artistsRaw = artistsRes.data?.data || [];
-
-      artists = artistsRaw.map(artist => ({
-        id: artist?.id,
-        name: artist?.name,
-        picture: artist?.picture,
-        tracklist: artist?.tracklist,
-      }));
-    }
-
-    // Prepare final payload based on type
-    let responsePayload = {};
-    if (typeKey === 'songs') responsePayload = { songs };
-    else if (typeKey === 'albums') responsePayload = { albums };
-    else if (typeKey === 'artists') responsePayload = { artists };
-    else responsePayload = { songs, albums, artists };
-
-    // Cache the result
-    await redis.set(cacheKey, JSON.stringify(responsePayload), 'EX', 3600); // 1 hour TTL
-
+    await redis.set(cacheKey, JSON.stringify(responsePayload), 'EX', 3600);
     res.json(responsePayload);
   } catch (error) {
     console.error("Error in searchMusic:", error.message);
