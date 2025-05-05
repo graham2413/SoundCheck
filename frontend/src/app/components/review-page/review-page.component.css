@@ -217,9 +217,8 @@ input[type='number'] {
 
 @media (max-height: 620px) {
   .imageHeight{
-    width: 56%;
+    width: 55%;
   }
-
 }
 
 @media (min-height: 500px) and (max-height: 553px) {

@@ -13,6 +13,7 @@
     <div
       [@slideAnimation]="showSecondIpod ? 'back' : 'hidden'"
       [ngClass]="{ 'invisible-view': !showSecondIpod }"
+      *ngIf="showSecondIpod"
     >
       <!-- Back Button (top-left) -->
       <button
@@ -304,7 +305,6 @@
     >
       <div
         class="bg-[#09101F] w-full flex flex-col flex-grow min-h-0"
-        style="height: 100dvh"
       >
       <div class="flex justify-between items-center px-4 w-full min-h-[60px] pt-1 topBar">
 
@@ -526,7 +526,7 @@
   <div
     #reviewsSection
     *ngIf="!showSecondIpod"
-    class="bg-[#09101F] shadow-md w-full mx-auto mt-3"
+    class="bg-[#171a21] shadow-md w-full mx-auto mt-3"
   >
     <div
       class="sticky top-0 z-30 bg-[#000000] px-3 py-2 rounded-t-sm shadow-[rgba(0,0,0,0.2)_0px_2px_6px]"
@@ -730,14 +730,14 @@
               else noReviewsMobile
             "
           >
-            <ul class="space-y-4 mt-1 bg-[#09101F] px-2" @fadeIn>
+            <ul class="space-y-4 mt-1 bg-[#171a21] px-2" @fadeIn>
               <li
                 *ngFor="
                   let review of pagedReviews;
                   let i = index;
                   trackBy: trackById
                 "
-                class="review-card p-2 flex flex-col gap-2 relative bg-[#09101F]"
+                class="review-card p-2 flex flex-col gap-2 relative bg-[#171a21]"
                 [ngClass]="{
                   'border-b border-gray-500': i < pagedReviews.length - 1
                 }"
