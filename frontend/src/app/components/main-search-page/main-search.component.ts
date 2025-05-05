@@ -198,7 +198,7 @@ export class MainSearchComponent implements OnInit {
       const searchBarEl = this.searchBar.nativeElement;
       const elementTop =
         searchBarEl.getBoundingClientRect().top + window.pageYOffset;
-      const offset = elementTop - 15;
+      const offset = elementTop - 105;
       window.scrollTo({ top: offset, behavior: 'smooth' });
     }, 0);
 
