@@ -503,7 +503,7 @@
     <!-- Remove from List Button -->
     <button
       *ngIf="!isProfileLoading && isInList"
-      class="mt-4 w-auto mx-auto text-white font-bold py-2 mt-2 px-6 rounded-full flex items-center justify-center text-lg bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+      class="mt-4 w-auto mx-auto text-white font-bold py-2 mt-4 px-6 rounded-full flex items-center justify-center text-lg bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
       [disabled]="addingToList"
       (click)="removeFromList(record)"
     >
