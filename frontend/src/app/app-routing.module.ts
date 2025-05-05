@@ -11,14 +11,18 @@ import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password.
 import { NotFoundComponent } from './components/not-found.component/not-found-page.component';
 
 export const appRoutes: Routes = [
-    { path: '', component: MainSearchComponent, canActivate: [AuthGuard], data: { animation: 'Home' } },
-    { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard], data: { animation: 'Profile' } },
-    { path: 'friends', component: FriendsComponent, canActivate: [AuthGuard], data: { animation: 'Friends' } },
-    { path: 'profile/:userId', component: ViewProfilePageComponent, canActivate: [AuthGuard], data: { animation: 'ViewProfile' } },
-    { path: 'login', component: LoginComponent, data: { animation: 'Login' } },
-    { path: 'register', component: RegisterComponent, data: { animation: 'Register' } },
-    { path: 'forgot-password', component: ForgotPasswordComponent, data: { animation: 'Register' } },
-    { path: 'reset-password/:token', component: ResetPasswordComponent, data: { animation: 'Register' } },
-    { path: 'not-found', component: NotFoundComponent,  data: { animation: 'Register'  }},
+    { path: '', component: MainSearchComponent, canActivate: [AuthGuard], data: { animation: 'homePage' } },
+    { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard], data: { animation: 'profilePage' } },
+    { path: 'friends', component: FriendsComponent, canActivate: [AuthGuard], data: { animation: 'friendsPage' } },
+    { path: 'profile/:userId', component: ViewProfilePageComponent, canActivate: [AuthGuard], data: { animation: 'viewProfilePage' } },
+  
+    // Auth-related
+    { path: 'login', component: LoginComponent, data: { animation: 'loginPage' } },
+    { path: 'register', component: RegisterComponent, data: { animation: 'registerPage' } },
+    { path: 'forgot-password', component: ForgotPasswordComponent, data: { animation: 'forgotPasswordPage' } },
+    { path: 'reset-password/:token', component: ResetPasswordComponent, data: { animation: 'resetPasswordPage' } },
+  
+    // Not found
+    { path: 'not-found', component: NotFoundComponent, data: { animation: 'notFoundPage' } },
     { path: '**', redirectTo: 'not-found' }
-];
+  ];

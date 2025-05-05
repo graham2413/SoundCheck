@@ -22,23 +22,6 @@ import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
   templateUrl: './other-profile-page.component.html',
   styleUrl: './other-profile-page.component.css',
   standalone: true,
-  animations: [
-    trigger('fadeSlide', [
-      transition(':enter', [
-        style({ opacity: 0, transform: 'translateY(10%)' }),
-        animate(
-          '300ms ease-out',
-          style({ opacity: 1, transform: 'translateY(0)' })
-        ),
-      ]),
-      transition(':leave', [
-        animate(
-          '200ms ease-in',
-          style({ opacity: 0, transform: 'translateY(-10%)' })
-        ),
-      ]),
-    ]),
-  ],
 })
 export class ViewProfilePageComponent implements OnInit {
   otherUserId!: string;

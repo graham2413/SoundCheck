@@ -18,20 +18,47 @@ import { AuthService } from './services/auth.service';
   imports: [CommonModule, RouterModule, NavbarComponent],
   animations: [
     trigger('routeAnimations', [
-      transition('* <=> *', [
-        query(':enter, :leave', style({ position: 'absolute', width: '100%', backfaceVisibility: 'hidden' }), { optional: true }),
+  
+      // Any route -> ViewProfile (slide in from right)
+      transition('* => viewProfilePage', [
+        query(':enter, :leave', style({ position: 'absolute', width: '100%' }), { optional: true }),
         group([
           query(':leave', [
-            animate('400ms ease-in-out', style({ transform: 'rotateY(180deg)', opacity: 0 }))
+            style({ transform: 'translateX(0)', opacity: 1 }),
+            animate('300ms ease-in-out', style({ transform: 'translateX(-100%)', opacity: 0 }))
           ], { optional: true }),
           query(':enter', [
-            style({ transform: 'rotateY(-180deg)', opacity: 0 }),
-            animate('400ms ease-in-out', style({ transform: 'rotateY(0)', opacity: 1 }))
+            style({ transform: 'translateX(100%)', opacity: 0 }),
+            animate('300ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
           ], { optional: true })
         ])
+      ]),
+  
+      // ViewProfile -> any route (slide out to right)
+      transition('viewProfilePage => *', [
+        query(':enter, :leave', style({ position: 'absolute', width: '100%' }), { optional: true }),
+        group([
+          query(':leave', [
+            style({ transform: 'translateX(0)', opacity: 1 }),
+            animate('300ms ease-in-out', style({ transform: 'translateX(100%)', opacity: 0 }))
+          ], { optional: true }),
+          query(':enter', [
+            style({ transform: 'translateX(-100%)', opacity: 0 }),
+            animate('300ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
+          ], { optional: true })
+        ])
+      ]),
+  
+      // Fallback: fade for all other transitions
+      transition('* <=> *', [
+        query(':enter', [
+          style({ opacity: 0 }),
+          animate('200ms ease-in-out', style({ opacity: 1 }))
+        ], { optional: true })
       ])
     ])
   ]
+  
 })
 export class AppComponent implements OnInit {
   title = 'Sound Check';
@@ -110,8 +137,8 @@ export class AppComponent implements OnInit {
   }
 
   prepareRoute(outlet: RouterOutlet) {
-    return outlet && outlet.activatedRouteData ? outlet.activatedRouteData['animation'] : '';
-  }
+    return outlet?.activatedRouteData?.['animation'] ?? '';
+  }  
 
   shouldShowNavbar(): boolean {
     const hiddenRoutes = ['/login', '/register', '/reset-password', "/forgot-password", "/not-found"];
