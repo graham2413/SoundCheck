@@ -14,7 +14,7 @@
       <button
         *ngIf="showForwardAndBackwardButtons"
         [style.visibility]="currentIndex > 0 ? 'visible' : 'hidden'"
-        class="text-white/80 hover:text-white text-[2.7rem] w-14 h-14 flex items-center justify-center audio-btn-sm"
+        class="text-white hover:text-white text-[2.7rem] w-14 h-14 flex items-center justify-center audio-btn-sm"
         (click)="onPreviousClick()"
       >
         <i class="fas fa-backward"></i>
@@ -24,7 +24,7 @@
       <ng-container *ngIf="record?.preview; else buttonPlaceholder">
         <button
           (click)="togglePlay()"
-          class="bg-white/80 text-black hover:bg-white hover:text-gray-800 w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md transition-colors duration-200"
+          class="bg-white text-black hover:bg-white hover:text-gray-800 w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md transition-colors duration-200"
         >
           <i class="{{ isPlaying ? 'fas fa-pause' : 'fas fa-play ml-1' }} text-3xl"></i>
         </button>
@@ -40,7 +40,7 @@
       <button
         *ngIf="showForwardAndBackwardButtons"
         [style.visibility]="currentIndex < recordList.length - 1 ? 'visible' : 'hidden'"
-        class="audio-btn-sm text-white/80 hover:text-white text-[2.7rem] w-14 h-14 flex items-center justify-center"
+        class="audio-btn-sm text-white hover:text-white text-[2.7rem] w-14 h-14 flex items-center justify-center"
         (click)="onNextClick()"
       >
         <i class="fas fa-forward"></i>

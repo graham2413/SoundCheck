@@ -17,7 +17,7 @@
       <!-- Back Button (top-left) -->
       <button
         (click)="onBackClick()"
-        class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md z-50"
+        class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md z-50"
       >
         <i class="fas fa-chevron-left text-[#09101F] text-lg"></i>
       </button>
@@ -149,7 +149,9 @@
           />
         </div>
         <div class="px-2">
-          <div class="p-4 text-white w-full mt-[1rem] px-3 border border-[#142249] rounded-lg">
+          <div
+            class="p-4 text-white w-full mt-[1rem] px-3 border border-[#142249] rounded-lg"
+          >
             <div class="text-xl font-bold leading-snug mb-1">
               {{ record.title }}
             </div>
@@ -157,20 +159,22 @@
               *ngIf="record.type === 'Album'"
               class="text-base text-gray-400 pt-1"
             >
-            <div class="text-base text-gray-400 pt-1">
-              Artist: <span class="text-white">{{ record.artist }}</span>
-            </div>            </div>
+              <div class="text-base text-gray-400 pt-1">
+                Artist: <span class="text-white">{{ record.artist }}</span>
+              </div>
+            </div>
             <div class="text-base text-gray-400 pt-1">
               Released:
               <span class="text-white">{{
                 formatDate(record.releaseDate)
               }}</span>
             </div>
-            <div *ngIf="record.type === 'Song'" class="text-base text-gray-400 pt-1">
+            <div
+              *ngIf="record.type === 'Song'"
+              class="text-base text-gray-400 pt-1"
+            >
               Album:
-              <span class="text-white">{{
-                record.album
-              }}</span>
+              <span class="text-white">{{ record.album }}</span>
             </div>
             <div class="text-base text-gray-400 pt-1">
               Genre: <span class="text-white">{{ record.genre }}</span>
@@ -178,9 +182,12 @@
 
             <!-- (Type: Song) Contributors -->
             <div *ngIf="record.type === 'Song' && record.contributors?.length">
-                <div class="text-base text-gray-400 pt-1">
-                  Contributors: <span class="text-white">{{ record.contributors.join(', ') }}</span>
-                </div>
+              <div class="text-base text-gray-400 pt-1">
+                Contributors:
+                <span class="text-white">{{
+                  record.contributors.join(", ")
+                }}</span>
+              </div>
             </div>
           </div>
           <!-- Album Tracklist -->
@@ -292,26 +299,25 @@
     <div
       [@slideAnimation]="showSecondIpod ? 'hidden' : 'front'"
       [ngClass]="{ 'invisible-view': showSecondIpod }"
-      class="absolute w-full flex flex-col items-center"
+      class="absolute inset-0 flex flex-col w-full h-[100dvh] min-h-0"
       #iPodFront
     >
       <div
         class="bg-[#09101F] w-full flex flex-col flex-grow min-h-0"
         style="height: 100dvh"
       >
-        <div
-          class="flex justify-between items-center px-4 w-full min-h-[60px] mt-1 topBar"
-        >
-          <!-- Left Button -->
+      <div class="flex justify-between items-center px-4 w-full min-h-[60px] pt-1 topBar">
+
+          <!-- Info Button -->
           <button
             (click)="showSecondIpod = true"
-            class="w-[4rem] h-[3rem] rounded-full bg-white/80 flex items-center justify-center shadow-md"
+            class="w-[4rem] h-[3rem] rounded-full bg-white flex items-center justify-center shadow-md"
           >
             <i class="fa-solid fa-info text-[#09101F] text-xl"></i>
           </button>
 
           <!-- Overall Rating -->
-          <div class="flex justify-center w-full mb-4 mt-4">
+          <div class="flex justify-center w-full my-4">
             <div
               class="relative w-[75%] flex flex-col items-center justify-center"
             >
@@ -393,18 +399,19 @@
           <!-- Close Button -->
           <button
             (click)="close()"
-            class="w-[4rem] h-[3rem] rounded-full bg-white/80 flex items-center justify-center shadow-md"
+            class="w-[4rem] h-[3rem] rounded-full bg-white flex items-center justify-center shadow-md"
           >
             <i class="fas fa-times text-[#09101F] text-xl"></i>
           </button>
         </div>
 
-        <!-- Image Section -->
-        <div class="flex flex-col items-center justify-center flex-1">
+        <!-- Middle Section: Image + Info/Text -->
+        <div
+          class="flex-1 min-h-0 flex flex-col items-center justify-center overflow-hidden px-4"
+        >
           <div
-            class="relative max-w-[75%] mt-[5rem] mb-5 flex items-center justify-center"
+            class="relative max-w-[80%] w-full flex justify-center items-center"
           >
-            <!-- Image (Appears when loaded) -->
             <img
               [src]="record.type === 'Artist' ? record.picture : record.cover"
               [alt]="record.type === 'Artist' ? record.name : record.title"
@@ -412,20 +419,18 @@
               (load)="isImageLoaded = true"
             />
           </div>
-        </div>
 
-        <!-- Info and Audio Player Section -->
-        <div class="flex flex-col items-center justify-center flex-1 pb-4">
-          <div class="text-center text-3xl mb-4 text-gray-200 font-semibold">
+          <!-- Title/Text -->
+          <div class="text-center text-3xl mt-4 text-gray-200 font-semibold">
             <ng-container *ngIf="record.type === 'Artist'">
-              <span class="text-gray-400 text-xl block uppercase mb-2">
-                Artist
-              </span>
+              <span class="text-gray-400 text-xl block uppercase mb-2"
+                >Artist</span
+              >
             </ng-container>
             <ng-container *ngIf="record.type === 'Album'">
-              <span class="text-gray-400 text-xl block uppercase mb-2">
-                Album
-              </span>
+              <span class="text-gray-400 text-xl block uppercase mb-2"
+                >Album</span
+              >
             </ng-container>
             <div
               class="title-wrapper"
@@ -443,12 +448,9 @@
                 >
                   {{ record.title }}
                 </span>
-                <span *ngIf="record.type === 'Artist'">
-                  {{ record.name }}
-                </span>
+                <span *ngIf="record.type === 'Artist'">{{ record.name }}</span>
               </div>
             </div>
-
             <p
               class="text-gray-400 text-xl flex items-center justify-center mt-2"
             >
@@ -465,26 +467,21 @@
               </span>
             </p>
           </div>
-          <div
-            class="h-auto flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
-          >
-            <app-audio-player
-              class="pt-1"
-              *ngIf="record"
-              [record]="record"
-              [hidden]="showSecondIpod"
-              [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
-              #audioPlayerMobile
-              [song]="currentSong"
-              (next)="nextSong()"
-              (previous)="prevSong()"
-              (playStatus)="updatePlayStatus($event)"
-              (playStarted)="onAudioPlayStarted($event)"
-              [currentIndex]="currentIndex"
-              [recordList]="recordList"
-            ></app-audio-player>
-          </div>
         </div>
+        <app-audio-player
+        *ngIf="record"
+        [record]="record"
+        [hidden]="showSecondIpod"
+        [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
+        #audioPlayerMobile
+        [song]="currentSong"
+        (next)="nextSong()"
+        (previous)="prevSong()"
+        (playStatus)="updatePlayStatus($event)"
+        (playStarted)="onAudioPlayStarted($event)"
+        [currentIndex]="currentIndex"
+        [recordList]="recordList"
+      ></app-audio-player>
       </div>
     </div>
   </div>
@@ -506,7 +503,7 @@
     <!-- Remove from List Button -->
     <button
       *ngIf="!isProfileLoading && isInList"
-      class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+      class="mt-4 w-auto mx-auto text-white font-bold py-2 mt-2 px-6 rounded-full flex items-center justify-center text-lg bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
       [disabled]="addingToList"
       (click)="removeFromList(record)"
     >

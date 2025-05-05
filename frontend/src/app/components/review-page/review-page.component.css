@@ -215,12 +215,9 @@ input[type='number'] {
   font-family: 'Poppins', sans-serif;
 }
 
-@media (max-height: 645px) {
-  .topBar {
-    margin-top: 20px !important;
-  }
+@media (max-height: 620px) {
   .imageHeight{
-    height: 13rem !important;
+    width: 56%;
   }
 
 }
