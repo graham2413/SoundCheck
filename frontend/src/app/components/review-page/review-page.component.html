@@ -489,7 +489,7 @@
   <div *ngIf="!showSecondIpod">
     <button
       *ngIf="!isProfileLoading && !isInList"
-      class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+      class="mt-[2rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
       [disabled]="addingToList"
       (click)="addToList(record)"
     >
@@ -1192,7 +1192,7 @@
       <div class="flex flex-col md:flex-row items-start gap-4 mt-2">
         <!-- Wrapper for both iPods -->
         <div
-          class="relative w-full max-w-[300px] min-h-[500px] overflow-auto overflow-hidden"
+          class="relative w-[50vw] max-w-[330px] h-[70vh] overflow-auto overflow-hidden"
         >
           <!-- First iPod -->
           <div
@@ -1201,7 +1201,7 @@
             *ngIf="!showSecondIpod"
           >
             <div
-              class="bg-[#09101F] border border-gray-700 rounded-lg p-3 md:p-4 w-full overflow-hidden"
+              class="bg-[#09101F] rounded-lg p-3 md:p-4 w-full overflow-hidden"
             >
               <div class="flex flex-col h-full">
                 <!-- Image Area -->
@@ -1366,7 +1366,7 @@
                   class="w-full h-auto rounded-lg"
                   alt="Record Image"
                 />
-                <div class="absolute inset-0 bg-black/40"></div>
+                <div class="absolute inset-0 bg-black/40 rounded-lg"></div>
               </div>
               <div class="relative left-0 right-0 py-2 z-50">
                 <div class="bg-white/30 rounded-md p-3 w-full text-left">

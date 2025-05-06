@@ -24,7 +24,7 @@
       <ng-container *ngIf="record?.preview; else buttonPlaceholder">
         <button
           (click)="togglePlay()"
-          class="bg-white text-black hover:bg-white hover:text-gray-800 w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md transition-colors duration-200"
+          class="play-btn-sm bg-white text-black hover:bg-white hover:text-gray-800 w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md transition-colors duration-200"
         >
           <i class="{{ isPlaying ? 'fas fa-pause' : 'fas fa-play ml-1' }} text-3xl"></i>
         </button>
