@@ -217,6 +217,7 @@ const getTopByType = async (type) => {
           cover: "$info.cover",
           picture: "$info.picture",
           artist: "$info.artist",
+          genre: "$info.genre",
           album: "$info.album",
           isExplicit: "$info.isExplicit",
           type: type,
