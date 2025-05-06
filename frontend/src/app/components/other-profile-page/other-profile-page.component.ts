@@ -838,9 +838,16 @@ export class ViewProfilePageComponent implements OnInit {
 
   goToUserProfile(userId?: string): void {
     this.showPanel = null;
-
+  
+    const currentUserId = this.route.snapshot.paramMap.get('userId');
+    const currentSection = history.state?.section;
+  
     if (userId) {
-      this.router.navigate([`/profile/${userId}`]);
+      this.router.navigate([`/profile/${userId}`], {
+        state: {
+          fromUserId: currentUserId,
+          section: currentSection
+        }      });
     } else {
       this.router.navigate(['/profile']);
     }
@@ -856,9 +863,19 @@ export class ViewProfilePageComponent implements OnInit {
 
   goBack(): void {
     this.appComponent.navigationDirection = 'back';
-
-    const section = history.state.section;
-
+  
+    const section = history.state?.section;
+    const previousUserId = history.state?.fromUserId;
+  
+    // 1. Go back to previous profile if available
+    if (previousUserId) {
+      this.router.navigate([`/profile/${previousUserId}`], {
+        state: { section } // forward section if it exists
+      });
+      return;
+    }
+  
+    // 2. If no previous profile, use section to route back to source
     if (section) {
       if (['addFriends', 'requests', 'myFriends'].includes(section)) {
         this.router.navigate(['/friends'], { state: { section } });
@@ -867,12 +884,12 @@ export class ViewProfilePageComponent implements OnInit {
       } else {
         this.router.navigate(['/']);
       }
-    } else if (window.history.length > 1) {
-      window.history.back();
     } else {
       this.router.navigate(['/']);
     }
   }
+  
+  
 
   openGradientModal() {
     this.tempSelectedGradient = this.currentGradient;

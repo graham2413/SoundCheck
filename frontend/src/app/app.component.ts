@@ -29,7 +29,29 @@ import { AuthService } from './services/auth.service';
   imports: [CommonModule, RouterModule, NavbarComponent],
   animations: [
     trigger('routeAnimations', [
-      // Slide profile IN (forward/default navigation)
+      // 🟢 Profile-to-profile via back button (slide current out to right)
+      transition(
+        (from: string | null, to: string | null) =>
+          typeof from === 'string' &&
+          typeof to === 'string' &&
+          from.startsWith('viewProfilePage-') &&
+          to.startsWith('viewProfilePage-back-'),
+        [
+          query(':enter, :leave', style({ position: 'absolute', width: '100%' }), { optional: true }),
+          group([
+            query(':leave', [
+              style({ transform: 'translateX(0)', opacity: 1 }),
+              animate('400ms ease-in-out', style({ transform: 'translateX(100%)', opacity: 0 }))
+            ], { optional: true }),
+            query(':enter', [
+              style({ transform: 'translateX(-100%)', opacity: 0 }),
+              animate('400ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
+            ], { optional: true })
+          ])
+        ]
+      ),
+    
+      // 🔵 Profile IN (forward navigation from another route or profile)
       transition(
         (from: string | null, to: string | null) =>
           typeof to === 'string' && to.startsWith('viewProfilePage-forward-'),
@@ -48,26 +70,7 @@ import { AuthService } from './services/auth.service';
         ]
       ),
     
-      // Slide profile IN (backward navigation via back button)
-      transition(
-        (from: string | null, to: string | null) =>
-          typeof to === 'string' && to.startsWith('viewProfilePage-back-'),
-        [
-          query(':enter, :leave', style({ position: 'absolute', width: '100%' }), { optional: true }),
-          group([
-            query(':leave', [
-              style({ transform: 'translateX(0)', opacity: 1 }),
-              animate('400ms ease-in-out', style({ transform: 'translateX(100%)', opacity: 0 }))
-            ], { optional: true }),
-            query(':enter', [
-              style({ transform: 'translateX(-100%)', opacity: 0 }),
-              animate('400ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
-            ], { optional: true })
-          ])
-        ]
-      ),
-    
-      // Slide OUT when leaving profile to any other route
+      // 🟠 Profile → any non-profile route
       transition(
         (from: string | null, to: string | null) =>
           typeof from === 'string' && from.startsWith('viewProfilePage-'),
@@ -85,15 +88,16 @@ import { AuthService } from './services/auth.service';
           ])
         ]
       ),
-      
-      // Fallback: fade for all other transitions
+    
+      // ⚫️ Fallback: all other route changes fade
       transition('* <=> *', [
         query(':enter', [
           style({ opacity: 0 }),
           animate('400ms ease-in-out', style({ opacity: 1 }))
         ], { optional: true })
       ])
-    ]),    
+    ])
+     
   ],
 })
 export class AppComponent implements OnInit {
@@ -116,10 +120,13 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe(() => {
+    .pipe(filter(event => event instanceof NavigationEnd))
+    .subscribe(() => {
+      // Delay resetting the direction to ensure animation picks up the correct one
+      setTimeout(() => {
         this.navigationDirection = 'forward';
-      });
+      }, 400); // small delay (can go up to 100ms if needed)
+    });
 
     this.fetchAndStoreAlbums();
 
