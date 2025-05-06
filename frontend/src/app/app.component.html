@@ -1,4 +1,5 @@
 <app-navbar *ngIf="shouldShowNavbar()"></app-navbar>
+
 <main [@routeAnimations]="prepareRoute(outlet)">
   <router-outlet #outlet="outlet"></router-outlet>
 </main>

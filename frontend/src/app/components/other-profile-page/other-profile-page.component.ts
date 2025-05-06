@@ -15,6 +15,7 @@ import { Review } from 'src/app/models/responses/review-responses';
 import { User } from 'src/app/models/responses/user.response';
 import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
 import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
+import { AppComponent } from 'src/app/app.component';
 
 @Component({
   selector: 'app-view-profile-page',
@@ -102,7 +103,8 @@ export class ViewProfilePageComponent implements OnInit {
     private userService: UserService,
     private toastr: ToastrService,
     private router: Router,
-    private modal: NgbModal
+    private modal: NgbModal,
+    private appComponent: AppComponent
   ) {}
 
   ngOnInit(): void {
@@ -853,6 +855,8 @@ export class ViewProfilePageComponent implements OnInit {
   }
 
   goBack(): void {
+    this.appComponent.navigationDirection = 'back';
+
     const section = history.state.section;
 
     if (section) {
