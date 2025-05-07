@@ -172,18 +172,18 @@ const setAlbumImages = async () => {
 
 // Retrieve stored album images from the database
 const getAlbumImages = async (req, res) => {
-    try {
-        const albums = await AlbumImage.find({}, { _id: 0, spotifyId: 1, name: 1, artist: 1, imageUrl: 1 });
+  try {
+    const albums = await AlbumImage.find({}); // ← no field filter
 
-        if (!albums.length) {
-            return res.status(404).json({ message: "No stored albums found" });
-        }
-
-        res.json({ albums });
-    } catch (error) {
-        console.error("Error retrieving stored album images:", error.message);
-        res.status(500).json({ message: "Failed to retrieve stored albums" });
+    if (!albums.length) {
+      return res.status(404).json({ message: "No stored albums found" });
     }
+
+    res.json({ albums });
+  } catch (error) {
+    console.error("Error retrieving stored album images:", error.message);
+    res.status(500).json({ message: "Failed to retrieve stored albums" });
+  }
 };
 
 module.exports = {

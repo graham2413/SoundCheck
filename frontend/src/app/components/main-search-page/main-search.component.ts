@@ -123,14 +123,21 @@ export class MainSearchComponent implements OnInit {
   
     // Delay to simulate loading
     setTimeout(() => {
-      albums.forEach((album) => {
+      albums.forEach((album, index) => {
         const imgEl = document.createElement("img");
-        imgEl.src = album.imageUrl;
-        imgEl.alt = album.name;
+        imgEl.src = album.cover;
+        imgEl.alt = album.title || album.name;
         imgEl.className =
-          "w-[10rem] h-[10rem] md:w-[15rem] md:h-[15rem] object-cover mr-4 rounded";
+          "w-[10rem] h-[10rem] md:w-[15rem] md:h-[15rem] object-cover mr-4 rounded cursor-pointer";
+      
+        // Add click event to open modal
+        imgEl.addEventListener("click", () => {
+          this.openModal(album, albums, index);
+        });
+      
         trackEl.appendChild(imgEl);
       });
+      
   
       this.isMarqueeLoading = false;
       this.initializeMarquee();
