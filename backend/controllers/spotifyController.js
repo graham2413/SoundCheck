@@ -2,6 +2,17 @@ const axios = require("axios");
 const User = require("../models/User");
 const AlbumImage = require("../models/AlbumImage");
 const getSpotifyAccessToken = require("../auth/spotifyAuth");
+const path = require("path");
+const https = require("https");
+const fs = require("fs");
+const { getGenreFromId, callDeezer } = require('../controllers/mainSearchController');
+
+const isProd = process.env.NODE_ENV === "production";
+const httpsAgent = isProd
+  ? new https.Agent()
+  : new https.Agent({
+      ca: fs.readFileSync(path.resolve(__dirname, "../cacert.pem")),
+    });
 
  // Fetch a user's Spotify playlists.
 exports.getUserPlaylists = async (req, res) => {
@@ -14,7 +25,7 @@ exports.getUserPlaylists = async (req, res) => {
 
         // Fetch user's playlists from Spotify API
         const response = await axios.get("https://api.spotify.com/v1/me/playlists", {
-            headers: { Authorization: `Bearer ${user.spotifyAccessToken}` },
+            headers: { Authorization: `Bearer ${user.spotifyAccessToken}`, httpsAgent: httpsAgent        },
         });
 
         res.json(response.data);
@@ -41,6 +52,7 @@ exports.importPlaylists = async (req, res) => {
         for (const playlistId of playlistIds) {
             const response = await axios.get(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
                 headers: { Authorization: `Bearer ${user.spotifyAccessToken}` },
+                httpsAgent: httpsAgent
             });
 
             // Extract and store track details
@@ -64,47 +76,97 @@ exports.importPlaylists = async (req, res) => {
     }
 };
 
-// Fetch top 25 albums from Spotify and store them in the database (runs once a week)
+// Fetch top 50 albums from Spotify and store them in the database (runs once a week)
 exports.setAlbumImages = async (req, res) => {
     try {
-        const accessToken = await getSpotifyAccessToken();
-        if (!accessToken) {
-            console.error("Failed to get Spotify access token.");
-            return;
-        }
-        
-        // Get the current year dynamically
-        const currentYear = new Date().getFullYear();
-
-        // Fetch albums released in the current year (2025)
-        const response = await axios.get("https://api.spotify.com/v1/search", {
-            headers: { Authorization: `Bearer ${accessToken}` },
-            params: {
-                q: `year:${currentYear} tag:new`, // Only new & recent albums from this year
-                type: "album",
-                limit: 50,
-            },
-        });
-
-        const albums = response.data.albums.items.map(album => ({
-            spotifyId: album.id,
-            name: album.name,
-            artist: album.artists.map(a => a.name).join(", "),
-            imageUrl: album.images[0]?.url || "",
-            releaseDate: album.release_date || "0000-00-00"
-        }));
-
-        // Sort albums by release date (newest first)
-        albums.sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate));
-
-        await AlbumImage.deleteMany({});
-        await AlbumImage.insertMany(albums);
-        return res.status(200).json({ message: "Album images updated successfully." });
-
+      const accessToken = await getSpotifyAccessToken();
+      if (!accessToken) {
+        console.error("Failed to get Spotify access token.");
+        return res.status(500).json({ message: "Failed to get Spotify access token." });
+      }
+  
+      const currentYear = new Date().getFullYear();
+  
+      const response = await axios.get("https://api.spotify.com/v1/search", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: {
+          q: `year:${currentYear} tag:new`,
+          type: "album",
+          limit: 50,
+        },
+        httpsAgent
+      });
+  
+      const albums = (await Promise.all(
+        response.data.albums.items.map(async (album) => {
+          const name = album.name;
+          const artistName = album.artists.map(a => a.name).join(", ");
+          const releaseDate = album.release_date || "0000-00-00";
+      
+          try {
+            const deezerSearchRes = await callDeezer(
+                `https://api.deezer.com/search/album?q=${encodeURIComponent(`${name} ${artistName}`)}`
+              );
+      
+            const matchedAlbum = deezerSearchRes.data.data?.find(a =>
+              a.title.toLowerCase() === name.toLowerCase()
+            );
+      
+            if (!matchedAlbum) return null;
+      
+            // Step 1: Fetch full Deezer album details
+            const deezerAlbumRes = await callDeezer(`https://api.deezer.com/album/${matchedAlbum.id}`);
+            const deezerAlbum = deezerAlbumRes.data;
+      
+            // Step 2: Resolve genre
+            const genre = await getGenreFromId(deezerAlbum.genre_id);
+      
+            // Step 3: Prepare tracklist
+            const tracklist = deezerAlbum.tracks?.data?.map(track => ({
+              id: track.id,
+              title: track.title,
+              duration: track.duration,
+              preview: track.preview,
+              isExplicit: track.explicit_lyrics || false
+            })) || [];
+      
+            // Step 4: Extract preview + isExplicit from first track
+            const preview = tracklist.find(t => t.preview)?.preview || "";
+            const isExplicit = tracklist.some(t => t.isExplicit);
+      
+            return {
+              id: deezerAlbum.id,
+              title: deezerAlbum.title,
+              artist: deezerAlbum.artist?.name || artistName,
+              cover: deezerAlbum.cover_medium || deezerAlbum.cover || "",
+              releaseDate,
+              tracklist,
+              genre,
+              type: "Album",
+              isExplicit,
+              preview
+            };
+      
+          } catch (err) {
+            console.warn(`Failed Deezer match for "${name}" by ${artistName}:`, err.message);
+            return null;
+          }
+        })
+      )).filter(album => album); // Only keep successfully enriched albums      
+  
+      // Sort albums by release date (newest first)
+      albums.sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate));
+  
+      await AlbumImage.deleteMany({});
+      await AlbumImage.insertMany(albums);
+  
+      return res.status(200).json({ message: "Album images updated successfully." });
+  
     } catch (error) {
-        console.error("error fetching popular albums:", error.response?.data || error.message);
+      console.error("Error fetching popular albums:", error.response?.data || error.message);
+      return res.status(500).json({ message: "Error fetching or storing albums." });
     }
-};
+  };
 
 // Retrieve stored album images from the database
 exports.getAlbumImages = async (req, res) => {

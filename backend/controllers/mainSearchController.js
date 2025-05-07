@@ -1,7 +1,7 @@
 const redis = require('../utils/redisClient');
 const { callDeezer } = require('../utils/callDeezer');
 
-exports.searchMusic = async (req, res) => {
+const searchMusic = async (req, res) => {
   try {
     const { query, type = 'songs' } = req.query;
     if (!query) return res.status(400).json({ message: "Query is required" });
@@ -218,7 +218,7 @@ async function getGenreFromId(genreId) {
   }
 }
 
-exports.getTrackDetails = async (req, res) => {
+const getTrackDetails = async (req, res) => {
   try {
     const { trackId } = req.params;
 
@@ -268,7 +268,7 @@ exports.getTrackDetails = async (req, res) => {
   }
 };
 
-exports.getAlbumDetails = async (req, res) => {
+const getAlbumDetails = async (req, res) => {
   try {
     const { albumId } = req.params;
 
@@ -330,7 +330,7 @@ exports.getAlbumDetails = async (req, res) => {
   }
 };
 
-exports.getArtistTopTracks = async (req, res) => {
+const getArtistTopTracks = async (req, res) => {
   try {
     const { artistId } = req.params;
 
@@ -399,4 +399,12 @@ exports.getArtistTopTracks = async (req, res) => {
   }
 };
 
-module.exports.callDeezer = callDeezer; // for testing file access
+module.exports = {
+  searchMusic,
+  getAlbumGenre,
+  getGenreFromId,
+  getTrackDetails,
+  getAlbumDetails,
+  getArtistTopTracks,
+  callDeezer
+};

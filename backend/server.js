@@ -101,7 +101,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/spotify", spotifyRoutes);
 
 // Background job
-cron.schedule("0 12 * * 5", async () => {
+// cron.schedule("0 12 * * 5", async () => {
+  cron.schedule("* * * * *", async () => {
+
   await spotifyController.setAlbumImages();
 });
 

@@ -29,7 +29,7 @@ import { AuthService } from './services/auth.service';
   imports: [CommonModule, RouterModule, NavbarComponent],
   animations: [
     trigger('routeAnimations', [
-      // 🟢 Profile-to-profile via back button (slide current out to right)
+      // Profile-to-profile via back button (slide current out to right)
       transition(
         (from: string | null, to: string | null) =>
           typeof from === 'string' &&
@@ -51,7 +51,7 @@ import { AuthService } from './services/auth.service';
         ]
       ),
     
-      // 🔵 Profile IN (forward navigation from another route or profile)
+      // Profile IN (forward navigation from another route or profile)
       transition(
         (from: string | null, to: string | null) =>
           typeof to === 'string' && to.startsWith('viewProfilePage-forward-'),
@@ -70,7 +70,7 @@ import { AuthService } from './services/auth.service';
         ]
       ),
     
-      // 🟠 Profile → any non-profile route
+      // Profile → any non-profile route
       transition(
         (from: string | null, to: string | null) =>
           typeof from === 'string' && from.startsWith('viewProfilePage-'),
@@ -89,7 +89,7 @@ import { AuthService } from './services/auth.service';
         ]
       ),
     
-      // ⚫️ Fallback: all other route changes fade
+      // Fallback: all other route changes fade
       transition('* <=> *', [
         query(':enter', [
           style({ opacity: 0 }),
@@ -101,7 +101,7 @@ import { AuthService } from './services/auth.service';
   ],
 })
 export class AppComponent implements OnInit {
-  title = 'Sound Check';
+  title = 'SoundCheck';
   currentUrl: string = '';
   navigationDirection: 'forward' | 'back' = 'forward';
 
@@ -125,7 +125,7 @@ export class AppComponent implements OnInit {
       // Delay resetting the direction to ensure animation picks up the correct one
       setTimeout(() => {
         this.navigationDirection = 'forward';
-      }, 400); // small delay (can go up to 100ms if needed)
+      }, 300);
     });
 
     this.fetchAndStoreAlbums();

@@ -208,20 +208,20 @@
 
     <!-- Headers -->
     <div
-      class="flex justify-around mt-3 text-white text-base md:text-lg font-semibold border-b border-gray-700 pb-2"
+      class="flex justify-around mt-2 text-white text-base md:text-lg font-semibold border-b border-gray-700 pb-1"
     >
       <div class="p-1" (click)="openReviews()">
-        <span class="block text-center">{{ otherUser.reviews.length }}</span>
+        <span class="block text-center text-lg">{{ otherUser.reviews.length }}</span>
         <span class="block text-center text-gray-400">Reviews</span>
       </div>
       <div class="p-1" (click)="openFriends()">
-        <span class="block text-center">{{
+        <span class="block text-center text-lg">{{
           otherUser.friends.length || 0
         }}</span>
         <span class="block text-center text-gray-400">Friends</span>
       </div>
       <div class="p-1" (click)="openList()">
-        <span class="block text-center">{{ otherUser.list?.length || 0 }}</span>
+        <span class="block text-center text-lg">{{ otherUser.list?.length || 0 }}</span>
         <span class="block text-center text-gray-400">List</span>
       </div>
     </div>
