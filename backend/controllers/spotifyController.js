@@ -15,7 +15,7 @@ const httpsAgent = isProd
     });
 
  // Fetch a user's Spotify playlists.
-exports.getUserPlaylists = async (req, res) => {
+ const getUserPlaylists = async (req, res) => {
     try {
         const user = await User.findById(req.user._id); // Ensure latest user data
 
@@ -37,7 +37,7 @@ exports.getUserPlaylists = async (req, res) => {
 
 
 // Fetches songs on each provided playlist (add func. to import into the database if not there.)
-exports.importPlaylists = async (req, res) => {
+const importPlaylists = async (req, res) => {
     try {
         const { playlistIds } = req.body; // List of selected Spotify playlist IDs
         const user = await User.findById(req.user._id); // Fetch user
@@ -77,13 +77,13 @@ exports.importPlaylists = async (req, res) => {
 };
 
 // Fetch top 50 albums from Spotify and store them in the database (runs once a week)
-exports.setAlbumImages = async (req, res) => {
+const setAlbumImages = async () => {
     try {
       const accessToken = await getSpotifyAccessToken();
       if (!accessToken) {
         console.error("Failed to get Spotify access token.");
-        return res.status(500).json({ message: "Failed to get Spotify access token." });
-      }
+        return false;
+    }
   
       const currentYear = new Date().getFullYear();
   
@@ -158,18 +158,20 @@ exports.setAlbumImages = async (req, res) => {
       albums.sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate));
   
       await AlbumImage.deleteMany({});
+      console.log("After delete:", await AlbumImage.countDocuments());
+      
       await AlbumImage.insertMany(albums);
   
-      return res.status(200).json({ message: "Album images updated successfully." });
+      return true;
   
     } catch (error) {
       console.error("Error fetching popular albums:", error.response?.data || error.message);
-      return res.status(500).json({ message: "Error fetching or storing albums." });
+      return false;
     }
   };
 
 // Retrieve stored album images from the database
-exports.getAlbumImages = async (req, res) => {
+const getAlbumImages = async (req, res) => {
     try {
         const albums = await AlbumImage.find({}, { _id: 0, spotifyId: 1, name: 1, artist: 1, imageUrl: 1 });
 
@@ -183,3 +185,10 @@ exports.getAlbumImages = async (req, res) => {
         res.status(500).json({ message: "Failed to retrieve stored albums" });
     }
 };
+
+module.exports = {
+    getUserPlaylists,
+    importPlaylists,
+    getAlbumImages,
+    setAlbumImages // 👈 add this
+  };
