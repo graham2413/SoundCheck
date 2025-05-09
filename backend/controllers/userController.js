@@ -98,10 +98,20 @@ exports.updateUserProfile = async (req, res) => {
     // Handle Profile Picture Upload (Using Multer)
     let profilePictureUrl = user.profilePicture;
     if (req.file) {
+      // Delete old image if it's from Cloudinary
+      if (user.profilePicture && user.profilePicture.includes('res.cloudinary.com')) {
+        const segments = user.profilePicture.split('/');
+        const publicIdWithExtension = segments[segments.length - 1]; // e.g., "abc123.jpg"
+        const publicId = publicIdWithExtension.split('.')[0]; // strip extension
+
+        await cloudinary.uploader.destroy(`profile_pictures/${publicId}`);
+      }
+
+      // Upload new image
       const uploadedImage = await cloudinary.uploader.upload(req.file.path, {
-        folder: "profile_pictures",
-        transformation: [{ width: 300, height: 300, crop: "fill" }],
+        folder: "profile_pictures"
       });
+
       profilePictureUrl = uploadedImage.secure_url;
     }
 

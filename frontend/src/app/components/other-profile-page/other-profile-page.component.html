@@ -74,7 +74,7 @@
     <div class="flex items-center justify-between">
       <!-- Profile Picture -->
       <img
-        [src]="otherUser.profilePicture || 'assets/otherUser?.png'"
+        [src]="getTransformedImageUrl(otherUser.profilePicture)"
         alt="Profile Picture"
         class="w-[9rem] h-[9rem] rounded-full border-[.5rem] border-[#09101F]"
         (click)="isImageModalOpen = true"

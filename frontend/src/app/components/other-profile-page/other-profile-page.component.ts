@@ -4,7 +4,6 @@ import { UserService } from '../../services/user.service';
 import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import { Friend } from 'src/app/models/responses/friend-response';
-import { animate, style, transition, trigger } from '@angular/animations';
 import { FormsModule } from '@angular/forms';
 import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ReviewPageComponent } from '../review-page/review-page.component';
@@ -125,6 +124,17 @@ export class ViewProfilePageComponent implements OnInit {
       });
     });
   }
+
+getTransformedImageUrl(fullUrl: string): string {
+  if (!fullUrl) {
+    return 'assets/otherUser.png'; // fallback
+  }
+
+  return fullUrl.replace(
+    '/upload/',
+    '/upload/w_1600,h_1600,c_fill,g_face,f_auto,q_auto,dpr_auto/'
+  );
+}
 
   public fetchUserDetails() {
     this.userService.getOtherUserProfileInfo(this.otherUserId).subscribe({
