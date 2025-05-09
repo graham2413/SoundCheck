@@ -29,7 +29,7 @@ exports.getUserProfile = async (req, res) => {
       reviews: reviews,
       createdAt: user.createdAt,
       gradient: user.gradient,
-      list: user.list || []
+      list: user.list || [],
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
@@ -97,22 +97,25 @@ exports.updateUserProfile = async (req, res) => {
 
     // Handle Profile Picture Upload (Using Multer)
     let profilePictureUrl = user.profilePicture;
+
     if (req.file) {
-      // Delete old image if it's from Cloudinary
-      if (user.profilePicture && user.profilePicture.includes('res.cloudinary.com')) {
-        const segments = user.profilePicture.split('/');
-        const publicIdWithExtension = segments[segments.length - 1]; // e.g., "abc123.jpg"
-        const publicId = publicIdWithExtension.split('.')[0]; // strip extension
+      // Delete old image from Cloudinary if present
+      if (
+        user.profilePicture &&
+        user.profilePicture.includes("res.cloudinary.com")
+      ) {
+        const segments = user.profilePicture.split("/");
+        const versionIndex = segments.findIndex((seg) => seg.startsWith("v")); // Find version segment
+        const publicIdWithExtension = segments
+          .slice(versionIndex + 1)
+          .join("/"); // everything after version
+        const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, ""); // remove file extension
 
         await cloudinary.uploader.destroy(`profile_pictures/${publicId}`);
       }
 
-      // Upload new image
-      const uploadedImage = await cloudinary.uploader.upload(req.file.path, {
-        folder: "profile_pictures"
-      });
-
-      profilePictureUrl = uploadedImage.secure_url;
+      // Use URL from multer-storage-cloudinary
+      profilePictureUrl = req.file.path;
     }
 
     // Handle Password Update (If a new password is provided)
@@ -159,7 +162,7 @@ exports.updateUserProfile = async (req, res) => {
       email: updatedUser.email,
       profilePicture: updatedUser.profilePicture,
       createdAt: updatedUser.createdAt,
-      gradient: updatedUser.gradient
+      gradient: updatedUser.gradient,
     });
   } catch (error) {
     console.error("Error updating profile:", error);
@@ -421,11 +424,12 @@ exports.deleteUserProfile = async (req, res) => {
   }
 };
 
-
 exports.addToList = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {
-      return res.status(401).json({ message: "Unauthorized. User not found in request." });
+      return res
+        .status(401)
+        .json({ message: "Unauthorized. User not found in request." });
     }
 
     const user = await User.findById(req.user._id);
@@ -454,7 +458,9 @@ exports.addToList = async (req, res) => {
     );
 
     if (exists) {
-      return res.status(400).json({ message: "Item already exists in your list." });
+      return res
+        .status(400)
+        .json({ message: "Item already exists in your list." });
     }
 
     // Clean new item
@@ -474,7 +480,7 @@ exports.addToList = async (req, res) => {
       releaseDate: item.releaseDate,
       contributors: item.contributors,
       tracklist: item.tracklist,
-      addedAt: item.addedAt || new Date()
+      addedAt: item.addedAt || new Date(),
     };
 
     // Push clean item
@@ -482,13 +488,14 @@ exports.addToList = async (req, res) => {
 
     await user.save();
 
-    return res.status(200).json({ message: "Item added to list successfully." });
+    return res
+      .status(200)
+      .json({ message: "Item added to list successfully." });
   } catch (error) {
     console.error("Error adding item to list:", error);
     return res.status(500).json({ message: "Server Error" });
   }
 };
-
 
 exports.removeFromList = async (req, res) => {
   try {
@@ -504,15 +511,21 @@ exports.removeFromList = async (req, res) => {
     const { id, type } = req.body;
 
     if (!id || !type) {
-      return res.status(400).json({ message: "Invalid request. Missing id or type." });
+      return res
+        .status(400)
+        .json({ message: "Invalid request. Missing id or type." });
     }
 
     // Filter out the item
-    user.list = user.list.filter(item => !(item.id === id && item.type === type));
+    user.list = user.list.filter(
+      (item) => !(item.id === id && item.type === type)
+    );
 
     await user.save();
 
-    return res.status(200).json({ message: "Item removed from list successfully." });
+    return res
+      .status(200)
+      .json({ message: "Item removed from list successfully." });
   } catch (error) {
     console.error("Error removing item from list:", error);
     return res.status(500).json({ message: "Server Error" });
