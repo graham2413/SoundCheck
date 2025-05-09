@@ -1198,7 +1198,7 @@
           <div
             class="relative transition-transform duration-500"
             [@iPodTransition]="iPodState"
-            *ngIf="!showSecondIpod"
+             [ngClass]="{ 'invisible-view': showSecondIpod }"
           >
             <div
               class="bg-[#09101F] rounded-lg p-3 md:p-4 w-full overflow-hidden"
@@ -1346,16 +1346,16 @@
           <div
           [@slideAnimation]="showSecondIpod ? 'back' : 'hidden'"
           [ngClass]="{ 'invisible-view': !showSecondIpod }"
-          *ngIf="showSecondIpod"
           class="absolute inset-0 z-30 overflow-y-auto custom-scrollbar pr-2"
         >
             <!-- Back Button (top-left) -->
-            <button
-              (click)="onBackClick()"
-              class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md z-50"
-            >
-              <i class="fas fa-chevron-left text-[#09101F] text-lg"></i>
-            </button>
+<button
+  (click)="onBackClick()"
+  class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md z-50
+         max-[980px]:w-8 max-[980px]:h-8"
+>
+  <i class="fas fa-chevron-left text-[#09101F] text-lg max-[980px]:text-sm"></i>
+</button>
 
             <!-- Artist Section -->
             <div *ngIf="record.type === 'Artist'">

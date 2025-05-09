@@ -4,81 +4,94 @@
   class="container mx-auto max-w-[1000px] pb-6 bg-[#09101F] text-white rounded-lg"
 >
   <!-- Top Gradient Banner -->
-  <div
-  class="w-full h-24 md:mt-[5.8rem] relative"
-  [class]="getGradientClass()"
->
-
-  <!-- Back Button -->
-  <button
-    (click)="goBack()"
-    class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md"
+  <div class="w-full h-24 md:mt-[5.8rem] relative" [class]="getGradientClass()">
+    <!-- Back Button -->
+    <button
+      (click)="goBack()"
+      class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md"
     >
-    <i class="fas fa-chevron-left text-[#09101F] text-lg"></i>
-  </button>
+      <i class="fas fa-chevron-left text-[#09101F] text-lg"></i>
+    </button>
 
-  <!-- Change Background Button -->
-  <button
-    *ngIf="otherUser._id === loggedInUser._id"
-    (click)="openGradientModal()"
-    class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md"
-  >
-    <i class="fas fa-paint-brush text-[#09101F] text-xl"></i>
-  </button>
-</div>
+    <!-- Change Background Button -->
+    <button
+      *ngIf="otherUser._id === loggedInUser._id"
+      (click)="openGradientModal()"
+      class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md"
+    >
+      <i class="fas fa-paint-brush text-[#09101F] text-xl"></i>
+    </button>
+  </div>
 
-<div
-  *ngIf="isGradientModalOpen"
-  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-  (click)="closeGradientModal()"
->
   <div
-    class="bg-gray-900 rounded-lg shadow-lg p-6 max-w-[600px] w-[90%] relative text-white"
-    (click)="$event.stopPropagation()"
+    *ngIf="isGradientModalOpen"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    (click)="closeGradientModal()"
   >
-    <h3 class="text-2xl font-bold mb-4 text-center">Choose Background Gradient</h3>
+    <div
+      class="bg-gray-900 rounded-lg shadow-lg p-6 max-w-[600px] w-[90%] relative text-white"
+      (click)="$event.stopPropagation()"
+    >
+      <h3 class="text-2xl font-bold mb-4 text-center">
+        Choose Background Gradient
+      </h3>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-      <button
-        *ngFor="let gradient of gradientPresets"
-        (click)="selectGradient(gradient.value)"
-        [ngClass]="
-          tempSelectedGradient === gradient.value
-            ? 'border-4 border-blue-400'
-            : 'border border-gray-700'
-        "
-        class="p-4 py-6 rounded-lg bg-gradient-to-r {{ gradient.value }} text-white font-semibold"
-      >
-      </button>
-    </div>    
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <button
+          *ngFor="let gradient of gradientPresets"
+          (click)="selectGradient(gradient.value)"
+          [ngClass]="
+            tempSelectedGradient === gradient.value
+              ? 'border-4 border-blue-400'
+              : 'border border-gray-700'
+          "
+          class="p-4 py-6 rounded-lg bg-gradient-to-r {{
+            gradient.value
+          }} text-white font-semibold"
+        ></button>
+      </div>
 
-    <div class="flex justify-end gap-4">
-      <button
-        (click)="closeGradientModal()"
-        class="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-700"
-      >
-        <i class="fas fa-times"></i> Cancel
-      </button>
-      <button
-        (click)="saveGradient()"
-        class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700"
-      >
-        <i class="fas fa-save"></i> Save
-      </button>
+      <div class="flex justify-end gap-4">
+        <button
+          (click)="closeGradientModal()"
+          class="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-700"
+        >
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button
+          (click)="saveGradient()"
+          class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700"
+        >
+          <i class="fas fa-save"></i> Save
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
   <!-- Profile Section -->
   <div class="relative px-4 -mt-12">
     <div class="flex items-center justify-between">
       <!-- Profile Picture -->
-      <img
-        [src]="getTransformedImageSmallUrl(otherUser.profilePicture)"
-        alt="Profile Picture"
-        class="w-[9rem] h-[9rem] rounded-full object-cover border-[.5rem] border-[#09101F]"
-        (click)="isImageModalOpen = true"
-      />
+      <!-- Profile Image with loading state -->
+      <div class="relative w-[9rem] h-[9rem]">
+        <!-- Actual image -->
+        <img
+          [src]="getTransformedImageSmallUrl(otherUser.profilePicture)"
+          alt="Profile Picture"
+          class="w-full h-full rounded-full object-cover border-[.5rem] border-[#09101F] transition-opacity duration-300"
+          [class.opacity-0]="!smallImageLoaded"
+          [class.opacity-100]="smallImageLoaded"
+          (load)="smallImageLoaded = true"
+          (click)="isImageModalOpen = true"
+        />
+
+        <!-- Skeleton placeholder -->
+        <div
+          *ngIf="!smallImageLoaded"
+          class="absolute inset-0 rounded-full bg-gray-700 animate-pulse border-[.5rem] border-[#09101F]"
+          (click)="isImageModalOpen = true"
+        ></div>
+      </div>
 
       <!-- Fullscreen Image Modal -->
       <div
@@ -101,7 +114,7 @@
 
         <!-- Full Image -->
         <img
-        [src]="getTransformedImageUrl(otherUser.profilePicture)"
+          [src]="getTransformedImageUrl(otherUser.profilePicture)"
           alt="Profile Picture"
           class="max-w-[90vw] max-h-[90vh] rounded-full shadow-lg transform transition-all duration-300"
           [class.scale-100]="isImageModalOpen"
@@ -112,7 +125,9 @@
       <!-- Friend/Follow or Edit Profile Button -->
       <ng-container *ngIf="otherUser && loggedInUser">
         <!-- If it's another user -->
-        <ng-container *ngIf="otherUser._id !== loggedInUser._id; else editProfileButton">
+        <ng-container
+          *ngIf="otherUser._id !== loggedInUser._id; else editProfileButton"
+        >
           <div class="flex flex-col items-center gap-2 mt-[3rem] md:mt-[4rem]">
             <button
               (click)="
@@ -156,42 +171,42 @@
                 }}
               </ng-template>
             </button>
-        
+
             <!-- Decline button below accept -->
             <button
-            *ngIf="otherUser.hasPendingRequestReceived"
-            (click)="declineFriendRequest(otherUser)"
-            [disabled]="decliningFriendRequest"
-            class="p-2 px-[1.1rem] text-sm md:text-lg font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
-          >
-            <ng-container *ngIf="decliningFriendRequest; else declineButtonContent">
-              <i class="fas fa-spinner fa-spin"></i>
-              Loading...
-            </ng-container>
-            <ng-template #declineButtonContent>
-              <i class="fas fa-times"></i>
-              Decline
-            </ng-template>
-          </button>
-          
+              *ngIf="otherUser.hasPendingRequestReceived"
+              (click)="declineFriendRequest(otherUser)"
+              [disabled]="decliningFriendRequest"
+              class="p-2 px-[1.1rem] text-sm md:text-lg font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+            >
+              <ng-container
+                *ngIf="decliningFriendRequest; else declineButtonContent"
+              >
+                <i class="fas fa-spinner fa-spin"></i>
+                Loading...
+              </ng-container>
+              <ng-template #declineButtonContent>
+                <i class="fas fa-times"></i>
+                Decline
+              </ng-template>
+            </button>
           </div>
         </ng-container>
-        
 
         <!-- Else (you're viewing your own profile) -->
         <ng-template #editProfileButton>
           <button
-          (click)="goToUserProfile()"
-          [disabled]="decliningFriendRequest"
-          class="p-2 px-4 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition mt-[3rem] flex items-center gap-2"
-        >
-          <ng-container *ngIf="!decliningFriendRequest; else loadingIcon">
-            <i class="fas fa-user-edit"></i> Edit Profile
-          </ng-container>
-          <ng-template #loadingIcon>
-            <i class="fas fa-spinner fa-spin"></i>
-          </ng-template>
-        </button>
+            (click)="goToUserProfile()"
+            [disabled]="decliningFriendRequest"
+            class="p-2 px-4 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition mt-[3rem] flex items-center gap-2"
+          >
+            <ng-container *ngIf="!decliningFriendRequest; else loadingIcon">
+              <i class="fas fa-user-edit"></i> Edit Profile
+            </ng-container>
+            <ng-template #loadingIcon>
+              <i class="fas fa-spinner fa-spin"></i>
+            </ng-template>
+          </button>
         </ng-template>
       </ng-container>
     </div>
@@ -211,7 +226,9 @@
       class="flex justify-around mt-2 text-white text-base md:text-lg font-semibold border-b border-gray-700 pb-1"
     >
       <div class="p-1" (click)="openReviews()">
-        <span class="block text-center text-lg">{{ otherUser.reviews.length }}</span>
+        <span class="block text-center text-lg">{{
+          otherUser.reviews.length
+        }}</span>
         <span class="block text-center text-gray-400">Reviews</span>
       </div>
       <div class="p-1" (click)="openFriends()">
@@ -221,7 +238,9 @@
         <span class="block text-center text-gray-400">Friends</span>
       </div>
       <div class="p-1" (click)="openList()">
-        <span class="block text-center text-lg">{{ otherUser.list?.length || 0 }}</span>
+        <span class="block text-center text-lg">{{
+          otherUser.list?.length || 0
+        }}</span>
         <span class="block text-center text-gray-400">List</span>
       </div>
     </div>
@@ -305,8 +324,13 @@
                         ? review.albumSongOrArtist.picture
                         : review.albumSongOrArtist.cover
                     "
-(click)="openReview(prepareRecord(review.albumSongOrArtist), reviewList, i)"
-
+                    (click)="
+                      openReview(
+                        prepareRecord(review.albumSongOrArtist),
+                        reviewList,
+                        i
+                      )
+                    "
                     alt="Album Cover"
                     class="w-full h-[6rem] md:h-[10rem] rounded object-cover border border-gray-600"
                   />
@@ -330,8 +354,13 @@
                     class="text-[#0F5EE4] text-lg md:text-2xl font-semibold line-clamp-2"
                   >
                     <span
-(click)="openReview(prepareRecord(review.albumSongOrArtist), reviewList, i)"
-
+                      (click)="
+                        openReview(
+                          prepareRecord(review.albumSongOrArtist),
+                          reviewList,
+                          i
+                        )
+                      "
                     >
                       {{
                         review.albumSongOrArtist.type === "Artist"
@@ -358,7 +387,11 @@
                       *ngIf="review.albumSongOrArtist.type !== 'Artist'"
                       class="md:text-xl"
                       (click)="
-                        openReview(prepareRecord(review.albumSongOrArtist), reviewList, i)
+                        openReview(
+                          prepareRecord(review.albumSongOrArtist),
+                          reviewList,
+                          i
+                        )
                       "
                     >
                       {{ review.albumSongOrArtist.artist }}
@@ -456,14 +489,18 @@
                 <button
                   (click)="toggleTypeDropdown()"
                   class="p-2 rounded-md transition flex items-center gap-2 md:text-xl"
-                  [ngClass]="selectedType !== 'All' ? 'bg-blue-600 md:hover:bg-blue-500' : ''"
+                  [ngClass]="
+                    selectedType !== 'All'
+                      ? 'bg-blue-600 md:hover:bg-blue-500'
+                      : ''
+                  "
                 >
                   <span class="inline">
-                    {{ selectedType !== 'All' ? selectedType : "Filter" }}
+                    {{ selectedType !== "All" ? selectedType : "Filter" }}
                   </span>
                   <i class="fas fa-filter text-base"></i>
                 </button>
-            
+
                 <!-- Type Filter Dropdown -->
                 <div
                   *ngIf="showTypeDropdown"
@@ -477,12 +514,12 @@
                   >
                     <i class="fas fa-times mr-2"></i> Clear
                   </button>
-            
+
                   <!-- Record Type Options -->
                   <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
                     <button
-                    *ngFor="let type of recordTypes"
-                    (click)="filterByType(type)"
+                      *ngFor="let type of recordTypes"
+                      (click)="filterByType(type)"
                       class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium text-lg"
                       [ngClass]="
                         selectedType === type
@@ -496,12 +533,14 @@
                 </div>
               </div>
             </div>
-      
+
             <ul class="mt-2 space-y-4">
               <li
-              *ngFor="let item of filteredList; let i = index"
-              class="relative flex flex-row cursor-pointer items-center p-2"
-              (click)="openReview(prepareRecord(item), filteredFullRecordList, i)"
+                *ngFor="let item of filteredList; let i = index"
+                class="relative flex flex-row cursor-pointer items-center p-2"
+                (click)="
+                  openReview(prepareRecord(item), filteredFullRecordList, i)
+                "
               >
                 <!-- Type Icon on Top Left -->
                 <div
@@ -517,14 +556,14 @@
                     [title]="item.type"
                   ></i>
                 </div>
-            
+
                 <!-- Cover or Picture -->
                 <img
                   [src]="item.cover || item.picture"
                   alt="Cover"
                   class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-600 flex-shrink-0"
                 />
-            
+
                 <!-- Text Info -->
                 <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
                   <p
@@ -533,7 +572,7 @@
                   >
                     {{ item.title || item.name }}
                   </p>
-            
+
                   <p
                     *ngIf="item.artist"
                     class="text-sm md:text-base text-gray-400 mt-1 truncate overflow-hidden whitespace-nowrap flex items-center"
@@ -566,10 +605,14 @@
           <li class="w-full">
             <div class="flex items-center mb-2">
               <i class="fas fa-list-ul text-blue-400 mr-2 text-xl"></i>
-              <span class="text-left font-semibold text-lg">Reviews by Type</span>
+              <span class="text-left font-semibold text-lg"
+                >Reviews by Type</span
+              >
             </div>
-          
-            <div class="flex justify-between w-full bg-gray-800 p-3 rounded-lg text-center">
+
+            <div
+              class="flex justify-between w-full bg-gray-800 p-3 rounded-lg text-center"
+            >
               <div class="w-1/3 flex flex-col items-center">
                 <div class="text-gray-300 text-base mb-1">Songs</div>
                 <div class="text-[#4C79F4] font-semibold text-xl">
@@ -594,19 +637,23 @@
           <li class="w-full">
             <div class="flex items-center mb-2">
               <i class="fas fa-compact-disc text-blue-400 mr-2 text-xl"></i>
-              <span class="text-left font-semibold text-lg">Most Reviewed Genre</span>
+              <span class="text-left font-semibold text-lg"
+                >Most Reviewed Genre</span
+              >
             </div>
             <div class="bg-gray-800 p-3 rounded-lg text-center">
               <span class="font-bold text-[#4C79F4] text-lg">
                 {{ mostReviewedGenre }}
               </span>
             </div>
-          </li>          
+          </li>
 
           <li class="w-full">
             <div class="flex items-center mb-2">
               <i class="fas fa-microphone-alt text-blue-400 mr-2 text-xl"></i>
-              <span class="text-left font-semibold text-lg">Most Reviewed Artist</span>
+              <span class="text-left font-semibold text-lg"
+                >Most Reviewed Artist</span
+              >
             </div>
             <div class="bg-gray-800 p-3 rounded-lg text-center">
               <span class="font-bold text-[#4C79F4] text-lg">
@@ -614,14 +661,16 @@
               </span>
             </div>
           </li>
-          
+
           <li class="w-full">
             <div class="flex items-center mb-2">
               <i class="fas fa-align-left text-blue-400 mr-2 text-xl"></i>
               <span class="text-left font-semibold text-lg">Words Written</span>
             </div>
-          
-            <div class="flex justify-between w-full bg-gray-800 p-3 rounded-lg text-center">
+
+            <div
+              class="flex justify-between w-full bg-gray-800 p-3 rounded-lg text-center"
+            >
               <div class="w-1/2">
                 <div class="text-gray-300 text-base mb-1">Total</div>
                 <div class="text-[#4C79F4] font-semibold text-xl">
@@ -635,12 +684,14 @@
                 </div>
               </div>
             </div>
-          </li>          
+          </li>
 
           <li class="w-full">
             <div class="flex items-center mb-2">
               <i class="fas fa-star text-blue-400 mr-2 text-xl"></i>
-              <span class="text-left font-semibold text-lg">Average Rating</span>
+              <span class="text-left font-semibold text-lg"
+                >Average Rating</span
+              >
             </div>
             <div class="bg-gray-800 p-3 rounded-lg text-center">
               <div class="text-[#4C79F4] font-semibold text-xl">
@@ -649,11 +700,13 @@
               </div>
             </div>
           </li>
-          
+
           <li class="w-full">
             <div class="flex items-center mb-2">
               <i class="fas fa-tags text-blue-400 mr-2 text-xl"></i>
-              <span class="text-left font-semibold text-lg">Genres Reviewed</span>
+              <span class="text-left font-semibold text-lg"
+                >Genres Reviewed</span
+              >
             </div>
             <div class="bg-gray-800 p-3 rounded-lg text-center">
               <div class="text-[#4C79F4] font-semibold text-xl">
@@ -661,19 +714,22 @@
               </div>
             </div>
           </li>
-          
+
           <li class="w-full">
             <div class="flex items-center mb-2">
               <i class="fas fa-fire text-blue-400 mr-2 text-xl"></i>
-              <span class="text-left font-semibold text-lg">Longest Review Streak</span>
+              <span class="text-left font-semibold text-lg"
+                >Longest Review Streak</span
+              >
             </div>
             <div class="bg-gray-800 p-3 rounded-lg text-center">
               <div class="text-[#4C79F4] font-semibold text-xl">
-                {{ longestReviewStreak }} Day{{ longestReviewStreak > 1 ? "s" : "" }}
+                {{ longestReviewStreak }} Day{{
+                  longestReviewStreak > 1 ? "s" : ""
+                }}
               </div>
             </div>
           </li>
-          
         </ul>
       </ng-container>
       <ng-template #noReviews>

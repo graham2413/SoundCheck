@@ -98,6 +98,7 @@ export class ViewProfilePageComponent implements OnInit {
   showTypeDropdown = false;
   selectedType: 'All' | 'Song' | 'Album' | 'Artist' = 'All';
   recordTypes: ('Song' | 'Album' | 'Artist')[] = ['Song', 'Album', 'Artist'];
+  smallImageLoaded = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -139,12 +140,12 @@ getTransformedImageUrl(fullUrl: string): string {
 
 getTransformedImageSmallUrl(fullUrl: string): string {
   if (!fullUrl) {
-    return 'assets/otherUser.png'; // fallback
+    return 'assets/otherUser.png';
   }
 
   return fullUrl.replace(
     '/upload/',
-    '/upload/w_400,f_auto,q_auto/'
+    '/upload/w_400,h_400,c_fill,g_face,f_auto,q_auto/'
   );
 }
 
