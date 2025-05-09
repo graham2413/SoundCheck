@@ -69,7 +69,6 @@ async function updateUserProfilePicture(imageUrl) {
     try {
       const uploadedImage = await cloudinary.uploader.upload(imageUrl, {
         folder: "profile_pictures",
-        transformation: [{ width: 300, height: 300, crop: "fill" }],
       });
       return uploadedImage.secure_url;
     } catch (error) {
