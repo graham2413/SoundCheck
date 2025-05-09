@@ -74,9 +74,9 @@
     <div class="flex items-center justify-between">
       <!-- Profile Picture -->
       <img
-        [src]="getTransformedImageUrl(otherUser.profilePicture)"
+        [src]="getTransformedImageSmallUrl(otherUser.profilePicture)"
         alt="Profile Picture"
-        class="w-[9rem] h-[9rem] rounded-full border-[.5rem] border-[#09101F]"
+        class="w-[9rem] h-[9rem] rounded-full object-cover border-[.5rem] border-[#09101F]"
         (click)="isImageModalOpen = true"
       />
 
@@ -101,7 +101,7 @@
 
         <!-- Full Image -->
         <img
-          [src]="otherUser.profilePicture || 'assets/otherUser?.png'"
+        [src]="getTransformedImageUrl(otherUser.profilePicture)"
           alt="Profile Picture"
           class="max-w-[90vw] max-h-[90vh] rounded-full shadow-lg transform transition-all duration-300"
           [class.scale-100]="isImageModalOpen"
@@ -436,7 +436,7 @@
                     <img
                       [src]="friend.profilePicture || 'assets/user.png'"
                       alt="Friend"
-                      class="w-[4rem] h-[4rem] md:w-[6rem] md:h-[6rem] rounded-full"
+                      class="w-[4rem] h-[4rem] md:w-[6rem] md:h-[6rem] object-cover rounded-full"
                     />
 
                     <!-- Username -->

@@ -136,6 +136,19 @@ getTransformedImageUrl(fullUrl: string): string {
   );
 }
 
+
+getTransformedImageSmallUrl(fullUrl: string): string {
+  if (!fullUrl) {
+    return 'assets/otherUser.png'; // fallback
+  }
+
+  return fullUrl.replace(
+    '/upload/',
+    '/upload/w_400,f_auto,q_auto/'
+  );
+}
+
+
   public fetchUserDetails() {
     this.userService.getOtherUserProfileInfo(this.otherUserId).subscribe({
       next: (response) => {
