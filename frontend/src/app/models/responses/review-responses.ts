@@ -1,18 +1,25 @@
-import { Album } from "./album-response";
-import { Artist } from "./artist-response";
-import { Song } from "./song-response";
-import { User } from "./user.response";
-
 export interface Review {
   _id: string;
-  user: User;
-  albumOrSongId: string;
-  createdAt: string;
+  user: {
+    _id: string;
+    username: string;
+    profilePicture: string;
+  };
+  albumSongOrArtist: {
+    id: string;
+    type: 'Album' | 'Song' | 'Artist';
+    title?: string;
+    name?: string;
+    cover?: string;
+    picture?: string;
+    isExplicit?: boolean;
+    artist?: string;
+    album?: string;
+    genre?: string;
+  };
   rating: number;
   reviewText: string;
-  type: string;
-  __v: number;
-  albumSongOrArtist: Album | Artist | Song;
+  createdAt: string;
 }
 
 export interface NewReviewResponse {

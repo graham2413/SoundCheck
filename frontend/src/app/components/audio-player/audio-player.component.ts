@@ -24,7 +24,7 @@ export class AudioPlayerComponent implements AfterViewInit {
   
   @ViewChild('myAudio') myAudioRef!: ElementRef<HTMLAudioElement>;
 
-  @Input() record: any;
+  @Input() record!: Album | Artist | Song;
   @Input() showForwardAndBackwardButtons: boolean = true;
   @Input() currentIndex!: number;
   @Input() recordList: (Album | Artist | Song)[] = [];

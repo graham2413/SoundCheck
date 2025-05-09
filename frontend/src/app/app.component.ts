@@ -20,7 +20,7 @@ import { ToastrService } from 'ngx-toastr';
 import { SpotifyService } from './services/spotify.service';
 import { jwtDecode } from 'jwt-decode';
 import { AuthService } from './services/auth.service';
-
+import { DecodedToken } from './models/responses/decoded-token-response';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -41,11 +41,11 @@ import { AuthService } from './services/auth.service';
           group([
             query(':leave', [
               style({ transform: 'translateX(0)', opacity: 1 }),
-              animate('400ms ease-in-out', style({ transform: 'translateX(100%)', opacity: 0 }))
+              animate('300ms ease-in-out', style({ transform: 'translateX(100%)', opacity: 0 }))
             ], { optional: true }),
             query(':enter', [
               style({ transform: 'translateX(-100%)', opacity: 0 }),
-              animate('400ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
+              animate('300ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
             ], { optional: true })
           ])
         ]
@@ -60,11 +60,11 @@ import { AuthService } from './services/auth.service';
           group([
             query(':leave', [
               style({ transform: 'translateX(0)', opacity: 1 }),
-              animate('400ms ease-in-out', style({ transform: 'translateX(-100%)', opacity: 0 }))
+              animate('300ms ease-in-out', style({ transform: 'translateX(-100%)', opacity: 0 }))
             ], { optional: true }),
             query(':enter', [
               style({ transform: 'translateX(100%)', opacity: 0 }),
-              animate('400ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
+              animate('300ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
             ], { optional: true })
           ])
         ]
@@ -79,11 +79,11 @@ import { AuthService } from './services/auth.service';
           group([
             query(':leave', [
               style({ transform: 'translateX(0)', opacity: 1 }),
-              animate('400ms ease-in-out', style({ transform: 'translateX(100%)', opacity: 0 }))
+              animate('300ms ease-in-out', style({ transform: 'translateX(100%)', opacity: 0 }))
             ], { optional: true }),
             query(':enter', [
               style({ transform: 'translateX(-100%)', opacity: 0 }),
-              animate('400ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
+              animate('300ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
             ], { optional: true })
           ])
         ]
@@ -93,7 +93,7 @@ import { AuthService } from './services/auth.service';
       transition('* <=> *', [
         query(':enter', [
           style({ opacity: 0 }),
-          animate('400ms ease-in-out', style({ opacity: 1 }))
+          animate('300ms ease-in-out', style({ opacity: 1 }))
         ], { optional: true })
       ])
     ])
@@ -113,7 +113,7 @@ export class AppComponent implements OnInit {
   ) {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe((event: any) => {
+      .subscribe((event: NavigationEnd) => {
         this.currentUrl = event.urlAfterRedirects;
       });
   }
@@ -152,7 +152,7 @@ export class AppComponent implements OnInit {
 
   private handleToken(token: string) {
     try {
-      const decoded: any = jwtDecode(token);
+      const decoded: DecodedToken = jwtDecode(token);
 
       if (!decoded?.userId || !decoded.exp) {
         throw new Error('Invalid token structure');

@@ -13,6 +13,7 @@ import { ToastrService } from 'ngx-toastr';
 import { User } from 'src/app/models/responses/user.response';
 import { UserService } from 'src/app/services/user.service';
 import { ConfirmationModalComponent } from './confirmation-modal/confirmation-modal.component';
+import { Friend } from 'src/app/models/responses/friend-response';
 
 @Component({
   selector: 'app-friends',
@@ -324,7 +325,7 @@ export class FriendsComponent implements OnInit {
   this.declineLoadingMap[fromUser._id] = true;
 
     this.userService.declineFriendRequest(fromUser._id).subscribe({
-      next: (response: any) => {
+        next: (_: unknown) => {
         if (
           this.userProfile &&
           this.userProfile.friendInfo.friendRequestsReceived
@@ -340,22 +341,22 @@ export class FriendsComponent implements OnInit {
         this.declineLoadingMap[fromUser._id] = false;
         this.toastrService.success('Friend request declined', 'Success');
       },      
-      error: (error: any) => {
-        this.declineLoadingMap[fromUser._id] = false;
-        this.toastrService.error(
-          error.error?.message || 'Error removing request',
-          'Error'
-        );
-      },
+    error: (error: { error?: { message?: string } }) => {
+      this.declineLoadingMap[fromUser._id] = false;
+      this.toastrService.error(
+        error.error?.message || 'Error removing request',
+        'Error'
+      );
+    }
     });
   }
 
-  removeFriend(friend: User) {
+  removeFriend(friend: Friend) {
     this.friendActionLoading = true;
     this.removingFriendId = friend._id;
 
     this.userService.removeFriend(friend._id).subscribe({
-      next: (response: any) => {
+        next: (_: unknown) => {
         if (this.userProfile && this.userProfile.friendInfo.friends) {
           this.userProfile.friendInfo.friends =
             this.userProfile.friendInfo.friends.filter(
@@ -384,18 +385,18 @@ export class FriendsComponent implements OnInit {
         this.removingFriendId = null;
         this.toastrService.success('Removed friend', 'Success');
       },
-      error: (error: any) => {
+      error: (error: { error?: { message?: string } }) => {
         this.friendActionLoading = false;
         this.removingFriendId = null;
         this.toastrService.error(
           error.error?.message || 'Error removing friend',
           'Error'
         );
-      },
+      }
     });
   }
 
-  openModal(friend: any) {
+  openModal(friend: Friend) {
     const modalOptions: NgbModalOptions = {
       backdrop: false,
       centered: true,

@@ -86,21 +86,22 @@ export class ProfileComponent implements OnInit {
     this.toastr.success('Logged out successfully');
   }
 
-  onProfilePictureChange(event: any) {
-    const file = event.target.files[0];
+onProfilePictureChange(event: Event): void {
+  const input = event.target as HTMLInputElement;
 
-    if (file) {
-      this.selectedFile = file;
+  if (!input.files || input.files.length === 0) return;
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        this.userProfile.profilePicture = base64;
-        this.profilePictureUrl = base64;
-      };
-      reader.readAsDataURL(file);
-    }
-  }
+  const file = input.files[0];
+  this.selectedFile = file;
+
+  const reader = new FileReader();
+  reader.onload = (e: ProgressEvent<FileReader>) => {
+    const base64 = e.target?.result as string;
+    this.userProfile.profilePicture = base64;
+    this.profilePictureUrl = base64;
+  };
+  reader.readAsDataURL(file);
+}
 
   saveProfile() {
     this.passwordError = '';

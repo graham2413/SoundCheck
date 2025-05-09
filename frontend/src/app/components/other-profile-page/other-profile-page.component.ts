@@ -16,7 +16,9 @@ import { User } from 'src/app/models/responses/user.response';
 import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
 import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 import { AppComponent } from 'src/app/app.component';
+import { BaseRecord } from 'src/app/models/responses/base-record';
 
+type ModalRecord = Album | Song | Artist | BaseRecord;
 @Component({
   selector: 'app-view-profile-page',
   imports: [CommonModule, FormsModule, TimeAgoPipe],
@@ -28,7 +30,7 @@ export class ViewProfilePageComponent implements OnInit {
   otherUserId!: string;
   otherUser: User | null = null;
   searchQuery: string = '';
-  filteredFriends: any[] = [];
+  filteredFriends: Friend[] = [];
   loggedInUser: User = {
     _id: '',
     username: '',
@@ -475,7 +477,7 @@ export class ViewProfilePageComponent implements OnInit {
   declineFriendRequest(fromUser: User) {
     this.decliningFriendRequest = true;
     this.userService.declineFriendRequest(fromUser._id).subscribe({
-      next: (response: any) => {
+    next: (_: unknown) => {
         if (
           this.loggedInUser &&
           this.loggedInUser.friendInfo.friendRequestsReceived
@@ -491,7 +493,7 @@ export class ViewProfilePageComponent implements OnInit {
         this.decliningFriendRequest = true;
         this.toastr.success('Friend request declined', 'Success');
       },
-      error: (error: any) => {
+      error: (error: { error?: { message?: string } }) => {
         this.decliningFriendRequest = true;
         this.toastr.error(
           error.error?.message || 'Error removing request',
@@ -557,7 +559,7 @@ export class ViewProfilePageComponent implements OnInit {
     });
   }
 
-  openModal(friend: any) {
+  openModal(friend: Friend) {
     const modalOptions: NgbModalOptions = {
       backdrop: false,
       centered: true,
@@ -577,11 +579,11 @@ export class ViewProfilePageComponent implements OnInit {
     });
   }
 
-  removeFriend(friend: User) {
+  removeFriend(friend: Friend) {
     this.isLoadingFriendAction = true;
 
     this.userService.removeFriend(friend._id).subscribe({
-      next: (response: any) => {
+    next: (_: unknown) => {
         const { friendInfo } = this.loggedInUser;
 
         // Remove from friends
@@ -607,7 +609,7 @@ export class ViewProfilePageComponent implements OnInit {
         this.toastr.success('Removed friend', 'Success');
         this.isLoadingFriendAction = false;
       },
-      error: (error: any) => {
+      error: (error: { error?: { message?: string } }) => {
         this.toastr.error(
           error.error?.message || 'Error removing friend',
           'Error'
@@ -682,53 +684,63 @@ export class ViewProfilePageComponent implements OnInit {
     this.showPanel = null;
   }
 
-  buildFullRecord(item: any): Album | Artist | Song {
-    if (item.type === 'Song') {
-      return {
-        id: item.id,
-        type: 'Song',
-        title: item.title,
-        artist: item.artist,
-        album: item.album,
-        cover: item.cover,
-        genre: item.genre,
-        preview: item.preview,
-        duration: item.duration,
-        isExplicit: item.isExplicit,
-        releaseDate: item.releaseDate,
-        contributors: item.contributors,
-      } as Song;
-    } else if (item.type === 'Album') {
-      return {
-        id: item.id,
-        type: 'Album',
-        title: item.title,
-        artist: item.artist,
-        cover: item.cover,
-        genre: item.genre,
-        releaseDate: item.releaseDate,
-        tracklist: item.tracklist,
-      } as Album;
-    } else {
-      return {
-        id: item.id,
-        type: 'Artist',
-        name: item.name,
-        picture: item.picture,
-        tracklist: item.tracklist,
-      } as Artist;
-    }
+buildFullRecord(item: BaseRecord): Album | Artist | Song {
+  const numericId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
+
+  if (item.type === 'Song') {
+    return {
+      id: numericId,
+      type: 'Song',
+      title: item.title ?? 'Unknown Title',
+      artist: item.artist ?? 'Unknown Artist',
+      album: item.album ?? '',
+      cover: item.cover ?? '',
+      genre: item.genre ?? 'Unknown',
+      preview: item.preview ?? '',
+      duration: item.duration ?? 0,
+      isExplicit: item.isExplicit ?? false,
+      releaseDate: item.releaseDate ?? '',
+      contributors: item.contributors ?? [],
+      isPlaying: item.isPlaying ?? false,
+    };
+  } else if (item.type === 'Album') {
+    return {
+      id: numericId,
+      type: 'Album',
+      title: item.title ?? 'Unknown Album',
+      artist: item.artist ?? 'Unknown Artist',
+      cover: item.cover ?? '',
+      genre: item.genre ?? 'Unknown',
+      releaseDate: item.releaseDate ?? '',
+      tracklist: item.tracklist ?? [],
+      isExplicit: item.isExplicit ?? false,
+      preview: item.preview ?? '',
+    };
+  } else {
+    return {
+      id: numericId,
+      type: 'Artist',
+      name: item.name ?? 'Unknown Artist',
+      picture: item.picture ?? '',
+      tracklist: item.tracklist ?? [],
+      preview: item.preview ?? '',
+    };
   }
+}
+
 
   get filteredFullRecordList(): (Album | Artist | Song)[] {
-    return (this.filteredList || []).map(item => this.buildFullRecord(item));
+return (this.filteredList || []).map(item =>
+  this.buildFullRecord({ ...item, id: parseInt(item.id, 10) })
+);
   }
 
-  openReview(
-    record: Album | Artist | Song,
-    recordList?: (Album | Artist | Song)[],
-    index?: number,
-  ) : NgbModalRef{
+
+openReview(
+  record: ModalRecord,
+  recordList?: ModalRecord[],
+  index?: number,
+): NgbModalRef {
     const modalOptions: NgbModalOptions = {
       backdrop: false,
       keyboard: true,
@@ -853,13 +865,15 @@ export class ViewProfilePageComponent implements OnInit {
     }
   }
 
-  get reviewList(): (Album | Artist | Song)[] {
-    return (
-      this.otherUser?.reviews
-        ?.map((a) => a.albumSongOrArtist as Album | Artist | Song)
-        .filter(Boolean) ?? []
-    );
-  }
+get reviewList(): ModalRecord[] {
+  return this.otherUser?.reviews?.map(a =>
+    this.buildFullRecord({ ...a.albumSongOrArtist, id: parseInt(a.albumSongOrArtist.id, 10) })
+  ) ?? [];
+}
+
+prepareRecord(raw: any): ModalRecord {
+  return this.buildFullRecord({ ...raw, id: parseInt(raw.id, 10) });
+}
 
   goBack(): void {
     this.appComponent.navigationDirection = 'back';

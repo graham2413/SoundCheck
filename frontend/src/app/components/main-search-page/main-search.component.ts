@@ -1,5 +1,15 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
-import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
+import {
+  NgbModal,
+  NgbModalOptions,
+  NgbModalRef,
+} from '@ng-bootstrap/ng-bootstrap';
 import { SearchService } from 'src/app/services/search.service';
 import { ReviewPageComponent } from '../review-page/review-page.component';
 import { ToastrService } from 'ngx-toastr';
@@ -13,13 +23,15 @@ import { ReviewService } from 'src/app/services/review.service';
 import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 import { Router } from '@angular/router';
 import { Review } from 'src/app/models/responses/review-responses';
-
+import { PopularRecord } from 'src/app/models/responses/popular-record-response';
+type ActivityRecord = Review['albumSongOrArtist'];
+type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
 @Component({
   selector: 'app-main-search',
   templateUrl: './main-search.component.html',
   styleUrls: ['./main-search.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, TimeAgoPipe]
+  imports: [CommonModule, FormsModule, TimeAgoPipe],
 })
 export class MainSearchComponent implements OnInit {
   @ViewChild('marqueeContainer') marqueeContainer!: ElementRef<HTMLDivElement>;
@@ -27,7 +39,7 @@ export class MainSearchComponent implements OnInit {
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
   @ViewChild('dropdownContainer') dropdownContainer!: ElementRef;
-  @ViewChild('filterButton') filterButton!: ElementRef
+  @ViewChild('filterButton') filterButton!: ElementRef;
 
   query: string = '';
   isLoading: boolean = false;
@@ -43,38 +55,59 @@ export class MainSearchComponent implements OnInit {
   showGenreDropdown = { songs: false, albums: false };
 
   // Available genres for filtering
-  genres = { songs: [] as string[], albums: [] as string[], artists: [] as string[] };
+  genres = {
+    songs: [] as string[],
+    albums: [] as string[],
+    artists: [] as string[],
+  };
 
   selectedGenre = { songs: '', albums: '' };
 
   // API results
-  results: { songs: Song[]; albums: Album[]; artists: Artist[] } = { songs: [], albums: [], artists: [] };
+  results: { songs: Song[]; albums: Album[]; artists: Artist[] } = {
+    songs: [],
+    albums: [],
+    artists: [],
+  };
 
   // Filtered results to store only matching genres
-  filteredResults: { songs: Song[]; albums: Album[]; artists: Artist[] } = { songs: [], albums: [], artists: [] };
+  filteredResults: { songs: Song[]; albums: Album[]; artists: Artist[] } = {
+    songs: [],
+    albums: [],
+    artists: [],
+  };
 
   skeletonArray = Array(15).fill(0);
   isMarqueeLoading = true;
-  popularRecords: any[] = [];
+  popularRecords: PopularRecord[] = [];
   expandedReviews: { [reviewId: string]: boolean } = {};
   activePopularType: 'Song' | 'Album' | 'Artist' = 'Song';
-  readonly popularTypes: Array<'Song' | 'Album' | 'Artist'> = ['Song', 'Album', 'Artist'];
+  readonly popularTypes: Array<'Song' | 'Album' | 'Artist'> = [
+    'Song',
+    'Album',
+    'Artist',
+  ];
   isDiscoverContentLoading: boolean = false;
   isActivityLoading: boolean = false;
-  activityFeed: any[] = [];
+  activityFeed: Review[] = [];
   section: string | null = null;
 
-  constructor(private searchService: SearchService,
+  constructor(
+    private searchService: SearchService,
     private modal: NgbModal,
     private toastr: ToastrService,
     private reviewService: ReviewService,
     private router: Router
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.section = history.state.section || null;
 
-    if (this.section === 'mainSearch' || this.section === 'popular' || this.section === 'recentActivity') {
+    if (
+      this.section === 'mainSearch' ||
+      this.section === 'popular' ||
+      this.section === 'recentActivity'
+    ) {
       this.setActiveDiscoverTab(this.section);
     }
   }
@@ -87,8 +120,11 @@ export class MainSearchComponent implements OnInit {
 
   @HostListener('document:click', ['$event'])
   clickOutside(event: Event) {
-    const clickedInsideDropdown = this.dropdownContainer?.nativeElement.contains(event.target);
-    const clickedFilterButton = this.filterButton?.nativeElement.contains(event.target);
+    const clickedInsideDropdown =
+      this.dropdownContainer?.nativeElement.contains(event.target);
+    const clickedFilterButton = this.filterButton?.nativeElement.contains(
+      event.target
+    );
 
     if (clickedInsideDropdown || clickedFilterButton) {
       return; // Do nothing
@@ -99,51 +135,58 @@ export class MainSearchComponent implements OnInit {
 
   private loadAlbumImages() {
     this.isMarqueeLoading = true; // trigger skeletons
-  
+
     const trackEl = this.marqueeTrack.nativeElement;
-    const storedAlbums = localStorage.getItem("albumImages");
-  
-    let albums: any[] = [];
-  
+    const storedAlbums = localStorage.getItem('albumImages');
+
+    let albums: Album[] = [];
+
     if (storedAlbums) {
       try {
         albums = JSON.parse(storedAlbums).albums || [];
       } catch (error) {
-        console.error("Error parsing stored album images:", error);
+        console.error('Error parsing stored album images:', error);
         albums = [];
       }
     }
-  
+
     if (albums.length === 0) {
       albums = Array.from({ length: 15 }, (_, i) => ({
-        imageUrl: `assets/album${i + 1}.jpg`,
-        name: `Static Album ${i + 1}`
+        id: i + 1,
+        title: `Static Album ${i + 1}`,
+        artist: 'Unknown',
+        cover: `assets/album${i + 1}.jpg`,
+        releaseDate: '',
+        tracklist: [],
+        genre: '',
+        type: 'Album',
+        isExplicit: false,
+        preview: '',
       }));
     }
-  
+
     // Delay to simulate loading
     setTimeout(() => {
       albums.forEach((album, index) => {
-        const imgEl = document.createElement("img");
+        const imgEl = document.createElement('img');
         imgEl.src = album.cover;
-        imgEl.alt = album.title || album.name;
+        imgEl.alt = album.title;
         imgEl.className =
-          "w-[10rem] h-[10rem] md:w-[15rem] md:h-[15rem] object-cover mr-4 rounded cursor-pointer";
-      
+          'w-[10rem] h-[10rem] md:w-[15rem] md:h-[15rem] object-cover mr-4 rounded cursor-pointer';
+
         // Add click event to open modal
-        imgEl.addEventListener("click", () => {
+        imgEl.addEventListener('click', () => {
           this.openModal(album, albums, index);
         });
-      
+
         trackEl.appendChild(imgEl);
       });
-      
-  
+
       this.isMarqueeLoading = false;
       this.initializeMarquee();
     }, 500); // show skeletons for 0.5s
-  }  
-  
+  }
+
   private initializeMarquee() {
     const containerEl = this.marqueeContainer.nativeElement;
     const trackEl = this.marqueeTrack.nativeElement;
@@ -228,7 +271,7 @@ export class MainSearchComponent implements OnInit {
                 type: 'Song' as const,
               }))
             : this.results.songs,
-        
+
           albums: data.albums
             ? data.albums.map((album: Album) => ({
                 ...album,
@@ -236,7 +279,7 @@ export class MainSearchComponent implements OnInit {
                 type: 'Album' as const,
               }))
             : this.results.albums,
-        
+
           artists: data.artists
             ? data.artists.map((artist: Artist) => ({
                 ...artist,
@@ -244,11 +287,11 @@ export class MainSearchComponent implements OnInit {
                 type: 'Artist' as const,
               }))
             : this.results.artists,
-        };        
-    
+        };
+
         this.filteredResults = { ...this.results };
 
-        if(type !== 'artists'){
+        if (type !== 'artists') {
           this.extractGenres();
         }
 
@@ -259,26 +302,32 @@ export class MainSearchComponent implements OnInit {
         }, 50);
       },
       error: (error) => {
-        this.toastr.error(`Error occurred while searching for "${this.query}"`, 'Error');
+        this.toastr.error(
+          `Error occurred while searching for "${this.query}"`,
+          'Error'
+        );
         this.isLoading = false;
       },
     });
   }
 
   extractGenres() {
-    this.genres.songs = [...new Set(
-      this.results.songs
-        .map(song => song.genre as string)
-        .filter(g => g && g !== 'Unknown')
-    )];
+    this.genres.songs = [
+      ...new Set(
+        this.results.songs
+          .map((song) => song.genre as string)
+          .filter((g) => g && g !== 'Unknown')
+      ),
+    ];
 
-    this.genres.albums = [...new Set(
-      this.results.albums
-        .map(album => album.genre as string)
-        .filter(g => g && g !== 'Unknown')
-    )];
+    this.genres.albums = [
+      ...new Set(
+        this.results.albums
+          .map((album) => album.genre as string)
+          .filter((g) => g && g !== 'Unknown')
+      ),
+    ];
   }
-
 
   toggleGenreFilter(section: 'songs' | 'albums') {
     this.showGenreDropdown[section] = !this.showGenreDropdown[section];
@@ -291,15 +340,18 @@ export class MainSearchComponent implements OnInit {
       this.selectedGenre[section] = genre;
 
       if (section === 'songs') {
-        this.filteredResults.songs = this.results.songs.filter((item: Song) => item.genre === genre);
+        this.filteredResults.songs = this.results.songs.filter(
+          (item: Song) => item.genre === genre
+        );
       } else {
-        this.filteredResults.albums = this.results.albums.filter((item: Album) => item.genre === genre);
+        this.filteredResults.albums = this.results.albums.filter(
+          (item: Album) => item.genre === genre
+        );
       }
     }
 
     this.showGenreDropdown[section] = false; // Close dropdown after selection
   }
-
 
   clearFilter(section: 'songs' | 'albums') {
     this.selectedGenre[section] = '';
@@ -327,26 +379,25 @@ export class MainSearchComponent implements OnInit {
   setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
     this.activeDiscoverTab = tab;
 
-    if(tab === 'popular') {
-      this.setPopularType('Song')
+    if (tab === 'popular') {
+      this.setPopularType('Song');
       this.loadPopularReviews('Song');
     }
-    if(tab === 'recentActivity') {
+    if (tab === 'recentActivity') {
       this.loadAcitivityFeed();
     }
   }
 
   setPopularType(type: 'Song' | 'Album' | 'Artist') {
-      this.isDiscoverContentLoading = true;
-      this.activePopularType = type;
-      this.loadPopularReviews(type);
+    this.isDiscoverContentLoading = true;
+    this.activePopularType = type;
+    this.loadPopularReviews(type);
   }
 
-    loadPopularReviews(type: 'Song' | 'Album' | 'Artist') {
+  loadPopularReviews(type: 'Song' | 'Album' | 'Artist') {
     this.reviewService.getTopReviewsByType(type).subscribe({
       next: (res) => {
-        this.popularRecords =
-          res.songs || res.albums || res.artists || [];
+        this.popularRecords = res.songs || res.albums || res.artists || [];
         setTimeout(() => {
           this.isDiscoverContentLoading = false;
         }, 250);
@@ -355,7 +406,7 @@ export class MainSearchComponent implements OnInit {
         this.toastr.error('Failed to load popular reviews:', err);
         this.popularRecords = [];
         this.isDiscoverContentLoading = false;
-      }
+      },
     });
   }
 
@@ -373,7 +424,7 @@ export class MainSearchComponent implements OnInit {
         this.activityFeed = [];
         this.toastr.error('Failed to load User activity feed:', err);
         this.isActivityLoading = false;
-      }
+      },
     });
   }
 
@@ -381,44 +432,47 @@ export class MainSearchComponent implements OnInit {
     this.expandedReviews[reviewId] = !this.expandedReviews[reviewId];
   }
 
-  openModal(record: Album | Artist | Song, recordList?: (Album | Artist | Song)[], index?: number): NgbModalRef {
+  openModal(
+    record: ModalRecord,
+    recordList?: ModalRecord[],
+    index?: number
+  ): NgbModalRef {
     const modalOptions: NgbModalOptions = {
       backdrop: false,
       keyboard: true,
       centered: true,
       scrollable: true,
     };
-  
+
     const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
     modalRef.componentInstance.activeDiscoverTab = this.activeDiscoverTab;
 
-        // Use passed list/index if available
-      if (recordList && index !== undefined) {
-        modalRef.componentInstance.recordList = recordList;
-        modalRef.componentInstance.currentIndex = index;
-      } else {
-         // Fallback for main search
-        if (record.type === 'Song') {
-          const idx = this.filteredResults.songs.findIndex(s => s === record);
-          modalRef.componentInstance.recordList = this.filteredResults.songs;
-          modalRef.componentInstance.currentIndex = idx;
-        }
-
-        if (record.type === 'Album') {
-          const idx = this.filteredResults.albums.findIndex(a => a === record);
-          modalRef.componentInstance.recordList = this.filteredResults.albums;
-          modalRef.componentInstance.currentIndex = idx;
-        }
-
-        if (record.type === 'Artist') {
-          const idx = this.filteredResults.artists.findIndex(a => a === record);
-          modalRef.componentInstance.recordList = this.filteredResults.artists;
-          modalRef.componentInstance.currentIndex = idx;
-        }
+    // Use passed list/index if available
+    if (recordList && index !== undefined) {
+      modalRef.componentInstance.recordList = recordList;
+      modalRef.componentInstance.currentIndex = index;
+    } else {
+      // Fallback for main search
+      if (record.type === 'Song') {
+        const idx = this.filteredResults.songs.findIndex((s) => s === record);
+        modalRef.componentInstance.recordList = this.filteredResults.songs;
+        modalRef.componentInstance.currentIndex = idx;
       }
-    
-    modalRef.componentInstance.record = record;
 
+      if (record.type === 'Album') {
+        const idx = this.filteredResults.albums.findIndex((a) => a === record);
+        modalRef.componentInstance.recordList = this.filteredResults.albums;
+        modalRef.componentInstance.currentIndex = idx;
+      }
+
+      if (record.type === 'Artist') {
+        const idx = this.filteredResults.artists.findIndex((a) => a === record);
+        modalRef.componentInstance.recordList = this.filteredResults.artists;
+        modalRef.componentInstance.currentIndex = idx;
+      }
+    }
+
+    modalRef.componentInstance.record = record;
 
     // 1. Handle when a review is created
     modalRef.componentInstance.reviewCreated?.subscribe((newReview: Review) => {
@@ -426,37 +480,42 @@ export class MainSearchComponent implements OnInit {
     });
 
     // 2. Handle when a review is deleted
-    modalRef.componentInstance.reviewDeleted?.subscribe((deletedReview: Review) => {
-      this.activityFeed = this.activityFeed.filter(
-        (review) => review._id !== deletedReview._id
-      );
-    });
+    modalRef.componentInstance.reviewDeleted?.subscribe(
+      (deletedReview: Review) => {
+        this.activityFeed = this.activityFeed.filter(
+          (review) => review._id !== deletedReview._id
+        );
+      }
+    );
     // 3. Handle when a review is edited
-    modalRef.componentInstance.reviewEdited.subscribe((updatedReview: Review) => {
-      const i = this.activityFeed.findIndex(a => a._id === updatedReview._id);
-      if (i !== -1) {
-        const updated = {
-          ...this.activityFeed[i],
-          reviewText: updatedReview.reviewText,
-          rating: updatedReview.rating,
-          createdAt: updatedReview.createdAt,
-        };
-      
-        this.activityFeed.splice(i, 1); // remove old position
-        this.activityFeed.unshift(updated); // insert at top
-      }      
-      if (this.activeDiscoverTab === 'popular') {
-        this.loadPopularReviews(this.activePopularType);
-      }      
-    });
+    modalRef.componentInstance.reviewEdited.subscribe(
+      (updatedReview: Review) => {
+        const i = this.activityFeed.findIndex(
+          (a) => a._id === updatedReview._id
+        );
+        if (i !== -1) {
+          const updated = {
+            ...this.activityFeed[i],
+            reviewText: updatedReview.reviewText,
+            rating: updatedReview.rating,
+            createdAt: updatedReview.createdAt,
+          };
+
+          this.activityFeed.splice(i, 1); // remove old position
+          this.activityFeed.unshift(updated); // insert at top
+        }
+        if (this.activeDiscoverTab === 'popular') {
+          this.loadPopularReviews(this.activePopularType);
+        }
+      }
+    );
 
     // 4. Handle opening a song frmo an artist or album review
     modalRef.componentInstance.openNewReview.subscribe((record: Song) => {
-    
       // Upgrade the image before opening the modal
       const highResCover = this.getHighQualityImage(record.cover);
       const updatedRecord = { ...record, cover: highResCover };
-    
+
       const newModal = this.openModal(updatedRecord, [], 0);
       newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
       modalRef.close();
@@ -464,9 +523,9 @@ export class MainSearchComponent implements OnInit {
     return modalRef;
   }
 
-  get activityRecords(): (Album | Artist | Song)[] {
-    return this.activityFeed.map(a => a.albumSongOrArtist);
-  }  
+  get activityRecords(): ActivityRecord[] {
+    return this.activityFeed.map((a) => a.albumSongOrArtist);
+  }
 
   getHighQualityImage(imageUrl: string): string {
     if (!imageUrl) return '';
@@ -480,7 +539,12 @@ export class MainSearchComponent implements OnInit {
   }
 
   resultsHasValues() {
-    return !!this.results && (this.results.songs?.length > 0 || this.results.artists?.length > 0 || this.results.albums?.length > 0);
+    return (
+      !!this.results &&
+      (this.results.songs?.length > 0 ||
+        this.results.artists?.length > 0 ||
+        this.results.albums?.length > 0)
+    );
   }
 
   closeModal() {
@@ -489,6 +553,8 @@ export class MainSearchComponent implements OnInit {
   }
 
   goToUserProfile(userId: string) {
-    this.router.navigate(['/profile', userId], { state: { section: 'recentActivity' } });
+    this.router.navigate(['/profile', userId], {
+      state: { section: 'recentActivity' },
+    });
   }
 }

@@ -41,6 +41,6 @@ export interface ListItem {
   isExplicit?: boolean;     // Song-only field
   releaseDate?: string;     // Song/Album field
   contributors?: string[];  // Song-only field
-  tracklist?: any[];        // Album or Artist field
+  tracklist?: Song[];        // Album or Artist field
   addedAt?: Date;
 }

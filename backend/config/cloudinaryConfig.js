@@ -13,8 +13,8 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: "profile_pictures",
-    format: async () => "jpg", // Convert to JPG
-    transformation: [{ width: 300, height: 300, crop: "fill" }],
+    format: async () => "jpg", // keep if JPG is acceptable
+    transformation: [] // or remove 'transformation' entirely
   },
 });
 

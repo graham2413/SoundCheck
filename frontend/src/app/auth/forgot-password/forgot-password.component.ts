@@ -24,7 +24,7 @@ export class ForgotPasswordComponent {
     this.error = '';
     this.isLoading = true;
     this.authService.forgotPassword(this.email).subscribe({
-      next: (res: any) => {
+        next: (res: { message: string }) => {
         this.toastr.success(res.message, "Success");
         this.isLoading = false;
         this.email = '';

@@ -6,18 +6,28 @@ import { Router } from '@angular/router';
 import { LoginResponse } from '../models/responses/login-response';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
-    private apiUrl = environment.auth;
+  private apiUrl = environment.auth;
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  register(userData: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/register`, userData);
+  register(userData: {
+    username: string;
+    email: string;
+    password: string;
+  }): Observable<{ token: string }> {
+    return this.http.post<{ token: string }>(
+      `${this.apiUrl}/register`,
+      userData
+    );
   }
 
-  login(credentials: any): Observable<LoginResponse> {
+  login(credentials: {
+    email: string;
+    password: string;
+  }): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials);
   }
 
@@ -30,11 +40,23 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  forgotPassword(email: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/forgot-password`, { email });
-  }  
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/forgot-password`,
+      { email }
+    );
+  }
 
-  resetPassword(token: string, newPassword: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/reset-password`, { token, newPassword });
+  resetPassword(
+    token: string,
+    newPassword: string
+  ): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/reset-password`,
+      {
+        token,
+        newPassword,
+      }
+    );
   }
 }
