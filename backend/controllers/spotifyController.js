@@ -138,7 +138,7 @@ const setAlbumImages = async () => {
               id: deezerAlbum.id,
               title: deezerAlbum.title,
               artist: deezerAlbum.artist?.name || artistName,
-              cover: deezerAlbum.cover_medium || deezerAlbum.cover || "",
+              cover: deezerAlbum.cover,
               releaseDate,
               tracklist,
               genre,

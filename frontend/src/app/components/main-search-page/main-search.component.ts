@@ -169,7 +169,7 @@ export class MainSearchComponent implements OnInit {
     setTimeout(() => {
       albums.forEach((album, index) => {
         const imgEl = document.createElement('img');
-        imgEl.src = album.cover;
+        imgEl.src = this.getHighQualityImage(album.cover);
         imgEl.alt = album.title;
         imgEl.className =
           'w-[10rem] h-[10rem] md:w-[15rem] md:h-[15rem] object-cover mr-4 rounded cursor-pointer';
