@@ -1,5 +1,3 @@
-import { Album } from "./album-response";
-import { Artist } from "./artist-response";
 import { Review } from "./review-responses";
 import { Song } from "./song-response";
 

@@ -957,7 +957,6 @@ export class ReviewPageComponent implements OnInit {
   }
 
   onBackClick() {
-    console.log('Back clicked', this.showSecondIpod);
     this.showSecondIpod = false;
   }
 
@@ -1088,7 +1087,7 @@ export class ReviewPageComponent implements OnInit {
     this.addingToList = true;
 
     const itemToRemove = {
-      id: record.id,
+      id: record.id.toString(),
       type: record.type,
     };
 

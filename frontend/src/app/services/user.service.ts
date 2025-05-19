@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
 import { tap } from 'rxjs/operators';
-import { User } from '../models/responses/user.response';
+import { ListItem, User } from '../models/responses/user.response';
 
 @Injectable({
   providedIn: 'root',
@@ -15,7 +15,7 @@ export class UserService {
 
   constructor(private http: HttpClient) {}
 
-  getAuthenticatedUserProfile(): Observable<any> {
+  getAuthenticatedUserProfile(): Observable<User> {
     const token = localStorage.getItem('token');
   
     if (!token) {
@@ -24,7 +24,7 @@ export class UserService {
 
     const headers = { Authorization: `Bearer ${token}` };
 
-    return this.http.get<any>(`${this.apiUrl}/profile`, { headers }).pipe(
+    return this.http.get<User>(`${this.apiUrl}/profile`, { headers }).pipe(
       tap((profile) => {
         if (profile) {
           profile.profilePicture = profile.profilePicture?.trim() ? 
@@ -37,7 +37,7 @@ export class UserService {
   }
 
     // Update authenticated user profile
-    updateUserProfile(formData: FormData): Observable<any> {
+    updateUserProfile(formData: FormData): Observable<User> {
       const token = localStorage.getItem('token');
     
       if (!token) {
@@ -45,14 +45,14 @@ export class UserService {
         return new Observable();
       }
     
-      return this.http.put<any>(`${this.apiUrl}/profile`, formData, {
+      return this.http.put<User>(`${this.apiUrl}/profile`, formData, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
     }
 
-    setUserProfile(profile: any) {
+    setUserProfile(profile: User) {
       this.userProfileSubject.next(profile);
     }
 
@@ -128,8 +128,8 @@ export class UserService {
       );
     }
 
-    getOtherUserProfileInfo(profileId: string): Observable<any> {
-      return this.http.get<any>(`${this.apiUrl}/profile/${profileId}`);
+    getOtherUserProfileInfo(profileId: string): Observable<User> {
+      return this.http.get<User>(`${this.apiUrl}/profile/${profileId}`);
     }
 
     deleteProfile(): Observable<{ message: string }> {
@@ -147,7 +147,7 @@ export class UserService {
       );
     }
 
-    addToList(item: any) {
+    addToList(item: ListItem) {
       const token = localStorage.getItem('token');
       
       if (!token) {
@@ -163,7 +163,7 @@ export class UserService {
       return this.http.post<{ message: string }>(`${this.apiUrl}/list`, item, { headers });
     }    
 
-    removeFromList(item: any) {
+    removeFromList(item: ListItem) {
       const token = localStorage.getItem('token');
       
       if (!token) {

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
 import { Album } from '../models/responses/album-response';
 import { Song } from '../models/responses/song-response';
+import { SearchResponse } from '../models/responses/search-response';
 
 @Injectable({
   providedIn: 'root'
@@ -13,13 +14,13 @@ export class SearchService {
 
   constructor(private http: HttpClient) {}
 
-  searchMusic(query: string, type: 'songs' | 'albums' | 'artists' | 'all' = 'songs'): Observable<any> {
+  searchMusic(query: string, type: 'songs' | 'albums' | 'artists' | 'all' = 'songs'): Observable<SearchResponse> {
     const url = `${this.apiUrl}?query=${encodeURIComponent(query)}&type=${type}`;
-    return this.http.get<any>(url);
+    return this.http.get<SearchResponse>(url);
   }
 
-  getTrackDetails(trackId: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/track/${trackId}`);
+  getTrackDetails(trackId: number): Observable<Song> {
+    return this.http.get<Song>(`${this.apiUrl}/track/${trackId}`);
   }
 
   getAlbumDetails(albumId: number): Observable<Album> {
