@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, EMPTY, Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
 import { tap } from 'rxjs/operators';
-import { ListItem, User } from '../models/responses/user.response';
+import { FollowedArtist, User } from '../models/responses/user.response';
 
 @Injectable({
   providedIn: 'root',
@@ -147,7 +147,7 @@ export class UserService {
       );
     }
 
-    addToList(item: ListItem) {
+    addToArtistList(item: FollowedArtist) {
       const token = localStorage.getItem('token');
       
       if (!token) {
@@ -163,7 +163,7 @@ export class UserService {
       return this.http.post<{ message: string }>(`${this.apiUrl}/list`, item, { headers });
     }    
 
-    removeFromList(item: ListItem) {
+    removeFromArtistList(payload: { id: string }): Observable<any> {
       const token = localStorage.getItem('token');
       
       if (!token) {
@@ -176,7 +176,7 @@ export class UserService {
         'Content-Type': 'application/json'
       };
     
-      return this.http.post<{ message: string }>(`${this.apiUrl}/list/remove`, item, { headers });
+      return this.http.post<{ message: string }>(`${this.apiUrl}/list/remove`, { payload }, { headers });
     }
     
 }

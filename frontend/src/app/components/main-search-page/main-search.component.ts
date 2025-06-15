@@ -24,6 +24,9 @@ import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 import { Router } from '@angular/router';
 import { Review } from 'src/app/models/responses/review-responses';
 import { PopularRecord } from 'src/app/models/responses/popular-record-response';
+import { UserService } from 'src/app/services/user.service';
+import { User } from 'src/app/models/responses/user.response';
+import { GetReleasesResponse, Release } from 'src/app/models/responses/release-response';
 type ActivityRecord = Review['albumSongOrArtist'];
 type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
 @Component({
@@ -34,8 +37,6 @@ type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
   imports: [CommonModule, FormsModule, TimeAgoPipe],
 })
 export class MainSearchComponent implements OnInit {
-  @ViewChild('marqueeContainer') marqueeContainer!: ElementRef<HTMLDivElement>;
-  @ViewChild('marqueeTrack') marqueeTrack!: ElementRef<HTMLDivElement>;
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
   @ViewChild('dropdownContainer') dropdownContainer!: ElementRef;
@@ -45,8 +46,6 @@ export class MainSearchComponent implements OnInit {
   isLoading: boolean = false;
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
   activeDiscoverTab: 'mainSearch' | 'popular' | 'recentActivity' = 'mainSearch';
-  private trackX = 0;
-  private speed = 0.8;
   isModalOpen = false;
   selectedRecord: Album | Artist | Song | null = null;
   searchAttempted = false;
@@ -77,7 +76,6 @@ export class MainSearchComponent implements OnInit {
     artists: [],
   };
 
-  skeletonArray = Array(15).fill(0);
   isMarqueeLoading = true;
   popularRecords: PopularRecord[] = [];
   expandedReviews: { [reviewId: string]: boolean } = {};
@@ -87,20 +85,51 @@ export class MainSearchComponent implements OnInit {
     'Album',
     'Artist',
   ];
+    activeFeedType: 'Friends' | 'Artists' = 'Friends';
+    readonly activityFeedTypes: Array<'Friends' | 'Artists'> = [
+    'Friends',
+    'Artists'
+  ];
   isDiscoverContentLoading: boolean = false;
   isActivityLoading: boolean = false;
   activityFeed: Review[] = [];
   section: string | null = null;
+    userProfile: User = {
+      _id: '',
+      username: '',
+      gradient: '',
+      createdAt: '',
+      reviews: [],
+      googleId: '',
+      email: '',
+      friends: [],
+      profilePicture: '',
+      artistList: [],
+      friendInfo: {
+        friends: [],
+        friendRequestsReceived: [],
+        friendRequestsSent: []
+      }
+    } as User;
+  
+  artistFeed: Release[] = [];
+  // isLoadingArtistFeed: boolean = false;
+  albums: any[] = [];
+  skeletonArray = Array(10);
+  @ViewChild('marqueeContainer') marqueeContainer!: ElementRef;
 
   constructor(
     private searchService: SearchService,
     private modal: NgbModal,
     private toastr: ToastrService,
     private reviewService: ReviewService,
-    private router: Router
+    private router: Router,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
+    this.setMarquee();
+    this.setUserProfile();
     this.section = history.state.section || null;
 
     if (
@@ -112,10 +141,75 @@ export class MainSearchComponent implements OnInit {
     }
   }
 
-  ngAfterViewInit(): void {
-    this.isMarqueeLoading = true;
-    this.loadAlbumImages();
-    requestAnimationFrame(() => this.animateMarquee());
+  async setMarquee() {
+  this.isMarqueeLoading = true;
+  const storedAlbums = localStorage.getItem('albumImages');
+  let baseAlbums: any[] = [];
+
+  if (storedAlbums) {
+    try {
+      const parsed = JSON.parse(storedAlbums);
+      baseAlbums = parsed.albums || [];
+      baseAlbums = baseAlbums.map(album => ({
+      ...album,
+      cover: this.getHighQualityImage(album.cover)
+    }));
+
+    } catch (e) {
+      console.error('Error parsing stored album images:', e);
+    }
+  }
+
+    if (baseAlbums.length === 0) {
+      // fallback defaults
+      baseAlbums = Array.from({ length: 10 }, (_, i) => ({
+        id: i,
+        title: `Static Album ${i + 1}`,
+        artist: 'Unknown',
+        cover: `assets/album${i + 1}.jpg`
+      }));
+    }
+
+      await this.preloadImages(baseAlbums);
+
+      this.albums = baseAlbums;
+      this.isMarqueeLoading = false;
+  }
+
+  preloadImages(albums: any[]): Promise<void> {
+  return new Promise(resolve => {
+    let loadedCount = 0;
+
+    if (albums.length === 0) {
+      resolve();
+      return;
+    }
+
+    for (let album of albums) {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loadedCount++;
+        if (loadedCount === albums.length) {
+          resolve();
+        }
+      };
+      img.src = album.cover;
+    }
+  });
+}
+
+  setUserProfile() {
+      // Subscribes to updates from the user profile observable
+    this.userService.userProfile$.subscribe((profile) => {
+      if (profile) {
+        this.userProfile = profile;
+      }
+    });
+  
+    if (!this.userProfile || !this.userProfile.username) {
+      this.userService.getAuthenticatedUserProfile().subscribe({
+      });
+    }
   }
 
   @HostListener('document:click', ['$event'])
@@ -131,114 +225,6 @@ export class MainSearchComponent implements OnInit {
     }
 
     this.showGenreDropdown = { songs: false, albums: false };
-  }
-
-  private loadAlbumImages() {
-    this.isMarqueeLoading = true; // trigger skeletons
-
-    const trackEl = this.marqueeTrack.nativeElement;
-    const storedAlbums = localStorage.getItem('albumImages');
-
-    let albums: Album[] = [];
-
-    if (storedAlbums) {
-      try {
-        albums = JSON.parse(storedAlbums).albums || [];
-      } catch (error) {
-        console.error('Error parsing stored album images:', error);
-        albums = [];
-      }
-    }
-
-    if (albums.length === 0) {
-      albums = Array.from({ length: 15 }, (_, i) => ({
-        id: i + 1,
-        title: `Static Album ${i + 1}`,
-        artist: 'Unknown',
-        cover: `assets/album${i + 1}.jpg`,
-        releaseDate: '',
-        tracklist: [],
-        genre: '',
-        type: 'Album',
-        isExplicit: false,
-        preview: '',
-      }));
-    }
-
-    // Delay to simulate loading
-    setTimeout(() => {
-      albums.forEach((album, index) => {
-        // Transform the cover once
-        const highQualityCover = this.getHighQualityImage(album.cover);
-        album.cover = highQualityCover; // update it on the album object
-
-        // Create image element
-        const imgEl = document.createElement('img');
-        imgEl.src = highQualityCover;
-        imgEl.alt = album.title;
-        imgEl.className = 'w-[10rem] h-[10rem] md:w-[15rem] md:h-[15rem] object-cover mr-4 rounded cursor-pointer';
-
-        // Click opens modal with updated album.cover
-        imgEl.addEventListener('click', () => {
-          this.openModal(album, albums, index);
-        });
-
-        trackEl.appendChild(imgEl);
-      });
-
-      this.isMarqueeLoading = false;
-      this.initializeMarquee();
-    }, 500); // show skeletons for 0.5s
-  }
-
-  private initializeMarquee() {
-    const containerEl = this.marqueeContainer.nativeElement;
-    const trackEl = this.marqueeTrack.nativeElement;
-
-    // Original images
-    const originalImages = Array.from(trackEl.children) as HTMLImageElement[];
-
-    const getTrackWidth = () => trackEl.scrollWidth;
-    const getContainerWidth = () => containerEl.offsetWidth;
-
-    // Keep duplicating until track is >= 2x container width
-    let cloneCount = 0;
-    while (getTrackWidth() < getContainerWidth() * 2 && cloneCount < 10) {
-      for (const img of originalImages) {
-        const clone = img.cloneNode(true) as HTMLImageElement;
-        trackEl.appendChild(clone);
-      }
-      cloneCount++;
-    }
-  }
-
-  private animateMarquee() {
-    const trackEl = this.marqueeTrack.nativeElement;
-    this.trackX -= this.speed;
-
-    // Check if the first child is fully off-screen
-    const firstImg = trackEl.firstElementChild as HTMLImageElement | null;
-    if (firstImg) {
-      const firstImgWidth =
-        firstImg.offsetWidth + this.getMarginRight(firstImg);
-      if (Math.abs(this.trackX) >= firstImgWidth) {
-        // remove from the front
-        trackEl.removeChild(firstImg);
-        // append to the end
-        trackEl.appendChild(firstImg);
-        // adjust trackX to avoid jump
-        this.trackX += firstImgWidth;
-      }
-    }
-
-    trackEl.style.transform = `translateX(${this.trackX}px)`;
-    requestAnimationFrame(() => this.animateMarquee());
-  }
-
-  // Helper to read the margin-right from computed style
-  private getMarginRight(el: HTMLElement): number {
-    const style = window.getComputedStyle(el);
-    return parseFloat(style.marginRight || '0');
   }
 
   onSearch(type: 'songs' | 'albums' | 'artists') {
@@ -305,7 +291,7 @@ export class MainSearchComponent implements OnInit {
           this.isLoading = false;
         }, 50);
       },
-      error: (error) => {
+      error: () => {
         this.toastr.error(
           `Error occurred while searching for "${this.query}"`,
           'Error'
@@ -388,7 +374,8 @@ export class MainSearchComponent implements OnInit {
       this.loadPopularReviews('Song');
     }
     if (tab === 'recentActivity') {
-      this.loadAcitivityFeed();
+      this.activeFeedType = 'Friends';
+      this.loadActivityFeed();
     }
   }
 
@@ -397,6 +384,49 @@ export class MainSearchComponent implements OnInit {
     this.activePopularType = type;
     this.loadPopularReviews(type);
   }
+
+    setFeedType(type: 'Friends' | 'Artists') {
+    this.isActivityLoading = true;
+    this.activeFeedType = type;
+    if(type === 'Artists') {
+      this.loadArtistsFeed();
+    }
+    if(type === 'Friends') {
+      this.loadActivityFeed();
+    }
+  }
+
+loadArtistsFeed() {
+  const artistList = this.userProfile.artistList;
+
+  if (!artistList || artistList.length === 0) {
+    this.isActivityLoading = false;
+    this.artistFeed = [];
+    return;
+  }
+
+  const artistIds = artistList.map(artist => artist.id).filter(Boolean); // removes null/undefined IDs
+
+  if (artistIds.length === 0) {
+    this.isActivityLoading = false;
+    this.artistFeed = [];
+    return;
+  }
+
+  this.searchService.getReleasesByArtistIds(artistIds).subscribe({
+    next: (res: GetReleasesResponse) => {
+        this.artistFeed = (res?.releases || []).map(release => ({
+          ...release,
+          cover: this.getHighQualityImage(release.cover)
+        }));
+        this.isActivityLoading = false;    },
+    error: (err) => {
+      this.toastr.error('Failed to load artists feed:', err.message || err);
+      this.artistFeed = [];
+      this.isActivityLoading = false;
+    },
+  });
+}
 
   loadPopularReviews(type: 'Song' | 'Album' | 'Artist') {
     this.reviewService.getTopReviewsByType(type).subscribe({
@@ -414,7 +444,7 @@ export class MainSearchComponent implements OnInit {
     });
   }
 
-  loadAcitivityFeed() {
+  loadActivityFeed() {
     this.isActivityLoading = true;
     this.reviewService.getActivityFeed().subscribe({
       next: (res) => {
@@ -435,6 +465,21 @@ export class MainSearchComponent implements OnInit {
   toggleReviewExpansion(reviewId: string) {
     this.expandedReviews[reviewId] = !this.expandedReviews[reviewId];
   }
+
+  transformReleaseToModalRecord(release: Release): PopularRecord {
+  return {
+    id: Number(release.albumId),
+    type: 'Album',
+    title: release.title,
+    artist: release.artistName,
+    cover: release.cover,
+    isExplicit: release.isExplicit,
+    releaseDate: release.releaseDate,
+    // Optional fields can be null or defaulted
+    avgRating: 0,
+    reviewCount: 0,
+  };
+}
 
   openModal(
     record: ModalRecord,
@@ -561,4 +606,9 @@ export class MainSearchComponent implements OnInit {
       state: { section: 'recentActivity' },
     });
   }
+
+  getPopularTypeIndex(): number {
+  return this.popularTypes.indexOf(this.activePopularType);
+}
+
 }

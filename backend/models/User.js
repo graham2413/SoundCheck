@@ -30,29 +30,19 @@ const userSchema = new Schema({
     createdAt: { type: Date, default: Date.now },
 
     // List of songs, albums, artists
-    list: {
+    artistList: {
       type: [
         {
           id: { type: String, required: true },
-          type: { type: String, required: true }, // 'Album' | 'Song' | 'Artist'
-          title: { type: String },
-          name: { type: String },
-          artist: { type: String },
-          cover: { type: String },
+          name: { type: String, required: true },
           picture: { type: String },
-          album: { type: String },
-          genre: { type: String },
-          preview: { type: String },         // Song field
-          duration: { type: Number },         // Song field
-          isExplicit: { type: Boolean },      // Song field
-          releaseDate: { type: String },      // Album/Song field
-          contributors: { type: [String] },   // Song field
-          tracklist: { type: Array },          // Album/Artist field
-          addedAt: { type: Date, default: Date.now }
+          addedAt: { type: Date, default: Date.now },
+          tracklist: { type: Array, default: [] },
+          preview: { type: String, default: '' }
         }
       ],
       default: []
-    },    
+    } 
 });
 
 // Export User model

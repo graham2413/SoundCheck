@@ -11,10 +11,10 @@ export interface User {
   hasPendingRequestSent?: boolean;
   hasPendingRequestReceived?: boolean;
   googleId: string;
-  reviews: Review[];
-  friends: User[];
+  reviews?: Review[];
+  friends?: User[];
   createdAt: string;
-  list: ListItem[];
+  artistList?: FollowedArtist[];
   gradient: string;
 }
 
@@ -24,21 +24,11 @@ export interface FriendInfo {
   friendRequestsReceived: User[];
 }
 
-export interface ListItem {
-  id: string; // Always stored as string
-  type: 'Album' | 'Artist' | 'Song';
-  title?: string;
-  name?: string;
-  artist?: string;
-  cover?: string;
+export interface FollowedArtist {
+  id: string;
+  name: string;
   picture?: string;
-  album?: string;
-  genre?: string;
-  preview?: string;         // Song-only field
-  duration?: number;        // Song-only field
-  isExplicit?: boolean;     // Song-only field
-  releaseDate?: string;     // Song/Album field
-  contributors?: string[];  // Song-only field
-  tracklist?: Song[];        // Album or Artist field
+  tracklist?: Song[];
+  preview?: string;
   addedAt?: Date;
 }

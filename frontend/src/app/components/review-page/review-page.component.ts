@@ -36,7 +36,7 @@ import { Song } from 'src/app/models/responses/song-response';
 import { CreateReviewCommandModel } from 'src/app/models/command-models/create-review-commandmodel';
 import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
 import { UserService } from 'src/app/services/user.service';
-import { ListItem, User } from 'src/app/models/responses/user.response';
+import { FollowedArtist, User } from 'src/app/models/responses/user.response';
 import { Router } from '@angular/router';
 
 @Component({
@@ -214,7 +214,7 @@ export class ReviewPageComponent implements OnInit {
     email: '',
     friends: [],
     profilePicture: '',
-    list: [],
+    artistList: [],
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],
@@ -304,10 +304,9 @@ export class ReviewPageComponent implements OnInit {
 
   updateIsInList() {
     this.isInList =
-      this.userProfile.list?.some(
+      this.userProfile.artistList?.some(
         (item) =>
-          item.id === this.record.id.toString() &&
-          item.type === this.record.type
+          item.id === this.record.id.toString()
       ) ?? false;
   }
 
@@ -456,7 +455,7 @@ export class ReviewPageComponent implements OnInit {
           //     reviews: [],
           //     friends: [],
           //     createdAt: new Date().toISOString(),
-          //     list: [],
+          //     artistList: [],
           //     gradient: 'linear-gradient(to right, #ff7e5f, #feb47b)',
           //   },
           //   rating: Math.floor(Math.random() * 10) + 1,
@@ -625,6 +624,7 @@ export class ReviewPageComponent implements OnInit {
           (this.record as Song).contributors = data.contributors;
           (this.record as Song).duration = data.duration;
           (this.record as Song).preview = data.preview;
+          (this.record as Song).genre = data.genre;
           const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
 
           players.forEach((player) => player?.stopLoading());
@@ -650,6 +650,7 @@ export class ReviewPageComponent implements OnInit {
             this.currentSong = album.tracklist[0];
           }
           album.preview = data.preview;
+          album.genre = data.genre || 'Unknown';
           album.isExplicit = data.isExplicit;
           this.isLoadingExtraDetails = false;
         },
@@ -1055,63 +1056,69 @@ export class ReviewPageComponent implements OnInit {
     return 'empty';
   }
 
-  addToList(record: Album | Artist | Song) {
-    this.addingToList = true;
-    const itemToAdd: ListItem = {
-      ...record,
-      id: record.id.toString(),
-      addedAt: new Date(),
-    };
+addToArtistList(artist: Artist) {
+  this.addingToList = true;
 
-    this.userService.addToList(itemToAdd).subscribe({
-      next: () => {
-        this.toastr.success('Added to your list!', 'Success');
+  const itemToAdd: FollowedArtist = {
+    id: artist.id.toString(),
+    name: artist.name,
+    picture: artist.picture,
+    addedAt: new Date(),
+    tracklist: artist.tracklist || [],
+    preview: artist.preview || '',
+  };
 
-        // Update local userProfile.list immediately
-        this.userProfile.list.push(itemToAdd);
+this.userService.addToArtistList(itemToAdd).subscribe({
+  next: () => {
+    this.toastr.success('Artist followed!', 'Success');
 
-        // Update the global userProfile observable
-        this.userService.setUserProfile(this.userProfile);
+    if (!this.userProfile.artistList) this.userProfile.artistList = [];
+    this.userProfile.artistList.push(itemToAdd);
+    this.userService.setUserProfile(this.userProfile);
 
-        this.isInList = true; // ✅ Update flag
-        this.addingToList = false;
-      },
-      error: () => {
-        this.toastr.error('Failed to add item to list.', 'Error');
-        this.addingToList = false;
-      },
-    });
+    this.isInList = true;
+
+    //  Trigger backend sync
+    this.searchService.syncArtistAlbums(itemToAdd.id, itemToAdd.name)
+      .subscribe({
+        next: () => {},
+        error: () => console.log(`Failed to sync albums for ${itemToAdd.name}`)
+      });
+
+    this.addingToList = false;
+  },
+  error: () => {
+    this.toastr.error('Failed to follow artist.', 'Error');
+    this.addingToList = false;
   }
+});
+}
 
-  removeFromList(record: Album | Artist | Song) {
-    this.addingToList = true;
+removeFromArtistList(artist: Artist) {
+  this.addingToList = true;
 
-    const itemToRemove = {
-      id: record.id.toString(),
-      type: record.type,
-    };
+  const id = artist.id.toString();
 
-    this.userService.removeFromList(itemToRemove).subscribe({
-      next: () => {
-        this.toastr.success('Removed from your list!', 'Success');
-        this.isInList = false;
-        this.addingToList = false;
+  this.userService.removeFromArtistList({ id }).subscribe({
+    next: () => {
+      this.toastr.success('Removed from your list!', 'Success');
+      this.isInList = false;
+      this.addingToList = false;
 
-        // Update local userProfile.list immediately
-        this.userProfile.list = this.userProfile.list.filter(
-          (item) =>
-            !(item.id === record.id.toString() && item.type === record.type)
-        );
+      // Update local userProfile.artistList
+      this.userProfile.artistList = this.userProfile.artistList?.filter(
+        (item) => item.id !== id
+      );
 
-        // Update the global userProfile if needed
-        this.userService.setUserProfile(this.userProfile);
-      },
-      error: () => {
-        this.toastr.error('Failed to remove item from list.', 'Error');
-        this.addingToList = false;
-      },
-    });
-  }
+      // Push updated profile to global observable
+      this.userService.setUserProfile(this.userProfile);
+    },
+    error: () => {
+      this.toastr.error('Failed to remove artist.', 'Error');
+      this.addingToList = false;
+    }
+  });
+}
 
   goToProfile(userId: string) {
     this.userNavigated.emit();

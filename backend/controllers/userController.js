@@ -2,6 +2,8 @@ const User = require("../models/User");
 const { cloudinary } = require("../config/cloudinaryConfig");
 const bcrypt = require("bcryptjs");
 const Review = require("../models/Review");
+const Release = require('../models/Release');
+const redis = require('../utils/redisClient');
 
 exports.getUserProfile = async (req, res) => {
   try {
@@ -29,7 +31,7 @@ exports.getUserProfile = async (req, res) => {
       reviews: reviews,
       createdAt: user.createdAt,
       gradient: user.gradient,
-      list: user.list || [],
+      artistList: user.artistList || [],
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
@@ -53,7 +55,7 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
       username: user.username,
       email: user.email,
       gradient: user.gradient,
-      list: user.list || [],
+      artistList: user.artistList || [],
       profilePicture: user.profilePicture,
       createdAt: user.createdAt,
       friendInfo: {
@@ -437,67 +439,44 @@ exports.addToList = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    const item = req.body;
+    const { id, name, picture, tracklist, preview } = req.body;
 
-    // Basic validation
-    if (!item || !item.id || !item.type) {
-      return res.status(400).json({ message: "Invalid item data." });
+    if (!id || !name) {
+      return res.status(400).json({ message: "Missing artist id or artist name." });
     }
 
-    // Force id to string
-    item.id = item.id.toString();
+    // Initialize artistList if not present
+    if (!user.artistList) user.artistList = [];
 
-    // Initialize list if missing
-    if (!user.list) {
-      user.list = [];
-    }
-
-    // Check if already exists
-    const exists = user.list.some(
-      (listItem) => listItem.id === item.id && listItem.type === item.type
+    // Check for existing follow
+    const alreadyFollowed = user.artistList.some(
+      (a) => a.id === id
     );
 
-    if (exists) {
-      return res
-        .status(400)
-        .json({ message: "Item already exists in your list." });
+    if (alreadyFollowed) {
+      return res.status(400).json({ message: "Artist is already in your list." });
     }
 
-    // Clean new item
-    const newItem = {
-      id: item.id,
-      type: item.type,
-      title: item.title,
-      name: item.name,
-      artist: item.artist,
-      cover: item.cover,
-      picture: item.picture,
-      album: item.album,
-      genre: item.genre,
-      preview: item.preview,
-      duration: item.duration,
-      isExplicit: item.isExplicit,
-      releaseDate: item.releaseDate,
-      contributors: item.contributors,
-      tracklist: item.tracklist,
-      addedAt: item.addedAt || new Date(),
+    const newArtist = {
+      id: id.toString(),
+      name: name || '',
+      picture: picture || '',
+      tracklist: Array.isArray(tracklist) ? tracklist : [],
+      preview: preview || '',
+      addedAt: new Date()
     };
 
-    // Push clean item
-    user.list.push(newItem);
-
+    user.artistList.push(newArtist);
     await user.save();
 
-    return res
-      .status(200)
-      .json({ message: "Item added to list successfully." });
+    return res.status(200).json({ message: "Artist added to list successfully." });
   } catch (error) {
-    console.error("Error adding item to list:", error);
+    console.error("Error adding artist to list:", error);
     return res.status(500).json({ message: "Server Error" });
   }
 };
 
-exports.removeFromList = async (req, res) => {
+exports.removeFromArtistList = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {
       return res.status(401).json({ message: "Unauthorized. User not found." });
@@ -508,26 +487,44 @@ exports.removeFromList = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    const { id, type } = req.body;
+    const id  = req.body.payload.id;
 
-    if (!id || !type) {
-      return res
-        .status(400)
-        .json({ message: "Invalid request. Missing id or type." });
+    if (!id) {
+      return res.status(400).json({ message: "Missing artist id." });
     }
 
-    // Filter out the item
-    user.list = user.list.filter(
-      (item) => !(item.id === id && item.type === type)
+    // Check if artist is in the list
+    const exists = user.artistList?.some(a => a.id === id);
+    if (!exists) {
+      return res.status(404).json({ message: "Artist not found in your list." });
+    }
+
+    // Filter out the artist
+    user.artistList = user.artistList.filter(
+      (item) => item.id !== id
     );
 
     await user.save();
 
-    return res
-      .status(200)
-      .json({ message: "Item removed from list successfully." });
+    // Check if any other users follows this artist, if  not remove all releases associated with this artist
+    const otherUsersWithArtist = await User.exists({
+      _id: { $ne: user._id },
+      "artistList.id": id
+    });
+
+    if (!otherUsersWithArtist) {
+      const deleteResult = await Release.deleteMany({ artistId: id });
+      console.log(`Deleted ${deleteResult.deletedCount} releases for artist ${id} as no users follow them.`);
+
+        // Clear Redis cache so future follow triggers re-sync
+      const redisKey = `artist-sync:user:${id}`;
+      await redis.del(redisKey);
+      console.log(`Cleared Redis sync key for artist ${id}`);
+    }
+
+    return res.status(200).json({ message: "Artist removed from list successfully." });
   } catch (error) {
-    console.error("Error removing item from list:", error);
+    console.error("Error removing artist from list:", error);
     return res.status(500).json({ message: "Server Error" });
   }
 };

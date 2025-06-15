@@ -5,13 +5,17 @@ import { CommonModule } from '@angular/common';
 import { ToastrService } from 'ngx-toastr';
 import { Friend } from 'src/app/models/responses/friend-response';
 import { FormsModule } from '@angular/forms';
-import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
+import {
+  NgbModal,
+  NgbModalOptions,
+  NgbModalRef,
+} from '@ng-bootstrap/ng-bootstrap';
 import { ReviewPageComponent } from '../review-page/review-page.component';
 import { Album } from 'src/app/models/responses/album-response';
 import { Artist } from 'src/app/models/responses/artist-response';
 import { Song } from 'src/app/models/responses/song-response';
 import { Review } from 'src/app/models/responses/review-responses';
-import { User } from 'src/app/models/responses/user.response';
+import { FollowedArtist, User } from 'src/app/models/responses/user.response';
 import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
 import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 import { AppComponent } from 'src/app/app.component';
@@ -40,7 +44,7 @@ export class ViewProfilePageComponent implements OnInit {
     email: '',
     friends: [],
     profilePicture: '',
-    list: [],
+    artistList: [],
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],
@@ -50,7 +54,7 @@ export class ViewProfilePageComponent implements OnInit {
 
   isLoadingFriendAction: boolean = false;
   isImageModalOpen: boolean = false;
-  showPanel: 'reviews' | 'friends' | 'list' | null = null;
+  showPanel: 'reviews' | 'friends' | 'artists' | null = null;
   reviewsByType = { songs: 0, albums: 0, artists: 0 };
   averageRating = 0;
   mostReviewedGenre: string = 'Unknown';
@@ -126,29 +130,27 @@ export class ViewProfilePageComponent implements OnInit {
     });
   }
 
-getTransformedImageUrl(fullUrl: string): string {
-  if (!fullUrl) {
-    return 'assets/otherUser.png'; // fallback
+  getTransformedImageUrl(fullUrl: string): string {
+    if (!fullUrl) {
+      return 'assets/otherUser.png'; // fallback
+    }
+
+    return fullUrl.replace(
+      '/upload/',
+      '/upload/w_1600,h_1600,c_fill,g_face,f_auto,q_auto,dpr_auto/'
+    );
   }
 
-  return fullUrl.replace(
-    '/upload/',
-    '/upload/w_1600,h_1600,c_fill,g_face,f_auto,q_auto,dpr_auto/'
-  );
-}
+  getTransformedImageSmallUrl(fullUrl: string): string {
+    if (!fullUrl) {
+      return 'assets/otherUser.png';
+    }
 
-
-getTransformedImageSmallUrl(fullUrl: string): string {
-  if (!fullUrl) {
-    return 'assets/otherUser.png';
+    return fullUrl.replace(
+      '/upload/',
+      '/upload/w_400,h_400,c_fill,g_face,f_auto,q_auto/'
+    );
   }
-
-  return fullUrl.replace(
-    '/upload/',
-    '/upload/w_400,h_400,c_fill,g_face,f_auto,q_auto/'
-  );
-}
-
 
   public fetchUserDetails() {
     this.userService.getOtherUserProfileInfo(this.otherUserId).subscribe({
@@ -431,29 +433,6 @@ getTransformedImageSmallUrl(fullUrl: string): string {
     return value.toString();
   }
 
-  toggleTypeDropdown() {
-    this.showTypeDropdown = !this.showTypeDropdown;
-  }
-
-  filterByType(type: 'Song' | 'Album' | 'Artist') {
-    this.selectedType = type;
-    this.showTypeDropdown = false;
-  }
-
-  clearTypeFilter() {
-    this.selectedType = 'All';
-    this.showTypeDropdown = false;
-  }
-
-  get filteredList() {
-    if (this.selectedType === 'All') {
-      return this.otherUser?.list || [];
-    }
-    return (this.otherUser?.list || []).filter(
-      (item) => item.type === this.selectedType
-    );
-  }
-
   sendFriendRequest(user: User) {
     this.isLoadingFriendAction = true;
 
@@ -473,7 +452,7 @@ getTransformedImageSmallUrl(fullUrl: string): string {
           username: user.username,
           profilePicture: user.profilePicture,
           email: '',
-          list: [],
+          artistList: [],
           googleId: '',
           createdAt: '',
           friends: [],
@@ -501,7 +480,7 @@ getTransformedImageSmallUrl(fullUrl: string): string {
   declineFriendRequest(fromUser: User) {
     this.decliningFriendRequest = true;
     this.userService.declineFriendRequest(fromUser._id).subscribe({
-    next: (_: unknown) => {
+      next: (_: unknown) => {
         if (
           this.loggedInUser &&
           this.loggedInUser.friendInfo.friendRequestsReceived
@@ -550,7 +529,7 @@ getTransformedImageSmallUrl(fullUrl: string): string {
               profilePicture: fromUser.profilePicture,
               email: '',
               createdAt: '',
-              list: [],
+              artistList: [],
               gradient: '',
               googleId: '',
               friendInfo: {
@@ -607,7 +586,7 @@ getTransformedImageSmallUrl(fullUrl: string): string {
     this.isLoadingFriendAction = true;
 
     this.userService.removeFriend(friend._id).subscribe({
-    next: (_: unknown) => {
+      next: (_: unknown) => {
         const { friendInfo } = this.loggedInUser;
 
         // Remove from friends
@@ -699,8 +678,8 @@ getTransformedImageSmallUrl(fullUrl: string): string {
   }
 
   openList() {
-    if (this.otherUser?.list && this.otherUser.list.length > 0) {
-      this.showPanel = 'list';
+    if (this.otherUser?.artistList && this.otherUser.artistList.length > 0) {
+      this.showPanel = 'artists';
     }
   }
 
@@ -708,63 +687,73 @@ getTransformedImageSmallUrl(fullUrl: string): string {
     this.showPanel = null;
   }
 
-buildFullRecord(item: BaseRecord): Album | Artist | Song {
-  const numericId = typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
+  buildFullRecord(item: BaseRecord): Album | Artist | Song {
+    const numericId =
+      typeof item.id === 'string' ? parseInt(item.id, 10) : item.id;
 
-  if (item.type === 'Song') {
-    return {
-      id: numericId,
-      type: 'Song',
-      title: item.title ?? 'Unknown Title',
-      artist: item.artist ?? 'Unknown Artist',
-      album: item.album ?? '',
-      cover: item.cover ?? '',
-      genre: item.genre ?? 'Unknown',
-      preview: item.preview ?? '',
-      duration: item.duration ?? 0,
-      isExplicit: item.isExplicit ?? false,
-      releaseDate: item.releaseDate ?? '',
-      contributors: item.contributors ?? [],
-      isPlaying: item.isPlaying ?? false,
-    };
-  } else if (item.type === 'Album') {
-    return {
-      id: numericId,
-      type: 'Album',
-      title: item.title ?? 'Unknown Album',
-      artist: item.artist ?? 'Unknown Artist',
-      cover: item.cover ?? '',
-      genre: item.genre ?? 'Unknown',
-      releaseDate: item.releaseDate ?? '',
-      tracklist: item.tracklist ?? [],
-      isExplicit: item.isExplicit ?? false,
-      preview: item.preview ?? '',
-    };
-  } else {
-    return {
-      id: numericId,
-      type: 'Artist',
-      name: item.name ?? 'Unknown Artist',
-      picture: item.picture ?? '',
-      tracklist: item.tracklist ?? [],
-      preview: item.preview ?? '',
-    };
+    if (item.type === 'Song') {
+      return {
+        id: numericId,
+        type: 'Song',
+        title: item.title ?? 'Unknown Title',
+        artist: item.artist ?? 'Unknown Artist',
+        album: item.album ?? '',
+        cover: item.cover ?? '',
+        genre: item.genre ?? 'Unknown',
+        preview: item.preview ?? '',
+        duration: item.duration ?? 0,
+        isExplicit: item.isExplicit ?? false,
+        releaseDate: item.releaseDate ?? '',
+        contributors: item.contributors ?? [],
+        isPlaying: item.isPlaying ?? false,
+      };
+    } else if (item.type === 'Album') {
+      return {
+        id: numericId,
+        type: 'Album',
+        title: item.title ?? 'Unknown Album',
+        artist: item.artist ?? 'Unknown Artist',
+        cover: item.cover ?? '',
+        genre: item.genre ?? 'Unknown',
+        releaseDate: item.releaseDate ?? '',
+        tracklist: item.tracklist ?? [],
+        isExplicit: item.isExplicit ?? false,
+        preview: item.preview ?? '',
+      };
+    } else {
+      return {
+        id: numericId,
+        type: 'Artist',
+        name: item.name ?? 'Unknown Artist',
+        picture: item.picture ?? '',
+        tracklist: item.tracklist ?? [],
+        preview: item.preview ?? '',
+      };
+    }
   }
+
+get filteredFullRecordList(): Artist[] {
+  return (this.otherUser?.artistList ?? []).map((item) =>
+    this.buildArtistRecord(item)
+  );
 }
 
+buildArtistRecord(item: FollowedArtist): Artist {
+  return {
+    id: parseInt(item.id, 10),
+    type: 'Artist',
+    name: item.name ?? 'Unknown Artist',
+    picture: item.picture ?? '',
+    tracklist: item.tracklist ?? [],
+    preview: item.preview ?? '',
+  };
+}
 
-  get filteredFullRecordList(): (Album | Artist | Song)[] {
-return (this.filteredList || []).map(item =>
-  this.buildFullRecord({ ...item, id: parseInt(item.id, 10) })
-);
-  }
-
-
-openReview(
-  record: ModalRecord,
-  recordList?: ModalRecord[],
-  index?: number,
-): NgbModalRef {
+  openReview(
+    record: ModalRecord,
+    recordList?: ModalRecord[],
+    index?: number
+  ): NgbModalRef {
     const modalOptions: NgbModalOptions = {
       backdrop: false,
       keyboard: true,
@@ -785,19 +774,21 @@ openReview(
     // 1. check for review edited
     modalRef.componentInstance.reviewEdited.subscribe(
       (updatedReview: Review) => {
-        const i = this.otherUser?.reviews.findIndex(
-          (a) => a._id === updatedReview._id
-        );
-        if (typeof i === 'number' && i !== -1) {
-          const updated = {
-            ...this.otherUser!.reviews![i],
-            reviewText: updatedReview.reviewText,
-            rating: updatedReview.rating,
-            createdAt: updatedReview.createdAt,
-          };
-          this.otherUser!.reviews!.splice(i, 1);
-          this.otherUser!.reviews!.unshift(updated);
-          this.updateUserStats();
+        if (this.otherUser && this.otherUser.reviews) {
+          const i = this.otherUser.reviews.findIndex(
+            (a) => a._id === updatedReview._id
+          );
+          if (i !== -1) {
+            const updated = {
+              ...this.otherUser.reviews[i],
+              reviewText: updatedReview.reviewText,
+              rating: updatedReview.rating,
+              createdAt: updatedReview.createdAt,
+            };
+            this.otherUser.reviews.splice(i, 1);
+            this.otherUser.reviews.unshift(updated);
+            this.updateUserStats();
+          }
         }
       }
     );
@@ -805,23 +796,23 @@ openReview(
     // 2. Check for review deleted
     modalRef.componentInstance.reviewDeleted?.subscribe(
       (deletedReview: Review) => {
-          if (this.otherUser?.reviews) {
-            this.otherUser.reviews = this.otherUser.reviews.filter(
-              review => review._id !== deletedReview._id
-            );
-            this.updateUserStats();
-          }
+        if (this.otherUser?.reviews) {
+          this.otherUser.reviews = this.otherUser.reviews.filter(
+            (review) => review._id !== deletedReview._id
+          );
+          this.updateUserStats();
+        }
       }
     );
 
     // 3. Check for review created
     modalRef.componentInstance.reviewCreated?.subscribe((newReview: Review) => {
-        if (this.otherUser?.reviews) {
-          this.otherUser.reviews.unshift(newReview);
-          this.updateUserStats();
-        }
-    });   
-    
+      if (this.otherUser?.reviews) {
+        this.otherUser.reviews.unshift(newReview);
+        this.updateUserStats();
+      }
+    });
+
     // 4. Navigating to another profile
     modalRef.componentInstance.userNavigated.subscribe(() => {
       this.showPanel = null;
@@ -829,11 +820,10 @@ openReview(
 
     // 5. Handle opening a song frmo an artist or album review
     modalRef.componentInstance.openNewReview.subscribe((record: Song) => {
-    
       // Upgrade the image before opening the modal
       const highResCover = this.getHighQualityImage(record.cover);
       const updatedRecord = { ...record, cover: highResCover };
-    
+
       const newModal = this.openReview(updatedRecord, [], 0);
       newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
       modalRef.close();
@@ -867,52 +857,58 @@ openReview(
   filterFriends(): void {
     const query = this.searchQuery.toLowerCase().trim();
     this.filteredFriends =
-      this.otherUser?.friends.filter((friend: { username: string }) =>
+      (this.otherUser?.friends ?? []).filter((friend: { username: string }) =>
         friend.username.toLowerCase().includes(query)
-      ) ?? [];
+      );
   }
 
   goToUserProfile(userId?: string): void {
     this.showPanel = null;
-  
+
     const currentUserId = this.route.snapshot.paramMap.get('userId');
     const currentSection = history.state?.section;
-  
+
     if (userId) {
       this.router.navigate([`/profile/${userId}`], {
         state: {
           fromUserId: currentUserId,
-          section: currentSection
-        }      });
+          section: currentSection,
+        },
+      });
     } else {
       this.router.navigate(['/profile']);
     }
   }
 
-get reviewList(): ModalRecord[] {
-  return this.otherUser?.reviews?.map(a =>
-    this.buildFullRecord({ ...a.albumSongOrArtist, id: parseInt(a.albumSongOrArtist.id, 10) })
-  ) ?? [];
-}
+  get reviewList(): ModalRecord[] {
+    return (
+      this.otherUser?.reviews?.map((a) =>
+        this.buildFullRecord({
+          ...a.albumSongOrArtist,
+          id: parseInt(a.albumSongOrArtist.id, 10),
+        })
+      ) ?? []
+    );
+  }
 
-prepareRecord(raw: any): ModalRecord {
-  return this.buildFullRecord({ ...raw, id: parseInt(raw.id, 10) });
-}
+  prepareRecord(raw: any): ModalRecord {
+    return this.buildFullRecord({ ...raw, id: parseInt(raw.id, 10) });
+  }
 
   goBack(): void {
     this.appComponent.navigationDirection = 'back';
-  
+
     const section = history.state?.section;
     const previousUserId = history.state?.fromUserId;
-  
+
     // 1. Go back to previous profile if available
     if (previousUserId) {
       this.router.navigate([`/profile/${previousUserId}`], {
-        state: { section } // forward section if it exists
+        state: { section }, // forward section if it exists
       });
       return;
     }
-  
+
     // 2. If no previous profile, use section to route back to source
     if (section) {
       if (['addFriends', 'requests', 'myFriends'].includes(section)) {
@@ -926,8 +922,6 @@ prepareRecord(raw: any): ModalRecord {
       this.router.navigate(['/']);
     }
   }
-  
-  
 
   openGradientModal() {
     this.tempSelectedGradient = this.currentGradient;

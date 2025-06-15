@@ -227,21 +227,21 @@
     >
       <div class="p-1" (click)="openReviews()">
         <span class="block text-center text-lg">{{
-          otherUser.reviews.length
+          otherUser.reviews?.length
         }}</span>
         <span class="block text-center text-gray-400">Reviews</span>
       </div>
       <div class="p-1" (click)="openFriends()">
         <span class="block text-center text-lg">{{
-          otherUser.friends.length || 0
+          otherUser.friends?.length || 0
         }}</span>
         <span class="block text-center text-gray-400">Friends</span>
       </div>
       <div class="p-1" (click)="openList()">
         <span class="block text-center text-lg">{{
-          otherUser.list?.length || 0
+          otherUser.artistList?.length || 0
         }}</span>
-        <span class="block text-center text-gray-400">List</span>
+        <span class="block text-center text-gray-400">Artists</span>
       </div>
     </div>
 
@@ -266,8 +266,8 @@
             <span *ngIf="showPanel === 'friends'"
               >({{ otherUser.friends?.length || 0 }})</span
             >
-            <span *ngIf="showPanel === 'list'">
-              ({{ otherUser.list?.length || 0 }})
+            <span *ngIf="showPanel === 'artists'">
+              ({{ otherUser.artistList?.length || 0 }})
             </span>
           </span>
         </h2>
@@ -449,7 +449,7 @@
 
             <div
               *ngIf="
-                filteredFriends.length === 0 && otherUser.friends.length > 0
+                filteredFriends.length === 0 && (otherUser.friends?.length ?? 0) > 0
               "
               class="text-center text-gray-400 py-4"
             >
@@ -482,84 +482,19 @@
             </div>
           </ng-container>
 
-          <ng-container *ngSwitchCase="'list'">
-            <div class="relative mb-6">
-              <!-- Filter Button Wrapper -->
-              <div class="absolute right-0 top-0 pr-1">
-                <button
-                  (click)="toggleTypeDropdown()"
-                  class="p-2 rounded-md transition flex items-center gap-2 md:text-xl"
-                  [ngClass]="
-                    selectedType !== 'All'
-                      ? 'bg-blue-600 md:hover:bg-blue-500'
-                      : ''
-                  "
-                >
-                  <span class="inline">
-                    {{ selectedType !== "All" ? selectedType : "Filter" }}
-                  </span>
-                  <i class="fas fa-filter text-base"></i>
-                </button>
-
-                <!-- Type Filter Dropdown -->
-                <div
-                  *ngIf="showTypeDropdown"
-                  class="absolute right-0 mt-2 w-48 bg-[#09101F]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
-                >
-                  <!-- Clear Filter Button -->
-                  <button
-                    *ngIf="selectedType !== 'All'"
-                    (click)="clearTypeFilter()"
-                    class="flex items-center justify-center w-full text-left text-white py-1 rounded-md transition border border-red-500 text-red-500 md:hover:bg-red-500 md:hover:text-white font-medium mb-2"
-                  >
-                    <i class="fas fa-times mr-2"></i> Clear
-                  </button>
-
-                  <!-- Record Type Options -->
-                  <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
-                    <button
-                      *ngFor="let type of recordTypes"
-                      (click)="filterByType(type)"
-                      class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium text-lg"
-                      [ngClass]="
-                        selectedType === type
-                          ? 'bg-blue-500 text-white shadow-md md:hover:bg-blue-400'
-                          : 'md:hover:bg-gray-600/80'
-                      "
-                    >
-                      {{ type }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <ng-container *ngSwitchCase="'artists'">
 
             <ul class="mt-2 space-y-4">
               <li
-                *ngFor="let item of filteredList; let i = index"
+                *ngFor="let item of this.otherUser?.artistList; let i = index"
                 class="relative flex flex-row cursor-pointer items-center p-2"
                 (click)="
                   openReview(prepareRecord(item), filteredFullRecordList, i)
                 "
               >
-                <!-- Type Icon on Top Left -->
-                <div
-                  class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2"
-                >
-                  <i
-                    class="fas text-sm md:text-xl"
-                    [ngClass]="{
-                      'fa-music text-blue-400': item.type === 'Song',
-                      'fa-compact-disc text-green-400': item.type === 'Album',
-                      'fa-user text-purple-400': item.type === 'Artist'
-                    }"
-                    [title]="item.type"
-                  ></i>
-                </div>
-
                 <!-- Cover or Picture -->
                 <img
-                  [src]="item.cover || item.picture"
+                  [src]="item.picture"
                   alt="Cover"
                   class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-600 flex-shrink-0"
                 />
@@ -568,25 +503,9 @@
                 <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
                   <p
                     class="text-lg md:text-xl font-semibold text-white leading-tight truncate overflow-hidden whitespace-nowrap"
-                    [title]="item.title || item.name"
+                    [title]="item.name"
                   >
-                    {{ item.title || item.name }}
-                  </p>
-
-                  <p
-                    *ngIf="item.artist"
-                    class="text-sm md:text-base text-gray-400 mt-1 truncate overflow-hidden whitespace-nowrap flex items-center"
-                    [title]="item.artist"
-                  >
-                    <!-- Explicit Icon -->
-                    <span
-                      *ngIf="item.isExplicit"
-                      class="inline-flex items-center justify-center bg-gray-600 text-white text-[10px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded md:mr-2 leading-none mr-1 align-middle"
-                      title="Explicit"
-                    >
-                      E
-                    </span>
-                    {{ item.artist }}
+                    {{ item.name }}
                   </p>
                 </div>
               </li>
@@ -600,7 +519,7 @@
   <div class="px-4 pt-4 pb-2">
     <div class="border-b border-gray-700 pb-4">
       <h2 class="text-xl font-bold mb-4">Statistics</h2>
-      <ng-container *ngIf="otherUser.reviews.length > 0; else noReviews">
+      <ng-container *ngIf="(otherUser.reviews?.length ?? 0) > 0; else noReviews">
         <ul class="space-y-3 text-base md:text-lg">
           <li class="w-full">
             <div class="flex items-center mb-2">
@@ -696,7 +615,7 @@
             <div class="bg-gray-800 p-3 rounded-lg text-center">
               <div class="text-[#4C79F4] font-semibold text-xl">
                 {{ averageRating }}
-                <span class="text-gray-400 text-base">/10</span>
+                <span class="text-gray-400 text-base">/ 10</span>
               </div>
             </div>
           </li>

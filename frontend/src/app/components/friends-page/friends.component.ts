@@ -48,7 +48,7 @@ export class FriendsComponent implements OnInit {
     email: '',
     friends: [],
     profilePicture: '',
-    list: [],
+    artistList: [],
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],

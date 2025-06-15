@@ -25,7 +25,7 @@ export class ProfileComponent implements OnInit {
     email: '',
     friends: [],
     profilePicture: '',
-    list: [],
+    artistList: [],
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],
@@ -102,6 +102,18 @@ onProfilePictureChange(event: Event): void {
   };
   reader.readAsDataURL(file);
 }
+
+
+  getTransformedImageUrl(fullUrl: string): string {
+    if (!fullUrl) {
+      return 'assets/otherUser.png'; // fallback
+    }
+
+    return fullUrl.replace(
+      '/upload/',
+      '/upload/w_1600,h_1600,c_fill,g_face,f_auto,q_auto,dpr_auto/'
+    );
+  }
 
   saveProfile() {
     this.passwordError = '';

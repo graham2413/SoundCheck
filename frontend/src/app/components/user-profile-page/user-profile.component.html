@@ -15,7 +15,7 @@
             class="hidden"
           />
           <img
-            [src]="profilePictureUrl"
+            [src]="getTransformedImageUrl(profilePictureUrl)"
             alt="Profile Picture"
             class="w-[8rem] h-[8rem] imageFix sm:w-40 sm:h-40 rounded-full border-2 border-gray-600 object-cover shadow-md hover:opacity-80 transition"
           />
@@ -157,7 +157,7 @@
       <button
         (click)="saveProfile()"
         [disabled]="isSaving"
-        class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:hover:bg-indigo-600 text-white px-4 py-3 rounded-full font-semibold transition mx-auto"
+        class="w-full flex items-center justify-center gap-2 bg-[#0F5EE4] hover:bg-indigo-500 disabled:hover:bg-indigo-600 text-white px-4 py-3 rounded-full font-semibold transition mx-auto"
         style="max-width: 20rem"
       >
         <span *ngIf="isSaving">
@@ -191,7 +191,7 @@
     <div class="mt-4 text-center">
       <button
         (click)="confirmDeleteAccount()"
-        class="w-full py-3 text-red-500 border border-red-500 rounded-full max-w-[20rem] font-semibold text-lg hover:bg-red-500 hover:text-white transition-colors duration-200"
+        class="w-full py-3 text-white-500 border border-red-500 bg-red-600 hover:bg-red-500 rounded-full max-w-[20rem] font-semibold text-lg hover:bg-red-500 hover:text-white transition-colors duration-200"
       >
         Delete My Account
       </button>

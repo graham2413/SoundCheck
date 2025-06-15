@@ -193,7 +193,7 @@
           </div>
           <!-- Album Tracklist -->
           <ul
-            *ngIf="isTracklistArray && record.type === 'Album'"
+            *ngIf="isTracklistArray && record.type === 'Album' && record.tracklist && record.tracklist.length > 1"
             class="space-y-3 w-full mt-3 p-2 pb-3 rounded-lg"
           >
             <li
@@ -247,7 +247,7 @@
                 >
                   <span
                     *ngIf="track.isExplicit"
-                    class="bg-gray-600 text-white text-sm w-[1.2em] h-[1.2em] flex items-center justify-center font-bold rounded leading-none shrink-0"
+                    class="bg-gray-600 text-white text-sm w-[1.2em] h-[1.3em] flex items-center justify-center font-bold rounded leading-none shrink-0"
                   >
                     E
                   </span>
@@ -414,7 +414,7 @@
             <img
               [src]="record.type === 'Artist' ? record.picture : record.cover"
               [alt]="record.type === 'Artist' ? record.name : record.title"
-              class="rounded-lg w-full max-w-[420px] max-h-[420px] object-contain imageHeight"
+              class="rounded-lg w-full max-w-[420px] max-h-[420px] object-contain imageHeight border border-gray-800"
               (load)="isImageLoaded = true"
             />
           </div>
@@ -426,7 +426,7 @@
                 >Artist</span
               >
             </ng-container>
-            <ng-container *ngIf="record.type === 'Album'">
+            <ng-container *ngIf="record.type === 'Album' && record.tracklist && record.tracklist.length > 1">
               <span class="text-gray-400 text-xl block uppercase mb-2"
                 >Album</span
               >
@@ -485,29 +485,29 @@
     </div>
   </div>
 
-  <!-- Add to List Button -->
-  <div *ngIf="!showSecondIpod">
+  <!-- Add Artist Button -->
+  <div *ngIf="!showSecondIpod && record.type == 'Artist'">
     <button
       *ngIf="!isProfileLoading && !isInList"
-      class="mt-[2rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+      class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
       [disabled]="addingToList"
-      (click)="addToList(record)"
+      (click)="addToArtistList(record)"
     >
       <ng-container *ngIf="!addingToList; else addingState">
         <i class="fas fa-plus-circle mr-2 text-2xl"></i>
-        Add to List
+        Follow Artist
       </ng-container>
     </button>
 
-    <!-- Remove from List Button -->
+    <!-- Remove Artist Button -->
     <button
       *ngIf="!isProfileLoading && isInList"
-      class="mt-4 w-auto mx-auto text-white font-bold py-2 mt-4 px-6 rounded-full flex items-center justify-center text-lg bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+      class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 mt-4 px-6 rounded-full flex items-center justify-center text-lg bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
       [disabled]="addingToList"
-      (click)="removeFromList(record)"
+      (click)="removeFromArtistList(record)"
     >
       <ng-container *ngIf="!addingToList; else removingState">
-        <i class="fas fa-trash text-2xl mr-2"></i> Remove from List
+        <i class="fas fa-trash text-2xl mr-2"></i> Remove Artist
       </ng-container>
     </button>
 
@@ -1198,7 +1198,7 @@
           <div
             class="relative transition-transform duration-500"
             [@iPodTransition]="iPodState"
-             [ngClass]="{ 'invisible-view': showSecondIpod }"
+            [ngClass]="{ 'invisible-view': showSecondIpod }"
           >
             <div
               class="bg-[#09101F] rounded-lg p-3 md:p-4 w-full overflow-hidden"
@@ -1244,6 +1244,11 @@
                       <span class="text-gray-400 text-xl block uppercase mt-2">
                         Artist
                       </span>
+                    </ng-container>
+                    <ng-container *ngIf="record.type === 'Album' && record.tracklist && record.tracklist.length > 1">
+                      <span class="text-gray-400 text-xl block uppercase mb-2"
+                        >Album</span
+                      >
                     </ng-container>
                     <div
                       class="title-wrapper"
@@ -1303,40 +1308,41 @@
                       [recordList]="recordList"
                     ></app-audio-player>
                   </div>
-                  <!-- Add to List Button -->
-                  <button
-                    *ngIf="!isProfileLoading && !isInList"
-                    class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
-                    [disabled]="addingToList"
-                    (click)="addToList(record)"
-                  >
-                    <ng-container *ngIf="!addingToList; else addingState">
-                      <i class="fas fa-plus-circle mr-2 text-2xl"></i>
-                      Add to List
-                    </ng-container>
-                  </button>
+                  <!-- Add Artist Button -->
+                  <div *ngIf="record.type == 'Artist'">
+                    <button
+                      *ngIf="!isProfileLoading && !isInList"
+                      class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                      [disabled]="addingToList"
+                      (click)="addToArtistList(record)"
+                    >
+                      <ng-container *ngIf="!addingToList; else addingState">
+                        <i class="fas fa-plus-circle mr-2 text-2xl"></i>
+                        Add Artist
+                      </ng-container>
+                    </button>
 
-                  <!-- Remove from List Button -->
-                  <button
-                    *ngIf="!isProfileLoading && isInList"
-                    class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
-                    [disabled]="addingToList"
-                    (click)="removeFromList(record)"
-                  >
-                    <ng-container *ngIf="!addingToList; else removingState">
-                      <i class="fas fa-trash text-2xl mr-2"></i> Remove from
-                      List
-                    </ng-container>
-                  </button>
+                    <!-- Remove Artist Button -->
+                    <button
+                      *ngIf="!isProfileLoading && isInList"
+                      class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                      [disabled]="addingToList"
+                      (click)="removeFromArtistList(record)"
+                    >
+                      <ng-container *ngIf="!addingToList; else removingState">
+                        <i class="fas fa-trash text-2xl mr-2"></i> Remove Artist
+                      </ng-container>
+                    </button>
 
-                  <!-- Loading templates -->
-                  <ng-template #addingState>
-                    <i class="fas fa-spinner fa-spin mr-2"></i> Adding...
-                  </ng-template>
+                    <!-- Loading templates -->
+                    <ng-template #addingState>
+                      <i class="fas fa-spinner fa-spin mr-2"></i> Adding...
+                    </ng-template>
 
-                  <ng-template #removingState>
-                    <i class="fas fa-spinner fa-spin mr-2"></i> Removing...
-                  </ng-template>
+                    <ng-template #removingState>
+                      <i class="fas fa-spinner fa-spin mr-2"></i> Removing...
+                    </ng-template>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1344,18 +1350,19 @@
 
           <!-- Back of iPod (Desktop) -->
           <div
-          [@slideAnimation]="showSecondIpod ? 'back' : 'hidden'"
-          [ngClass]="{ 'invisible-view': !showSecondIpod }"
-          class="absolute inset-0 z-30 overflow-y-auto custom-scrollbar pr-2"
-        >
+            [@slideAnimation]="showSecondIpod ? 'back' : 'hidden'"
+            [ngClass]="{ 'invisible-view': !showSecondIpod }"
+            class="absolute inset-0 z-30 overflow-y-auto custom-scrollbar pr-2"
+          >
             <!-- Back Button (top-left) -->
-<button
-  (click)="onBackClick()"
-  class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md z-50
-         max-[980px]:w-8 max-[980px]:h-8"
->
-  <i class="fas fa-chevron-left text-[#09101F] text-lg max-[980px]:text-sm"></i>
-</button>
+            <button
+              (click)="onBackClick()"
+              class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md z-50 max-[980px]:w-8 max-[980px]:h-8"
+            >
+              <i
+                class="fas fa-chevron-left text-[#09101F] text-lg max-[980px]:text-sm"
+              ></i>
+            </button>
 
             <!-- Artist Section -->
             <div *ngIf="record.type === 'Artist'">
@@ -1482,7 +1489,10 @@
             </div>
 
             <!-- Album and Song Section  -->
-            <div *ngIf="record.type !== 'Artist'" class="bg-[#09101F] rounded-lg pb-4 w-full overflow-hidden">
+            <div
+              *ngIf="record.type !== 'Artist'"
+              class="bg-[#09101F] rounded-lg pb-4 w-full overflow-hidden"
+            >
               <div class="relative flex justify-center items-center">
                 <img
                   [src]="record.cover || ''"

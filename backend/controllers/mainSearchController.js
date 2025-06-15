@@ -1,5 +1,7 @@
 const redis = require('../utils/redisClient');
 const { callDeezer } = require('../utils/callDeezer');
+const Release = require('../models/Release');
+const User = require('../models/User');
 
 const searchMusic = async (req, res) => {
   try {
@@ -399,6 +401,143 @@ const getArtistTopTracks = async (req, res) => {
   }
 };
 
+async function syncArtistAlbums(artistId, artistName) {
+  try {
+    let index = 0;
+    const limit = 100;
+    let allAlbums = [];
+
+    while (true) {
+      const url = `https://api.deezer.com/artist/${artistId}/albums?limit=${limit}&index=${index}`;
+      const response = await callDeezer(url);
+      if (!response?.data?.data?.length) break;
+
+      allAlbums.push(...response.data.data);
+      index += limit;
+
+      if (!response.data.next) break;
+    }
+
+    const allAlbumIds = allAlbums.map(album => album.id.toString());
+
+    const existingIds = await Release.find({
+      albumId: { $in: allAlbumIds },
+      artistId
+    }).distinct('albumId');
+
+    const seen = new Set();
+
+    const newAlbums = allAlbums.filter(album => {
+      const dateKey = album.release_date.slice(0, 7); // e.g., "2025-01"
+      const titleKey = album.title.toLowerCase().trim();
+      const key = `${titleKey}|${dateKey}`;
+
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return !existingIds.includes(album.id.toString());
+    });
+
+    if (newAlbums.length === 0) {
+      console.log(`No new albums for ${artistName} (${artistId})`);
+      return;
+    }
+
+    const docsToInsert = newAlbums.map(album => ({
+      albumId: album.id,
+      artistId,
+      artistName,
+      title: album.title,
+      cover: album.cover,
+      isExplicit: album.explicit_lyrics || false,
+      releaseDate: new Date(album.release_date),
+    }));
+
+    await Release.insertMany(docsToInsert);
+    console.log(`Inserted ${newAlbums.length} albums for ${artistName} (${artistId})`);
+  } catch (err) {
+    console.error(`syncArtistAlbums failed for artist ${artistId} (${artistName}):`, err.message || err);
+    throw err; // Rethrow if you want outer methods to be aware
+  }
+}
+
+// When a user manually triggers album sync for an artist (following an artist)
+const getAndStoreArtistAlbums = async (req, res) => {
+
+  if (!req.user || !req.user._id) {
+    return res.status(401).json({ message: 'Unauthorized. User not found.' });
+  }
+  const artistId = req.params.id;
+  const artistName = req.query.name;
+
+  const redisKey = `artist-sync:user:${artistId}`;
+  const cached = await redis.get(redisKey);
+  if (cached) return res.status(200).json({ message: 'Recently synced' });
+
+  await syncArtistAlbums(artistId, artistName);
+  await redis.set(redisKey, '1', 'EX', 60 * 60 * 6); // 6h TTL
+
+  res.status(200).json({ message: 'Synced from user action' });
+};
+
+// Cron job method to update all followed artists' albums
+async function cronSyncAllArtists() {
+  const followedArtists = await getFollowedArtistList();
+
+  for (const { id, name } of followedArtists) {
+    const redisKey = `artist-sync:cron:${id}`;
+    const cached = await redis.get(redisKey);
+    if (cached) continue;
+
+    try {
+      await syncArtistAlbums(id, name);
+      await redis.set(redisKey, '1', 'EX', 60 * 60 * 25); // only if sync succeeded
+    } catch (err) {
+      console.error(`Cron sync failed for ${name} (${id}):`, err.message || err);
+    }
+
+    // Delay here to throttle API calls
+    await new Promise(resolve => setTimeout(resolve, 200)); // 5 artists/sec
+  }
+
+  console.log(`Cron sync completed for ${followedArtists.length} artists`);
+}
+
+
+async function getFollowedArtistList() {
+  const users = await User.find({}, 'artistList').lean();
+
+  const allFollows = users.flatMap(u => u.artistList || []);
+
+  // Deduplicate by artistId
+  const uniqueMap = new Map();
+  for (const { id, name } of allFollows) {
+    if (!uniqueMap.has(id)) {
+      uniqueMap.set(id, name);
+    }
+  }
+
+  return Array.from(uniqueMap, ([id, name]) => ({ id, name }));
+}
+
+const getReleasesByArtistIds = async (req, res) => {
+  try {
+    const { artistIds } = req.body;
+
+    if (!Array.isArray(artistIds) || artistIds.length === 0) {
+      return res.status(400).json({ message: 'artistIds must be a non-empty array' });
+    }
+
+    const releases = await Release.find({
+      artistId: { $in: artistIds }
+    }).sort({ releaseDate: -1 });
+
+    return res.status(200).json({ releases });
+  } catch (err) {
+    console.error('Error fetching releases:', err.message || err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   searchMusic,
   getAlbumGenre,
@@ -406,5 +545,8 @@ module.exports = {
   getTrackDetails,
   getAlbumDetails,
   getArtistTopTracks,
-  callDeezer
+  callDeezer,
+  getAndStoreArtistAlbums,
+  cronSyncAllArtists,
+  getReleasesByArtistIds
 };

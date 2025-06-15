@@ -50,7 +50,7 @@ export class NavbarComponent implements OnInit {
     email: '',
     friends: [],
     profilePicture: '',
-    list: [],
+    artistList: [],
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],
@@ -137,5 +137,16 @@ export class NavbarComponent implements OnInit {
     if (!this.eRef.nativeElement.contains(event.target)) {
       this.isProfileMenuOpen = false;
     }
+  }
+
+    getTransformedImageUrl(fullUrl: string): string {
+    if (!fullUrl) {
+      return 'assets/otherUser.png'; // fallback
+    }
+
+    return fullUrl.replace(
+      '/upload/',
+      '/upload/w_1600,h_1600,c_fill,g_face,f_auto,q_auto,dpr_auto/'
+    );
   }
 }

@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
 import { environment } from 'src/environments/environments';
 import { Album } from '../models/responses/album-response';
 import { Song } from '../models/responses/song-response';
 import { SearchResponse } from '../models/responses/search-response';
+import { GetReleasesResponse } from '../models/responses/release-response';
 
 @Injectable({
   providedIn: 'root'
@@ -30,4 +31,31 @@ export class SearchService {
   getArtistTracks(artistId: number): Observable<Song[]> {
     return this.http.get<Song[]>(`${this.apiUrl}/artistTracks/${artistId}`);
   }
+
+  syncArtistAlbums(artistId: string, artistName: string): Observable<any> {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      console.error('No authentication token found');
+      return throwError(() => new Error('No auth token'));
+    }
+
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.post(`${this.apiUrl}/artist/${artistId}/sync?name=${encodeURIComponent(artistName)}`,
+      {},
+      { headers }
+    );
+  }
+
+getReleasesByArtistIds(artistIds: string[]): Observable<GetReleasesResponse> {
+  return this.http.post<GetReleasesResponse>(
+    `${this.apiUrl}/artist/releases`,
+    { artistIds }
+  );
+}
+
 }

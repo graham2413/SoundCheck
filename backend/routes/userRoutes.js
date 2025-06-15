@@ -19,7 +19,7 @@ router.delete("/profile", authenticateUser, userController.deleteUserProfile);
 // User list methods
 router.post('/list', authenticateUser, userController.addToList);
 
-router.post('/list/remove', authenticateUser, userController.removeFromList);
+router.post('/list/remove', authenticateUser, userController.removeFromArtistList);
 
 
 /*
