@@ -250,7 +250,11 @@ onSearch(type: 'songs' | 'albums' | 'artists', useFallback: boolean = true) {
   }, 0);
 
   this.isLoading = true;
+
+  if (!this.searchAttempted) {
   this.searchAttempted = true;
+  } 
+
   this.results = { songs: [], albums: [], artists: [] };
   this.filteredResults = { songs: [], albums: [], artists: [] };
 
@@ -724,6 +728,11 @@ loadActivityFeed() {
 
   getPopularTypeIndex(): number {
   return this.popularTypes.indexOf(this.activePopularType);
+}
+
+getActiveSearchTabIndex(): number {
+  const order: ('songs' | 'albums' | 'artists')[] = ['songs', 'albums', 'artists'];
+  return order.indexOf(this.activeTab);
 }
 
 }

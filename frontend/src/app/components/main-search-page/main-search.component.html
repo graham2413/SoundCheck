@@ -151,6 +151,7 @@
   >
     <input
       type="search"
+      [disabled]="isLoading"
       autofocus
       [(ngModel)]="query"
       (keydown.enter)="onSearch('songs')"
@@ -159,7 +160,7 @@
       style="direction: ltr; text-align: left"
     />
     <button
-      *ngIf="!isLoading"
+      [disabled]="isLoading"
       (click)="onSearch('songs')"
       class="absolute inset-y-0 right-10 flex items-center"
     >
@@ -177,6 +178,55 @@
         />
       </svg>
     </button>
+  </div>
+
+    <!-- Search Tabs with Sliding Highlight -->
+  <div *ngIf="searchAttempted || isLoading" class="mt-6 flex justify-center">
+    <div class="relative flex bg-gray-800 rounded-full p-1 w-fit">
+      <!-- Sliding highlight -->
+      <div
+        class="absolute top-0 left-0 h-full bg-[#0F5EE4] rounded-full transition-all duration-300"
+        [ngStyle]="{
+          width: 100 / 3 + '%',
+          transform: 'translateX(' + getActiveSearchTabIndex() * 100 + '%)'
+        }"
+      ></div>
+
+      <!-- Buttons -->
+      <button
+        (click)="onSearch('songs', false)"
+        [disabled]="isLoading"
+        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl font-semibold rounded-full transition text-center"
+        [ngClass]="{
+          'text-white': activeTab === 'songs',
+          'text-gray-300': activeTab !== 'songs'
+        }"
+      >
+        Songs
+      </button>
+      <button
+        (click)="onSearch('albums', false)"
+        [disabled]="isLoading"
+        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl font-semibold rounded-full transition text-center"
+        [ngClass]="{
+          'text-white': activeTab === 'albums',
+          'text-gray-300': activeTab !== 'albums'
+        }"
+      >
+        Albums
+      </button>
+      <button
+        (click)="onSearch('artists', false)"
+        [disabled]="isLoading"
+        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl font-semibold rounded-full transition text-center"
+        [ngClass]="{
+          'text-white': activeTab === 'artists',
+          'text-gray-300': activeTab !== 'artists'
+        }"
+      >
+        Artists
+      </button>
+    </div>
   </div>
 
   <!-- Loading Indicator -->
@@ -209,34 +259,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Toggle Buttons -->
-  <div
-    *ngIf="!isLoading && searchAttempted"
-    class="mt-6 flex !gap-1 sm:!gap-4 justify-center"
-  >
-    <button
-      (click)="onSearch('songs', false)"
-      [class.bg-[#0F5EE4]]="activeTab === 'songs'"
-      class="px-4 py-2 rounded-full md:hover:bg-indigo-500 transition text-xl font-bold"
-    >
-      Songs
-    </button>
-    <button
-      (click)="onSearch('albums', false)"
-      [class.bg-[#0F5EE4]]="activeTab === 'albums'"
-      class="px-4 py-2 rounded-full md:hover:bg-indigo-500 transition text-xl font-bold"
-    >
-      Albums
-    </button>
-    <button
-      (click)="onSearch('artists', false)"
-      [class.bg-[#0F5EE4]]="activeTab === 'artists'"
-      class="px-4 py-2 rounded-full md:hover:bg-indigo-500 transition text-xl font-bold"
-    >
-      Artists
-    </button>
   </div>
 
   <!-- Search Results -->
@@ -895,14 +917,13 @@
           >
             You have reached the end of your feed.
           </div>
-
-          <!-- No Artists Followed -->
-          <div
-            *ngIf="!isFetchingArtistFeed && artistFeed.length === 0"
-            class="text-center text-gray-400 mt-8 text-lg italic bg-gray-800 p-4 rounded-lg"
-          >
-            Not following any artists
-          </div>
+        </div>
+        <!-- No Artists Followed -->
+        <div
+          *ngIf="!isFetchingArtistFeed && artistFeed.length === 0"
+          class="text-center text-gray-400 mt-8 text-lg md:text-xl italic bg-gray-800 p-4 rounded-lg"
+        >
+          Not following any artists
         </div>
         <!-- Loading spinner -->
         <div
