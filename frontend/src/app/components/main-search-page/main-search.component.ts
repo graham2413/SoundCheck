@@ -230,7 +230,7 @@ export class MainSearchComponent implements OnInit {
     );
 
     if (clickedInsideDropdown || clickedFilterButton) {
-      return; // Do nothing
+      return;
     }
 
     this.showGenreDropdown = { songs: false, albums: false };
