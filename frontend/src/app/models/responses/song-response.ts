@@ -12,4 +12,5 @@ export interface Song {
     duration: number;
     type: 'Song';
     isPlaying: boolean;
+    wasOriginallyAlbumButTreatedAsSingle?: boolean;
   }

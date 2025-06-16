@@ -8,6 +8,8 @@ export interface Review {
   albumSongOrArtist: {
     id: string;
     type: 'Album' | 'Song' | 'Artist';
+    wasOriginallyAlbumButTreatedAsSingle?: boolean;
+    effectiveType?: 'Album' | 'Song' | 'Artist';
     title?: string;
     name?: string;
     cover?: string;

@@ -16,6 +16,7 @@ exports.createReview = async (req, res) => {
             albumSongOrArtist: {
                 id: albumSongOrArtist.id,
                 type: albumSongOrArtist.type,
+                wasOriginallyAlbumButTreatedAsSingle: albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle || false,
                 title: albumSongOrArtist.title,
                 name: albumSongOrArtist.name,
                 cover: albumSongOrArtist.cover || "",
@@ -127,28 +128,51 @@ exports.deleteReview = async (req, res) => {
 
 // Get all reviews from user's friends (user's activity feed)
 exports.getActivityFeed = async (req, res) => {
-    try {
-      const userId = req.user._id;
-  
-      // Get user's friends list
-      const user = await User.findById(userId).select("friends");
-  
-      if (!user || user.friends.length === 0) {
-        return res.status(200).json({ reviews: [] });
-      }
-  
-      const friendAndSelfIds = [...user.friends, userId];
+  try {
+    const userId = req.user._id;
+    const { cursorDate, cursorId, limit = 20 } = req.query;
 
-      const reviews = await Review.find({ user: { $in: friendAndSelfIds } })
-      .populate("user", "username profilePicture")
-      .sort({ createdAt: -1 });
-  
-      res.status(200).json({ reviews });
-    } catch (error) {
-      console.error("Error fetching friends' reviews:", error);
-      res.status(500).json({ message: "Server error while fetching friends' reviews." });
+    const user = await User.findById(userId).select("friends");
+
+    if (!user || user.friends.length === 0) {
+      return res.status(200).json({ reviews: [], nextCursor: null });
     }
-  };
+
+    const friendAndSelfIds = [...user.friends, userId];
+
+    const query = { user: { $in: friendAndSelfIds } };
+
+    // Apply cursor logic if present
+    if (cursorDate && cursorId) {
+      query.$or = [
+        { createdAt: { $lt: new Date(cursorDate) } },
+        {
+          createdAt: new Date(cursorDate),
+          _id: { $lt: cursorId }
+        }
+      ];
+    }
+
+    const reviews = await Review.find(query)
+      .populate("user", "username profilePicture")
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(Number(limit));
+
+    // Get the next cursor from the last item
+    const last = reviews[reviews.length - 1];
+    const nextCursor = last
+      ? {
+          cursorDate: last.createdAt.toISOString(),
+          cursorId: last._id
+        }
+      : null;
+
+    res.status(200).json({ reviews, nextCursor });
+  } catch (error) {
+    console.error("Error fetching friends' reviews:", error);
+    res.status(500).json({ message: "Server error while fetching friends' reviews." });
+  }
+};
 
   
   // Methods to get top review by type (Album, Song, Artist)

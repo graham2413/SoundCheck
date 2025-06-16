@@ -522,16 +522,42 @@ async function getFollowedArtistList() {
 const getReleasesByArtistIds = async (req, res) => {
   try {
     const { artistIds } = req.body;
+    const { cursorDate, cursorId, limit = 20 } = req.query;
 
     if (!Array.isArray(artistIds) || artistIds.length === 0) {
       return res.status(400).json({ message: 'artistIds must be a non-empty array' });
     }
 
-    const releases = await Release.find({
+    const query = {
       artistId: { $in: artistIds }
-    }).sort({ releaseDate: -1 });
+    };
 
-    return res.status(200).json({ releases });
+    // If a cursor is provided, apply compound pagination logic
+    if (cursorDate && cursorId) {
+      query.$or = [
+        { releaseDate: { $lt: new Date(cursorDate) } },
+        {
+          releaseDate: new Date(cursorDate),
+          _id: { $lt: cursorId }
+        }
+      ];
+    }
+
+    const releases = await Release.find(query)
+      .sort({ releaseDate: -1, _id: -1 })
+      .limit(Number(limit));
+
+    // Prepare next cursor if there are more results
+    const last = releases[releases.length - 1];
+    const nextCursor = last
+      ? { cursorDate: last.releaseDate.toISOString(), cursorId: last._id }
+      : null;
+
+    return res.status(200).json({
+      releases,
+      nextCursor
+    });
+
   } catch (err) {
     console.error('Error fetching releases:', err.message || err);
     return res.status(500).json({ message: 'Server error' });

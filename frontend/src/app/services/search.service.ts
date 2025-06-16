@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { environment } from 'src/environments/environments';
 import { Album } from '../models/responses/album-response';
@@ -51,10 +51,26 @@ export class SearchService {
     );
   }
 
-getReleasesByArtistIds(artistIds: string[]): Observable<GetReleasesResponse> {
+getReleasesByArtistIds(
+  artistIds: string[],
+  limit: number,
+  cursorDate?: string,
+  cursorId?: string
+): Observable<GetReleasesResponse> {
+  
+  let params = new HttpParams().set('limit', limit.toString());
+
+  if (cursorDate) {
+    params = params.set('cursorDate', cursorDate);
+  }
+  if (cursorId) {
+    params = params.set('cursorId', cursorId);
+  }
+
   return this.http.post<GetReleasesResponse>(
     `${this.apiUrl}/artist/releases`,
-    { artistIds }
+    { artistIds },
+    { params }
   );
 }
 

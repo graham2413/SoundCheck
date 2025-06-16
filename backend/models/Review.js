@@ -5,7 +5,8 @@ const reviewSchema = new mongoose.Schema({
     albumSongOrArtist: { // Store full album/song/artist details here
         id: { type: String, required: true }, // Deezer ID
         type: { type: String, enum: ["Album", "Song", "Artist"], required: true },
-    title: String,
+        wasOriginallyAlbumButTreatedAsSingle: { type: Boolean, default: false },
+        title: String,
         name: String,
         cover: String,
         picture: String,

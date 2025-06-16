@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
 import {
@@ -14,8 +14,15 @@ type PopularRecordResponse = {
   albums?: PopularRecord[];
   artists?: PopularRecord[];
 };
+
+type ActivityFeedCursor = {
+  cursorDate: string;
+  cursorId: string;
+} | null;
+
 type ActivityFeedResponse = {
   reviews: Review[];
+  nextCursor: ActivityFeedCursor;
 };
 @Injectable({
   providedIn: 'root',
@@ -116,18 +123,35 @@ export class ReviewService {
     });
   }
 
-  getActivityFeed(): Observable<ActivityFeedResponse> {
-    const token = localStorage.getItem('token');
+getActivityFeed(params: {
+  cursorDate?: string;
+  cursorId?: string;
+  limit?: number;
+} = {}): Observable<ActivityFeedResponse> {
+  const token = localStorage.getItem('token');
 
-    if (!token) {
-      console.error('No authentication token found');
-      return new Observable<ActivityFeedResponse>();
-    }
-
-    const headers = { Authorization: `Bearer ${token}` };
-
-    return this.http.get<ActivityFeedResponse>(`${this.apiUrl}/activityFeed`, {
-      headers,
-    });
+  if (!token) {
+    console.error('No authentication token found');
+    return new Observable<ActivityFeedResponse>();
   }
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  let httpParams = new HttpParams();
+  if (params.cursorDate) {
+    httpParams = httpParams.set('cursorDate', params.cursorDate);
+  }
+  if (params.cursorId) {
+    httpParams = httpParams.set('cursorId', params.cursorId);
+  }
+  if (params.limit !== undefined) {
+    httpParams = httpParams.set('limit', params.limit.toString());
+  }
+
+  return this.http.get<ActivityFeedResponse>(`${this.apiUrl}/activityFeed`, {
+    headers,
+    params: httpParams
+  });
+}
+
 }

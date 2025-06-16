@@ -17,4 +17,5 @@ export interface BaseRecord {
   contributors?: string[];
   duration?: number;
   isPlaying?: boolean;
+  wasOriginallyAlbumButTreatedAsSingle?: boolean;
 }

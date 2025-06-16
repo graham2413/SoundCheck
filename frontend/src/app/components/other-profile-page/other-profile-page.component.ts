@@ -706,6 +706,7 @@ export class ViewProfilePageComponent implements OnInit {
         releaseDate: item.releaseDate ?? '',
         contributors: item.contributors ?? [],
         isPlaying: item.isPlaying ?? false,
+        wasOriginallyAlbumButTreatedAsSingle: item.wasOriginallyAlbumButTreatedAsSingle ?? false
       };
     } else if (item.type === 'Album') {
       return {

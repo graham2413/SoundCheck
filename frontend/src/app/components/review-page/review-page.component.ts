@@ -617,8 +617,27 @@ export class ReviewPageComponent implements OnInit {
 
   public getExtraDetails() {
     this.isLoadingExtraDetails = true;
-    if (this.record.type === 'Song') {
-      this.searchService.getTrackDetails(this.record.id).subscribe({
+
+    const isActuallyAnAlbum =
+      this.record.type === 'Song' && (this.record as any)?.wasOriginallyAlbumButTreatedAsSingle;
+
+    if (this.record.type === 'Song' && isActuallyAnAlbum) {
+      // Treat as album, fetch full album details
+      (this.record as any).type = 'Album';
+      this.fetchAlbumDetails();
+    } else if (this.record.type === 'Song') {
+      this.fetchSongDetails();
+    } else if (this.record.type === 'Album') {
+      this.fetchAlbumDetails();
+    }
+    else{
+      this.fetchArtistDetails();
+    }
+
+  }
+
+  fetchSongDetails() {
+          this.searchService.getTrackDetails(this.record.id).subscribe({
         next: (data: Song) => {
           (this.record as Song).releaseDate = data.releaseDate;
           (this.record as Song).contributors = data.contributors;
@@ -635,10 +654,10 @@ export class ReviewPageComponent implements OnInit {
           this.isLoadingExtraDetails = false;
         },
       });
-    }
+  }
 
-    if (this.record.type === 'Album') {
-      this.searchService.getAlbumDetails(this.record.id).subscribe({
+  fetchAlbumDetails() {
+          this.searchService.getAlbumDetails(this.record.id).subscribe({
         next: (data: Album) => {
           const album = this.record as Album;
           album.releaseDate = data.releaseDate;
@@ -666,10 +685,10 @@ export class ReviewPageComponent implements OnInit {
           players.forEach((player) => player?.stopLoading());
         },
       });
-    }
+  }
 
-    if (this.record.type === 'Artist') {
-      this.searchService.getArtistTracks(this.record.id).subscribe({
+  fetchArtistDetails() {
+          this.searchService.getArtistTracks(this.record.id).subscribe({
         next: (data: Song[]) => {
           const artist = this.record as Artist;
           artist.tracklist = Array.isArray(data)
@@ -692,7 +711,6 @@ export class ReviewPageComponent implements OnInit {
           players.forEach((player) => player?.stopLoading());
         },
       });
-    }
   }
 
   onAudioPlayStarted(previewUrl: string): void {
@@ -813,6 +831,7 @@ export class ReviewPageComponent implements OnInit {
       albumSongOrArtist: {
         id: this.record.id,
         type: this.record.type,
+        wasOriginallyAlbumButTreatedAsSingle: false,
         title: this.record.type !== 'Artist' ? this.record.title : undefined, // Only for Albums & Songs
         name:
           this.record.type === 'Artist' ? this.record.name : this.record.artist, // Artists use 'name', Albums/Songs use 'artist'
@@ -831,6 +850,12 @@ export class ReviewPageComponent implements OnInit {
       rating: this.newRating,
       reviewText: this.newReview,
     };
+
+    // Artist activity feed and Marquee all return Albums, yet some are Albums with only one track (Single)
+      if (this.record.type === 'Album' && this.record.tracklist?.length === 1) {
+        reviewCommand.albumSongOrArtist.type = 'Song';
+        reviewCommand.albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle = true;
+      }
 
     this.reviewService.createReview(reviewCommand).subscribe({
       next: (data: NewReviewResponse) => {

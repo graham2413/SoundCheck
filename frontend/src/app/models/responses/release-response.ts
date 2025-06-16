@@ -14,4 +14,8 @@ export interface Release {
 
 export interface GetReleasesResponse {
   releases: Release[];
+  nextCursor?: {
+    cursorDate: string;
+    cursorId: string;
+  };
 }

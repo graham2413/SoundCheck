@@ -27,6 +27,8 @@ import { PopularRecord } from 'src/app/models/responses/popular-record-response'
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/models/responses/user.response';
 import { GetReleasesResponse, Release } from 'src/app/models/responses/release-response';
+import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
+
 type ActivityRecord = Review['albumSongOrArtist'];
 type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
 @Component({
@@ -34,7 +36,7 @@ type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
   templateUrl: './main-search.component.html',
   styleUrls: ['./main-search.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, TimeAgoPipe],
+  imports: [CommonModule, FormsModule, TimeAgoPipe, InfiniteScrollDirective],
 })
 export class MainSearchComponent implements OnInit {
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
@@ -91,7 +93,7 @@ export class MainSearchComponent implements OnInit {
     'Artists'
   ];
   isDiscoverContentLoading: boolean = false;
-  isActivityLoading: boolean = false;
+  isFetchingArtistFeed: boolean = false;
   activityFeed: Review[] = [];
   section: string | null = null;
     userProfile: User = {
@@ -113,7 +115,14 @@ export class MainSearchComponent implements OnInit {
     } as User;
   
   artistFeed: Release[] = [];
-  // isLoadingArtistFeed: boolean = false;
+  artistFeedCursor: { cursorDate: string; cursorId: string } | null = null;
+  hasMoreArtistFeed: boolean = true;
+  feedPageLimit: number = 20;
+
+  activityFeedCursor: { cursorDate: string; cursorId: string } | null = null;
+  hasMoreActivityFeed: boolean = true;
+  isFetchingActivityFeed: boolean = false;
+
   albums: any[] = [];
   skeletonArray = Array(10);
   @ViewChild('marqueeContainer') marqueeContainer!: ElementRef;
@@ -227,56 +236,48 @@ export class MainSearchComponent implements OnInit {
     this.showGenreDropdown = { songs: false, albums: false };
   }
 
-  onSearch(type: 'songs' | 'albums' | 'artists') {
-    const query = this.query.trim();
-    if (!query) return;
+onSearch(type: 'songs' | 'albums' | 'artists', useFallback: boolean = true) {
+  const query = this.query.trim();
+  if (!query) return;
 
-    (document.activeElement as HTMLElement)?.blur();
+  (document.activeElement as HTMLElement)?.blur();
 
-    // Scroll the search bar into view
-    setTimeout(() => {
-      const searchBarEl = this.searchBar.nativeElement;
-      const elementTop =
-        searchBarEl.getBoundingClientRect().top + window.pageYOffset;
-      const offset = elementTop - 105;
-      window.scrollTo({ top: offset, behavior: 'smooth' });
-    }, 0);
+  setTimeout(() => {
+    const searchBarEl = this.searchBar.nativeElement;
+    const elementTop = searchBarEl.getBoundingClientRect().top + window.pageYOffset;
+    const offset = elementTop - 105;
+    window.scrollTo({ top: offset, behavior: 'smooth' });
+  }, 0);
 
-    this.isLoading = true;
-    this.searchAttempted = true;
+  this.isLoading = true;
+  this.searchAttempted = true;
+  this.results = { songs: [], albums: [], artists: [] };
+  this.filteredResults = { songs: [], albums: [], artists: [] };
 
-    // Clear previous results
-    this.results = { songs: [], albums: [], artists: [] };
-    this.filteredResults = { songs: [], albums: [], artists: [] };
+  const fallbackOrder: ('songs' | 'albums' | 'artists')[] = ['songs', 'albums', 'artists'];
+  const startIndex = fallbackOrder.indexOf(type);
 
+  if (!useFallback) {
+    // Manual search: only search for the requested type
+    this.setActiveTab(type);
     this.searchService.searchMusic(this.query, type).subscribe({
       next: (data: SearchResponse) => {
-        // Enhance images for better quality before storing results
         this.results = {
-          ...this.results, // Preserve previously loaded data (important for lazy loading!)
-          songs: data.songs
-            ? data.songs.map((song: Song) => ({
-                ...song,
-                cover: this.getHighQualityImage(song.cover),
-                type: 'Song' as const,
-              }))
-            : this.results.songs,
-
-          albums: data.albums
-            ? data.albums.map((album: Album) => ({
-                ...album,
-                cover: this.getHighQualityImage(album.cover),
-                type: 'Album' as const,
-              }))
-            : this.results.albums,
-
-          artists: data.artists
-            ? data.artists.map((artist: Artist) => ({
-                ...artist,
-                picture: this.getHighQualityImage(artist.picture),
-                type: 'Artist' as const,
-              }))
-            : this.results.artists,
+          songs: data.songs?.map(song => ({
+            ...song,
+            cover: this.getHighQualityImage(song.cover),
+            type: 'Song' as const,
+          })) || [],
+          albums: data.albums?.map(album => ({
+            ...album,
+            cover: this.getHighQualityImage(album.cover),
+            type: 'Album' as const,
+          })) || [],
+          artists: data.artists?.map(artist => ({
+            ...artist,
+            picture: this.getHighQualityImage(artist.picture),
+            type: 'Artist' as const,
+          })) || [],
         };
 
         this.filteredResults = { ...this.results };
@@ -285,21 +286,79 @@ export class MainSearchComponent implements OnInit {
           this.extractGenres();
         }
 
-        // Allow images to load
         setTimeout(() => {
-          this.setActiveTab(type);
           this.isLoading = false;
         }, 50);
       },
       error: () => {
-        this.toastr.error(
-          `Error occurred while searching for "${this.query}"`,
-          'Error'
-        );
+        this.toastr.error(`Error occurred while searching for "${this.query}"`, 'Error');
         this.isLoading = false;
       },
     });
+    return;
   }
+
+  // Smart fallback search
+  const attemptSearch = (i: number) => {
+    if (i >= fallbackOrder.length) {
+      this.isLoading = false;
+      return;
+    }
+
+    const currentType = fallbackOrder[i];
+    this.searchService.searchMusic(this.query, currentType).subscribe({
+      next: (data: SearchResponse) => {
+        const isEmpty =
+          (!data.songs?.length && currentType === 'songs') ||
+          (!data.albums?.length && currentType === 'albums') ||
+          (!data.artists?.length && currentType === 'artists');
+
+        if (isEmpty) {
+          attemptSearch(i + 1); // fallback to next
+          return;
+        }
+
+        // We have results, switch to that tab
+        this.setActiveTab(currentType);
+
+        this.results = {
+          ...this.results,
+          songs: data.songs?.map(song => ({
+            ...song,
+            cover: this.getHighQualityImage(song.cover),
+            type: 'Song' as const,
+          })) || [],
+          albums: data.albums?.map(album => ({
+            ...album,
+            cover: this.getHighQualityImage(album.cover),
+            type: 'Album' as const,
+          })) || [],
+          artists: data.artists?.map(artist => ({
+            ...artist,
+            picture: this.getHighQualityImage(artist.picture),
+            type: 'Artist' as const,
+          })) || [],
+        };
+
+        this.filteredResults = { ...this.results };
+
+        if (currentType !== 'artists') {
+          this.extractGenres();
+        }
+
+        setTimeout(() => {
+          this.isLoading = false;
+        }, 50);
+      },
+      error: () => {
+        this.toastr.error(`Error occurred while searching for "${this.query}"`, 'Error');
+        this.isLoading = false;
+      },
+    });
+  };
+
+  attemptSearch(startIndex);
+}
 
   extractGenres() {
     this.genres.songs = [
@@ -385,47 +444,73 @@ export class MainSearchComponent implements OnInit {
     this.loadPopularReviews(type);
   }
 
-    setFeedType(type: 'Friends' | 'Artists') {
-    this.isActivityLoading = true;
-    this.activeFeedType = type;
-    if(type === 'Artists') {
-      this.loadArtistsFeed();
-    }
-    if(type === 'Friends') {
-      this.loadActivityFeed();
-    }
+  setFeedType(type: 'Friends' | 'Artists') {
+  this.activeFeedType = type;
+  if(type === 'Artists') {
+    this.loadArtistsFeed();
   }
+  if(type === 'Friends') {
+    this.loadActivityFeed();
+  }
+}
 
 loadArtistsFeed() {
   const artistList = this.userProfile.artistList;
 
   if (!artistList || artistList.length === 0) {
-    this.isActivityLoading = false;
+    this.isFetchingArtistFeed = false;
     this.artistFeed = [];
     return;
   }
 
-  const artistIds = artistList.map(artist => artist.id).filter(Boolean); // removes null/undefined IDs
-
+  const artistIds = artistList.map(artist => artist.id).filter(Boolean);
   if (artistIds.length === 0) {
-    this.isActivityLoading = false;
+    this.isFetchingArtistFeed = false;
     this.artistFeed = [];
+    this.hasMoreArtistFeed = false;
     return;
   }
 
-  this.searchService.getReleasesByArtistIds(artistIds).subscribe({
-    next: (res: GetReleasesResponse) => {
-        this.artistFeed = (res?.releases || []).map(release => ({
-          ...release,
-          cover: this.getHighQualityImage(release.cover)
-        }));
-        this.isActivityLoading = false;    },
-    error: (err) => {
-      this.toastr.error('Failed to load artists feed:', err.message || err);
-      this.artistFeed = [];
-      this.isActivityLoading = false;
-    },
-  });
+  this.getArtistFeed(artistIds, undefined, undefined);
+}
+
+loadMoreArtistsFeed() {
+  if (!this.hasMoreArtistFeed || !this.artistFeedCursor) return;
+
+  const artistIds = this.userProfile.artistList?.map(a => a.id).filter(Boolean);
+  if (!artistIds?.length) return;
+
+  const { cursorDate, cursorId } = this.artistFeedCursor;
+
+  this.getArtistFeed(artistIds, cursorDate, cursorId);
+}
+
+getArtistFeed(artistIds: string[], cursorDate?: string, cursorId?: string) {
+    this.isFetchingArtistFeed = true;
+
+    this.searchService
+    .getReleasesByArtistIds(artistIds, this.feedPageLimit, cursorDate, cursorId)
+    .subscribe({
+      next: (res: GetReleasesResponse) => {
+      const newReleases = (res?.releases || []).map(release => ({
+        ...release,
+        cover: this.getHighQualityImage(release.cover),
+      }));
+
+      this.artistFeed = cursorDate
+        ? [...this.artistFeed, ...newReleases] // pagination
+        : newReleases;     // initial load
+        this.artistFeedCursor = res.nextCursor || null;
+        this.hasMoreArtistFeed = !!res.nextCursor;
+        this.isFetchingArtistFeed = false;
+      },
+      error: (err) => {
+        this.toastr.error('Failed to load artists feed:', err.message || err);
+        this.artistFeed = [];
+        this.isFetchingArtistFeed = false;
+        this.hasMoreArtistFeed = false;
+      },
+    });
 }
 
   loadPopularReviews(type: 'Song' | 'Album' | 'Artist') {
@@ -444,23 +529,53 @@ loadArtistsFeed() {
     });
   }
 
-  loadActivityFeed() {
-    this.isActivityLoading = true;
-    this.reviewService.getActivityFeed().subscribe({
-      next: (res) => {
-        this.activityFeed = res.reviews || [];
+loadActivityFeed() {
+  if (this.isFetchingActivityFeed || !this.hasMoreActivityFeed) return;
 
-        setTimeout(() => {
-          this.isActivityLoading = false;
-        }, 250);
-      },
-      error: (err) => {
-        this.activityFeed = [];
-        this.toastr.error('Failed to load User activity feed:', err);
-        this.isActivityLoading = false;
-      },
-    });
+  this.isFetchingActivityFeed = true;
+
+  const params: any = {
+    limit: this.feedPageLimit
+  };
+
+  if (this.activityFeedCursor) {
+    params.cursorDate = this.activityFeedCursor.cursorDate;
+    params.cursorId = this.activityFeedCursor.cursorId;
   }
+
+  this.reviewService.getActivityFeed(params).subscribe({
+    next: (res) => {
+      const newReviews = (res.reviews || []).map((review) => {
+        const wasAlbumTreatedAsSingle = review.albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle;
+
+        return {
+          ...review,
+          albumSongOrArtist: {
+            ...review.albumSongOrArtist,
+            effectiveType: wasAlbumTreatedAsSingle ? 'Song' : review.albumSongOrArtist.type
+          }
+        };
+      });
+      
+      this.activityFeed = [...this.activityFeed, ...newReviews];
+
+      this.activityFeedCursor = res.nextCursor || null;
+      this.hasMoreActivityFeed = !!res.nextCursor;
+
+      this.isFetchingActivityFeed = false;
+    },
+    error: (err) => {
+      this.toastr.error('Failed to load user activity feed', err.message);
+      this.isFetchingActivityFeed = false;
+    },
+  });
+}
+
+    onScrollActivityFeed() {
+      if (this.hasMoreActivityFeed && !this.isFetchingActivityFeed) {
+        this.loadActivityFeed();
+      }
+    }
 
   toggleReviewExpansion(reviewId: string) {
     this.expandedReviews[reviewId] = !this.expandedReviews[reviewId];
