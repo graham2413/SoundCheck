@@ -1,21 +1,33 @@
 const Redis = require('ioredis');
 const fs = require('fs');
 
-const isLocal = process.env.NODE_ENV === 'development'; // or use !isProd if clearer
+const isProd = process.env.NODE_ENV === 'production';
 
 const redisOptions = {
   host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT,
   password: process.env.REDIS_PASSWORD,
+  tls: {}, // Upstash requires TLS for TCP, no cert needed
+  maxRetriesPerRequest: null,
+  retryStrategy(times) {
+    return Math.min(times * 100, 2000); // exponential backoff: 100ms → 2s
+  },
+  reconnectOnError(err) {
+    return (
+      err.code === 'ECONNRESET' ||
+      err.message.includes('READONLY') ||
+      err.message.includes('ECONNREFUSED')
+    );
+  },
 };
 
-//  Only use TLS with cert locally
-if (isLocal) {
+// Optionally load a TLS cert locally, if needed
+if (!isProd) {
   try {
     redisOptions.tls = { ca: fs.readFileSync('cacert.pem') };
-    console.log('🔐 Loaded local Redis TLS cert.');
+    console.log('Loaded local Redis TLS cert.');
   } catch (err) {
-    console.warn('⚠️ Local Redis TLS cert not found. Proceeding without TLS.', err);
+    console.warn('Local Redis TLS cert not found. Proceeding without TLS.', err);
   }
 }
 
