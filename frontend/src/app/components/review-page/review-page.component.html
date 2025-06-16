@@ -1549,7 +1549,7 @@
                 </div>
                 <!-- Album Tracklist -->
                 <ul
-                  *ngIf="isTracklistArray && record.type === 'Album'"
+                  *ngIf="isTracklistArray && record.type === 'Album' && record.tracklist && record.tracklist.length > 1"
                   class="space-y-3 w-full mt-3 pb-3 rounded-lg"
                 >
                   <li
