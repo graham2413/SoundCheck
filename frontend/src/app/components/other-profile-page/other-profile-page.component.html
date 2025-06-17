@@ -321,8 +321,8 @@
                   <img
                     [src]="
                       review.albumSongOrArtist.type === 'Artist'
-                        ? review.albumSongOrArtist.picture
-                        : review.albumSongOrArtist.cover
+                        ? (review.albumSongOrArtist.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png')
+                        : (review.albumSongOrArtist.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801')
                     "
                     (click)="
                       openReview(
@@ -494,7 +494,7 @@
               >
                 <!-- Cover or Picture -->
                 <img
-                  [src]="item.picture"
+                  [src]="item.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'"
                   alt="Cover"
                   class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-600 flex-shrink-0"
                 />

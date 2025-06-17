@@ -76,7 +76,7 @@
 </div>
 
 <div [hidden]="activeDiscoverTab !== 'mainSearch'">
-  <div class="bg-[#09101F] text-white pb-[1rem] md:pb-8 pt-[1rem] md:pt-[2rem]">
+  <div class="bg-[#09101F] text-white pb-[0.5rem] md:pb-8 pt-[0.5rem] md:pt-[2rem]">
     <!-- Marquee Container -->
     <div #marqueeContainer class="marquee-container">
       <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading">
@@ -85,7 +85,7 @@
           class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[17rem]"
           (click)="openModal(album, albums, i)"
         >
-          <img [src]="album.cover" [alt]="album.title" />
+          <img [src]="album.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'" [alt]="album.title" />
           <div class="track-info w-full overflow-hidden">
             <p
               class="title text-base md:text-lg truncate w-full text-left"
@@ -135,11 +135,11 @@
 
   <!-- Heading -->
   <div class="text-center max-w-5xl mx-auto px-4">
-    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">
+    <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight">
       Explore Music
     </h1>
-    <p class="mt-2 text-lg text-gray-300">
-      The banner above updates with new Spotify releases every Friday to help
+    <p class="mt-1 text-base text-gray-300">
+      The banner above updates with new music every Friday to help
       inspire your next search.
     </p>
   </div>
@@ -147,7 +147,7 @@
   <!-- Search Bar -->
   <div
     #searchBar
-    class="relative mt-8 w-full max-w-md sm:max-w-lg mx-auto px-4"
+    class="relative mt-5 w-full max-w-md sm:max-w-lg mx-auto px-4"
   >
     <input
       type="search"
@@ -330,7 +330,7 @@
         >
           <!-- Image -->
           <img
-            [src]="song.cover"
+            [src]="song.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'"
             alt="Cover"
             class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
           />
@@ -426,7 +426,7 @@
         >
           <!-- Image -->
           <img
-            [src]="album.cover"
+            [src]="album.cover  || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'"
             alt="Album Cover"
             class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
           />
@@ -471,7 +471,7 @@
           >
             <!-- Image -->
             <img
-              [src]="artist.picture"
+              [src]="artist.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'"
               alt="Artist"
               class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
             />
@@ -592,12 +592,16 @@
                 {{ i + 1 }}.
               </div>
 
-              <!-- Album Cover -->
-              <img
-                [src]="record.cover || record.picture || 'assets/fallback.jpg'"
+                <!-- Album/Artist Cover -->
+                <img
+                [src]="
+                  activePopularType === 'Artist'
+                  ? (record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png')
+                  : (record.cover || record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801')
+                "
                 alt="Media"
                 class="w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] object-cover rounded border border-gray-600"
-              />
+                />
 
               <!-- Info -->
               <div class="ml-4 flex-1 overflow-hidden">
@@ -715,8 +719,9 @@
                     </div>
                     <img
                       [src]="
-                        activity.albumSongOrArtist.cover ||
-                        activity.albumSongOrArtist.picture
+                        activity.albumSongOrArtist.effectiveType === 'Artist'
+                          ? (activity.albumSongOrArtist.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png')
+                          : (activity.albumSongOrArtist.cover || activity.albumSongOrArtist.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801')
                       "
                       (click)="
                         openModal(
@@ -875,7 +880,7 @@
             "
           >
             <img
-              [src]="release.cover || 'assets/fallback.jpg'"
+              [src]="release.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'"
               alt="Cover"
               class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
             />
@@ -904,7 +909,7 @@
                   {{ release.artistName }}
                 </p>
                 <div class="text-xs md:text-base text-gray-500 mt-2">
-                  {{ release.releaseDate | timeAgo }}
+                  {{ getReleaseLabel(release.releaseDate) }}
                 </div>
               </div>
             </div>

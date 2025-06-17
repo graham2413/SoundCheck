@@ -27,11 +27,11 @@
       <div *ngIf="record.type === 'Artist'">
         <!-- Image background layer -->
         <div class="absolute top-0 left-0 right-0 w-full z-0">
-          <img
-            [src]="record.type === 'Artist' ? record.picture : ''"
+            <img
+            [src]="record.type === 'Artist' ? (record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png') : ''"
             class="w-full h-auto"
             alt="Record Image"
-          />
+            />
           <div class="absolute inset-0 bg-black/40"></div>
         </div>
         <div class="relative mt-[10rem] left-0 right-0 px-2 py-2 z-50">
@@ -144,7 +144,7 @@
       <div *ngIf="record.type !== 'Artist'">
         <div class="relative flex justify-center items-center">
           <img
-            [src]="record.cover || ''"
+            [src]="record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'"
             class="w-[55%] h-auto rounded-md mt-[2rem] border-2 border-gray-500"
             alt="Record Image"
           />
@@ -412,7 +412,11 @@
             class="relative max-w-[85%] w-full flex justify-center items-center"
           >
             <img
-              [src]="record.type === 'Artist' ? record.picture : record.cover"
+              [src]="
+                record.type === 'Artist'
+                  ? (record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png')
+                  : (record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801')
+              "
               [alt]="record.type === 'Artist' ? record.name : record.title"
               class="rounded-lg w-full max-w-[420px] max-h-[420px] object-contain imageHeight border border-gray-800"
               (load)="isImageLoaded = true"
@@ -1222,11 +1226,11 @@
                     <img
                       *ngIf="isImageLoaded"
                       [src]="
-                        record.type === 'Artist' ? record.picture : record.cover
+                        record.type === 'Artist'
+                          ? (record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png')
+                          : (record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801')
                       "
-                      [alt]="
-                        record.type === 'Artist' ? record.name : record.title
-                      "
+                      [alt]="record.type === 'Artist' ? record.name : record.title"
                       (click)="showSecondIpod = true"
                       class="w-full h-full object-contain rounded-lg cursor-pointer transition-transform duration-300 ease-in-out hover:opacity-80"
                     />
@@ -1369,7 +1373,7 @@
               <!-- Image background layer -->
               <div class="relative w-full">
                 <img
-                  [src]="record.type === 'Artist' ? record.picture : ''"
+                  [src]="record.type === 'Artist' ? (record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png') : ''"
                   class="w-full h-auto rounded-lg"
                   alt="Record Image"
                 />
@@ -1495,7 +1499,7 @@
             >
               <div class="relative flex justify-center items-center">
                 <img
-                  [src]="record.cover || ''"
+                  [src]="record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'"
                   class="w-[55%] h-auto rounded-md mt-[2rem] border-2 border-gray-500"
                   alt="Record Image"
                 />

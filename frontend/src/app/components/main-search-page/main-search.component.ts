@@ -133,7 +133,8 @@ export class MainSearchComponent implements OnInit {
     private toastr: ToastrService,
     private reviewService: ReviewService,
     private router: Router,
-    private userService: UserService
+    private userService: UserService,
+    private timeAgoPipe: TimeAgoPipe
   ) {}
 
   ngOnInit(): void {
@@ -733,6 +734,30 @@ loadActivityFeed() {
 getActiveSearchTabIndex(): number {
   const order: ('songs' | 'albums' | 'artists')[] = ['songs', 'albums', 'artists'];
   return order.indexOf(this.activeTab);
+}
+
+getReleaseLabel(releaseDate: string | Date): string {
+  const date = new Date(releaseDate);
+  const now = new Date();
+
+  const diff = date.getTime() - now.getTime();
+  const days = Math.round(diff / (1000 * 60 * 60 * 24));
+
+  if (diff > 0) {
+    // Future release
+    if (days <= 7) {
+      return `Releases in ${days} day${days !== 1 ? 's' : ''}`;
+    } else {
+      return `Coming ${date.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+      })}`;
+    }
+  } else {
+    // Past release
+    return `Released ${this.timeAgoPipe.transform(releaseDate)}`;
+  }
 }
 
 }

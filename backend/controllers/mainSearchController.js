@@ -401,21 +401,30 @@ const getArtistTopTracks = async (req, res) => {
   }
 };
 
-async function syncArtistAlbums(artistId, artistName) {
+async function syncArtistAlbums(artistId, artistName, fullSync = false) {
   try {
-    let index = 0;
-    const limit = 100;
     let allAlbums = [];
 
-    while (true) {
-      const url = `https://api.deezer.com/artist/${artistId}/albums?limit=${limit}&index=${index}`;
+    if (fullSync) {
+      let index = 0;
+      const limit = 100;
+
+      while (true) {
+        const url = `https://api.deezer.com/artist/${artistId}/albums?limit=${limit}&index=${index}`;
+        const response = await callDeezer(url);
+        if (!response?.data?.data?.length) break;
+
+        allAlbums.push(...response.data.data);
+        index += limit;
+
+        if (!response.data.next) break;
+      }
+    } else {
+      const url = `https://api.deezer.com/artist/${artistId}/albums?limit=100&index=0`;
       const response = await callDeezer(url);
-      if (!response?.data?.data?.length) break;
-
-      allAlbums.push(...response.data.data);
-      index += limit;
-
-      if (!response.data.next) break;
+      if (response?.data?.data?.length) {
+        allAlbums.push(...response.data.data);
+      }
     }
 
     const allAlbumIds = allAlbums.map(album => album.id.toString());
@@ -437,6 +446,61 @@ async function syncArtistAlbums(artistId, artistName) {
       return !existingIds.includes(album.id.toString());
     });
 
+    // --- Update recently released (including future) albums if data changed ---
+    const now = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+
+    const recentlyChangedAlbums = allAlbums.filter(album => {
+      const releaseDate = new Date(album.release_date);
+      return releaseDate >= thirtyDaysAgo;
+    });
+
+    const recentlyChangedAlbumIds = recentlyChangedAlbums.map(a => a.id.toString());
+
+    const existingRecentReleases = await Release.find({
+      albumId: { $in: recentlyChangedAlbumIds },
+      artistId,
+      releaseDate: { $gte: thirtyDaysAgo }
+    });
+
+    const DEFAULT_COVER = 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801';
+    const DEFAULT_TITLE = 'Untitled Album';
+    const DEFAULT_RELEASE_DATE = new Date('1970-01-01');
+
+    const updates = [];
+
+    for (const album of recentlyChangedAlbums) {
+      const existing = existingRecentReleases.find(r => r.albumId === album.id.toString());
+      if (!existing) continue;
+
+      const updatedFields = {};
+
+      const title = album.title?.trim() || DEFAULT_TITLE;
+      const cover = album.cover?.trim() || DEFAULT_COVER;
+      const releaseDate = album.release_date ? new Date(album.release_date) : DEFAULT_RELEASE_DATE;
+
+      if (title !== existing.title) updatedFields.title = title;
+      if (cover !== existing.cover) updatedFields.cover = cover;
+      if (releaseDate.getTime() !== new Date(existing.releaseDate).getTime()) {
+        updatedFields.releaseDate = releaseDate;
+      }
+
+      if (Object.keys(updatedFields).length > 0) {
+        updates.push({
+          updateOne: {
+            filter: { _id: existing._id },
+            update: { $set: updatedFields }
+          }
+        });
+      }
+    }
+
+    if (updates.length > 0) {
+      await Release.bulkWrite(updates);
+      console.log(`Updated ${updates.length} recent/future albums for ${artistName} (${artistId})`);
+    }
+
     if (newAlbums.length === 0) {
       console.log(`No new albums for ${artistName} (${artistId})`);
       return;
@@ -446,17 +510,17 @@ async function syncArtistAlbums(artistId, artistName) {
       albumId: album.id,
       artistId,
       artistName,
-      title: album.title,
-      cover: album.cover,
-      isExplicit: album.explicit_lyrics || false,
-      releaseDate: new Date(album.release_date),
+      title: album.title?.trim() || DEFAULT_TITLE,
+      cover: album.cover?.trim() || DEFAULT_COVER,
+      isExplicit: !!album.explicit_lyrics,
+      releaseDate: album.release_date ? new Date(album.release_date) : DEFAULT_RELEASE_DATE,
     }));
 
     await Release.insertMany(docsToInsert);
     console.log(`Inserted ${newAlbums.length} albums for ${artistName} (${artistId})`);
   } catch (err) {
     console.error(`syncArtistAlbums failed for artist ${artistId} (${artistName}):`, err.message || err);
-    throw err; // Rethrow if you want outer methods to be aware
+    throw err;
   }
 }
 
@@ -473,33 +537,56 @@ const getAndStoreArtistAlbums = async (req, res) => {
   const cached = await redis.get(redisKey);
   if (cached) return res.status(200).json({ message: 'Recently synced' });
 
-  await syncArtistAlbums(artistId, artistName);
+  await syncArtistAlbums(artistId, artistName, true);
   await redis.set(redisKey, '1', 'EX', 60 * 60 * 6); // 6h TTL
 
   res.status(200).json({ message: 'Synced from user action' });
 };
 
 // Cron job method to update all followed artists' albums
-async function cronSyncAllArtists() {
+async function cronSyncAllArtists(batchSize = 10, delayMs = 1000) {
   const followedArtists = await getFollowedArtistList();
+  let totalSynced = 0;
 
-  for (const { id, name } of followedArtists) {
-    const redisKey = `artist-sync:cron:${id}`;
-    const cached = await redis.get(redisKey);
-    if (cached) continue;
+  for (let i = 0; i < followedArtists.length; i += batchSize) {
+    const batch = followedArtists.slice(i, i + batchSize);
 
-    try {
-      await syncArtistAlbums(id, name);
-      await redis.set(redisKey, '1', 'EX', 60 * 60 * 25); // only if sync succeeded
-    } catch (err) {
-      console.error(`Cron sync failed for ${name} (${id}):`, err.message || err);
+    const syncBatch = batch.map(({ id, name }) => {
+      return (async () => {
+        const redisKey = `artist-sync:cron:${id}`;
+        const cached = await redis.get(redisKey);
+        if (cached) return { id, name, status: 'skipped' };
+
+        try {
+          await syncArtistAlbums(id, name);
+          await redis.set(redisKey, '1', 'EX', 60 * 60 * 25);
+          return { id, name, status: 'synced' };
+        } catch (err) {
+          console.error(`Cron sync failed for ${name} (${id}):`, err.message || err);
+          return { id, name, status: 'failed', error: err.message || err };
+        }
+      })();
+    });
+
+    const results = await Promise.allSettled(syncBatch);
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        const { status } = result.value;
+        if (status === 'synced') totalSynced += 1;
+      } else {
+        console.error(`Unhandled sync rejection:`, result.reason);
+      }
     }
 
-    // Delay here to throttle API calls
-    await new Promise(resolve => setTimeout(resolve, 200)); // 5 artists/sec
+    // Log per batch
+    console.log(`Processed batch ${i / batchSize + 1} of ${Math.ceil(followedArtists.length / batchSize)}`);
+
+    // Delay between batches
+    await new Promise(resolve => setTimeout(resolve, delayMs));
   }
 
-  console.log(`Cron sync completed for ${followedArtists.length} artists`);
+  console.log(`Cron sync completed. Total artists: ${followedArtists.length}, Synced: ${totalSynced}`);
 }
 
 

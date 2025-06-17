@@ -1,9 +1,10 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { Injectable, Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'timeAgo',
   standalone: true,
 })
+@Injectable({ providedIn: 'root' })
 export class TimeAgoPipe implements PipeTransform {
   transform(value: string | Date): string {
     const date = new Date(value);
