@@ -42,17 +42,17 @@ describe("GET /api/users/:id", () => {
           createdAt: "2024-01-01",
         };
     
-        const mockSelect = {
-          populate: jest.fn().mockResolvedValue(mockUser),
-        };
-        User.findById.mockReturnValue({ select: () => mockSelect });
-    
-        Review.find.mockImplementation(() => {
-          return {
-            select: jest.fn().mockReturnThis(),
-            sort: jest.fn().mockResolvedValue([]),
-          };
+        User.findById.mockReturnValue({
+          select: jest.fn().mockReturnThis(),
+          populate: jest.fn().mockReturnThis(),
+          lean: jest.fn().mockResolvedValue(mockUser)
         });
+    
+      Review.find.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([])
+      });
     
         const res = await request(app).get("/api/users/profile/user123");
     
@@ -76,13 +76,11 @@ describe("GET /api/users/profile", () => {
         friendRequestsReceived: [],
       };
   
-      const mockChain = {
+      User.findById.mockReturnValue({
         select: jest.fn().mockReturnThis(),
         populate: jest.fn().mockReturnThis(),
-        then: (cb) => cb(mockUser), // simulate await
-      };
-  
-      User.findById.mockReturnValue(mockChain);
+        lean: jest.fn().mockResolvedValue(mockUser)
+      });
   
       const res = await request(app).get("/api/users/profile");
   
@@ -246,8 +244,10 @@ describe("GET /api/users/friends/search", () => {
     });
   
     it("should return search results", async () => {
-      const mockSelect = jest.fn().mockResolvedValue([{ username: "match" }]);
-      User.find.mockReturnValue({ select: mockSelect });
+      User.find.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([{ username: "match" }])
+      });
   
       const res = await request(app).get("/api/users/friends/search?q=match");
       expect(res.status).toBe(200);

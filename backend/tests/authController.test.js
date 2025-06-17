@@ -40,7 +40,9 @@ beforeEach(() => {
 describe('POST /api/auth/register', () => {
 
   it('should return 400 if user already exists', async () => {
-    User.findOne.mockResolvedValue({ email: 'test@example.com' });
+    User.findOne.mockReturnValue({
+      lean: jest.fn().mockResolvedValue({ email: 'test@example.com' })
+    });
 
     const res = await request(app).post('/api/auth/register').send({
       username: 'test',
@@ -53,7 +55,9 @@ describe('POST /api/auth/register', () => {
   });
 
   it('should create user and return token + user info', async () => {
-    User.findOne.mockResolvedValue(null);
+    User.findOne.mockReturnValue({
+      lean: jest.fn().mockResolvedValue(null)
+    });
     bcrypt.genSalt.mockResolvedValue('salt');
     bcrypt.hash.mockResolvedValue('hashedPassword');
 
@@ -82,7 +86,9 @@ describe('POST /api/auth/register', () => {
   });
 
   it('should return 500 on server error', async () => {
-    User.findOne.mockRejectedValue(new Error('DB Error'));
+    User.findOne.mockReturnValue({
+      lean: jest.fn().mockRejectedValue(new Error('DB Error'))
+    });
 
     const res = await request(app).post('/api/auth/register').send({
       username: 'test',
@@ -99,27 +105,15 @@ describe('POST /api/auth/register', () => {
 // Login test group
 describe('POST /api/auth/login', () => {
 
-  function mockPopulatedUser(userData) {
-    const chain = {
-      populate: jest.fn().mockReturnThis()
-    };
-  
-    chain.populate.mockImplementationOnce(() => chain)
-                   .mockImplementationOnce(() => chain)
-                   .mockImplementationOnce(() => ({
-                     then: (resolve) => resolve(userData)
-                   }));
-  
-    return chain;
-  }
   
 
   it('should return 400 if user does not exist', async () => {
-    const mockQuery = {
+
+    User.findOne.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
       populate: jest.fn().mockReturnThis(),
-      exec: jest.fn().mockResolvedValue(null)
-    };
-    User.findOne.mockReturnValue(mockQuery);
+      lean: jest.fn().mockResolvedValue(null)
+    });
   
     const res = await request(app).post('/api/auth/login').send({
       email: 'nonexistent@example.com',
@@ -131,8 +125,11 @@ describe('POST /api/auth/login', () => {
   });  
 
   it('should return 400 if password is incorrect', async () => {
-    const mockUser = { password: 'hashedPassword' };
-    User.findOne.mockReturnValue(mockPopulatedUser(mockUser));
+    User.findOne.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      populate: jest.fn().mockReturnThis(),
+      lean: jest.fn().mockResolvedValue({ password: 'hashedPassword' })
+    });
     bcrypt.compare.mockResolvedValue(false);
 
     const res = await request(app).post('/api/auth/login').send({
@@ -157,7 +154,11 @@ describe('POST /api/auth/login', () => {
       friendRequestsReceived: []
     };
 
-    User.findOne.mockReturnValue(mockPopulatedUser(mockUser));
+    User.findOne.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      populate: jest.fn().mockReturnThis(),
+      lean: jest.fn().mockResolvedValue(mockUser)
+    });
     bcrypt.compare.mockResolvedValue(true);
     jwt.sign.mockReturnValue('fake-login-token');
 
