@@ -17,7 +17,6 @@ import { filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { ToastrService } from 'ngx-toastr';
-import { SpotifyService } from './services/spotify.service';
 import { jwtDecode } from 'jwt-decode';
 import { AuthService } from './services/auth.service';
 import { DecodedToken } from './models/responses/decoded-token-response';
@@ -108,7 +107,6 @@ export class AppComponent implements OnInit {
   constructor(
     private router: Router,
     private toastr: ToastrService,
-    private spotifyService: SpotifyService,
     private authService: AuthService
   ) {
     this.router.events
@@ -122,13 +120,10 @@ export class AppComponent implements OnInit {
     this.router.events
     .pipe(filter(event => event instanceof NavigationEnd))
     .subscribe(() => {
-      // Delay resetting the direction to ensure animation picks up the correct one
       setTimeout(() => {
         this.navigationDirection = 'forward';
       }, 300);
     });
-
-    this.fetchAndStoreAlbums();
 
     const queryParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = queryParams.get('token');
@@ -174,16 +169,6 @@ export class AppComponent implements OnInit {
     this.toastr.error('Session expired. Please log in again.', 'Error');
   }
 
-  private fetchAndStoreAlbums(): void {
-    this.spotifyService.getAlbumImages().subscribe({
-      next: (data) => {
-        localStorage.setItem('albumImages', JSON.stringify(data));
-      },
-      error: (err) => {
-        console.error('Failed to fetch album images:', err);
-      },
-    });
-  }
 
   prepareRoute(outlet: RouterOutlet) {
     if (!outlet || !outlet.isActivated) return null;

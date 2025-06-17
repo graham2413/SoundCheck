@@ -28,6 +28,7 @@ import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/models/responses/user.response';
 import { GetReleasesResponse, Release } from 'src/app/models/responses/release-response';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
+import { SpotifyService } from 'src/app/services/spotify.service';
 
 type ActivityRecord = Review['albumSongOrArtist'];
 type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
@@ -134,11 +135,14 @@ export class MainSearchComponent implements OnInit {
     private reviewService: ReviewService,
     private router: Router,
     private userService: UserService,
-    private timeAgoPipe: TimeAgoPipe
+    private timeAgoPipe: TimeAgoPipe,
+    private spotifyService: SpotifyService
   ) {}
 
-  ngOnInit(): void {
-    this.setMarquee();
+  async ngOnInit(): Promise<void> {
+    await this.fetchAndStoreAlbums(); // Wait until albums are stored
+    await this.setMarquee();
+
     this.setUserProfile();
     this.section = history.state.section || null;
 
@@ -207,6 +211,21 @@ export class MainSearchComponent implements OnInit {
     }
   });
 }
+
+  fetchAndStoreAlbums(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.spotifyService.getAlbumImages().subscribe({
+        next: (data) => {
+          localStorage.setItem('albumImages', JSON.stringify(data));
+          resolve();
+        },
+        error: (err) => {
+          console.error('Failed to fetch album images:', err);
+          resolve(); // Still resolve so app doesn’t hang
+        },
+      });
+    });
+  }
 
   setUserProfile() {
       // Subscribes to updates from the user profile observable
