@@ -25,7 +25,7 @@ const httpsAgent = isProd
 
         // Fetch user's playlists from Spotify API
         const response = await axios.get("https://api.spotify.com/v1/me/playlists", {
-            headers: { Authorization: `Bearer ${user.spotifyAccessToken}`, httpsAgent: httpsAgent        },
+            headers: { Authorization: `Bearer ${user.spotifyAccessToken}`, httpsAgent: httpsAgent },
         });
 
         res.json(response.data);
@@ -173,7 +173,7 @@ const setAlbumImages = async () => {
 // Retrieve stored album images from the database
 const getAlbumImages = async (req, res) => {
   try {
-    const albums = await AlbumImage.find({}); // ← no field filter
+    const albums = await AlbumImage.find({}).lean();
 
     if (!albums.length) {
       return res.status(404).json({ message: "No stored albums found" });
@@ -190,5 +190,5 @@ module.exports = {
     getUserPlaylists,
     importPlaylists,
     getAlbumImages,
-    setAlbumImages // 👈 add this
+    setAlbumImages
   };

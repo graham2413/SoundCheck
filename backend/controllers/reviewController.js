@@ -132,7 +132,7 @@ exports.getActivityFeed = async (req, res) => {
     const userId = req.user._id;
     const { cursorDate, cursorId, limit = 20 } = req.query;
 
-    const user = await User.findById(userId).select("friends");
+    const user = await User.findById(userId).select("friends").lean();
 
     if (!user || user.friends.length === 0) {
       return res.status(200).json({ reviews: [], nextCursor: null });

@@ -12,7 +12,8 @@ exports.getUserProfile = async (req, res) => {
       .populate({
         path: "friends",
         select: "username profilePicture", // Get only essential friend info
-      });
+      })
+      .lean();
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -21,7 +22,8 @@ exports.getUserProfile = async (req, res) => {
     // Fetch user's reviews separately
     const reviews = await Review.find({ user: user._id })
       .select("reviewText rating type createdAt albumSongOrArtist")
-      .sort({ createdAt: -1 }); // Sort reviews by newest first
+      .sort({ createdAt: -1 }) // Sort reviews by newest first
+      .lean();
 
     res.json({
       _id: user._id,
@@ -44,7 +46,8 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
       .select("-password")
       .populate("friendRequestsSent", "username profilePicture")
       .populate("friendRequestsReceived", "username profilePicture")
-      .populate("friends", "username profilePicture");
+      .populate("friends", "username profilePicture")
+      .lean();
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -381,7 +384,8 @@ exports.searchUsers = async (req, res) => {
         { username: { $regex: searchQuery, $options: "i" } }, // Case-insensitive search
       ],
       _id: { $ne: req.user._id }, // Exclude the logged-in user
-    }).select("username email profilePicture");
+    }).select("username email profilePicture")
+    .lean();
 
     res.status(200).json(users);
   } catch (error) {

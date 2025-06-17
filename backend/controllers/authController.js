@@ -9,7 +9,7 @@ exports.registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email }).lean();
     if (user) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -49,18 +49,11 @@ exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email })
-      .populate({
-        path: "friends",
-        select: "username profilePicture"
-      })
-      .populate({
-        path: "friendRequestsSent",
-        select: "username profilePicture"
-      })
-      .populate({
-        path: "friendRequestsReceived",
-        select: "username profilePicture"
-      });
+      .select("+password")
+      .populate("friends", "username profilePicture")
+      .populate("friendRequestsSent", "username profilePicture")
+      .populate("friendRequestsReceived", "username profilePicture")
+      .lean();
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -109,49 +102,6 @@ exports.logoutUser = (req, res) => {
     message: "Logged out successfully (JWT-based, client should remove token)",
   });
 };
-
-
-// exports.spotifyCallback = async (req, res) => {
-//   try {
-//     if (!req.user) {
-//       console.error("Spotify authentication failed - No user found.");
-//       return res.status(401).json({ message: "Spotify authentication failed" });
-//     }
-
-//     // Find the user in MongoDB (by Spotify ID)
-//     let user = await User.findOne({ spotifyId: req.user.spotifyId });
-
-//     if (!user) {
-//       // If user does not exist, create a new one
-//       user = new User({
-//         spotifyId: req.user.spotifyId,
-//         username: req.user.displayName || "Spotify User",
-//         email: req.user.email || "",
-//         profilePicture: req.user.profilePicture || "",
-//         spotifyAccessToken: req.user.spotifyAccessToken,
-//         spotifyRefreshToken: req.user.spotifyRefreshToken,
-//       });
-
-//       await user.save();
-//     } else {
-//       // Update existing user's tokens
-//       user.spotifyAccessToken = req.user.spotifyAccessToken;
-//       user.spotifyRefreshToken = req.user.spotifyRefreshToken;
-//       await user.save();
-//     }
-
-//     // Generate JWT token
-//     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-//       expiresIn: "7d",
-//     });
-
-//     // Redirect user to frontend with token
-//     res.redirect(`http://localhost:4200/dashboard?token=${token}`);
-//   } catch (error) {
-//     console.error("Error in Spotify callback:", error);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// };
 
 exports.forgotPassword = async (req, res) => {
   try {

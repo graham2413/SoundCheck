@@ -632,7 +632,8 @@ const getReleasesByArtistIds = async (req, res) => {
 
     const releases = await Release.find(query)
       .sort({ releaseDate: -1, _id: -1 })
-      .limit(Number(limit));
+      .limit(Number(limit))
+      .lean();
 
     // Prepare next cursor if there are more results
     const last = releases[releases.length - 1];
