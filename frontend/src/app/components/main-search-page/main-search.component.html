@@ -85,7 +85,7 @@
           class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[17rem]"
           (click)="openModal(album, albums, i)"
         >
-          <img [src]="album.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'" [alt]="album.title" />
+          <img [src]="album.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'" [alt]="album.title" />
           <div class="track-info w-full overflow-hidden">
             <p
               class="title text-base md:text-lg truncate w-full text-left"
@@ -330,7 +330,7 @@
         >
           <!-- Image -->
           <img
-            [src]="song.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'"
+            [src]="song.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
             alt="Cover"
             class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
           />
@@ -426,7 +426,7 @@
         >
           <!-- Image -->
           <img
-            [src]="album.cover  || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'"
+            [src]="album.cover  || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
             alt="Album Cover"
             class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
           />
@@ -597,7 +597,7 @@
                 [src]="
                   activePopularType === 'Artist'
                   ? (record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png')
-                  : (record.cover || record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801')
+                  : (record.cover || record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801')
                 "
                 alt="Media"
                 class="w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] object-cover rounded border border-gray-600"
@@ -721,7 +721,7 @@
                       [src]="
                         activity.albumSongOrArtist.effectiveType === 'Artist'
                           ? (activity.albumSongOrArtist.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png')
-                          : (activity.albumSongOrArtist.cover || activity.albumSongOrArtist.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801')
+                          : (activity.albumSongOrArtist.cover || activity.albumSongOrArtist.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801')
                       "
                       (click)="
                         openModal(
@@ -880,7 +880,7 @@
             "
           >
             <img
-              [src]="release.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'"
+              [src]="release.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
               alt="Cover"
               class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
             />

@@ -144,7 +144,7 @@
       <div *ngIf="record.type !== 'Artist'">
         <div class="relative flex justify-center items-center">
           <img
-            [src]="record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'"
+            [src]="record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
             class="w-[55%] h-auto rounded-md mt-[2rem] border-2 border-gray-500"
             alt="Record Image"
           />
@@ -415,7 +415,7 @@
               [src]="
                 record.type === 'Artist'
                   ? (record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png')
-                  : (record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801')
+                  : (record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801')
               "
               [alt]="record.type === 'Artist' ? record.name : record.title"
               class="rounded-lg w-full max-w-[420px] max-h-[420px] object-contain imageHeight border border-gray-800"
@@ -1228,7 +1228,7 @@
                       [src]="
                         record.type === 'Artist'
                           ? (record.picture || 'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png')
-                          : (record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801')
+                          : (record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801')
                       "
                       [alt]="record.type === 'Artist' ? record.name : record.title"
                       (click)="showSecondIpod = true"
@@ -1499,7 +1499,7 @@
             >
               <div class="relative flex justify-center items-center">
                 <img
-                  [src]="record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/f_auto,q_auto/m2bmgchypxctuwaac801'"
+                  [src]="record.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
                   class="w-[55%] h-auto rounded-md mt-[2rem] border-2 border-gray-500"
                   alt="Record Image"
                 />
