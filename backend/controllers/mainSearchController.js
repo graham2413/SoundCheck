@@ -356,24 +356,7 @@ const getArtistTopTracks = async (req, res) => {
         .json({ message: "Artist not found or no tracks available" });
     }
 
-    // In-memory cache for per-request deduplication
-    const genreCache = new Map();
-    const artistTopTrackData = artistsResponse.data.data;
-
-    const artistTopTrackDetails = await Promise.all(
-      artistTopTrackData.map(async (track) => {
-        const albumId = track.album?.id;
-        let genre = "Unknown";
-
-        if (albumId && typeof albumId === 'number') {
-          if (genreCache.has(albumId)) {
-            genre = genreCache.get(albumId);
-          } else {
-            genre = await getAlbumGenre(albumId);
-            genreCache.set(albumId, genre);
-          }
-        }
-
+    const artistTopTrackDetails = artistsResponse.data.data.map((track) => {
         return {
           id: track.id,
           title: track.title,
@@ -383,11 +366,9 @@ const getArtistTopTracks = async (req, res) => {
           preview: track.preview,
           isExplicit: track.explicit_lyrics,
           cover: track.album?.cover,
-          genre,
           type: 'Song'
         };
-      })
-    );
+      });
 
     return res.json(artistTopTrackDetails);
   } catch (error) {
@@ -401,6 +382,8 @@ const getArtistTopTracks = async (req, res) => {
   }
 };
 
+// Shared method to sync artist albums to MongoDB
+// This is used both for manual sync and scheduled tasks
 async function syncArtistAlbums(artistId, artistName, fullSync = false) {
   try {
     let allAlbums = [];
@@ -589,7 +572,7 @@ async function cronSyncAllArtists(batchSize = 10, delayMs = 1000) {
   console.log(`Cron sync completed. Total artists: ${followedArtists.length}, Synced: ${totalSynced}`);
 }
 
-
+// Helper function to get the list of followed artists from MongoDB
 async function getFollowedArtistList() {
   const users = await User.find({}, 'artistList').lean();
 
@@ -606,6 +589,7 @@ async function getFollowedArtistList() {
   return Array.from(uniqueMap, ([id, name]) => ({ id, name }));
 }
 
+// Fetch MongoDB releases by artist IDs for Artist feed
 const getReleasesByArtistIds = async (req, res) => {
   try {
     const { artistIds } = req.body;
@@ -652,6 +636,45 @@ const getReleasesByArtistIds = async (req, res) => {
   }
 };
 
+// Fetch Deezer artist releases for Artist profiles
+const getDeezerArtistReleases = async (req, res) => {
+  const { artistId } = req.params;
+  const limit = parseInt(req.query.limit) || 100;
+  const index = parseInt(req.query.index) || 0;
+  const artistName = req.query.artistName || '';
+
+
+  if (!artistId) {
+    return res.status(400).json({ message: 'artistId is required' });
+  }
+
+  try {
+    const url = `https://api.deezer.com/artist/${artistId}/albums?limit=${limit}&index=${index}`;
+    const response = await callDeezer(url);
+
+    if (!response?.data?.data?.length) {
+      return res.status(200).json({ albums: [], next: null });
+    }
+
+    const albums = response.data.data.map(album => ({
+      id: album.id,
+      title: album.title,
+      artist: artistName,
+      cover: album.cover,
+      releaseDate: album.release_date,
+      isExplicit: album.explicit_lyrics || false,
+    }));
+
+    return res.status(200).json({
+      albums,
+      next: response.data.next || null,
+    });
+  } catch (err) {
+    console.error(`Error fetching Deezer releases for artist ${artistId}:`, err.message || err);
+    return res.status(500).json({ message: 'Failed to fetch artist releases' });
+  }
+};
+
 module.exports = {
   searchMusic,
   getAlbumGenre,
@@ -662,5 +685,6 @@ module.exports = {
   callDeezer,
   getAndStoreArtistAlbums,
   cronSyncAllArtists,
-  getReleasesByArtistIds
+  getReleasesByArtistIds,
+  getDeezerArtistReleases
 };

@@ -38,13 +38,20 @@ import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/c
 import { UserService } from 'src/app/services/user.service';
 import { FollowedArtist, User } from 'src/app/models/responses/user.response';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 
 @Component({
   selector: 'app-review-page',
   templateUrl: './review-page.component.html',
   styleUrls: ['./review-page.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, AudioPlayerComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AudioPlayerComponent,
+    InfiniteScrollDirective,
+  ],
   animations: [
     trigger('overlayAnimation', [
       transition(':enter', [
@@ -256,6 +263,12 @@ export class ReviewPageComponent implements OnInit {
   @Output() userNavigated = new EventEmitter<void>();
   @Output() openNewReview = new EventEmitter<{ id: number; type: string }>();
   isLoadingExtraDetails: boolean = false;
+  activeTab: 'Top Tracks' | 'All Releases' = 'Top Tracks';
+  releases: Album[] = [];
+  pageIndex = 0;
+  hasMoreReleases = true;
+  releasesPageSize = 100;
+  isLoadingMoreReleases = false;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -305,8 +318,7 @@ export class ReviewPageComponent implements OnInit {
   updateIsInList() {
     this.isInList =
       this.userProfile.artistList?.some(
-        (item) =>
-          item.id === this.record.id.toString()
+        (item) => item.id === this.record.id.toString()
       ) ?? false;
   }
 
@@ -479,7 +491,7 @@ export class ReviewPageComponent implements OnInit {
           //     type: 'Song',
           //     isPlaying: false,
           //   }
-          // }));          
+          // }));
 
           this.existingUserReview = data.userReview;
 
@@ -619,7 +631,8 @@ export class ReviewPageComponent implements OnInit {
     this.isLoadingExtraDetails = true;
 
     const isActuallyAnAlbum =
-      this.record.type === 'Song' && (this.record as any)?.wasOriginallyAlbumButTreatedAsSingle;
+      this.record.type === 'Song' &&
+      (this.record as any)?.wasOriginallyAlbumButTreatedAsSingle;
 
     if (this.record.type === 'Song' && isActuallyAnAlbum) {
       // Treat as album, fetch full album details
@@ -629,88 +642,175 @@ export class ReviewPageComponent implements OnInit {
       this.fetchSongDetails();
     } else if (this.record.type === 'Album') {
       this.fetchAlbumDetails();
-    }
-    else{
+    } else {
       this.fetchArtistDetails();
     }
-
   }
 
   fetchSongDetails() {
-          this.searchService.getTrackDetails(this.record.id).subscribe({
-        next: (data: Song) => {
-          (this.record as Song).releaseDate = data.releaseDate;
-          (this.record as Song).contributors = data.contributors;
-          (this.record as Song).duration = data.duration;
-          (this.record as Song).preview = data.preview;
-          (this.record as Song).genre = data.genre;
-          const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+    this.searchService.getTrackDetails(this.record.id).subscribe({
+      next: (data: Song) => {
+        (this.record as Song).releaseDate = data.releaseDate;
+        (this.record as Song).contributors = data.contributors;
+        (this.record as Song).duration = data.duration;
+        (this.record as Song).preview = data.preview;
+        (this.record as Song).genre = data.genre;
+        const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
 
-          players.forEach((player) => player?.stopLoading());
-          this.isLoadingExtraDetails = false;
-        },
-        error: () => {
-          (this.record as Song).releaseDate = '';
-          this.isLoadingExtraDetails = false;
-        },
-      });
+        players.forEach((player) => player?.stopLoading());
+        this.isLoadingExtraDetails = false;
+      },
+      error: () => {
+        (this.record as Song).releaseDate = '';
+        this.isLoadingExtraDetails = false;
+      },
+    });
   }
 
   fetchAlbumDetails() {
-          this.searchService.getAlbumDetails(this.record.id).subscribe({
-        next: (data: Album) => {
-          const album = this.record as Album;
-          album.releaseDate = data.releaseDate;
-          album.tracklist = data.tracklist.map((track) => ({
-            ...track,
-            isPlaying: false,
+    this.searchService.getAlbumDetails(this.record.id).subscribe({
+      next: (data: Album) => {
+        const album = this.record as Album;
+
+        // Apply high-quality cover to each track
+        album.tracklist = data.tracklist.map((track) => ({
+          ...track,
+          isPlaying: false,
+          cover: album.cover,
+        }));
+
+        if (album.tracklist.length > 0) {
+          this.currentSong = album.tracklist[0];
+        }
+
+        album.preview = data.preview;
+        album.genre = data.genre || 'Unknown';
+        album.isExplicit = data.isExplicit;
+
+        this.isLoadingExtraDetails = false;
+      },
+      error: () => {
+        const album = this.record as Album;
+        album.releaseDate = 'Unknown';
+        album.tracklist = [];
+        this.isLoadingExtraDetails = false;
+      },
+      complete: () => {
+        const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+
+        players.forEach((player) => player?.stopLoading());
+      },
+    });
+  }
+
+  fetchArtistDetails() {
+    if ((this.record as Artist).name === undefined) {
+      console.warn('record is not an Artist');
+      return;
+    }
+    forkJoin({
+      tracks: this.searchService.getArtistTracks(this.record.id),
+      releases: this.searchService.getArtistReleases(
+        this.record.id,
+        (this.record as Artist).name
+      ),
+    }).subscribe({
+      next: ({ tracks, releases }) => {
+        const artist = this.record as Artist;
+
+        // Set tracklist with high-res covers
+        artist.tracklist = Array.isArray(tracks)
+          ? tracks.map((track) => ({
+              ...track,
+              isPlaying: false,
+              cover: this.getHighQualityImage(track.cover),
+            }))
+          : [];
+
+        artist.preview = tracks[0]?.preview || '';
+
+        if (artist.tracklist.length > 0) {
+          this.currentSong = artist.tracklist[0];
+        }
+
+        // Set releases with high-res covers
+        this.releases = Array.isArray(releases?.albums)
+          ? releases.albums.map((release) => ({
+              ...release,
+              cover: this.getHighQualityImage(release.cover),
+            }))
+          : [];
+
+        // Pagination state
+        this.hasMoreReleases = !!releases?.next;
+        this.pageIndex = 100;
+
+        this.isLoadingExtraDetails = false;
+      },
+      error: () => {
+        const artist = this.record as Artist;
+        artist.tracklist = [];
+        this.releases = [];
+        this.isLoadingExtraDetails = false;
+      },
+      complete: () => {
+        const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+        players.forEach((player) => player?.stopLoading());
+      },
+    });
+  }
+
+  loadMoreReleases() {
+    if (
+      !this.record?.id ||
+      !this.hasMoreReleases ||
+      this.isLoadingMoreReleases
+    ) {
+      return;
+    }
+
+    if ((this.record as Artist).name === undefined) {
+      console.warn('record is not an Artist');
+      return;
+    }
+    this.isLoadingMoreReleases = true;
+
+    this.searchService
+      .getArtistReleases(
+        this.record.id,
+        (this.record as Artist).name,
+        this.releasesPageSize,
+        this.pageIndex
+      )
+      .subscribe({
+        next: ({ albums, next }) => {
+          const highQualityAlbums = albums.map((release) => ({
+            ...release,
+            cover: this.getHighQualityImage(release.cover),
           }));
-          if (album.tracklist.length > 0) {
-            this.currentSong = album.tracklist[0];
-          }
-          album.preview = data.preview;
-          album.genre = data.genre || 'Unknown';
-          album.isExplicit = data.isExplicit;
-          this.isLoadingExtraDetails = false;
+
+          this.releases.push(...highQualityAlbums);
+          this.pageIndex += this.releasesPageSize;
+          this.hasMoreReleases = !!next;
         },
         error: () => {
-          const album = this.record as Album;
-          album.releaseDate = 'Unknown';
-          album.tracklist = [];
-          this.isLoadingExtraDetails = false;
+          this.hasMoreReleases = false;
         },
         complete: () => {
-          const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
-
-          players.forEach((player) => player?.stopLoading());
+          this.isLoadingMoreReleases = false;
         },
       });
   }
 
-  fetchArtistDetails() {
-          this.searchService.getArtistTracks(this.record.id).subscribe({
-        next: (data: Song[]) => {
-          const artist = this.record as Artist;
-          artist.tracklist = Array.isArray(data)
-            ? data.map((track) => ({ ...track, isPlaying: false }))
-            : [];
-          artist.preview = data[0]?.preview || ''; // set preview to first song's preview or null
-          if (artist.tracklist.length > 0) {
-            this.currentSong = artist.tracklist[0];
-          }
-          this.isLoadingExtraDetails = false;
-        },
-        error: () => {
-          const artist = this.record as Artist;
-          artist.tracklist = [];
-          this.isLoadingExtraDetails = false;
-        },
-        complete: () => {
-          const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+  getHighQualityImage(imageUrl: string): string {
+    if (!imageUrl) return '';
 
-          players.forEach((player) => player?.stopLoading());
-        },
-      });
+    // Ensure we're requesting the highest resolution available
+    if (imageUrl.includes('api.deezer.com')) {
+      return `${imageUrl}?size=xl`;
+    }
+
+    return imageUrl;
   }
 
   onAudioPlayStarted(previewUrl: string): void {
@@ -765,9 +865,9 @@ export class ReviewPageComponent implements OnInit {
     }
   }
 
-  openSong(song: Song) {
+  openSongOrAlbum(record: Song | Album) {
     this.activeModal.close();
-    this.openNewReview.emit(song);
+    this.openNewReview.emit(record);
   }
 
   // From the back of ipod (albums and artists)
@@ -852,10 +952,11 @@ export class ReviewPageComponent implements OnInit {
     };
 
     // Artist activity feed and Marquee all return Albums, yet some are Albums with only one track (Single)
-      if (this.record.type === 'Album' && this.record.tracklist?.length === 1) {
-        reviewCommand.albumSongOrArtist.type = 'Song';
-        reviewCommand.albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle = true;
-      }
+    if (this.record.type === 'Album' && this.record.tracklist?.length === 1) {
+      reviewCommand.albumSongOrArtist.type = 'Song';
+      reviewCommand.albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle =
+        true;
+    }
 
     this.reviewService.createReview(reviewCommand).subscribe({
       next: (data: NewReviewResponse) => {
@@ -1081,69 +1182,71 @@ export class ReviewPageComponent implements OnInit {
     return 'empty';
   }
 
-addToArtistList(artist: Artist) {
-  this.addingToList = true;
+  addToArtistList(artist: Artist) {
+    this.addingToList = true;
 
-  const itemToAdd: FollowedArtist = {
-    id: artist.id.toString(),
-    name: artist.name,
-    picture: artist.picture,
-    addedAt: new Date(),
-    tracklist: artist.tracklist || [],
-    preview: artist.preview || '',
-  };
+    const itemToAdd: FollowedArtist = {
+      id: artist.id.toString(),
+      name: artist.name,
+      picture: artist.picture,
+      addedAt: new Date(),
+      tracklist: artist.tracklist || [],
+      preview: artist.preview || '',
+    };
 
-this.userService.addToArtistList(itemToAdd).subscribe({
-  next: () => {
-    this.toastr.success('Artist followed!', 'Success');
+    this.userService.addToArtistList(itemToAdd).subscribe({
+      next: () => {
+        this.toastr.success('Artist followed!', 'Success');
 
-    if (!this.userProfile.artistList) this.userProfile.artistList = [];
-    this.userProfile.artistList.push(itemToAdd);
-    this.userService.setUserProfile(this.userProfile);
+        if (!this.userProfile.artistList) this.userProfile.artistList = [];
+        this.userProfile.artistList.push(itemToAdd);
+        this.userService.setUserProfile(this.userProfile);
 
-    this.isInList = true;
+        this.isInList = true;
 
-    //  Trigger backend sync
-    this.searchService.syncArtistAlbums(itemToAdd.id, itemToAdd.name)
-      .subscribe({
-        next: () => {},
-        error: () => console.log(`Failed to sync albums for ${itemToAdd.name}`)
-      });
+        //  Trigger backend sync
+        this.searchService
+          .syncArtistAlbums(itemToAdd.id, itemToAdd.name)
+          .subscribe({
+            next: () => {},
+            error: () =>
+              console.log(`Failed to sync albums for ${itemToAdd.name}`),
+          });
 
-    this.addingToList = false;
-  },
-  error: () => {
-    this.toastr.error('Failed to follow artist.', 'Error');
-    this.addingToList = false;
+        this.addingToList = false;
+      },
+      error: () => {
+        this.toastr.error('Failed to follow artist.', 'Error');
+        this.addingToList = false;
+      },
+    });
   }
-});
-}
 
-removeFromArtistList(artist: Artist) {
-  this.addingToList = true;
+  removeFromArtistList(artist: Artist) {
+    this.addingToList = true;
 
-  const id = artist.id.toString();
+    const id = artist.id.toString();
 
-  this.userService.removeFromArtistList({ id }).subscribe({
-    next: () => {
-      this.toastr.success('Removed from your list!', 'Success');
-      this.isInList = false;
-      this.addingToList = false;
+    this.userService.removeFromArtistList({ id }).subscribe({
+      next: () => {
+        this.toastr.success('Removed from your list!', 'Success');
+        this.isInList = false;
+        this.addingToList = false;
 
-      // Update local userProfile.artistList
-      this.userProfile.artistList = this.userProfile.artistList?.filter(
-        (item) => item.id !== id
-      );
+        // Update local userProfile.artistList
+        this.userProfile.artistList = this.userProfile.artistList?.filter(
+          (item) => item.id !== id
+        );
 
-      // Push updated profile to global observable
-      this.userService.setUserProfile(this.userProfile);
-    },
-    error: () => {
-      this.toastr.error('Failed to remove artist.', 'Error');
-      this.addingToList = false;
-    }
-  });
-}
+        // Push updated profile to global observable
+        this.userService.setUserProfile(this.userProfile);
+      },
+      error: () => {
+        this.toastr.error('Failed to remove artist.', 'Error');
+        this.addingToList = false;
+      },
+    });
+  }
 
   goToProfile(userId: string) {
     this.userNavigated.emit();

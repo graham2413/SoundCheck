@@ -1,3 +1,4 @@
+import { Album } from "./album-response";
 import { Song } from "./song-response";
 
 export interface Artist {

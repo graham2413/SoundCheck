@@ -139,21 +139,41 @@ export class MainSearchComponent implements OnInit {
     private spotifyService: SpotifyService
   ) {}
 
-  async ngOnInit(): Promise<void> {
-    await this.fetchAndStoreAlbums(); // Wait until albums are stored
-    await this.setMarquee();
+async ngOnInit(): Promise<void> {
+  const stored = localStorage.getItem('albumImages');
+  let shouldRefetch = true;
 
-    this.setUserProfile();
-    this.section = history.state.section || null;
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      const cachedAt = parsed.cachedAt || 0;
+      const lastFridayNoon = this.getLastFridayNoon();
 
-    if (
-      this.section === 'mainSearch' ||
-      this.section === 'popular' ||
-      this.section === 'recentActivity'
-    ) {
-      this.setActiveDiscoverTab(this.section);
+      if (cachedAt >= lastFridayNoon) {
+        shouldRefetch = false; // Cache is fresh
+      }
+    } catch (e) {
+      console.warn('Failed to parse cached albumImages:', e);
     }
   }
+
+  if (shouldRefetch) {
+    await this.fetchAndStoreAlbums();
+  }
+
+  await this.setMarquee();
+  this.setUserProfile();
+
+  this.section = history.state.section || null;
+
+  if (
+    this.section === 'mainSearch' ||
+    this.section === 'popular' ||
+    this.section === 'recentActivity'
+  ) {
+    this.setActiveDiscoverTab(this.section);
+  }
+}
 
   async setMarquee() {
   this.isMarqueeLoading = true;
@@ -190,6 +210,16 @@ export class MainSearchComponent implements OnInit {
       this.isMarqueeLoading = false;
   }
 
+  getLastFridayNoon(): number {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sunday, 5 = Friday
+    const daysSinceFriday = (day >= 5) ? day - 5 : 7 - (5 - day);
+    const lastFriday = new Date(now);
+    lastFriday.setDate(now.getDate() - daysSinceFriday);
+    lastFriday.setHours(12, 0, 0, 0); // set to 12:00 PM Friday
+    return lastFriday.getTime();
+}
+
   preloadImages(albums: any[]): Promise<void> {
   return new Promise(resolve => {
     let loadedCount = 0;
@@ -216,7 +246,10 @@ export class MainSearchComponent implements OnInit {
     return new Promise((resolve, reject) => {
       this.spotifyService.getAlbumImages().subscribe({
         next: (data) => {
-          localStorage.setItem('albumImages', JSON.stringify(data));
+          localStorage.setItem('albumImages', JSON.stringify({
+            albums: data.albums,
+            cachedAt: Date.now()
+          }));
           resolve();
         },
         error: (err) => {
@@ -698,13 +731,13 @@ loadActivityFeed() {
       }
     );
 
-    // 4. Handle opening a song frmo an artist or album review
-    modalRef.componentInstance.openNewReview.subscribe((record: Song) => {
-      // Upgrade the image before opening the modal
-      const highResCover = this.getHighQualityImage(record.cover);
-      const updatedRecord = { ...record, cover: highResCover };
+    // 5. Handle opening a song or album from an artist or album review
+    modalRef.componentInstance.openNewReview.subscribe((record: Song | Album) => {
+            if (!('type' in record) || !record.type) {
+                (record as Album).type = 'Album';
+              }
 
-      const newModal = this.openModal(updatedRecord, [], 0);
+      const newModal = this.openModal(record, [], 0);
       newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
       modalRef.close();
     });

@@ -819,13 +819,14 @@ buildArtistRecord(item: FollowedArtist): Artist {
       this.showPanel = null;
     });
 
-    // 5. Handle opening a song frmo an artist or album review
-    modalRef.componentInstance.openNewReview.subscribe((record: Song) => {
-      // Upgrade the image before opening the modal
-      const highResCover = this.getHighQualityImage(record.cover);
-      const updatedRecord = { ...record, cover: highResCover };
+    // 5. Handle opening a song or album from an artist or album review
+    modalRef.componentInstance.openNewReview.subscribe((record: Song | Album) => {
 
-      const newModal = this.openReview(updatedRecord, [], 0);
+      if (!('type' in record) || !record.type) {
+        (record as Album).type = 'Album';
+      }
+
+      const newModal = this.openReview(record, [], 0);
       newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
       modalRef.close();
     });
