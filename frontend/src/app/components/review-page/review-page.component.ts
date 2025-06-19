@@ -686,6 +686,7 @@ export class ReviewPageComponent implements OnInit {
         album.preview = data.preview;
         album.genre = data.genre || 'Unknown';
         album.isExplicit = data.isExplicit;
+        album.releaseDate = data.releaseDate || 'Unknown';
 
         this.isLoadingExtraDetails = false;
       },
