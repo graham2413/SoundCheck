@@ -79,36 +79,75 @@
   <div class="bg-[#09101F] text-white pb-[0.5rem] md:pb-8 pt-[0.5rem] md:pt-[2rem]">
     <!-- Marquee Container -->
     <div #marqueeContainer class="marquee-container">
-      <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading">
-        <div
-          *ngFor="let album of albums; let i = index"
-          class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[17rem]"
-          (click)="openModal(album, albums, i)"
+<div class="marquee-track" *ngIf="!isMarqueeLoading; else loading">
+  <!-- First copy -->
+  <ng-container *ngFor="let album of albums; let i = index">
+    <div
+      class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[17rem]"
+      (click)="openModal(album, albums, i)"
+    >
+      <img
+        [src]="album.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
+        [alt]="album.title"
+      />
+      <div class="track-info w-full overflow-hidden">
+        <p
+          class="title text-base md:text-lg truncate w-full text-left"
+          [title]="album.title"
         >
-          <img [src]="album.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'" [alt]="album.title" />
-          <div class="track-info w-full overflow-hidden">
-            <p
-              class="title text-base md:text-lg truncate w-full text-left"
-              [title]="album.title"
-            >
-              {{ album.title }}
-            </p>
-            <p
-              class="artist text-sm md:text-base text-gray-400 truncate w-full text-left"
-              [title]="album.artist"
-            >
-              <span
-                *ngIf="album?.isExplicit"
-                class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
-                title="Explicit"
-              >
-                E
-              </span>
-              {{ album.artist }}
-            </p>
-          </div>
-        </div>
+          {{ album.title }}
+        </p>
+        <p
+          class="artist text-sm md:text-base text-gray-400 truncate w-full text-left"
+          [title]="album.artist"
+        >
+          <span
+            *ngIf="album?.isExplicit"
+            class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+            title="Explicit"
+          >
+            E
+          </span>
+          {{ album.artist }}
+        </p>
       </div>
+    </div>
+  </ng-container>
+
+  <!-- Second copy (duplicate for infinite scroll) -->
+  <ng-container *ngFor="let album of albums; let i = index">
+    <div
+      class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[17rem]"
+      (click)="openModal(album, albums, i)"
+    >
+      <img
+        [src]="album.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
+        [alt]="album.title"
+      />
+      <div class="track-info w-full overflow-hidden">
+        <p
+          class="title text-base md:text-lg truncate w-full text-left"
+          [title]="album.title"
+        >
+          {{ album.title }}
+        </p>
+        <p
+          class="artist text-sm md:text-base text-gray-400 truncate w-full text-left"
+          [title]="album.artist"
+        >
+          <span
+            *ngIf="album?.isExplicit"
+            class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+            title="Explicit"
+          >
+            E
+          </span>
+          {{ album.artist }}
+        </p>
+      </div>
+    </div>
+  </ng-container>
+</div>
 
       <ng-template #loading>
         <div

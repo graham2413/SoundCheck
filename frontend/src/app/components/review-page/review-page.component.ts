@@ -40,7 +40,6 @@ import { UserService } from 'src/app/services/user.service';
 import { FollowedArtist, User } from 'src/app/models/responses/user.response';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 
 @Component({
   selector: 'app-review-page',
@@ -50,8 +49,7 @@ import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
   imports: [
     CommonModule,
     FormsModule,
-    AudioPlayerComponent,
-    InfiniteScrollDirective,
+    AudioPlayerComponent
   ],
   animations: [
     trigger('overlayAnimation', [

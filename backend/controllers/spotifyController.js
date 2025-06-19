@@ -5,7 +5,7 @@ const getSpotifyAccessToken = require("../auth/spotifyAuth");
 const path = require("path");
 const https = require("https");
 const fs = require("fs");
-const { getGenreFromId, callDeezer } = require('../controllers/mainSearchController');
+const { callDeezer } = require('../controllers/mainSearchController');
 
 const isProd = process.env.NODE_ENV === "production";
 const httpsAgent = isProd
@@ -76,99 +76,147 @@ const importPlaylists = async (req, res) => {
     }
 };
 
-// Fetch top 50 albums from Spotify and store them in the database (runs once a week)
+// Fetch top albums from Spotify and store them in the database (runs once a week)
 const setAlbumImages = async () => {
-    try {
-      const accessToken = await getSpotifyAccessToken();
-      if (!accessToken) {
-        console.error("Failed to get Spotify access token.");
-        return false;
+  try {
+    const accessToken = await getSpotifyAccessToken();
+    if (!accessToken) {
+      console.error("Failed to get Spotify access token.");
+      return false;
     }
-  
-      const currentYear = new Date().getFullYear();
-  
-      const response = await axios.get("https://api.spotify.com/v1/search", {
+
+    const currentYear = new Date().getFullYear();
+    const allAlbums = [];
+
+    // Step 1: Fetch up to 500 albums (10 pages of 50)
+    for (let offset = 0; offset < 300; offset += 50) {
+      const res = await axios.get("https://api.spotify.com/v1/search", {
         headers: { Authorization: `Bearer ${accessToken}` },
         params: {
           q: `year:${currentYear} tag:new`,
           type: "album",
           limit: 50,
+          offset,
+          market: "US"
         },
         httpsAgent
       });
-  
-      const albums = (await Promise.all(
-        response.data.albums.items.map(async (album) => {
-          const name = album.name;
-          const artistName = album.artists.map(a => a.name).join(", ");
-          const releaseDate = album.release_date || "0000-00-00";
-      
-          try {
-            const deezerSearchRes = await callDeezer(
-                `https://api.deezer.com/search/album?q=${encodeURIComponent(`${name} ${artistName}`)}`
-              );
-      
-            const matchedAlbum = deezerSearchRes.data.data?.find(a =>
-              a.title.toLowerCase() === name.toLowerCase()
-            );
-      
-            if (!matchedAlbum) return null;
-      
-            // Step 1: Fetch full Deezer album details
-            const deezerAlbumRes = await callDeezer(`https://api.deezer.com/album/${matchedAlbum.id}`);
-            const deezerAlbum = deezerAlbumRes.data;
-      
-            // Step 2: Resolve genre
-            const genre = await getGenreFromId(deezerAlbum.genre_id);
-      
-            // Step 3: Prepare tracklist
-            const tracklist = deezerAlbum.tracks?.data?.map(track => ({
-              id: track.id,
-              title: track.title,
-              duration: track.duration,
-              preview: track.preview,
-              isExplicit: track.explicit_lyrics || false
-            })) || [];
-      
-            // Step 4: Extract preview + isExplicit from first track
-            const preview = tracklist.find(t => t.preview)?.preview || "";
-            const isExplicit = tracklist.some(t => t.isExplicit);
-      
-            return {
-              id: deezerAlbum.id,
-              title: deezerAlbum.title,
-              artist: deezerAlbum.artist?.name || artistName,
-              cover: deezerAlbum.cover,
-              releaseDate,
-              tracklist,
-              genre,
-              type: "Album",
-              isExplicit,
-              preview
-            };
-      
-          } catch (err) {
-            console.warn(`Failed Deezer match for "${name}" by ${artistName}:`, err.message);
-            return null;
-          }
-        })
-      )).filter(album => album); // Only keep successfully enriched albums      
-  
-      // Sort albums by release date (newest first)
-      albums.sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate));
-  
+      allAlbums.push(...res.data.albums.items);
+    }
+
+    // Step 2: Collect unique artist IDs
+    const artistIds = [...new Set(allAlbums.flatMap(a => a.artists.map(ar => ar.id)))];
+    const popularArtistIds = new Set();
+    const artistPopularityMap = new Map();
+
+    for (let i = 0; i < artistIds.length; i += 50) {
+      const batch = artistIds.slice(i, i + 50);
+      const res = await axios.get("https://api.spotify.com/v1/artists", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: { ids: batch.join(",") },
+        httpsAgent
+      });
+
+      res.data.artists.forEach(artist => {
+        artistPopularityMap.set(artist.id, artist.popularity);
+        if (artist.popularity >= 75) {
+          popularArtistIds.add(artist.id);
+        }
+      });
+    }
+
+    // Step 3: Attach popularity to each album's artists
+    allAlbums.forEach(album => {
+      album.artists.forEach(artist => {
+        artist.popularity = artistPopularityMap.get(artist.id) || 0;
+      });
+    });
+
+    // Step 4: Filter albums based on artist popularity
+    const filteredAlbums = allAlbums.filter(album =>
+      album.artists.some(artist => popularArtistIds.has(artist.id))
+    );
+
+    // Step 5: Enrich via Deezer
+    const albums = (await Promise.all(
+      filteredAlbums.map(async (album) => {
+        const name = album.name;
+        const artistName = album.artists.map(a => a.name).join(", ");
+        const releaseDate = album.release_date || "0000-00-00";
+        const maxPopularity = Math.max(...album.artists.map(a => a.popularity || 0));
+
+        try {
+          const deezerSearchRes = await callDeezer(
+            `https://api.deezer.com/search/album?q=${encodeURIComponent(`${name} ${artistName}`)}`
+          );
+
+          const matchedAlbum = deezerSearchRes.data.data?.find(a =>
+            a.title.toLowerCase() === name.toLowerCase()
+          );
+
+          if (!matchedAlbum) return null;
+
+          return {
+            id: matchedAlbum.id,
+            title: matchedAlbum.title,
+            artist: matchedAlbum.artist?.name || artistName,
+            cover: matchedAlbum.cover,
+            releaseDate,
+            type: "Album",
+            isExplicit: matchedAlbum.explicit_lyrics || false,
+            popularity: maxPopularity
+          };
+
+        } catch (err) {
+          console.warn(`Failed Deezer match for "${name}" by ${artistName}:`, err.message);
+          return null;
+        }
+      })
+    )).filter(album => album);
+
+    // Step 6: Sort albums by release date (newest first), then popularity
+    albums.sort((a, b) => {
+      const dateDiff = new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return (b.popularity || 0) - (a.popularity || 0);
+    });
+
+      // Step 7: Load existing albums before wiping
+      const existingAlbums = await AlbumImage.find().sort({ releaseDate: -1, popularity: -1 }).lean();
+
+      // Clear out old records
       await AlbumImage.deleteMany({});
       console.log("After delete:", await AlbumImage.countDocuments());
-      
-      await AlbumImage.insertMany(albums);
-  
+
+      // Deduplicate new albums by ID
+      let dedupedAlbums = Array.from(
+        new Map(albums.map(album => [album.id, album])).values()
+      );
+
+      // If less than 110, pull top existing albums as fallback
+      if (dedupedAlbums.length < 110) {
+        const needed = 110 - dedupedAlbums.length;
+
+        const fallback = existingAlbums
+          .filter(existing => !dedupedAlbums.find(a => a.id === existing.id))
+          .slice(0, needed);
+
+        dedupedAlbums = dedupedAlbums.concat(fallback);
+      }
+
+      // Final cap
+      dedupedAlbums = dedupedAlbums.slice(0, 110);
+
+      // Store final set
+      await AlbumImage.insertMany(dedupedAlbums);
+
       return true;
-  
-    } catch (error) {
-      console.error("Error fetching popular albums:", error.response?.data || error.message);
-      return false;
-    }
-  };
+
+  } catch (error) {
+    console.error("Error fetching popular albums:", error.response?.data || error.message);
+    return false;
+  }
+};
 
 // Retrieve stored album images from the database
 const getAlbumImages = async (req, res) => {

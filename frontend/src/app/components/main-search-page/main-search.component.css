@@ -9,7 +9,7 @@
 
 .marquee-track {
   display: flex;
-  animation: scroll 100s linear infinite;
+  animation: scroll 350s linear infinite;
   width: max-content;
   padding-left: 3rem;
 }
