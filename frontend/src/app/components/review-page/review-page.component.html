@@ -3,11 +3,6 @@
   *ngIf="isModalOpen"
   class="fixed inset-0 flex flex-col bg-[#09101F] text-white overflow-y-auto md:hidden z-50"
   @slideUp
-  infiniteScroll
-  [infiniteScrollDistance]="2"
-  [infiniteScrollThrottle]="150"
-  [scrollWindow]="false"
-  (scrolled)="loadMoreReleases()"
 >
   <!--iPod Container -->
   <div
@@ -224,13 +219,6 @@
               <p class="text-gray-400 text-xs sm:text-sm">
                 {{ release.releaseDate | date : "yyyy" }}
               </p>
-            </div>
-
-            <div
-              *ngIf="isLoadingMoreReleases"
-              class="col-span-2 text-center py-4 text-gray-500 text-lg"
-            >
-              Loading more releases...
             </div>
           </div>
         </div>
@@ -536,16 +524,19 @@
                 >Artist</span
               >
             </ng-container>
-            <ng-container
-              *ngIf="
-                record.type === 'Album' &&
-                record.tracklist &&
-                record.tracklist.length > 1
-              "
-            >
-              <span class="text-gray-400 text-xl block uppercase mb-2"
-                >Album</span
+            <ng-container *ngIf="record.type === 'Album'">
+              <span
+                class="text-gray-400 text-xl block uppercase mb-2"
+                *ngIf="isSingleAlbum"
               >
+                Single
+              </span>
+              <span
+                class="text-gray-400 text-xl block uppercase mb-2"
+                *ngIf="!isSingleAlbum && (record.tracklist?.length ?? 0) > 1"
+              >
+                Album
+              </span>
             </ng-container>
             <div
               class="title-wrapper"
@@ -1365,17 +1356,20 @@
                         Artist
                       </span>
                     </ng-container>
-                    <ng-container
-                      *ngIf="
-                        record.type === 'Album' &&
-                        record.tracklist &&
-                        record.tracklist.length > 1
-                      "
-                    >
-                      <span class="text-gray-400 text-xl block uppercase mb-2"
-                        >Album</span
-                      >
-                    </ng-container>
+                      <ng-container *ngIf="record.type === 'Album'">
+                        <span
+                          class="text-gray-400 text-xl block uppercase mb-2"
+                          *ngIf="isSingleAlbum"
+                        >
+                          Single
+                        </span>
+                        <span
+                          class="text-gray-400 text-xl block uppercase mb-2"
+                          *ngIf="!isSingleAlbum && (record.tracklist?.length ?? 0) > 1"
+                        >
+                          Album
+                        </span>
+                      </ng-container>
                     <div
                       class="title-wrapper"
                       [class.masked]="isTextOverflowing"
@@ -1679,13 +1673,6 @@
                     <p class="text-gray-400 text-xs">
                       {{ release.releaseDate | date : "yyyy" }}
                     </p>
-                  </div>
-
-                  <div
-                    *ngIf="isLoadingMoreReleases"
-                    class="col-span-2 text-center py-4 text-gray-500 text-lg"
-                  >
-                    Loading more releases...
                   </div>
                 </div>
               </div>

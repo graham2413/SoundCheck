@@ -697,8 +697,19 @@ loadActivityFeed() {
 
     // 1. Handle when a review is created
     modalRef.componentInstance.reviewCreated?.subscribe((newReview: Review) => {
-      this.activityFeed.unshift(newReview); // Add new review at top
-    });
+        const wasAlbumTreatedAsSingle = newReview.albumSongOrArtist?.wasOriginallyAlbumButTreatedAsSingle;
+
+        const transformedReview = {
+          ...newReview,
+          albumSongOrArtist: {
+            ...newReview.albumSongOrArtist,
+            effectiveType: wasAlbumTreatedAsSingle
+              ? 'Song'
+              : newReview.albumSongOrArtist?.type || 'unknown',
+          },
+        };
+
+  this.activityFeed.unshift(transformedReview);    });
 
     // 2. Handle when a review is deleted
     modalRef.componentInstance.reviewDeleted?.subscribe(
@@ -739,7 +750,6 @@ loadActivityFeed() {
 
       const newModal = this.openModal(record, [], 0);
       newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
-      modalRef.close();
     });
     return modalRef;
   }

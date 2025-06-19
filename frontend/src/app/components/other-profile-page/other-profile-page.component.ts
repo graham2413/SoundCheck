@@ -828,7 +828,6 @@ buildArtistRecord(item: FollowedArtist): Artist {
 
       const newModal = this.openReview(record, [], 0);
       newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
-      modalRef.close();
     });
     return modalRef;
   }

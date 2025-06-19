@@ -74,10 +74,8 @@ getReleasesByArtistIds(
   );
 }
 
-getArtistReleases(artistId: number, artistName: string, limit = 100, index = 0): Observable<{ albums: Album[]; next: string | null }> {
+getArtistReleases(artistId: number, artistName: string): Observable<{ albums: Album[]; next: string | null }> {
   const params = new HttpParams()
-    .set('limit', limit.toString())
-    .set('index', index.toString())
     .set('artistName', artistName);
 
   return this.http.get<{ albums: Album[]; next: string | null }>(

@@ -3,46 +3,59 @@ const User = require("../models/User");
 
 // Create a new review
 exports.createReview = async (req, res) => {
-    try {
-        const { albumSongOrArtist, rating, reviewText } = req.body;
+  try {
+    const { albumSongOrArtist, rating, reviewText } = req.body;
 
-        if (!albumSongOrArtist || !albumSongOrArtist.id || !albumSongOrArtist.type) {
-            return res.status(400).json({ message: "Album, Song, or Artist details are required." });
-        }
-        
-        // Create the new review object using the full `albumSongOrArtist` details
-        const newReview = new Review({
-            user: req.user._id,
-            albumSongOrArtist: {
-                id: albumSongOrArtist.id,
-                type: albumSongOrArtist.type,
-                wasOriginallyAlbumButTreatedAsSingle: albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle || false,
-                title: albumSongOrArtist.title,
-                name: albumSongOrArtist.name,
-                cover: albumSongOrArtist.cover || "",
-                picture: albumSongOrArtist.picture || "",
-                isExplicit: albumSongOrArtist.isExplicit || false,
-                artist: albumSongOrArtist.artist,
-                album: albumSongOrArtist.album || "",
-                genre: albumSongOrArtist.genre || "",
-            },
-            rating,
-            reviewText
-        });
-
-        // Save the new review
-        await newReview.save();
-
-        // Populate the user details for the created review
-        await newReview.populate('user', 'username profilePicture');
-
-        res.status(201).json({
-            message: "Review created successfully!",
-            review: newReview
-        });
-    } catch (error) {
-        res.status(400).json({ message: error.message || "Error creating review." });
+    if (!albumSongOrArtist || !albumSongOrArtist.id || !albumSongOrArtist.type) {
+      return res.status(400).json({ message: "Album, Song, or Artist details are required." });
     }
+
+    // Check if the user has already submitted a review for this item
+    const existingReview = await Review.findOne({
+      user: req.user._id,
+      'albumSongOrArtist.id': albumSongOrArtist.id,
+      'albumSongOrArtist.type': albumSongOrArtist.type
+    });
+
+    if (existingReview) {
+      return res.status(409).json({
+        message: "You have already submitted a review for this item.",
+        review: existingReview
+      });
+    }
+
+    // Create the new review object
+    const newReview = new Review({
+      user: req.user._id,
+      albumSongOrArtist: {
+        id: albumSongOrArtist.id,
+        type: albumSongOrArtist.type,
+        wasOriginallyAlbumButTreatedAsSingle: albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle || false,
+        title: albumSongOrArtist.title,
+        name: albumSongOrArtist.name,
+        cover: albumSongOrArtist.cover || "",
+        picture: albumSongOrArtist.picture || "",
+        isExplicit: albumSongOrArtist.isExplicit || false,
+        artist: albumSongOrArtist.artist,
+        album: albumSongOrArtist.album || "",
+        genre: albumSongOrArtist.genre || "",
+      },
+      rating,
+      reviewText
+    });
+
+    await newReview.save();
+
+    // Populate the user details for the created review
+    await newReview.populate('user', 'username profilePicture');
+
+    res.status(201).json({
+      message: "Review created successfully!",
+      review: newReview
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message || "Error creating review." });
+  }
 };
 
 

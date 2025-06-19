@@ -636,38 +636,46 @@ const getReleasesByArtistIds = async (req, res) => {
   }
 };
 
-// Fetch Deezer artist releases for Artist profiles
+// Fetch all Deezer artist releases (fully sorted, all pages)
 const getDeezerArtistReleases = async (req, res) => {
   const { artistId } = req.params;
-  const limit = parseInt(req.query.limit) || 100;
-  const index = parseInt(req.query.index) || 0;
   const artistName = req.query.artistName || '';
-
 
   if (!artistId) {
     return res.status(400).json({ message: 'artistId is required' });
   }
 
   try {
-    const url = `https://api.deezer.com/artist/${artistId}/albums?limit=${limit}&index=${index}`;
-    const response = await callDeezer(url);
+    let allAlbums = [];
+    let nextUrl = `https://api.deezer.com/artist/${artistId}/albums?limit=100&index=0`;
 
-    if (!response?.data?.data?.length) {
-      return res.status(200).json({ albums: [], next: null });
+    // Keep fetching until there are no more pages
+    while (nextUrl) {
+      const response = await callDeezer(nextUrl);
+      const data = response?.data?.data;
+
+      if (!data || data.length === 0) break;
+
+      allAlbums = allAlbums.concat(data);
+      nextUrl = response?.data?.next || null;
     }
 
-    const albums = response.data.data.map(album => ({
-      id: album.id,
-      title: album.title,
-      artist: artistName,
-      cover: album.cover,
-      releaseDate: album.release_date,
-      isExplicit: album.explicit_lyrics || false,
-    }));
+    // Normalize and filter bad/missing dates
+    const albums = allAlbums
+      .map(album => ({
+        id: album.id,
+        title: album.title,
+        artist: artistName,
+        cover: album.cover,
+        releaseDate: album.release_date,
+        isExplicit: album.explicit_lyrics || false,
+      }))
+      .filter(a => a.releaseDate && !isNaN(new Date(a.releaseDate)))
+      .sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate)); // Descending
 
     return res.status(200).json({
       albums,
-      next: response.data.next || null,
+      next: null, // no pagination — you already have all of them
     });
   } catch (err) {
     console.error(`Error fetching Deezer releases for artist ${artistId}:`, err.message || err);

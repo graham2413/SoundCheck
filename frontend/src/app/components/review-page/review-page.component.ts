@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
@@ -266,9 +267,7 @@ export class ReviewPageComponent implements OnInit {
   activeTab: 'Top Tracks' | 'All Releases' = 'Top Tracks';
   releases: Album[] = [];
   pageIndex = 0;
-  hasMoreReleases = true;
-  releasesPageSize = 100;
-  isLoadingMoreReleases = false;
+  public isSingleAlbum: boolean = false;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -277,8 +276,7 @@ export class ReviewPageComponent implements OnInit {
     private searchService: SearchService,
     private modal: NgbModal,
     private userService: UserService,
-    private router: Router
-  ) {}
+    private router: Router) {}
 
   ngOnInit(): void {
     this.isMobileView = window.innerWidth <= 768;
@@ -344,18 +342,18 @@ export class ReviewPageComponent implements OnInit {
     }
   }
 
-  openRecord() {
+openRecord() {
+  this.getExtraDetails().then(() => {
     this.getReviews();
-    this.getExtraDetails();
+
     setTimeout(() => {
-      const modalElement = document.querySelector(
-        '.modal-content'
-      ) as HTMLElement;
+      const modalElement = document.querySelector('.modal-content') as HTMLElement;
       if (modalElement) {
-        modalElement.scrollTop = 0; // Scroll to top
+        modalElement.scrollTop = 0;
       }
     }, 100);
-  }
+  });
+}
 
   scrollToReviews(): void {
     if (this.reviewsSection) {
@@ -443,80 +441,80 @@ export class ReviewPageComponent implements OnInit {
   }
 
   getReviews() {
-    this.reviewService
-      .searchReviews(this.record.id, this.record.type)
-      .subscribe({
-        next: (data: Reviews) => {
-          this.reviews = data.reviews;
-          // this.reviews = Array.from({ length: 35 }, (_, i) => ({
-          //   _id: `review${i + 1}`,
-          //   __v: 0,
-          //   user: {
-          //     _id: `user${i + 1}`,
-          //     username: `User${i + 1}`,
-          //     email: `user${i + 1}@example.com`,
-          //     profilePicture: `https://i.pravatar.cc/150?img=${(i % 70) + 1}`,
-          //     friendInfo: {
-          //       friends: [],
-          //       pendingRequests: [],
-          //       sentRequests: [],
-          //       friendRequestsSent: [],
-          //       friendRequestsReceived: [],
-          //     },
-          //     googleId: `google-${i + 1}`,
-          //     reviews: [],
-          //     friends: [],
-          //     createdAt: new Date().toISOString(),
-          //     artistList: [],
-          //     gradient: 'linear-gradient(to right, #ff7e5f, #feb47b)',
-          //   },
-          //   rating: Math.floor(Math.random() * 10) + 1,
-          //   reviewText: `This is a mock review #${i + 1}.`,
-          //   createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-          //   albumOrSongId: `song-${i + 1}`,
-          //   type: 'Song',
-          //   title: `Mock Song Title ${i + 1}`,
-          //   albumSongOrArtist: {
-          //     id: i + 1,
-          //     title: `Mock Song Title ${i + 1}`,
-          //     artist: `Artist ${i + 1}`,
-          //     album: `Album ${i + 1}`,
-          //     cover: `https://via.placeholder.com/150?text=Cover+${i + 1}`,
-          //     preview: '',
-          //     isExplicit: i % 3 === 0,
-          //     genre: 'Pop',
-          //     releaseDate: new Date(2023, 0, 1 + i).toISOString(),
-          //     contributors: [`Contributor ${i + 1}`],
-          //     duration: 200 + i,
-          //     type: 'Song',
-          //     isPlaying: false,
-          //   }
-          // }));
+const inferredType =
+  this.record.type === 'Album' && this.record.tracklist?.length === 1
+    ? 'Song'
+    : this.record.type;
 
-          this.existingUserReview = data.userReview;
+this.reviewService.searchReviews(this.record.id, inferredType).subscribe({
+      next: (data: Reviews) => {
+        this.reviews = data.reviews;
+        // this.reviews = Array.from({ length: 35 }, (_, i) => ({
+        //   _id: `review${i + 1}`,
+        //   __v: 0,
+        //   user: {
+        //     _id: `user${i + 1}`,
+        //     username: `User${i + 1}`,
+        //     email: `user${i + 1}@example.com`,
+        //     profilePicture: `https://i.pravatar.cc/150?img=${(i % 70) + 1}`,
+        //     friendInfo: {
+        //       friends: [],
+        //       pendingRequests: [],
+        //       sentRequests: [],
+        //       friendRequestsSent: [],
+        //       friendRequestsReceived: [],
+        //     },
+        //     googleId: `google-${i + 1}`,
+        //     reviews: [],
+        //     friends: [],
+        //     createdAt: new Date().toISOString(),
+        //     artistList: [],
+        //     gradient: 'linear-gradient(to right, #ff7e5f, #feb47b)',
+        //   },
+        //   rating: Math.floor(Math.random() * 10) + 1,
+        //   reviewText: `This is a mock review #${i + 1}.`,
+        //   createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+        //   albumOrSongId: `song-${i + 1}`,
+        //   type: 'Song',
+        //   title: `Mock Song Title ${i + 1}`,
+        //   albumSongOrArtist: {
+        //     id: i + 1,
+        //     title: `Mock Song Title ${i + 1}`,
+        //     artist: `Artist ${i + 1}`,
+        //     album: `Album ${i + 1}`,
+        //     cover: `https://via.placeholder.com/150?text=Cover+${i + 1}`,
+        //     preview: '',
+        //     isExplicit: i % 3 === 0,
+        //     genre: 'Pop',
+        //     releaseDate: new Date(2023, 0, 1 + i).toISOString(),
+        //     contributors: [`Contributor ${i + 1}`],
+        //     duration: 200 + i,
+        //     type: 'Song',
+        //     isPlaying: false,
+        //   }
+        // }));
 
-          this.ratingBarFill = 0;
-          this.circleDashOffset = 113.1;
-          this.isRatingLoaded = true;
-          this.isReviewsLoaded = true;
-          this.isImageLoaded = true;
+        this.existingUserReview = data.userReview;
 
-          setTimeout(() => {
-            this.ratingBarFill = this.getAverageRating() * 10;
-            this.circleDashOffset =
-              113.1 - (this.getAverageRating() / 10) * 113.1;
-          }, 50);
-        },
-        error: (error) => {
-          this.toastr.error(
-            'Error occurred while retrieving reviews.',
-            'Error'
-          );
-          this.isRatingLoaded = true;
-          this.isReviewsLoaded = true;
-          this.isImageLoaded = true;
-        },
-      });
+        this.ratingBarFill = 0;
+        this.circleDashOffset = 113.1;
+        this.isRatingLoaded = true;
+        this.isReviewsLoaded = true;
+        this.isImageLoaded = true;
+
+        setTimeout(() => {
+          this.ratingBarFill = this.getAverageRating() * 10;
+          this.circleDashOffset =
+            113.1 - (this.getAverageRating() / 10) * 113.1;
+        }, 50);
+      },
+      error: (error) => {
+        this.toastr.error('Error occurred while retrieving reviews.', 'Error');
+        this.isRatingLoaded = true;
+        this.isReviewsLoaded = true;
+        this.isImageLoaded = true;
+      },
+    });
   }
 
   get combinedReviews(): Review[] {
@@ -627,181 +625,152 @@ export class ReviewPageComponent implements OnInit {
       : false;
   }
 
-  public getExtraDetails() {
-    this.isLoadingExtraDetails = true;
+public getExtraDetails(): Promise<void> {
+  this.isLoadingExtraDetails = true;
 
-    const isActuallyAnAlbum =
-      this.record.type === 'Song' &&
-      (this.record as any)?.wasOriginallyAlbumButTreatedAsSingle;
+  const isActuallyAnAlbum =
+    this.record.type === 'Song' &&
+    (this.record as any)?.wasOriginallyAlbumButTreatedAsSingle;
 
+  return new Promise<void>((resolve) => {
     if (this.record.type === 'Song' && isActuallyAnAlbum) {
-      // Treat as album, fetch full album details
       (this.record as any).type = 'Album';
-      this.fetchAlbumDetails();
+      this.fetchAlbumDetails(resolve);
     } else if (this.record.type === 'Song') {
-      this.fetchSongDetails();
+      this.fetchSongDetails(resolve);
     } else if (this.record.type === 'Album') {
-      this.fetchAlbumDetails();
+      this.fetchAlbumDetails(resolve);
     } else {
-      this.fetchArtistDetails();
+      this.fetchArtistDetails(resolve);
     }
+  });
+}
+
+fetchSongDetails(done?: () => void) {
+  this.searchService.getTrackDetails(this.record.id).subscribe({
+    next: (data: Song) => {
+      const song = this.record as Song;
+
+      song.releaseDate = data.releaseDate;
+      song.contributors = data.contributors;
+      song.duration = data.duration;
+      song.preview = data.preview;
+      song.genre = data.genre;
+
+      const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+      players.forEach((player) => player?.stopLoading());
+
+      this.isLoadingExtraDetails = false;
+      if (done) done();
+    },
+    error: () => {
+      const song = this.record as Song;
+      song.releaseDate = '';
+      this.isLoadingExtraDetails = false;
+      if (done) done();
+    }
+  });
+}
+
+fetchAlbumDetails(done?: () => void) {
+  this.searchService.getAlbumDetails(this.record.id).subscribe({
+    next: (data: Album) => {
+      const album = this.record as Album;
+
+      album.tracklist = data.tracklist.map((track) => ({
+        ...track,
+        isPlaying: false,
+        cover: album.cover,
+      }));
+
+      this.isSingleAlbum =
+            album.type === 'Album' &&
+            Array.isArray(album.tracklist) &&
+            album.tracklist.length === 1;
+
+
+      if (album.tracklist.length > 0) {
+        this.currentSong = album.tracklist[0];
+      }
+
+      album.preview = data.preview;
+      album.genre = data.genre || 'Unknown';
+      album.isExplicit = data.isExplicit;
+      album.releaseDate = data.releaseDate || 'Unknown';
+
+      this.isLoadingExtraDetails = false;
+    },
+    error: () => {
+      const album = this.record as Album;
+      album.releaseDate = 'Unknown';
+      album.tracklist = [];
+      this.isLoadingExtraDetails = false;
+    },
+    complete: () => {
+      const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+      players.forEach((player) => player?.stopLoading());
+
+      if (done) done();
+    },
+  });
+}
+
+fetchArtistDetails(done?: () => void) {
+  if ((this.record as Artist).name === undefined) {
+    console.warn('record is not an Artist');
+    if (done) done();
+    return;
   }
 
-  fetchSongDetails() {
-    this.searchService.getTrackDetails(this.record.id).subscribe({
-      next: (data: Song) => {
-        (this.record as Song).releaseDate = data.releaseDate;
-        (this.record as Song).contributors = data.contributors;
-        (this.record as Song).duration = data.duration;
-        (this.record as Song).preview = data.preview;
-        (this.record as Song).genre = data.genre;
-        const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+  forkJoin({
+    tracks: this.searchService.getArtistTracks(this.record.id),
+    releases: this.searchService.getArtistReleases(
+      this.record.id,
+      (this.record as Artist).name
+    ),
+  }).subscribe({
+    next: ({ tracks, releases }) => {
+      const artist = this.record as Artist;
 
-        players.forEach((player) => player?.stopLoading());
-        this.isLoadingExtraDetails = false;
-      },
-      error: () => {
-        (this.record as Song).releaseDate = '';
-        this.isLoadingExtraDetails = false;
-      },
-    });
-  }
+      // Set tracklist with high-res covers
+      artist.tracklist = Array.isArray(tracks)
+        ? tracks.map((track) => ({
+            ...track,
+            isPlaying: false,
+            cover: this.getHighQualityImage(track.cover),
+          }))
+        : [];
 
-  fetchAlbumDetails() {
-    this.searchService.getAlbumDetails(this.record.id).subscribe({
-      next: (data: Album) => {
-        const album = this.record as Album;
+      artist.preview = tracks[0]?.preview || '';
 
-        // Apply high-quality cover to each track
-        album.tracklist = data.tracklist.map((track) => ({
-          ...track,
-          isPlaying: false,
-          cover: album.cover,
-        }));
+      if (artist.tracklist.length > 0) {
+        this.currentSong = artist.tracklist[0];
+      }
 
-        if (album.tracklist.length > 0) {
-          this.currentSong = album.tracklist[0];
-        }
-
-        album.preview = data.preview;
-        album.genre = data.genre || 'Unknown';
-        album.isExplicit = data.isExplicit;
-        album.releaseDate = data.releaseDate || 'Unknown';
-
-        this.isLoadingExtraDetails = false;
-      },
-      error: () => {
-        const album = this.record as Album;
-        album.releaseDate = 'Unknown';
-        album.tracklist = [];
-        this.isLoadingExtraDetails = false;
-      },
-      complete: () => {
-        const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
-
-        players.forEach((player) => player?.stopLoading());
-      },
-    });
-  }
-
-  fetchArtistDetails() {
-    if ((this.record as Artist).name === undefined) {
-      console.warn('record is not an Artist');
-      return;
-    }
-    forkJoin({
-      tracks: this.searchService.getArtistTracks(this.record.id),
-      releases: this.searchService.getArtistReleases(
-        this.record.id,
-        (this.record as Artist).name
-      ),
-    }).subscribe({
-      next: ({ tracks, releases }) => {
-        const artist = this.record as Artist;
-
-        // Set tracklist with high-res covers
-        artist.tracklist = Array.isArray(tracks)
-          ? tracks.map((track) => ({
-              ...track,
-              isPlaying: false,
-              cover: this.getHighQualityImage(track.cover),
-            }))
-          : [];
-
-        artist.preview = tracks[0]?.preview || '';
-
-        if (artist.tracklist.length > 0) {
-          this.currentSong = artist.tracklist[0];
-        }
-
-        // Set releases with high-res covers
-        this.releases = Array.isArray(releases?.albums)
-          ? releases.albums.map((release) => ({
-              ...release,
-              cover: this.getHighQualityImage(release.cover),
-            }))
-          : [];
-
-        // Pagination state
-        this.hasMoreReleases = !!releases?.next;
-        this.pageIndex = 100;
-
-        this.isLoadingExtraDetails = false;
-      },
-      error: () => {
-        const artist = this.record as Artist;
-        artist.tracklist = [];
-        this.releases = [];
-        this.isLoadingExtraDetails = false;
-      },
-      complete: () => {
-        const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
-        players.forEach((player) => player?.stopLoading());
-      },
-    });
-  }
-
-  loadMoreReleases() {
-    if (
-      !this.record?.id ||
-      !this.hasMoreReleases ||
-      this.isLoadingMoreReleases
-    ) {
-      return;
-    }
-
-    if ((this.record as Artist).name === undefined) {
-      console.warn('record is not an Artist');
-      return;
-    }
-    this.isLoadingMoreReleases = true;
-
-    this.searchService
-      .getArtistReleases(
-        this.record.id,
-        (this.record as Artist).name,
-        this.releasesPageSize,
-        this.pageIndex
-      )
-      .subscribe({
-        next: ({ albums, next }) => {
-          const highQualityAlbums = albums.map((release) => ({
+      // Set releases with high-res covers
+      this.releases = Array.isArray(releases?.albums)
+        ? releases.albums.map((release) => ({
             ...release,
             cover: this.getHighQualityImage(release.cover),
-          }));
+          }))
+        : [];
 
-          this.releases.push(...highQualityAlbums);
-          this.pageIndex += this.releasesPageSize;
-          this.hasMoreReleases = !!next;
-        },
-        error: () => {
-          this.hasMoreReleases = false;
-        },
-        complete: () => {
-          this.isLoadingMoreReleases = false;
-        },
-      });
-  }
+      this.isLoadingExtraDetails = false;
+      if (done) done();
+    },
+    error: () => {
+      const artist = this.record as Artist;
+      artist.tracklist = [];
+      this.releases = [];
+      this.isLoadingExtraDetails = false;
+      if (done) done();
+    },
+    complete: () => {
+      const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+      players.forEach((player) => player?.stopLoading());
+    },
+  });
+}
 
   getHighQualityImage(imageUrl: string): string {
     if (!imageUrl) return '';
@@ -830,6 +799,7 @@ export class ReviewPageComponent implements OnInit {
   }
 
   nextSong() {
+    this.isSingleAlbum = false;
     this.audioPlayerMobile?.setSource(this.currentSong?.preview || '', false);
     this.audioPlayerDesktop?.setSource(this.currentSong?.preview || '', false);
 
@@ -867,7 +837,6 @@ export class ReviewPageComponent implements OnInit {
   }
 
   openSongOrAlbum(record: Song | Album) {
-    this.activeModal.close();
     this.openNewReview.emit(record);
   }
 
@@ -961,7 +930,15 @@ export class ReviewPageComponent implements OnInit {
 
     this.reviewService.createReview(reviewCommand).subscribe({
       next: (data: NewReviewResponse) => {
-        this.existingUserReview = data.review;
+        const type = data.review.albumSongOrArtist?.type;
+
+        this.existingUserReview = {
+          ...data.review,
+          albumSongOrArtist: {
+            ...data.review.albumSongOrArtist,
+            effectiveType: type,
+          },
+        };
         this.reviewCreated.emit(data.review);
 
         this.reviews = [...this.reviews, data.review];
