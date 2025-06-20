@@ -118,10 +118,6 @@ cron.schedule("0 12 * * 5", async () => {
   await spotifyController.setAlbumImages();
 });
 
-spotifyController.setAlbumImages().catch(err => {
-  console.error("Immediate setAlbumImages() run failed:", err);
-});
-
 // Keep-alive ping (every 14 minutes - prevents cold starts)
 cron.schedule("*/14 * * * *", async () => {
   try {
