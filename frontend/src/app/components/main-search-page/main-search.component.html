@@ -76,7 +76,18 @@
 </div>
 
 <div [hidden]="activeDiscoverTab !== 'mainSearch'">
-  <div class="bg-[#09101F] text-white pb-[0.5rem] md:pb-8 pt-[0.5rem] md:pt-[2rem]">
+  
+    <!-- Heading -->
+    <div class="text-center max-w-5xl mx-auto px-4">
+    <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mt-5">
+      Explore Music
+    </h1>
+    <p class="mt-1 text-base md:text-xl text-gray-300">
+      The marquee below updates with new music every Friday to help
+      inspire your next search.
+    </p>
+  </div>
+  <div class="bg-[#09101F] text-white pb-[0.5rem] md:pb-8 pt-[0.5rem] md:pt-[0.5rem]">
     <!-- Marquee Container -->
     <div #marqueeContainer class="marquee-container">
 <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading">
@@ -172,21 +183,10 @@
     </div>
   </div>
 
-  <!-- Heading -->
-  <div class="text-center max-w-5xl mx-auto px-4">
-    <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight">
-      Explore Music
-    </h1>
-    <p class="mt-1 text-base text-gray-300">
-      The banner above updates with new music every Friday to help
-      inspire your next search.
-    </p>
-  </div>
-
   <!-- Search Bar -->
   <div
     #searchBar
-    class="relative mt-5 w-full max-w-md sm:max-w-lg mx-auto px-4"
+    class="relative mt-5 md:mt-1 w-full max-w-md sm:max-w-lg mx-auto px-4"
   >
     <input
       type="search"
