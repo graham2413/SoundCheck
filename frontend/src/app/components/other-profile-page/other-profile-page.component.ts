@@ -668,23 +668,27 @@ export class ViewProfilePageComponent implements OnInit {
   openReviews() {
     if (this.otherUser?.reviews && this.otherUser.reviews.length > 0) {
       this.showPanel = 'reviews';
+        document.body.style.overflow = 'hidden';
     }
   }
 
   openFriends() {
     if (this.otherUser?.friends && this.otherUser.friends.length > 0) {
       this.showPanel = 'friends';
+        document.body.style.overflow = 'hidden';
     }
   }
 
   openList() {
     if (this.otherUser?.artistList && this.otherUser.artistList.length > 0) {
       this.showPanel = 'artists';
+        document.body.style.overflow = 'hidden';
     }
   }
 
   closePanel() {
     this.showPanel = null;
+      document.body.style.overflow = '';
   }
 
   buildFullRecord(item: BaseRecord): Album | Artist | Song {

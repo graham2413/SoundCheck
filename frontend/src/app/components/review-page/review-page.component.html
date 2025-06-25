@@ -1152,6 +1152,22 @@
       <i class="fas fa-times text-xl"></i>
     </button>
 
+    <!-- Info Button -->
+    <button
+      (click)="showSecondIpod = !showSecondIpod"
+      class="absolute top-3 left-3 bg-gray-800 hover:bg-gray-700 text-white w-[4rem] h-[4rem] rounded-full flex items-center justify-center transition border-2 border-white shadow-lg"
+    >
+      <i
+      *ngIf="!showSecondIpod"
+      class="fas fa-info text-xl"
+      ></i>
+      <i
+      *ngIf="showSecondIpod"
+      class="fas fa-chevron-left text-xl"
+      style="color: white;"
+      ></i>
+    </button>
+
     <!-- Overall Rating Circle -->
     <div class="flex justify-center w-full">
       <ng-container
@@ -1338,8 +1354,7 @@
                       [alt]="
                         record.type === 'Artist' ? record.name : record.title
                       "
-                      (click)="showSecondIpod = true"
-                      class="w-full h-full object-contain rounded-lg cursor-pointer transition-transform duration-300 ease-in-out hover:opacity-80"
+                      class="w-full h-full object-contain rounded-lg transition-transform duration-300 ease-in-out"
                     />
                   </div>
                 </div>
@@ -1474,19 +1489,9 @@
             [ngClass]="{ 'invisible-view': !showSecondIpod }"
             class="absolute inset-0 z-30 overflow-y-auto custom-scrollbar pr-2 bg-[#09101F] rounded-lg"
           >
-            <!-- Back Button (top-left) -->
-            <button
-              (click)="onBackClick()"
-              class="absolute top-4 left-4 w-[2rem] h-[2rem] rounded-full bg-white flex items-center justify-center shadow-md z-50"
-            >
-              <i
-                class="fas fa-chevron-left text-[#09101F] text-lg sm:text-2xl"
-              ></i>
-            </button>
-
             <!-- Artist Section -->
             <div *ngIf="record.type === 'Artist'">
-              <div class="relative mt-[5rem] left-0 right-0 z-50">
+              <div class="relative mt-[1.5rem] left-0 right-0 z-50">
                 <div class="relative flex bg-gray-800 rounded-full p-1 w-fit mx-auto mb-5 mt-2">
                   <!-- Sliding Highlight -->
                     <div
@@ -1686,7 +1691,7 @@
                     record.cover ||
                     'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
                   "
-                  class="w-[55%] h-auto rounded-md mt-[2rem] border-2 border-gray-500"
+                  class="w-[55%] h-auto rounded-md mt-[1rem] border-2 border-gray-500"
                   alt="Record Image"
                 />
               </div>

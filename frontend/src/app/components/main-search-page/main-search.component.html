@@ -77,12 +77,12 @@
 
 <div [hidden]="activeDiscoverTab !== 'mainSearch'">
   <!-- Heading -->
-  <div class="text-center max-w-5xl mx-auto px-4">
+  <div class="text-center max-w-5xl mx-auto px-3">
     <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mt-5">
       Explore Music
     </h1>
     <p class="mt-1 text-base md:text-xl text-gray-300">
-      The marquee below updates with new music every Friday to help inspire your
+      The marquee below updates with new music every Friday to inspire your
       next search.
     </p>
   </div>
@@ -107,7 +107,7 @@
             />
             <div class="track-info w-full overflow-hidden">
               <p
-                class="title text-base md:text-lg truncate w-full text-left"
+                class="title text-base md:text-lg truncate w-full text-left font-semibold"
                 [title]="album.title"
               >
                 {{ album.title }}
