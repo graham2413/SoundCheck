@@ -705,27 +705,28 @@
         <div
           class="absolute top-0 left-0 h-full w-1/2 bg-[#0F5EE4] rounded-full transition-all duration-300"
           [ngStyle]="{
-            transform:
-              activeFeedType === 'Artists'
-                ? 'translateX(100%)'
-                : 'translateX(0%)'
+        transform:
+          activeFeedType === 'Artists'
+            ? 'translateX(100%)'
+            : 'translateX(0%)'
           }"
         ></div>
 
         <!-- Buttons -->
         <ng-container *ngFor="let feedType of activityFeedTypes">
           <button
-            (click)="setFeedType(feedType)"
-            class="relative z-10 w-28 py-2 text-lg md:text-xl font-semibold rounded-full transition"
-            [ngClass]="{
-              'text-white': activeFeedType === feedType,
-              'text-gray-300': activeFeedType !== feedType
-            }"
+        (click)="setFeedType(feedType)"
+        class="relative z-10 w-28 py-2 text-lg md:text-xl font-semibold rounded-full transition"
+        [ngClass]="{
+          'text-white': activeFeedType === feedType,
+          'text-gray-300': activeFeedType !== feedType
+        }"
           >
-            {{ feedType }}
+        {{ feedType }}
           </button>
         </ng-container>
       </div>
+      <div class="w-full border-b border-gray-700 mb-4"></div>
 
       <!-- Activity Feed Loaded -->
       <div *ngIf="activeFeedType == 'Friends'">

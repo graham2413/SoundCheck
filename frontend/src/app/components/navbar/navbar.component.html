@@ -154,7 +154,7 @@
 
 <!-- Bottom Navigation for Mobile -->
 <div
-  class="bg-[#0F1722] p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-20 justify-around items-center h-[4.5rem] rounded-t-xl border-t border-t-gray-700"
+  class="bg-[#0F1722] p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-20 justify-around items-center h-[4rem] rounded-t-xl border-t border-t-gray-700"
 >
   <button
     routerLink="/"
@@ -166,7 +166,7 @@
     class="flex flex-col items-center justify-center h-full flex-1 rounded-r"
   >
     <i
-      class="fas fa-home text-xl mb-1"
+      class="fas fa-home text-xl"
       [ngClass]="{
       'text-[#4C79F4]': activeTab === 'home',
       'text-gray-400': activeTab !== 'home'
@@ -186,7 +186,7 @@
   >
     <div class="relative">
       <i
-        class="fas fa-users text-xl mb-1"
+        class="fas fa-users text-xl"
         [ngClass]="{
           'text-[#4C79F4]': activeTab === 'friends',
           'text-gray-400': activeTab !== 'friends'
@@ -214,7 +214,7 @@
   class="flex flex-col items-center justify-center relative h-full flex-1 rounded-l"
   >
     <i
-      class="fas fa-user text-xl mb-1"
+      class="fas fa-user text-xl"
       [ngClass]="{
         'text-[#4C79F4]': activeTab === 'profile',
         'text-gray-400': activeTab !== 'profile'
