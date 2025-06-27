@@ -10,10 +10,15 @@ COPY package*.json ./
 # Step 4: Install dependencies
 RUN npm install
 
+
+# Step 4.5: Copy cacert.pem (before running tests)
+COPY cacert.pem ./
+
 # Step 5: Copy the rest of the application files
 COPY . .
 
-# Step 6: Run tests
+# Step 6: Run tests (in test mode to enable mocking)
+ENV NODE_ENV=test
 RUN npm test
 
 # Step 7: Expose port (e.g., 5000)

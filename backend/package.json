@@ -6,7 +6,7 @@
     "start": "cross-env NODE_ENV=production node server.js",
     "dev": "cross-env NODE_ENV=development nodemon server.js",
     "debug": "cross-env NODE_ENV=development NODE_EXTRA_CA_CERTS=./fullchain.pem node --inspect server.js",
-    "test": "jest"
+    "test": "jest --detectOpenHandles --forceExit"
   },
   "keywords": [],
   "author": "",
