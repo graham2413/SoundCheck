@@ -10,7 +10,7 @@ const isProd = process.env.NODE_ENV === "production";
 const agent = isProd
   ? new https.Agent()
   : new https.Agent({
-      ca: fs.readFileSync(path.resolve(__dirname, "../cacert.pem")),
+    ca: fs.existsSync(path.resolve(__dirname, "../cacert.pem")) ? fs.readFileSync(path.resolve(__dirname, "../cacert.pem")) : undefined
     });
 
 const getSpotifyAccessToken = async () => {

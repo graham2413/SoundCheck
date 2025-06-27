@@ -40,7 +40,7 @@ async function callDeezer(url) {
     agent = new https.Agent();
   } else {
     agent = new https.Agent({
-      ca: fs.readFileSync("cacert.pem"),
+    ca: fs.existsSync("cacert.pem") ? fs.readFileSync("cacert.pem") : undefined,
     });
   }
 

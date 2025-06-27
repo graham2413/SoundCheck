@@ -24,7 +24,7 @@ const redisOptions = {
 // Optionally load a TLS cert locally, if needed
 if (!isProd) {
   try {
-    redisOptions.tls = { ca: fs.readFileSync('cacert.pem') };
+    redisOptions.tls = { ca: fs.existsSync('cacert.pem') ? fs.readFileSync('cacert.pem') : undefined };
     console.log('Loaded local Redis TLS cert.');
   } catch (err) {
     console.warn('Local Redis TLS cert not found. Proceeding without TLS.', err);

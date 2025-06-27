@@ -297,7 +297,7 @@ const isProd = process.env.NODE_ENV === "production";
 const agent = isProd
   ? new https.Agent()
   : new https.Agent({
-      ca: fs.readFileSync("cacert.pem"),
+    ca: fs.existsSync("cacert.pem") ? fs.readFileSync("cacert.pem") : undefined,
     });
 
 exports.proxyImage = async function (req, res) {
