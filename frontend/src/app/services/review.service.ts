@@ -154,4 +154,8 @@ getActivityFeed(params: {
   });
 }
 
+getProxiedImageUrl(originalUrl: string): string {
+  return `${this.apiUrl}/image-proxy?url=${encodeURIComponent(originalUrl)}`;
+}
+
 }

@@ -1,11 +1,12 @@
-const redis = require('../utils/redisClient');
-const { callDeezer } = require('../utils/callDeezer');
-const Release = require('../models/Release');
-const User = require('../models/User');
+const redis = require("../utils/redisClient");
+const { callDeezer } = require("../utils/callDeezer");
+const { fetchWithRetry } = require("../utils/fetchWithRetry");
+const Release = require("../models/Release");
+const User = require("../models/User");
 
 const searchMusic = async (req, res) => {
   try {
-    const { query, type = 'songs' } = req.query;
+    const { query, type = "songs" } = req.query;
     if (!query) return res.status(400).json({ message: "Query is required" });
 
     const typeKey = type.toLowerCase();
@@ -17,27 +18,44 @@ const searchMusic = async (req, res) => {
     if (cached) return res.json(JSON.parse(cached));
 
     // Prepare response parts
-    let songs = [], albums = [], artists = [];
+    let songs = [],
+      albums = [],
+      artists = [];
 
     // === TYPE: ALL ===
-    if (typeKey === 'all') {
-      const [songsResult, albumsResult, artistsResult] = await Promise.allSettled([
-        callDeezer(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=15`),
-        callDeezer(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=10`),
-        callDeezer(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=10`)
-      ]);
+    if (typeKey === "all") {
+      const [songsResult, albumsResult, artistsResult] =
+        await Promise.allSettled([
+          fetchWithRetry(() =>
+            callDeezer(
+              `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=15`
+            )
+          ),
+          fetchWithRetry(() =>
+            callDeezer(
+              `https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=10`
+            )
+          ),
+          fetchWithRetry(() =>
+            callDeezer(
+              `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=10`
+            )
+          ),
+        ]);
 
       // SONGS
-      if (songsResult.status === 'fulfilled') {
+      if (songsResult.status === "fulfilled") {
         const songsRaw = songsResult.value.data?.data || [];
-        const uniqueAlbumIds = [...new Set(songsRaw.map(item => item?.album?.id).filter(Boolean))];
+        const uniqueAlbumIds = [
+          ...new Set(songsRaw.map((item) => item?.album?.id).filter(Boolean)),
+        ];
         const albumGenresMap = new Map(
           await Promise.all(
-            uniqueAlbumIds.map(async id => [id, await getAlbumGenre(id)])
+            uniqueAlbumIds.map(async (id) => [id, await getAlbumGenre(id)])
           )
         );
 
-        songs = songsRaw.map(item => ({
+        songs = songsRaw.map((item) => ({
           id: item?.id,
           title: item?.title,
           artist: item?.artist?.name,
@@ -50,10 +68,12 @@ const searchMusic = async (req, res) => {
       }
 
       // ALBUMS
-      if (albumsResult.status === 'fulfilled') {
+      if (albumsResult.status === "fulfilled") {
         const albumsRaw = albumsResult.value.data?.data || [];
         const albumGenres = await Promise.all(
-          albumsRaw.map(album => album?.id ? getAlbumGenre(album.id) : "Unknown")
+          albumsRaw.map((album) =>
+            album?.id ? getAlbumGenre(album.id) : "Unknown"
+          )
         );
 
         albums = albumsRaw.map((album, index) => ({
@@ -67,29 +87,34 @@ const searchMusic = async (req, res) => {
       }
 
       // ARTISTS
-      if (artistsResult.status === 'fulfilled') {
+      if (artistsResult.status === "fulfilled") {
         const artistsRaw = artistsResult.value.data?.data || [];
-        artists = artistsRaw.map(artist => ({
+        artists = artistsRaw.map((artist) => ({
           id: artist?.id,
           name: artist?.name,
           picture: artist?.picture,
           tracklist: artist?.tracklist,
         }));
       }
-
     } else {
       // === TYPE: SONGS ===
-      if (typeKey === 'songs') {
-        const songsRes = await callDeezer(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=15`);
+      if (typeKey === "songs") {
+        const songsRes = await fetchWithRetry(() =>
+          callDeezer(
+            `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=15`
+          )
+        );
         const songsRaw = songsRes.data?.data || [];
-        const uniqueAlbumIds = [...new Set(songsRaw.map(item => item?.album?.id).filter(Boolean))];
+        const uniqueAlbumIds = [
+          ...new Set(songsRaw.map((item) => item?.album?.id).filter(Boolean)),
+        ];
         const albumGenresMap = new Map(
           await Promise.all(
-            uniqueAlbumIds.map(async id => [id, await getAlbumGenre(id)])
+            uniqueAlbumIds.map(async (id) => [id, await getAlbumGenre(id)])
           )
         );
 
-        songs = songsRaw.map(item => ({
+        songs = songsRaw.map((item) => ({
           id: item?.id,
           title: item?.title,
           artist: item?.artist?.name,
@@ -102,11 +127,17 @@ const searchMusic = async (req, res) => {
       }
 
       // === TYPE: ALBUMS ===
-      if (typeKey === 'albums') {
-        const albumsRes = await callDeezer(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=10`);
+      if (typeKey === "albums") {
+        const albumsRes = await fetchWithRetry(() =>
+          callDeezer(
+            `https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=10`
+          )
+        );
         const albumsRaw = albumsRes.data?.data || [];
         const albumGenres = await Promise.all(
-          albumsRaw.map(album => album?.id ? getAlbumGenre(album.id) : "Unknown")
+          albumsRaw.map((album) =>
+            album?.id ? getAlbumGenre(album.id) : "Unknown"
+          )
         );
 
         albums = albumsRaw.map((album, index) => ({
@@ -120,11 +151,15 @@ const searchMusic = async (req, res) => {
       }
 
       // === TYPE: ARTISTS ===
-      if (typeKey === 'artists') {
-        const artistsRes = await callDeezer(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=10`);
+      if (typeKey === "artists") {
+        const artistsRes = await fetchWithRetry(() =>
+          callDeezer(
+            `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=10`
+          )
+        );
         const artistsRaw = artistsRes.data?.data || [];
 
-        artists = artistsRaw.map(artist => ({
+        artists = artistsRaw.map((artist) => ({
           id: artist?.id,
           name: artist?.name,
           picture: artist?.picture,
@@ -134,12 +169,15 @@ const searchMusic = async (req, res) => {
     }
 
     const responsePayload =
-      typeKey === 'songs' ? { songs } :
-      typeKey === 'albums' ? { albums } :
-      typeKey === 'artists' ? { artists } :
-      { songs, albums, artists };
+      typeKey === "songs"
+        ? { songs }
+        : typeKey === "albums"
+          ? { albums }
+          : typeKey === "artists"
+            ? { artists }
+            : { songs, albums, artists };
 
-    await redis.set(cacheKey, JSON.stringify(responsePayload), 'EX', 3600);
+    await redis.set(cacheKey, JSON.stringify(responsePayload), "EX", 3600);
     res.json(responsePayload);
   } catch (error) {
     console.error("Error in searchMusic:", error.message);
@@ -148,17 +186,17 @@ const searchMusic = async (req, res) => {
 };
 
 async function getAlbumGenre(albumId) {
-  if (!albumId || typeof albumId !== 'number' || isNaN(albumId)) {
+  if (!albumId || typeof albumId !== "number" || isNaN(albumId)) {
     return "Unknown";
   }
-  
+
   const albumCacheKey = `album-genre:${albumId}`;
   const cachedGenre = await redis.get(albumCacheKey);
   if (cachedGenre) return cachedGenre;
 
   try {
-    const albumDetails = await callDeezer(
-      `https://api.deezer.com/album/${albumId}`
+    const albumDetails = await fetchWithRetry(() =>
+      callDeezer(`https://api.deezer.com/album/${albumId}`)
     );
 
     if (!albumDetails.data) {
@@ -192,7 +230,7 @@ async function getAlbumGenre(albumId) {
     console.error(`Failed to fetch genre for album ${albumId}:`, err.message);
     return "Unknown";
   }
-};
+}
 
 async function getGenreFromId(genreId) {
   if (!genreId || genreId <= 0) return "Unknown";
@@ -202,12 +240,12 @@ async function getGenreFromId(genreId) {
   if (cached) return cached;
 
   try {
-    const genreResponse = await callDeezer(
-      `https://api.deezer.com/genre/${genreId}`
+    const genreResponse = await fetchWithRetry(() =>
+      callDeezer(`https://api.deezer.com/genre/${genreId}`)
     );
     const name = genreResponse.data?.name || null;
 
-    await redis.set(cacheKey, name || "Unknown", 'EX', 86400); // cache even if "Unknown"
+    await redis.set(cacheKey, name || "Unknown", "EX", 86400); // cache even if "Unknown"
     return name || "Unknown";
   } catch (error) {
     console.error(
@@ -215,7 +253,7 @@ async function getGenreFromId(genreId) {
       error.message
     );
     // Cache failure to avoid repeated retries
-    await redis.set(cacheKey, "Unknown", 'EX', 86400);
+    await redis.set(cacheKey, "Unknown", "EX", 86400);
     return "Unknown";
   }
 }
@@ -229,8 +267,8 @@ const getTrackDetails = async (req, res) => {
     }
 
     // Fetch track details using rate-limited function
-    const trackResponse = await callDeezer(
-      `https://api.deezer.com/track/${trackId}`
+    const trackResponse = await fetchWithRetry(() =>
+      callDeezer(`https://api.deezer.com/track/${trackId}`)
     );
 
     if (!trackResponse.data) {
@@ -242,7 +280,7 @@ const getTrackDetails = async (req, res) => {
 
     // Check if album ID is available to fetch genre
     let genre = "Unknown";
-    if (trackData.album?.id && typeof trackData.album.id === 'number') {
+    if (trackData.album?.id && typeof trackData.album.id === "number") {
       genre = await getAlbumGenre(trackData.album.id);
     }
 
@@ -255,7 +293,7 @@ const getTrackDetails = async (req, res) => {
       contributors: trackData.contributors
         ? trackData.contributors.map((c) => c.name)
         : [],
-        genre: genre,
+      genre: genre,
     };
 
     return res.json(trackDetails);
@@ -279,8 +317,8 @@ const getAlbumDetails = async (req, res) => {
     }
 
     // Fetch album details using rate-limited function
-    const albumResponse = await callDeezer(
-      `https://api.deezer.com/album/${albumId}`
+    const albumResponse = await fetchWithRetry(() =>
+      callDeezer(`https://api.deezer.com/album/${albumId}`)
     );
 
     if (!albumResponse.data) {
@@ -312,12 +350,12 @@ const getAlbumDetails = async (req, res) => {
           preview: track.preview,
           isExplicit: track.explicit_lyrics,
           cover: track.album?.cover,
-          type: 'Song',
+          type: "Song",
           genre: genre,
         })) || [],
-        genre: genre,
-        isExplicit: albumData.explicit_lyrics,
-        preview: firstTrack?.preview || null
+      genre: genre,
+      isExplicit: albumData.explicit_lyrics,
+      preview: firstTrack?.preview || null,
     };
 
     return res.json(albumDetails);
@@ -341,8 +379,8 @@ const getArtistTopTracks = async (req, res) => {
     }
 
     // Fetch artist track details using rate-limited function
-    const artistsResponse = await callDeezer(
-      `https://api.deezer.com/artist/${artistId}/top?limit=25`
+    const artistsResponse = await fetchWithRetry(() =>
+      callDeezer(`https://api.deezer.com/artist/${artistId}/top?limit=25`)
     );
 
     // Ensure the API response has expected structure
@@ -357,18 +395,18 @@ const getArtistTopTracks = async (req, res) => {
     }
 
     const artistTopTrackDetails = artistsResponse.data.data.map((track) => {
-        return {
-          id: track.id,
-          title: track.title,
-          artist: track.artist?.name || "Unknown",
-          album: track.album?.title || "Unknown",
-          duration: track.duration,
-          preview: track.preview,
-          isExplicit: track.explicit_lyrics,
-          cover: track.album?.cover,
-          type: 'Song'
-        };
-      });
+      return {
+        id: track.id,
+        title: track.title,
+        artist: track.artist?.name || "Unknown",
+        album: track.album?.title || "Unknown",
+        duration: track.duration,
+        preview: track.preview,
+        isExplicit: track.explicit_lyrics,
+        cover: track.album?.cover,
+        type: "Song",
+      };
+    });
 
     return res.json(artistTopTrackDetails);
   } catch (error) {
@@ -394,7 +432,7 @@ async function syncArtistAlbums(artistId, artistName, fullSync = false) {
 
       while (true) {
         const url = `https://api.deezer.com/artist/${artistId}/albums?limit=${limit}&index=${index}`;
-        const response = await callDeezer(url);
+        const response = await fetchWithRetry(() => callDeezer(url));
         if (!response?.data?.data?.length) break;
 
         allAlbums.push(...response.data.data);
@@ -403,23 +441,25 @@ async function syncArtistAlbums(artistId, artistName, fullSync = false) {
         if (!response.data.next) break;
       }
     } else {
-      const url = `https://api.deezer.com/artist/${artistId}/albums?limit=100&index=0`;
-      const response = await callDeezer(url);
-      if (response?.data?.data?.length) {
+      const limit = 100;
+      for (let index = 0; index < 200; index += 100) {
+        const url = `https://api.deezer.com/artist/${artistId}/albums?limit=${limit}&index=${index}`;
+        const response = await fetchWithRetry(() => callDeezer(url));
+        if (!response?.data?.data?.length) break;
         allAlbums.push(...response.data.data);
       }
     }
 
-    const allAlbumIds = allAlbums.map(album => album.id.toString());
+    const allAlbumIds = allAlbums.map((album) => album.id.toString());
 
     const existingIds = await Release.find({
       albumId: { $in: allAlbumIds },
-      artistId
-    }).distinct('albumId');
+      artistId,
+    }).distinct("albumId");
 
     const seen = new Set();
 
-    const newAlbums = allAlbums.filter(album => {
+    const newAlbums = allAlbums.filter((album) => {
       const dateKey = album.release_date.slice(0, 7); // e.g., "2025-01"
       const titleKey = album.title.toLowerCase().trim();
       const key = `${titleKey}|${dateKey}`;
@@ -434,34 +474,41 @@ async function syncArtistAlbums(artistId, artistName, fullSync = false) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(now.getDate() - 30);
 
-    const recentlyChangedAlbums = allAlbums.filter(album => {
+    const recentlyChangedAlbums = allAlbums.filter((album) => {
       const releaseDate = new Date(album.release_date);
       return releaseDate >= thirtyDaysAgo;
     });
 
-    const recentlyChangedAlbumIds = recentlyChangedAlbums.map(a => a.id.toString());
+    const recentlyChangedAlbumIds = recentlyChangedAlbums.map((a) =>
+      a.id.toString()
+    );
 
     const existingRecentReleases = await Release.find({
       albumId: { $in: recentlyChangedAlbumIds },
       artistId,
-      releaseDate: { $gte: thirtyDaysAgo }
+      releaseDate: { $gte: thirtyDaysAgo },
     });
 
-    const DEFAULT_COVER = 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801';
-    const DEFAULT_TITLE = 'Untitled Album';
-    const DEFAULT_RELEASE_DATE = new Date('1970-01-01');
+    const DEFAULT_COVER =
+      "https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801";
+    const DEFAULT_TITLE = "Untitled Album";
+    const DEFAULT_RELEASE_DATE = new Date("1970-01-01");
 
     const updates = [];
 
     for (const album of recentlyChangedAlbums) {
-      const existing = existingRecentReleases.find(r => r.albumId === album.id.toString());
+      const existing = existingRecentReleases.find(
+        (r) => r.albumId === album.id.toString()
+      );
       if (!existing) continue;
 
       const updatedFields = {};
 
       const title = album.title?.trim() || DEFAULT_TITLE;
       const cover = album.cover?.trim() || DEFAULT_COVER;
-      const releaseDate = album.release_date ? new Date(album.release_date) : DEFAULT_RELEASE_DATE;
+      const releaseDate = album.release_date
+        ? new Date(album.release_date)
+        : DEFAULT_RELEASE_DATE;
 
       if (title !== existing.title) updatedFields.title = title;
       if (cover !== existing.cover) updatedFields.cover = cover;
@@ -473,15 +520,17 @@ async function syncArtistAlbums(artistId, artistName, fullSync = false) {
         updates.push({
           updateOne: {
             filter: { _id: existing._id },
-            update: { $set: updatedFields }
-          }
+            update: { $set: updatedFields },
+          },
         });
       }
     }
 
     if (updates.length > 0) {
       await Release.bulkWrite(updates);
-      console.log(`Updated ${updates.length} recent/future albums for ${artistName} (${artistId})`);
+      console.log(
+        `Updated ${updates.length} recent/future albums for ${artistName} (${artistId})`
+      );
     }
 
     if (newAlbums.length === 0) {
@@ -489,41 +538,47 @@ async function syncArtistAlbums(artistId, artistName, fullSync = false) {
       return;
     }
 
-    const docsToInsert = newAlbums.map(album => ({
+    const docsToInsert = newAlbums.map((album) => ({
       albumId: album.id,
       artistId,
       artistName,
       title: album.title?.trim() || DEFAULT_TITLE,
       cover: album.cover?.trim() || DEFAULT_COVER,
       isExplicit: !!album.explicit_lyrics,
-      releaseDate: album.release_date ? new Date(album.release_date) : DEFAULT_RELEASE_DATE,
+      releaseDate: album.release_date
+        ? new Date(album.release_date)
+        : DEFAULT_RELEASE_DATE,
     }));
 
     await Release.insertMany(docsToInsert);
-    console.log(`Inserted ${newAlbums.length} albums for ${artistName} (${artistId})`);
+    console.log(
+      `Inserted ${newAlbums.length} albums for ${artistName} (${artistId})`
+    );
   } catch (err) {
-    console.error(`syncArtistAlbums failed for artist ${artistId} (${artistName}):`, err.message || err);
+    console.error(
+      `syncArtistAlbums failed for artist ${artistId} (${artistName}):`,
+      err.message || err
+    );
     throw err;
   }
 }
 
 // When a user manually triggers album sync for an artist (following an artist)
 const getAndStoreArtistAlbums = async (req, res) => {
-
   if (!req.user || !req.user._id) {
-    return res.status(401).json({ message: 'Unauthorized. User not found.' });
+    return res.status(401).json({ message: "Unauthorized. User not found." });
   }
   const artistId = req.params.id;
   const artistName = req.query.name;
 
   const redisKey = `artist-sync:user:${artistId}`;
   const cached = await redis.get(redisKey);
-  if (cached) return res.status(200).json({ message: 'Recently synced' });
+  if (cached) return res.status(200).json({ message: "Recently synced" });
 
   await syncArtistAlbums(artistId, artistName, true);
-  await redis.set(redisKey, '1', 'EX', 60 * 60 * 6); // 6h TTL
+  await redis.set(redisKey, "1", "EX", 60 * 60 * 6); // 6h TTL
 
-  res.status(200).json({ message: 'Synced from user action' });
+  res.status(200).json({ message: "Synced from user action" });
 };
 
 // Cron job method to update all followed artists' albums
@@ -536,17 +591,21 @@ async function cronSyncAllArtists(batchSize = 10, delayMs = 1000) {
 
     const syncBatch = batch.map(({ id, name }) => {
       return (async () => {
-        const redisKey = `artist-sync:cron:${id}`;
+        const today = new Date().toISOString().slice(0, 10); // e.g., "2025-06-27"
+        const redisKey = `artist-sync:cron:${id}:${today}`;
         const cached = await redis.get(redisKey);
-        if (cached) return { id, name, status: 'skipped' };
+        if (cached) return { id, name, status: "skipped" };
 
         try {
           await syncArtistAlbums(id, name);
-          await redis.set(redisKey, '1', 'EX', 60 * 60 * 25);
-          return { id, name, status: 'synced' };
+          await redis.set(redisKey, "1");
+          return { id, name, status: "synced" };
         } catch (err) {
-          console.error(`Cron sync failed for ${name} (${id}):`, err.message || err);
-          return { id, name, status: 'failed', error: err.message || err };
+          console.error(
+            `Cron sync failed for ${name} (${id}):`,
+            err.message || err
+          );
+          return { id, name, status: "failed", error: err.message || err };
         }
       })();
     });
@@ -554,29 +613,33 @@ async function cronSyncAllArtists(batchSize = 10, delayMs = 1000) {
     const results = await Promise.allSettled(syncBatch);
 
     for (const result of results) {
-      if (result.status === 'fulfilled') {
+      if (result.status === "fulfilled") {
         const { status } = result.value;
-        if (status === 'synced') totalSynced += 1;
+        if (status === "synced") totalSynced += 1;
       } else {
         console.error(`Unhandled sync rejection:`, result.reason);
       }
     }
 
     // Log per batch
-    console.log(`Processed batch ${i / batchSize + 1} of ${Math.ceil(followedArtists.length / batchSize)}`);
+    console.log(
+      `Processed batch ${i / batchSize + 1} of ${Math.ceil(followedArtists.length / batchSize)}`
+    );
 
     // Delay between batches
-    await new Promise(resolve => setTimeout(resolve, delayMs));
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
 
-  console.log(`Cron sync completed. Total artists: ${followedArtists.length}, Synced: ${totalSynced}`);
+  console.log(
+    `Cron sync completed. Total artists: ${followedArtists.length}, Synced: ${totalSynced}`
+  );
 }
 
 // Helper function to get the list of followed artists from MongoDB
 async function getFollowedArtistList() {
-  const users = await User.find({}, 'artistList').lean();
+  const users = await User.find({}, "artistList").lean();
 
-  const allFollows = users.flatMap(u => u.artistList || []);
+  const allFollows = users.flatMap((u) => u.artistList || []);
 
   // Deduplicate by artistId
   const uniqueMap = new Map();
@@ -596,11 +659,13 @@ const getReleasesByArtistIds = async (req, res) => {
     const { cursorDate, cursorId, limit = 20 } = req.query;
 
     if (!Array.isArray(artistIds) || artistIds.length === 0) {
-      return res.status(400).json({ message: 'artistIds must be a non-empty array' });
+      return res
+        .status(400)
+        .json({ message: "artistIds must be a non-empty array" });
     }
 
     const query = {
-      artistId: { $in: artistIds }
+      artistId: { $in: artistIds },
     };
 
     // If a cursor is provided, apply compound pagination logic
@@ -609,8 +674,8 @@ const getReleasesByArtistIds = async (req, res) => {
         { releaseDate: { $lt: new Date(cursorDate) } },
         {
           releaseDate: new Date(cursorDate),
-          _id: { $lt: cursorId }
-        }
+          _id: { $lt: cursorId },
+        },
       ];
     }
 
@@ -627,22 +692,21 @@ const getReleasesByArtistIds = async (req, res) => {
 
     return res.status(200).json({
       releases,
-      nextCursor
+      nextCursor,
     });
-
   } catch (err) {
-    console.error('Error fetching releases:', err.message || err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("Error fetching releases:", err.message || err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
 // Fetch all Deezer artist releases (fully sorted, all pages)
 const getDeezerArtistReleases = async (req, res) => {
   const { artistId } = req.params;
-  const artistName = req.query.artistName || '';
+  const artistName = req.query.artistName || "";
 
   if (!artistId) {
-    return res.status(400).json({ message: 'artistId is required' });
+    return res.status(400).json({ message: "artistId is required" });
   }
 
   try {
@@ -651,7 +715,7 @@ const getDeezerArtistReleases = async (req, res) => {
 
     // Keep fetching until there are no more pages
     while (nextUrl) {
-      const response = await callDeezer(nextUrl);
+      const response = await fetchWithRetry(() => callDeezer(nextUrl));
       const data = response?.data?.data;
 
       if (!data || data.length === 0) break;
@@ -662,7 +726,7 @@ const getDeezerArtistReleases = async (req, res) => {
 
     // Normalize and filter bad/missing dates
     const albums = allAlbums
-      .map(album => ({
+      .map((album) => ({
         id: album.id,
         title: album.title,
         artist: artistName,
@@ -670,7 +734,7 @@ const getDeezerArtistReleases = async (req, res) => {
         releaseDate: album.release_date,
         isExplicit: album.explicit_lyrics || false,
       }))
-      .filter(a => a.releaseDate && !isNaN(new Date(a.releaseDate)))
+      .filter((a) => a.releaseDate && !isNaN(new Date(a.releaseDate)))
       .sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate)); // Descending
 
     return res.status(200).json({
@@ -678,8 +742,11 @@ const getDeezerArtistReleases = async (req, res) => {
       next: null, // no pagination — you already have all of them
     });
   } catch (err) {
-    console.error(`Error fetching Deezer releases for artist ${artistId}:`, err.message || err);
-    return res.status(500).json({ message: 'Failed to fetch artist releases' });
+    console.error(
+      `Error fetching Deezer releases for artist ${artistId}:`,
+      err.message || err
+    );
+    return res.status(500).json({ message: "Failed to fetch artist releases" });
   }
 };
 
@@ -694,5 +761,5 @@ module.exports = {
   getAndStoreArtistAlbums,
   cronSyncAllArtists,
   getReleasesByArtistIds,
-  getDeezerArtistReleases
+  getDeezerArtistReleases,
 };

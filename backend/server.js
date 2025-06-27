@@ -132,8 +132,10 @@ cron.schedule("*/14 * * * *", async () => {
 
 // Sync all artists albums in DB daily at 3 AM
 cron.schedule('0 3 * * *', async () => {
-  console.log('Starting daily artist album sync at 3 AM');
+  console.log('🔥 Starting daily artist album sync at 3 AM (local)');
   await cronSyncAllArtists();
+}, {
+  timezone: 'America/Chicago'
 });
 
 // Below runs the sync every minute for testing purposes

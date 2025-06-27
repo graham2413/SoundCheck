@@ -8,18 +8,19 @@
       "preLaunchTask": "npm: start",
       "url": "http://localhost:4200/"
     },
-    {
-      "name": "Run Backend (Node.js)",
-      "type": "node",
-      "request": "launch",
-      "program": "${workspaceFolder}/backend/server.js",
-      "cwd": "${workspaceFolder}/backend",
-      "outFiles": ["${workspaceFolder}/backend/**/*.js"],
-      "runtimeExecutable": "node",
-      "env": {
-        "NODE_ENV": "development"
-      }
-    },
+{
+  "name": "Run Backend (Node.js)",
+  "type": "node",
+  "request": "launch",
+  "program": "${workspaceFolder}/backend/server.js",
+  "cwd": "${workspaceFolder}/backend",
+  "outFiles": ["${workspaceFolder}/backend/**/*.js"],
+  "runtimeExecutable": "node",
+  "env": {
+    "NODE_ENV": "development",
+    "NODE_EXTRA_CA_CERTS": "${workspaceFolder}/backend/fullchain.pem"
+  }
+},
     {
       "name": "Attach to Running Backend",
       "type": "node",

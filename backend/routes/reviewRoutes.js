@@ -23,4 +23,7 @@ router.get("/top-albums", authenticateUser, reviewController.getTopAlbums);
 router.get("/top-songs", authenticateUser, reviewController.getTopSongs);
 router.get("/top-artists", authenticateUser, reviewController.getTopArtists);
 
+// Method to  proxy images for getting dynamic image gradient for SPA (color thief needs CORS setup)
+router.get("/image-proxy", reviewController.proxyImage);
+
 module.exports = router;

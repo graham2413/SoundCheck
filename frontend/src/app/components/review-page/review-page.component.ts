@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import {
-  ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
@@ -40,6 +39,7 @@ import { UserService } from 'src/app/services/user.service';
 import { FollowedArtist, User } from 'src/app/models/responses/user.response';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import { ColorThiefService } from '@soarlin/angular-color-thief';
 
 @Component({
   selector: 'app-review-page',
@@ -266,7 +266,9 @@ export class ReviewPageComponent implements OnInit {
   releases: Album[] = [];
   pageIndex = 0;
   public isSingleAlbum: boolean = false;
-
+  backgroundGradient: string = 'linear-gradient(to bottom, #09101F, #000000)';
+  isDarkBackground: boolean = false;
+  
   constructor(
     private activeModal: NgbActiveModal,
     private reviewService: ReviewService,
@@ -274,6 +276,7 @@ export class ReviewPageComponent implements OnInit {
     private searchService: SearchService,
     private modal: NgbModal,
     private userService: UserService,
+    private colorThief: ColorThiefService,
     private router: Router) {}
 
   ngOnInit(): void {
@@ -339,6 +342,74 @@ export class ReviewPageComponent implements OnInit {
       setTimeout(() => this.checkIfScrollable(), 0);
     }
   }
+
+  preloadLowResImageForGradient(): void {
+  const url = this.getImageUrl(true);
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = (e) => this.onImageLoad(e as Event);
+  img.src = url;
+}
+
+getImageUrl(lowRes = false): string {
+  let rawUrl = this.record.type === 'Artist'
+    ? this.record.picture ||
+        'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
+    : this.record.cover ||
+        'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801';
+
+  if (lowRes) {
+    rawUrl = this.getLowResImageUrl(rawUrl);
+  }
+
+  return this.reviewService.getProxiedImageUrl(rawUrl);
+}
+
+darkenColor(r: number, g: number, b: number, factor = 0.7): [number, number, number] {
+  return [r * factor, g * factor, b * factor];
+}
+
+async onImageLoad(event: Event): Promise<void> {
+  const img = event.target as HTMLImageElement;
+
+  try {
+    const [[r, g, b]] = await this.colorThief.getPalette(img, 3);
+    const [dr, dg, db] = this.darkenColor(r, g, b, 0.6); // 0.6 = 40% darker
+    const gradient = `linear-gradient(to bottom, rgb(${dr}, ${dg}, ${db}))`;
+
+    const luminance = (0.299 * dr + 0.587 * dg + 0.114 * db) / 255;
+    this.isDarkBackground = luminance < 0.5;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.backgroundGradient = gradient;
+      });
+    });
+
+  } catch (err) {
+    console.error('Color extraction failed:', err);
+    this.isDarkBackground = true;
+    const fallback = 'linear-gradient(to bottom, #09101F, #000000)';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.backgroundGradient = fallback;
+      });
+    });
+  }
+}
+
+
+getLowResImageUrl(url: string): string {
+  // Handle Deezer-style ?size=xl → ?size=small
+  const urlObj = new URL(url);
+  if (urlObj.hostname.includes('deezer.com')) {
+    urlObj.searchParams.set('size', 'small');
+    return urlObj.toString();
+  }
+
+  // Fallback for legacy Cloudinary-style /1000x1000- → /50x50-
+  return url.replace(/\/\d+x\d+-/, '/50x50-');
+}
 
 openRecord() {
   this.getExtraDetails().then(() => {
@@ -796,43 +867,38 @@ fetchArtistDetails(done?: () => void) {
     }
   }
 
-  nextSong() {
-    this.isSingleAlbum = false;
-    this.audioPlayerMobile?.setSource(this.currentSong?.preview || '', false);
-    this.audioPlayerDesktop?.setSource(this.currentSong?.preview || '', false);
+nextSong() {
 
-    if (this.currentIndex < this.recordList.length - 1) {
-      this.currentIndex++;
-      this.record = this.recordList[this.currentIndex];
+  if (this.currentIndex < this.recordList.length - 1) {
+    this.currentIndex++;
+    this.record = this.recordList[this.currentIndex];
 
-      this.isReviewsLoaded = false;
-      this.isRatingLoaded = false;
-      this.isImageLoaded = false;
-
-      this.resetScrollingState();
-      this.scrollToTopOfIpod();
-      this.openRecord();
-      this.updateIsInList();
-    }
+    this.resetForNewRecord();
   }
+}
 
-  prevSong() {
-    this.audioPlayerMobile?.setSource(this.currentSong?.preview || '', false);
-    this.audioPlayerDesktop?.setSource(this.currentSong?.preview || '', false);
-    if (this.currentIndex > 0) {
-      this.currentIndex--;
-      this.record = this.recordList[this.currentIndex];
+prevSong() {
+    
+  if (this.currentIndex > 0) {
+    this.currentIndex--;
+    this.record = this.recordList[this.currentIndex];
 
-      this.isReviewsLoaded = false;
-      this.isRatingLoaded = false;
-      this.isImageLoaded = false;
-
-      this.resetScrollingState();
-      this.scrollToTopOfIpod();
-      this.openRecord();
-      this.updateIsInList();
-    }
+    this.resetForNewRecord();
   }
+}
+
+resetForNewRecord() {
+  this.isSingleAlbum = false;
+  this.isReviewsLoaded = false;
+  this.isRatingLoaded = false;
+  this.isImageLoaded = false;
+
+  this.preloadLowResImageForGradient()
+  this.resetScrollingState();
+  this.scrollToTopOfIpod();
+  this.openRecord();
+  this.updateIsInList();
+}
 
   openSongOrAlbum(record: Song | Album) {
     this.openNewReview.emit(record);

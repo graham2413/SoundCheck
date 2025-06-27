@@ -1,10 +1,9 @@
 // utils/callDeezer.js
-const axios = require('axios');
-const https = require('https');
-const crypto = require('crypto');
-const fs = require('fs');
-const redis = require('./redisClient');
-
+const axios = require("axios");
+const https = require("https");
+const crypto = require("crypto");
+const fs = require("fs");
+const redis = require("./redisClient");
 
 async function callDeezer(url) {
   const key = `deezer-rate-limit`;
@@ -37,21 +36,25 @@ async function callDeezer(url) {
   // HTTPS agent
   let agent;
 
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     agent = new https.Agent();
   } else {
     agent = new https.Agent({
-      ca: fs.readFileSync('cacert.pem'),
+      ca: fs.readFileSync("cacert.pem"),
     });
   }
 
   let attempt = 0;
   while (attempt < 5) {
     try {
-      const response = await axios.get(url, { httpsAgent: agent });
+      const response = await axios.get(url, {
+        httpsAgent: agent,
+        timeout: 7000, // 7 seconds or whatever you prefer
+      });
 
       // Handle Deezer Quota Limit (Code 4)
       if (response.data?.error?.code === 4) {
+        if (attempt === 0) console.warn(`⚠️ Deezer quota hit. Retrying...`);
         await new Promise((resolve) =>
           setTimeout(resolve, 2 ** attempt * 1000)
         ); // Exponential backoff
