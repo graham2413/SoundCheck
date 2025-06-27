@@ -16,6 +16,8 @@ const connectDB = require("./config/db");
 require("ssl-root-cas").inject();
 const cors = require("cors");
 const session = require("express-session");
+const RedisStore = require("connect-redis").default;
+const redisClient = require("./utils/redisClient");
 const passport = require("./config/passport");
 const googleAuthRoutes = require("./auth/google");
 const cron = require("node-cron");
@@ -75,12 +77,15 @@ app.use(
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    store: new RedisStore({ client: redisClient }),
+    secret: process.env.SESSION_SECRET || "fallback-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
   })
 );
