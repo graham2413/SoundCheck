@@ -17,7 +17,7 @@ require("ssl-root-cas").inject();
 const cors = require("cors");
 const session = require("express-session");
 const RedisStoreImport = require("connect-redis");
-const RedisStore = RedisStoreImport.default;
+const RedisStore = RedisStoreImport.default.RedisStore;
 const redisClient = require("./utils/redisClient");
 const passport = require("./config/passport");
 const googleAuthRoutes = require("./auth/google");
