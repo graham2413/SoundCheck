@@ -32,13 +32,16 @@ if (!isProd) {
 }
 
 if (process.env.NODE_ENV === 'test') {
-  console.warn('Skipping Redis connection in test environment.');
   module.exports = {
     on: () => {},
     get: async () => null,
     set: async () => {},
   };
-  return;
+} else {
+  const redis = new Redis(redisOptions);
+  redis.on('error', (err) => console.error('❌ Redis connection error:', err));
+  redis.on('connect', () => console.log('✅ Redis connected'));
+  module.exports = redis;
 }
 
 const redis = new Redis(redisOptions);
