@@ -1,5 +1,22 @@
-<app-navbar *ngIf="shouldShowNavbar()"></app-navbar>
+<ng-container *ngIf="profileLoaded; else loading">
+  <app-navbar *ngIf="shouldShowNavbar()"></app-navbar>
 
-<main [@routeAnimations]="prepareRoute(outlet)">
-  <router-outlet #outlet="outlet"></router-outlet>
-</main>
+  <main [@routeAnimations]="prepareRoute(outlet)">
+    <router-outlet #outlet="outlet"></router-outlet>
+  </main>
+</ng-container>
+
+<ng-template #loading>
+  <div class="full-screen-loader">
+    <div class="background-underlay"></div>
+    <div class="blur-overlay">
+      <div class="equalizer-loader">
+        <span class="bar bar1"></span>
+        <span class="bar bar2"></span>
+        <span class="bar bar3"></span>
+        <span class="bar bar4"></span>
+        <span class="bar bar5"></span>
+      </div>
+    </div>
+  </div>
+</ng-template>

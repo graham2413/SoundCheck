@@ -13,13 +13,15 @@ import {
   query,
   group,
 } from '@angular/animations';
-import { filter } from 'rxjs/operators';
+import { catchError, filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { ToastrService } from 'ngx-toastr';
 import { jwtDecode } from 'jwt-decode';
 import { AuthService } from './services/auth.service';
 import { DecodedToken } from './models/responses/decoded-token-response';
+import { UserService } from './services/user.service';
+import { forkJoin, of, timer } from 'rxjs';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -103,11 +105,13 @@ export class AppComponent implements OnInit {
   title = 'SoundCheck';
   currentUrl: string = '';
   navigationDirection: 'forward' | 'back' = 'forward';
+  profileLoaded = false;
 
   constructor(
     private router: Router,
     private toastr: ToastrService,
-    private authService: AuthService
+    private authService: AuthService,
+    private userService: UserService
   ) {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -145,23 +149,39 @@ export class AppComponent implements OnInit {
     }
   }
 
-  private handleToken(token: string) {
-    try {
-      const decoded: DecodedToken = jwtDecode(token);
+private handleToken(token: string) {
+  try {
+    const decoded: DecodedToken = jwtDecode(token);
 
-      if (!decoded?.userId || !decoded.exp) {
-        throw new Error('Invalid token structure');
-      }
-
-      const currentTime = Math.floor(Date.now() / 1000);
-
-      if (decoded.exp < currentTime) {
-        this.logout();
-      }
-    } catch (error) {
-      this.logout();
+    if (!decoded?.userId || !decoded.exp) {
+      throw new Error('Invalid token structure');
     }
+
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (decoded.exp < currentTime) {
+      this.logout();
+      return;
+    }
+
+    const delay$ = timer(2000);
+    const profile$ = this.userService.getAuthenticatedUserProfile().pipe(
+      catchError(() => of(null)) // Catch error to prevent breaking forkJoin
+    );
+
+    forkJoin([delay$, profile$]).subscribe(([_, profile]) => {
+      if (!profile) {
+        this.logout();
+      } else {
+        this.profileLoaded = true;
+      }
+    });
+
+  } catch (error) {
+    console.warn('Token parsing failed:', error);
+    this.logout();
   }
+}
+
 
   private logout() {
     this.authService.logout();

@@ -528,10 +528,18 @@ export class MainSearchComponent implements OnInit {
     this.activeDiscoverTab = tab;
 
     if (tab === 'popular') {
+      this.popularImageLoaded = {
+        song: {},
+        album: {},
+        artist: {},
+      };
       this.setPopularType('Song');
       this.loadPopularReviews('Song');
     }
     if (tab === 'recentActivity') {
+      this.hasMoreActivityFeed = true;
+      this.artistImageLoaded = {};
+      this.activityImageLoaded = {};
       this.activeFeedType = 'Friends';
       this.loadActivityFeed();
     }
@@ -717,7 +725,6 @@ export class MainSearchComponent implements OnInit {
       cover: release.cover,
       isExplicit: release.isExplicit,
       releaseDate: release.releaseDate,
-      // Optional fields can be null or defaulted
       avgRating: 0,
       reviewCount: 0,
     };
