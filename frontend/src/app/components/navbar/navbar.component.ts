@@ -22,16 +22,25 @@ import { UserService } from 'src/app/services/user.service';
         animate('150ms ease-out', style({ opacity: 1, transform: 'scale(1)' })),
       ]),
       transition(':leave', [
-        animate('100ms ease-in', style({ opacity: 0, transform: 'scale(0.95)' })),
+        animate(
+          '100ms ease-in',
+          style({ opacity: 0, transform: 'scale(0.95)' })
+        ),
       ]),
     ]),
     trigger('fadeSlide', [
       transition(':enter', [
         style({ opacity: 0, transform: 'translateY(-20%)' }),
-        animate('250ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
+        animate(
+          '250ms ease-out',
+          style({ opacity: 1, transform: 'translateY(0)' })
+        ),
       ]),
       transition(':leave', [
-        animate('200ms ease-in', style({ opacity: 0, transform: 'translateY(-10%)' }))
+        animate(
+          '200ms ease-in',
+          style({ opacity: 0, transform: 'translateY(-10%)' })
+        ),
       ]),
     ]),
   ],
@@ -54,8 +63,8 @@ export class NavbarComponent implements OnInit {
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],
-      friendRequestsSent: []
-    }
+      friendRequestsSent: [],
+    },
   } as User;
 
   isProfileLoading: boolean = false;
@@ -71,30 +80,39 @@ export class NavbarComponent implements OnInit {
 
   ngOnInit(): void {
     this.isProfileLoading = true;
-  
-    // Subscribes to updates from the user profile observable
+
+    // Subscribe to profile updates
     this.userService.userProfile$.subscribe((profile) => {
       if (profile) {
         this.userProfile = profile;
         this.isProfileLoading = false;
       }
     });
-  
+
+    // Load profile if not already available
     if (!this.userProfile || !this.userProfile.username) {
       this.userService.getAuthenticatedUserProfile().subscribe({
-        next: () => this.isProfileLoading = false,
-        error: () => this.isProfileLoading = false
+        next: () => (this.isProfileLoading = false),
+        error: () => (this.isProfileLoading = false),
       });
     }
 
+    const currentPath = this.router.url;
+    this.setTabFromPath(currentPath);
+
+    // Subscribe to future navigation changes
     this.router.events
-    .pipe(filter(event => event instanceof NavigationEnd))
-    .subscribe((event: NavigationEnd) => {
-      const path = event.urlAfterRedirects;
-      if (path.startsWith('/profile')) this.activeTab = 'profile';
-      else if (path.startsWith('/friends')) this.activeTab = 'friends';
-      else this.activeTab = 'home';
-    });
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        this.setTabFromPath(event.urlAfterRedirects);
+      });
+  }
+
+  // Helper function to avoid duplication
+  private setTabFromPath(path: string) {
+    if (path.startsWith('/profile')) this.activeTab = 'profile';
+    else if (path.startsWith('/friends')) this.activeTab = 'friends';
+    else this.activeTab = 'home';
   }
 
   toggleMenu() {
@@ -139,7 +157,7 @@ export class NavbarComponent implements OnInit {
     }
   }
 
-    getTransformedImageUrl(fullUrl: string): string {
+  getTransformedImageUrl(fullUrl: string): string {
     if (!fullUrl) {
       return 'assets/otherUser.png'; // fallback
     }

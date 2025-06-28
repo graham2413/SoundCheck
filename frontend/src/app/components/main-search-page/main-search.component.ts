@@ -524,26 +524,36 @@ export class MainSearchComponent implements OnInit {
     this.activeTab = tab;
   }
 
-  setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
-    this.activeDiscoverTab = tab;
+setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
+  this.activeDiscoverTab = tab;
 
-    if (tab === 'popular') {
-      this.popularImageLoaded = {
-        song: {},
-        album: {},
-        artist: {},
-      };
-      this.setPopularType('Song');
-      this.loadPopularReviews('Song');
-    }
-    if (tab === 'recentActivity') {
-      this.hasMoreActivityFeed = true;
-      this.artistImageLoaded = {};
-      this.activityImageLoaded = {};
-      this.activeFeedType = 'Friends';
-      this.loadActivityFeed();
-    }
+  if (tab === 'popular') {
+    this.popularImageLoaded = {
+      song: {},
+      album: {},
+      artist: {},
+    };
+    this.setPopularType('Song');
+    this.loadPopularReviews('Song');
   }
+
+  if (tab === 'recentActivity') {
+    this.hasMoreActivityFeed = true;
+    this.artistImageLoaded = {};
+    this.activityImageLoaded = {};
+    this.activeFeedType = 'Friends';
+
+    // Force feed refresh to retrigger image loading
+    const cachedFeed = [...this.activityFeed];
+    this.activityFeed = [];
+    setTimeout(() => {
+      this.activityFeed = cachedFeed;
+    }, 0);
+
+    this.loadActivityFeed();
+  }
+}
+
 
   setPopularType(type: 'Song' | 'Album' | 'Artist') {
     this.isDiscoverContentLoading = true;

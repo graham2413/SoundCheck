@@ -49,9 +49,9 @@
   </div>
 
   <!-- Top Navigation for Mobile -->
-  <div class="md:hidden fixed top-0 pt-5 w-full z-20 bg-[#0F1722] shadow-lg">
+  <div class="md:hidden fixed top-0 w-full z-20 bg-[#0F1722] shadow-lg">
     <!-- Heading -->
-    <div class="h-[3rem] flex items-center justify-center">
+    <!-- <div class="h-[3rem] flex items-center justify-center">
       <h1 class="text-white text-3xl font-bold flex items-center">
         <ng-container [ngSwitch]="activeTab">
           <span *ngSwitchCase="'myFriends'" class="tab-title">My Friends</span>
@@ -75,7 +75,7 @@
           ({{ userProfile.friendInfo.friendRequestsReceived.length || 0 }})
         </span>
       </h1>
-    </div>
+    </div> -->
 
     <!-- Buttons Row with shared border -->
     <div class="relative bg-[#0F1722]">
@@ -108,7 +108,7 @@
         >
           <span
             [ngClass]="{
-              'text-[#4C79F4] font-extrabold': activeTab === 'myFriends',
+              'text-gray-200 font-semibold': activeTab === 'myFriends',
               'text-gray-400': activeTab !== 'myFriends'
             }"
             class="text-lg"
@@ -124,7 +124,7 @@
         >
           <span
             [ngClass]="{
-              'text-[#4C79F4] font-extrabold': activeTab === 'friendRequests',
+              'text-gray-200 font-semibold': activeTab === 'friendRequests',
               'text-gray-400': activeTab !== 'friendRequests'
             }"
             class="text-lg"
@@ -140,7 +140,7 @@
         >
           <span
             [ngClass]="{
-              'text-[#4C79F4] font-extrabold': activeTab === 'addFriends',
+              'text-gray-200 font-semibold': activeTab === 'addFriends',
               'text-gray-400': activeTab !== 'addFriends'
             }"
             class="text-lg"
@@ -168,10 +168,18 @@
           </span>
         </h2>
 
+<span
+  *ngIf="activeTab === 'myFriends'"
+  class="md:hidden block text-gray-400 text-lg pl-6"
+>
+  <span class="text-white font-semibold">Friends</span>
+  <span class="text-base text-gray-400">({{ userProfile.friendInfo.friends.length || 0 }})</span>
+</span>
+
         <!-- Search Bar -->
         <div
           #searchBar
-          class="relative w-[95%] sm:max-w-[800px] mb-6 mx-auto pt-[5rem] md:pt-0"
+          class="relative w-[95%] sm:max-w-[800px] mb-6 mx-auto pt-[.5rem] md:pt-0"
         >
           <input
             type="text"
@@ -181,7 +189,7 @@
             class="w-full rounded-full bg-[#09101F] border border-gray-600 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg shadow-md"
           />
           <i
-            class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pt-[5rem] md:pt-0"
+            class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pt-[.5rem] md:pt-0"
           ></i>
         </div>
 
@@ -424,7 +432,7 @@
         <!-- Search Bar -->
         <div
           #searchBar
-          class="relative mb-6 w-[95%] sm:max-w-[800px] mx-auto pt-[5rem] md:pt-0"
+          class="relative mb-6 w-[95%] sm:max-w-[800px] mx-auto pt-[.5rem] md:pt-0"
         >
           <input
             type="text"
@@ -435,7 +443,7 @@
           />
           <i
             (click)="searchUsers()"
-            class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer pt-[5rem] md:pt-0"
+            class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer pt-[.5rem] md:pt-0"
           ></i>
         </div>
         <!-- Show Skeleton Loader While Searching -->

@@ -1,12 +1,10 @@
-<div class="md:pt-[6rem] w-full z-500 bg-[#0F1722] shadow-lg">
+<div class="sticky top-0 z-30 md:pt-[6rem] w-full bg-[#0F1722]">
   <!-- Buttons Row with shared border -->
-  <div class="relative bg-[#0F1722]">
-    <div
-      class="flex justify-around items-center h-[3.5rem] border-b border-gray-700 relative"
-    >
-      <!-- Highlight Underline -->
+  <div class="relative bg-[#0F1722] border-b border-b-gray-800">
+    <div class="flex justify-around items-center h-[3.5rem] relative">
+      <!-- Highlight Underline: mobile -->
       <div
-        class="absolute bottom-[-.04rem] h-[2px] bg-[#4C79F4] transition-all duration-300"
+        class="absolute bottom-[.3rem] h-[2px] bg-[#4C79F4] transition-all duration-300 md:hidden"
         [ngStyle]="{
           width:
             activeDiscoverTab === 'mainSearch'
@@ -23,6 +21,25 @@
         }"
       ></div>
 
+      <!-- Highlight Underline: md+ -->
+      <div
+        class="absolute bottom-[.3rem] h-[2px] bg-[#4C79F4] transition-all duration-300 hidden md:block"
+        [ngStyle]="{
+          width:
+            activeDiscoverTab === 'mainSearch'
+              ? '110px'
+              : activeDiscoverTab === 'popular'
+              ? '105px'
+              : '110px',
+          left:
+            activeDiscoverTab === 'mainSearch'
+              ? 'calc(16.66% - 55px)'
+              : activeDiscoverTab === 'popular'
+              ? 'calc(50% - 52.5px)'
+              : 'calc(83.33% - 55px)'
+        }"
+      ></div>
+
       <!-- Main Search -->
       <button
         (click)="setActiveDiscoverTab('mainSearch')"
@@ -30,7 +47,7 @@
       >
         <span
           [ngClass]="{
-            'text-[#4C79F4] font-extrabold': activeDiscoverTab === 'mainSearch',
+            'text-gray-200 font-semibold': activeDiscoverTab === 'mainSearch',
             'text-gray-400': activeDiscoverTab !== 'mainSearch'
           }"
           class="text-lg md:text-2xl"
@@ -46,7 +63,7 @@
       >
         <span
           [ngClass]="{
-            'text-[#4C79F4] font-extrabold': activeDiscoverTab === 'popular',
+            'text-gray-200 font-semibold': activeDiscoverTab === 'popular',
             'text-gray-400': activeDiscoverTab !== 'popular'
           }"
           class="text-lg md:text-2xl"
@@ -62,8 +79,7 @@
       >
         <span
           [ngClass]="{
-            'text-[#4C79F4] font-extrabold':
-              activeDiscoverTab === 'recentActivity',
+            'text-gray-200 font-semibold': activeDiscoverTab === 'recentActivity',
             'text-gray-400': activeDiscoverTab !== 'recentActivity'
           }"
           class="text-lg md:text-2xl"

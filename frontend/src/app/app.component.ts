@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import {
   Router,
   NavigationEnd,
@@ -111,7 +111,8 @@ export class AppComponent implements OnInit {
     private router: Router,
     private toastr: ToastrService,
     private authService: AuthService,
-    private userService: UserService
+    private userService: UserService,
+    private cdRef: ChangeDetectorRef
   ) {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -163,9 +164,9 @@ private handleToken(token: string) {
       return;
     }
 
-    const delay$ = timer(2000);
+    const delay$ = timer(3000);
     const profile$ = this.userService.getAuthenticatedUserProfile().pipe(
-      catchError(() => of(null)) // Catch error to prevent breaking forkJoin
+      catchError(() => of(null))
     );
 
     forkJoin([delay$, profile$]).subscribe(([_, profile]) => {
@@ -173,6 +174,7 @@ private handleToken(token: string) {
         this.logout();
       } else {
         this.profileLoaded = true;
+        this.cdRef.detectChanges(); 
       }
     });
 
