@@ -82,8 +82,8 @@
       Explore Music
     </h1>
     <p class="mt-1 text-base md:text-xl text-gray-300">
-      The marquee below updates with new music every Friday to inspire your
-      next search.
+      The marquee below updates with new music every Friday to inspire your next
+      search.
     </p>
   </div>
   <div
@@ -275,20 +275,10 @@
     </div>
   </div>
 
-  <!-- Loading Indicator -->
-  <div
-    *ngIf="isLoading"
-    class="mt-6 w-full max-w-3xl mx-auto flex justify-center"
-  >
-    <div
-      class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
-    ></div>
-  </div>
-
   <!-- Skeleton Loader -->
   <div
     *ngIf="isLoading"
-    class="mt-6 mx-auto mb-2 pt-6 rounded-lg shadow-lg sm:w-full max-w-3xl"
+    class="mx-auto mb-2 pt-6 rounded-lg shadow-lg sm:w-full max-w-3xl"
   >
     <div class="animate-pulse space-y-2">
       <!-- Skeleton Loader for Songs -->
@@ -370,20 +360,34 @@
 
       <ul class="mt-2 space-y-2">
         <li
-          *ngFor="let song of filteredResults.songs"
+          *ngFor="let song of filteredResults.songs; let i = index"
           class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
           (click)="openModal(song)"
         >
           <!-- Image -->
-          <img
-            [src]="
-              song.cover ||
-              'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-            "
-            alt="Cover"
-            class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
-          />
+          <div class="relative h-20 w-20 md:h-32 md:w-32 flex-shrink-0">
+            <!-- Loader -->
+            <div
+              *ngIf="!imageLoaded.songs[i]"
+              class="absolute inset-0 flex items-center justify-center rounded-md border border-gray-800 bg-gray-900"
+            >
+              <div
+                class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+              ></div>
+            </div>
 
+            <!-- Image -->
+            <img
+              [src]="
+                song.cover ||
+                'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+              "
+              (load)="imageLoaded.songs[i] = true"
+              [class.invisible]="!imageLoaded.songs[i]"
+              alt="Cover"
+              class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800"
+            />
+          </div>
           <!-- Text Container -->
           <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
             <p
@@ -469,19 +473,34 @@
 
       <ul class="mt-2 space-y-2">
         <li
-          *ngFor="let album of filteredResults.albums"
+          *ngFor="let album of filteredResults.albums; let i = index"
           class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
           (click)="openModal(album)"
         >
           <!-- Image -->
-          <img
-            [src]="
-              album.cover ||
-              'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-            "
-            alt="Album Cover"
-            class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
-          />
+          <div class="relative h-20 w-20 md:h-32 md:w-32 flex-shrink-0">
+            <!-- Loader -->
+            <div
+              *ngIf="!imageLoaded.albums[i]"
+              class="absolute inset-0 flex items-center justify-center rounded-md border border-gray-800 bg-gray-900"
+            >
+              <div
+                class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+              ></div>
+            </div>
+
+            <!-- Image -->
+            <img
+              [src]="
+                album.cover ||
+                'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+              "
+              (load)="imageLoaded.albums[i] = true"
+              [class.invisible]="!imageLoaded.albums[i]"
+              alt="Album Cover"
+              class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800"
+            />
+          </div>
 
           <!-- Text Container -->
           <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
@@ -517,19 +536,34 @@
       <div class="relative mb-[2.8rem]">
         <ul class="mt-2 2">
           <li
-            *ngFor="let artist of filteredResults.artists"
+            *ngFor="let artist of filteredResults.artists; let i = index"
             class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
             (click)="openModal(artist)"
           >
             <!-- Image -->
-            <img
-              [src]="
-                artist.picture ||
-                'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
-              "
-              alt="Artist"
-              class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
-            />
+            <div class="relative h-20 w-20 md:h-32 md:w-32 flex-shrink-0">
+              <!-- Loader -->
+              <div
+                *ngIf="!imageLoaded.artists[i]"
+                class="absolute inset-0 flex items-center justify-center rounded-md border border-gray-800 bg-gray-900"
+              >
+                <div
+                  class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                ></div>
+              </div>
+
+              <!-- Image -->
+              <img
+                [src]="
+                  artist.picture ||
+                  'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
+                "
+                (load)="imageLoaded.artists[i] = true"
+                [class.invisible]="!imageLoaded.artists[i]"
+                alt="Artist"
+                class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800"
+              />
+            </div>
 
             <!-- Text Container -->
             <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
@@ -648,18 +682,35 @@
               </div>
 
               <!-- Album/Artist Cover -->
-              <img
-                [src]="
-                  activePopularType === 'Artist'
-                    ? record.picture ||
-                      'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
-                    : record.cover ||
-                      record.picture ||
-                      'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-                "
-                alt="Media"
-                class="w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] object-cover rounded border border-gray-600"
-              />
+              <div
+                class="relative w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] flex-shrink-0"
+              >
+                <!-- Loader -->
+                <div
+                  *ngIf="!popularImageLoaded[getPopularKey()][i]"
+                  class="absolute inset-0 flex items-center justify-center rounded border border-gray-600 bg-gray-900"
+                >
+                  <div
+                    class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                  ></div>
+                </div>
+
+                <!-- Image -->
+                <img
+                  [src]="
+                    activePopularType === 'Artist'
+                      ? record.picture ||
+                        'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
+                      : record.cover ||
+                        record.picture ||
+                        'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                  "
+                  (load)="popularImageLoaded[getPopularKey()][i] = true"
+                  [class.invisible]="!popularImageLoaded[getPopularKey()][i]"
+                  alt="Media"
+                  class="w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] object-cover rounded border border-gray-600"
+                />
+              </div>
 
               <!-- Info -->
               <div class="ml-4 flex-1 overflow-hidden">
@@ -705,24 +756,24 @@
         <div
           class="absolute top-0 left-0 h-full w-1/2 bg-[#0F5EE4] rounded-full transition-all duration-300"
           [ngStyle]="{
-        transform:
-          activeFeedType === 'Artists'
-            ? 'translateX(100%)'
-            : 'translateX(0%)'
+            transform:
+              activeFeedType === 'Artists'
+                ? 'translateX(100%)'
+                : 'translateX(0%)'
           }"
         ></div>
 
         <!-- Buttons -->
         <ng-container *ngFor="let feedType of activityFeedTypes">
           <button
-        (click)="setFeedType(feedType)"
-        class="relative z-10 w-28 py-2 text-lg md:text-xl font-semibold rounded-full transition"
-        [ngClass]="{
-          'text-white': activeFeedType === feedType,
-          'text-gray-300': activeFeedType !== feedType
-        }"
+            (click)="setFeedType(feedType)"
+            class="relative z-10 w-28 py-2 text-lg md:text-xl font-semibold rounded-full transition"
+            [ngClass]="{
+              'text-white': activeFeedType === feedType,
+              'text-gray-300': activeFeedType !== feedType
+            }"
           >
-        {{ feedType }}
+            {{ feedType }}
           </button>
         </ng-container>
       </div>
@@ -759,7 +810,7 @@
                   >
                     <!-- Review Type Icon -->
                     <div
-                      class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2"
+                      class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2 z-10"
                     >
                       <i
                         class="fas text-sm md:text-xl"
@@ -776,25 +827,40 @@
                         title="{{ activity.albumSongOrArtist.effectiveType }}"
                       ></i>
                     </div>
-                    <img
-                      [src]="
-                        activity.albumSongOrArtist.effectiveType === 'Artist'
-                          ? activity.albumSongOrArtist.picture ||
-                            'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
-                          : activity.albumSongOrArtist.cover ||
-                            activity.albumSongOrArtist.picture ||
-                            'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-                      "
-                      (click)="
-                        openModal(
-                          activity.albumSongOrArtist,
-                          activityRecords,
-                          i
-                        )
-                      "
-                      alt="Album Cover"
-                      class="w-full h-[6rem] md:h-[10rem] rounded object-cover border border-gray-600"
-                    />
+                    <div class="relative w-full h-[6rem] md:h-[10rem]">
+                      <!-- Loader -->
+                      <div
+                        *ngIf="!activityImageLoaded[i]"
+                        class="absolute inset-0 flex items-center justify-center rounded border border-gray-600 bg-gray-900"
+                      >
+                        <div
+                          class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                        ></div>
+                      </div>
+
+                      <!-- Image -->
+                      <img
+                        [src]="
+                          activity.albumSongOrArtist.effectiveType === 'Artist'
+                            ? activity.albumSongOrArtist.picture ||
+                              'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
+                            : activity.albumSongOrArtist.cover ||
+                              activity.albumSongOrArtist.picture ||
+                              'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                        "
+                        (load)="activityImageLoaded[i] = true"
+                        [class.invisible]="!activityImageLoaded[i]"
+                        (click)="
+                          openModal(
+                            activity.albumSongOrArtist,
+                            activityRecords,
+                            i
+                          )
+                        "
+                        alt="Album Cover"
+                        class="w-full h-[6rem] md:h-[10rem] rounded object-cover border border-gray-600"
+                      />
+                    </div>
 
                     <!-- Star + Rating on one line, no wrap -->
                     <span
@@ -871,11 +937,30 @@
                   class="flex items-center gap-2 mt-[3rem]"
                   (click)="goToUserProfile(activity.user._id)"
                 >
-                  <img
-                    [src]="activity.user.profilePicture || 'assets/user.png'"
-                    alt="User"
-                    class="w-[4rem] h-[4rem] rounded-full object-cover"
-                  />
+                  <div
+                    class="relative w-[4rem] h-[4rem] rounded-full overflow-hidden"
+                  >
+                    <!-- Loader -->
+                    <div
+                      *ngIf="!getActivityImageLoaded(i, 'profile')"
+                      class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
+                    >
+                      <div
+                        class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"
+                      ></div>
+                    </div>
+
+                    <!-- Profile Picture -->
+                    <img
+                      [src]="activity.user.profilePicture || 'assets/user.png'"
+                      (load)="setActivityImageLoaded(i, 'profile')"
+                      (error)="setActivityImageLoaded(i, 'profile')"
+                      [class.invisible]="!getActivityImageLoaded(i, 'profile')"
+                      alt="User"
+                      class="w-[4rem] h-[4rem] rounded-full object-cover"
+                    />
+                  </div>
+
                   <div class="text-base md:text-xl text-gray-400">
                     <p class="font-semibold text-white leading-tight">
                       {{ activity.user.username }}
@@ -941,14 +1026,30 @@
               )
             "
           >
-            <img
-              [src]="
-                release.cover ||
-                'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-              "
-              alt="Cover"
-              class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
-            />
+            <div class="relative h-20 w-20 md:h-32 md:w-32 flex-shrink-0">
+              <!-- Loader -->
+              <div
+                *ngIf="!artistImageLoaded[i]"
+                class="absolute inset-0 flex items-center justify-center rounded-md border border-gray-800 bg-gray-900"
+              >
+                <div
+                  class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                ></div>
+              </div>
+
+              <!-- Image -->
+              <img
+                [src]="
+                  release.cover ||
+                  'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                "
+                (load)="artistImageLoaded[i] = true"
+                (error)="artistImageLoaded[i] = true"
+                [class.invisible]="!artistImageLoaded[i]"
+                alt="Cover"
+                class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800"
+              />
+            </div>
 
             <div class="flex-1 text-white max-w-full overflow-hidden">
               <!-- Text Container -->

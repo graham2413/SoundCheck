@@ -60,6 +60,7 @@ export class FriendsComponent implements OnInit {
   acceptLoadingMap: { [userId: string]: boolean } = {};
   addFriendLoadingMap: { [userId: string]: boolean } = {};
   section: string | null = null;
+  imageLoadState: { [key: string]: boolean } = {};
 
   constructor(
     private userService: UserService,
@@ -83,6 +84,7 @@ export class FriendsComponent implements OnInit {
   setActiveTab(tab: string) {
     this.activeTab = tab;
     this.searchQuery = '';
+    this.imageLoadState = {};
 
     setTimeout(() => {
       this.scrollToTop();
@@ -111,6 +113,14 @@ export class FriendsComponent implements OnInit {
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
   }
+
+  markImageLoaded(i: number, context: string): void {
+  this.imageLoadState[`${i}-${context}`] = true;
+}
+
+isImageLoaded(i: number, context: string): boolean {
+  return this.imageLoadState[`${i}-${context}`] === true;
+}
 
   getSearchPlaceholder() {
     switch (this.activeTab) {

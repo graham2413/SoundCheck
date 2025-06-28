@@ -103,6 +103,7 @@ export class ViewProfilePageComponent implements OnInit {
   selectedType: 'All' | 'Song' | 'Album' | 'Artist' = 'All';
   recordTypes: ('Song' | 'Album' | 'Artist')[] = ['Song', 'Album', 'Artist'];
   smallImageLoaded = false;
+  imageLoadState: { [key: string]: boolean } = {};
 
   constructor(
     private route: ActivatedRoute,
@@ -668,27 +669,27 @@ export class ViewProfilePageComponent implements OnInit {
   openReviews() {
     if (this.otherUser?.reviews && this.otherUser.reviews.length > 0) {
       this.showPanel = 'reviews';
-        document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
     }
   }
 
   openFriends() {
     if (this.otherUser?.friends && this.otherUser.friends.length > 0) {
       this.showPanel = 'friends';
-        document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
     }
   }
 
   openList() {
     if (this.otherUser?.artistList && this.otherUser.artistList.length > 0) {
       this.showPanel = 'artists';
-        document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
     }
   }
 
   closePanel() {
     this.showPanel = null;
-      document.body.style.overflow = '';
+    document.body.style.overflow = '';
   }
 
   buildFullRecord(item: BaseRecord): Album | Artist | Song {
@@ -710,7 +711,8 @@ export class ViewProfilePageComponent implements OnInit {
         releaseDate: item.releaseDate ?? '',
         contributors: item.contributors ?? [],
         isPlaying: item.isPlaying ?? false,
-        wasOriginallyAlbumButTreatedAsSingle: item.wasOriginallyAlbumButTreatedAsSingle ?? false
+        wasOriginallyAlbumButTreatedAsSingle:
+          item.wasOriginallyAlbumButTreatedAsSingle ?? false,
       };
     } else if (item.type === 'Album') {
       return {
@@ -737,22 +739,22 @@ export class ViewProfilePageComponent implements OnInit {
     }
   }
 
-get filteredFullRecordList(): Artist[] {
-  return (this.otherUser?.artistList ?? []).map((item) =>
-    this.buildArtistRecord(item)
-  );
-}
+  get filteredFullRecordList(): Artist[] {
+    return (this.otherUser?.artistList ?? []).map((item) =>
+      this.buildArtistRecord(item)
+    );
+  }
 
-buildArtistRecord(item: FollowedArtist): Artist {
-  return {
-    id: parseInt(item.id, 10),
-    type: 'Artist',
-    name: item.name ?? 'Unknown Artist',
-    picture: item.picture ?? '',
-    tracklist: item.tracklist ?? [],
-    preview: item.preview ?? '',
-  };
-}
+  buildArtistRecord(item: FollowedArtist): Artist {
+    return {
+      id: parseInt(item.id, 10),
+      type: 'Artist',
+      name: item.name ?? 'Unknown Artist',
+      picture: item.picture ?? '',
+      tracklist: item.tracklist ?? [],
+      preview: item.preview ?? '',
+    };
+  }
 
   openReview(
     record: ModalRecord,
@@ -824,15 +826,16 @@ buildArtistRecord(item: FollowedArtist): Artist {
     });
 
     // 5. Handle opening a song or album from an artist or album review
-    modalRef.componentInstance.openNewReview.subscribe((record: Song | Album) => {
+    modalRef.componentInstance.openNewReview.subscribe(
+      (record: Song | Album) => {
+        if (!('type' in record) || !record.type) {
+          (record as Album).type = 'Album';
+        }
 
-      if (!('type' in record) || !record.type) {
-        (record as Album).type = 'Album';
+        const newModal = this.openReview(record, [], 0);
+        newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
       }
-
-      const newModal = this.openReview(record, [], 0);
-      newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
-    });
+    );
     return modalRef;
   }
 
@@ -861,10 +864,10 @@ buildArtistRecord(item: FollowedArtist): Artist {
 
   filterFriends(): void {
     const query = this.searchQuery.toLowerCase().trim();
-    this.filteredFriends =
-      (this.otherUser?.friends ?? []).filter((friend: { username: string }) =>
+    this.filteredFriends = (this.otherUser?.friends ?? []).filter(
+      (friend: { username: string }) =>
         friend.username.toLowerCase().includes(query)
-      );
+    );
   }
 
   goToUserProfile(userId?: string): void {
@@ -970,6 +973,14 @@ buildArtistRecord(item: FollowedArtist): Artist {
         this.isGradientModalOpen = false;
       },
     });
+  }
+
+  markImageLoaded(i: number, context: string): void {
+    this.imageLoadState[`${context}-${i}`] = true;
+  }
+
+  isImageLoaded(i: number, context: string): boolean {
+    return this.imageLoadState[`${context}-${i}`] === true;
   }
 
   getGradientClass(): string {

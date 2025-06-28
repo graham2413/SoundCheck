@@ -7,10 +7,10 @@ const redisOptions = {
   host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT,
   password: process.env.REDIS_PASSWORD,
-  tls: {}, // Upstash requires TLS for TCP, no cert needed
+  tls: {},
   maxRetriesPerRequest: null,
   retryStrategy(times) {
-    return Math.min(times * 100, 2000); // exponential backoff: 100ms → 2s
+    return Math.min(times * 100, 2000);
   },
   reconnectOnError(err) {
     return (
@@ -21,16 +21,19 @@ const redisOptions = {
   },
 };
 
-// Optionally load a TLS cert locally, if needed
+// Optionally load local TLS cert in non-production
 if (!isProd) {
   try {
-    redisOptions.tls = { ca: fs.existsSync('cacert.pem') ? fs.readFileSync('cacert.pem') : undefined };
+    redisOptions.tls = {
+      ca: fs.existsSync('cacert.pem') ? fs.readFileSync('cacert.pem') : undefined,
+    };
     console.log('Loaded local Redis TLS cert.');
   } catch (err) {
     console.warn('Local Redis TLS cert not found. Proceeding without TLS.', err);
   }
 }
 
+// Mock in test mode
 if (process.env.NODE_ENV === 'test') {
   module.exports = {
     on: () => {},
@@ -43,10 +46,3 @@ if (process.env.NODE_ENV === 'test') {
   redis.on('connect', () => console.log('✅ Redis connected'));
   module.exports = redis;
 }
-
-const redis = new Redis(redisOptions);
-
-redis.on('error', (err) => console.error('❌ Redis connection error:', err));
-redis.on('connect', () => console.log('✅ Redis connected'));
-
-module.exports = redis;
