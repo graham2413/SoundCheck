@@ -20,8 +20,8 @@
             class="w-[8rem] h-[8rem] imageFix sm:w-40 sm:h-40 rounded-full border-2 border-gray-600 object-cover shadow-md hover:opacity-80 transition"
           />
           <div
-          class="absolute bottom-2 right-[2rem] iconPlacementFix transform translate-x-1/2 translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-full shadow-md hover:bg-gray-600 transition flex items-center justify-center"
-        >
+            class="absolute bottom-2 right-[2rem] iconPlacementFix transform translate-x-1/2 translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-full shadow-md hover:bg-gray-600 transition flex items-center justify-center"
+          >
             <i class="fas fa-camera iconSizeFix text-white text-sm"></i>
           </div>
         </label>
@@ -34,8 +34,8 @@
           (click)="viewPublicProfile()"
           class="w-[12rem] buttons px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-lg font-medium rounded-full transition flex items-center justify-center gap-2 mx-auto md:mx-0"
         >
-        <i class="fas fa-user text-white"></i>
-        Public Profile
+          <i class="fas fa-user text-white"></i>
+          View Profile
         </button>
 
         <button
@@ -52,7 +52,9 @@
     <form class="relative mt-6 md:mt-4 space-y-4">
       <!-- Display Name -->
       <div class="w-full max-w-[800px] mx-auto">
-        <label class="block text-gray-300 text-base md:text-lg font-semibold mb-1">
+        <label
+          class="block text-gray-300 text-base md:text-lg font-semibold mb-1"
+        >
           Display Name
         </label>
         <input
@@ -65,7 +67,9 @@
 
       <!-- Email -->
       <div class="w-full max-w-[800px] mx-auto">
-        <label class="block text-gray-300 text-base md:text-lg font-semibold mb-1">
+        <label
+          class="block text-gray-300 text-base md:text-lg font-semibold mb-1"
+        >
           Email
         </label>
         <input
@@ -79,7 +83,9 @@
       <!-- Change Password (Does not change Google Passwords) -->
       <div *ngIf="userProfile" class="w-full max-w-[800px] mx-auto">
         <div class="flex items-center gap-1">
-          <label class="block text-gray-300 text-base md:text-lg font-semibold mb-1">
+          <label
+            class="block text-gray-300 text-base md:text-lg font-semibold mb-1"
+          >
             New Password
           </label>
           <div class="relative inline-flex cursor-pointer">
@@ -88,7 +94,7 @@
               class="fas fa-question-circle text-gray-400 hover:text-gray-200 transition-colors text-lg ml-2 mb-1"
               (click)="toggleTooltip()"
             ></i>
-          
+
             <!-- Fullscreen overlay + Tooltip -->
             <div
               *ngIf="isTooltipOpen"
@@ -104,7 +110,6 @@
               </div>
             </div>
           </div>
-               
         </div>
 
         <div class="relative">
@@ -128,7 +133,9 @@
         </p>
 
         <div class="mt-4">
-          <label class="block text-gray-300 text-base md:text-lg font-semibold mb-1">
+          <label
+            class="block text-gray-300 text-base md:text-lg font-semibold mb-1"
+          >
             Confirm New Password
           </label>
           <div class="relative">
@@ -147,9 +154,64 @@
               (click)="showConfirmPassword = !showConfirmPassword"
             ></i>
           </div>
-          <p class="text-base text-red-500 mt-1 ml-2" *ngIf="confirmPasswordError">
+          <p
+            class="text-base text-red-500 mt-1 ml-2"
+            *ngIf="confirmPasswordError"
+          >
             {{ confirmPasswordError }}
           </p>
+        </div>
+      </div>
+
+      <div class="w-full max-w-[800px] mx-auto">
+        <h2
+          class="block text-base md:text-lg font-semibold mb-4 border-t border-gray-600 py-2 pt-4"
+        >
+          <span class="text-gray-300">Current Music App:</span>
+          <span class="text-white">
+            {{
+              preferredApp && platformStyles[preferredApp].label
+                ? platformStyles[preferredApp].label
+                : preferredApp || "None"
+            }}
+          </span>
+        </h2>
+
+        <div class="flex justify-center pb-5 border-b border-gray-600">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-5">
+            <button
+              *ngFor="let app of availablePlatforms"
+              (click)="setPreferredMusicApp(app)"
+              [ngStyle]="{
+                backgroundColor:
+                  preferredApp === app
+                    ? platformStyles[app].color
+                    : shadeColor(platformStyles[app].color, -30)
+              }"
+              [ngClass]="{
+                'text-white ring-2 ring-offset-1': preferredApp === app,
+                'text-gray-100 opacity-90 hover:opacity-100':
+                  preferredApp !== app
+              }"
+              class="py-2 px-4 min-w-[6.5rem] rounded-full text-sm font-medium transition duration-200 focus:outline-none flex items-center gap-2 justify-center"
+            >
+              <ng-container *ngIf="platformStyles[app].icon; else svgIcon">
+                <i
+                  [class]="platformStyles[app].icon"
+                  class="text-[2rem] leading-none"
+                ></i>
+              </ng-container>
+
+              <ng-template #svgIcon>
+                <img
+                  *ngIf="platformStyles[app].imagePath"
+                  [src]="platformStyles[app].imagePath"
+                  alt="{{ platformStyles[app].label }} logo"
+                  class="w-[2rem] h-[2rem]"
+                />
+              </ng-template>
+            </button>
+          </div>
         </div>
       </div>
 

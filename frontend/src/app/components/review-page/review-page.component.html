@@ -661,16 +661,27 @@
     </ng-template>
   </div>
 
-    <a
-      *ngIf="smartLinkUrl"
-      [href]="smartLinkUrl"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 transition"
-    >
-      <i class="fas fa-headphones mr-2 text-2xl"></i>
-      Open in Music App
-    </a>
+  <!-- Loading state while fetching smart link -->
+  <div
+    *ngIf="isLoadingSmartUrl"
+    class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-medium py-2 px-6 rounded-full flex items-center justify-center text-lg bg-gray-700 opacity-75 animate-pulse"
+  >
+    <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i>
+    Loading link...
+  </div>
+
+  <!-- Actual smart link once available -->
+  <a
+    *ngIf="!isLoadingSmartUrl && smartLinkUrl"
+    [href]="smartLinkUrl"
+    target="_blank"
+    rel="noopener noreferrer"
+    (click)="openMusicAppClick($event)"
+    class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 transition"
+  >
+    <i class="fas fa-headphones mr-2 text-2xl"></i>
+    Open in Music App
+  </a>
 
   <!-- Reviews Section -->
   <div
@@ -1527,11 +1538,22 @@
                     </ng-template>
                   </div>
 
+                  <!-- Loading state while fetching smart link -->
+                  <div
+                    *ngIf="isLoadingSmartUrl"
+                    class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-medium py-2 px-6 rounded-full flex items-center justify-center text-lg bg-gray-700 opacity-75 animate-pulse"
+                  >
+                    <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i>
+                    Loading link...
+                  </div>
+
+                  <!-- Actual smart link once available -->
                   <a
-                    *ngIf="smartLinkUrl"
+                    *ngIf="!isLoadingSmartUrl && smartLinkUrl"
                     [href]="smartLinkUrl"
                     target="_blank"
                     rel="noopener noreferrer"
+                    (click)="openMusicAppClick($event)"
                     class="music-app-button mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 transition"
                   >
                     <i class="fas fa-headphones mr-2 text-2xl"></i>
@@ -2444,3 +2466,63 @@
     </div>
   </div>
 </div>
+
+  <!-- App Picker Modal -->
+  <div
+    *ngIf="showAppPickerModal"
+    class="fixed inset-0 z-50 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4"
+  >
+    <div class="bg-[#1a1a1a] rounded-xl shadow-lg p-6 w-full max-w-xl relative">
+      <!-- Close button -->
+      <button
+        class="absolute top-3 right-3 text-gray-400 hover:text-white text-4xl"
+        (click)="showAppPickerModal = false"
+      >
+        &times;
+      </button>
+
+      <!-- Preferred App Section (your existing UI) -->
+      <div class="w-full mx-auto mb-6">
+        <h2 class="block text-xl md:text-2xl font-semibold py-2 text-center">
+          <span class="text-gray-300">Select a Music App</span>
+        </h2>
+
+        <div class="flex justify-center pb-3 pt-3">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-5">
+            <button
+              *ngFor="let app of availablePlatforms"
+              (click)="setPreferredMusicApp(app)"
+              [ngStyle]="{
+                backgroundColor:
+                  preferredApp === app
+                    ? platformStyles[app].color
+                    : shadeColor(platformStyles[app].color, -30)
+              }"
+              [ngClass]="{
+                'text-white ring-2 ring-offset-1': preferredApp === app,
+                'text-gray-100 opacity-90 hover:opacity-100':
+                  preferredApp !== app
+              }"
+              class="py-2 px-4 min-w-[6.5rem] rounded-full text-sm font-medium transition duration-200 focus:outline-none flex items-center gap-2 justify-center"
+            >
+              <ng-container *ngIf="platformStyles[app].icon; else svgIcon">
+                <i
+                  [class]="platformStyles[app].icon"
+                  class="text-[2rem] leading-none"
+                ></i>
+              </ng-container>
+
+              <ng-template #svgIcon>
+                <img
+                  *ngIf="platformStyles[app].imagePath"
+                  [src]="platformStyles[app].imagePath"
+                  alt="{{ platformStyles[app].label }} logo"
+                  class="w-[2rem] h-[2rem]"
+                />
+              </ng-template>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

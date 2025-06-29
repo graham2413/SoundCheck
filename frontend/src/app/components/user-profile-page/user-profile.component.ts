@@ -48,6 +48,42 @@ export class ProfileComponent implements OnInit {
   isSaving: boolean = false;
   isDeleting: boolean = false;
 
+  preferredApp: string | null = null;
+availablePlatforms: string[] = [
+  'spotify',
+  'appleMusic',
+  'youtubeMusic',
+  'deezer',
+  'amazonMusic',
+  'soundcloud',
+  'pandora',
+  'audiomack',
+];
+
+
+platformStyles: Record<string, { label: string; color: string; icon?: string; imagePath?: string }> = {
+  spotify: { label: 'Spotify', color: '#1DB954', icon: 'fab fa-spotify' },
+  appleMusic: { label: 'Apple Music', color: '#FC3C44', icon: 'fab fa-apple' },
+  youtubeMusic: { label: 'YouTube Music', color: '#FF0000', icon: 'fab fa-youtube' },
+  amazonMusic: { label: 'Amazon Music', color: '#3B4CCA', icon: 'fab fa-amazon' },
+  soundcloud: { label: 'SoundCloud', color: '#FF5500', icon: 'fab fa-soundcloud' },
+  deezer: {
+    label: 'Deezer',
+    color: '#9333E8',
+    imagePath: '../assets/deezer-logo.png'
+  },
+  audiomack: {
+    label: 'Audiomack',
+    color: '#FFBD00',
+    imagePath: '../assets/audiomack-logo.png'
+  },
+  pandora: {
+    label: 'Pandora',
+    color: '#3668FF',
+    imagePath: '../assets/pandora-logo.png'
+  },
+};
+
   constructor(
     private userService: UserService,
     private toastr: ToastrService,
@@ -56,6 +92,8 @@ export class ProfileComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.preferredApp = localStorage.getItem('preferredMusicApp');
+
     window.scrollTo({ top: 0, behavior: 'auto' });
 
     // Subscribe to the global profile state
@@ -80,6 +118,31 @@ export class ProfileComponent implements OnInit {
       this.profilePictureUrl = 'assets/user.png';
     }
   }
+
+  setPreferredMusicApp(app: string) {
+  this.preferredApp = app;
+  localStorage.setItem('preferredMusicApp', app);
+}
+
+shadeColor(color: string, percent: number) {
+  let R = parseInt(color.substring(1, 3), 16);
+  let G = parseInt(color.substring(3, 5), 16);
+  let B = parseInt(color.substring(5, 7), 16);
+
+  R = Math.round((R * (100 + percent)) / 100);
+  G = Math.round((G * (100 + percent)) / 100);
+  B = Math.round((B * (100 + percent)) / 100);
+
+  R = R < 255 ? R : 255;
+  G = G < 255 ? G : 255;
+  B = B < 255 ? B : 255;
+
+  const RR = R.toString(16).padStart(2, '0');
+  const GG = G.toString(16).padStart(2, '0');
+  const BB = B.toString(16).padStart(2, '0');
+
+  return `#${RR}${GG}${BB}`;
+}
 
   logout() {
     this.authService.logout();

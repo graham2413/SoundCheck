@@ -265,6 +265,63 @@ export class ReviewPageComponent implements OnInit {
   backgroundGradient: string = 'linear-gradient(to bottom, #09101F, #000000)';
   isDarkBackground: boolean = false;
   smartLinkUrl: string | null = null;
+  isLoadingSmartUrl: boolean = true;
+  showAppPickerModal: boolean = false;
+  preferredApp: string | null = null;
+  availablePlatforms: string[] = [
+    'spotify',
+    'appleMusic',
+    'youtubeMusic',
+    'deezer',
+    'amazonMusic',
+    'soundcloud',
+    'pandora',
+    'audiomack',
+  ];
+
+  platformStyles: Record<
+    string,
+    { label: string; color: string; icon?: string; imagePath?: string }
+  > = {
+    spotify: { label: 'Spotify', color: '#1DB954', icon: 'fab fa-spotify' },
+    appleMusic: {
+      label: 'Apple Music',
+      color: '#FC3C44',
+      icon: 'fab fa-apple',
+    },
+    youtubeMusic: {
+      label: 'YouTube Music',
+      color: '#FF0000',
+      icon: 'fab fa-youtube',
+    },
+    amazonMusic: {
+      label: 'Amazon Music',
+      color: '#3B4CCA',
+      icon: 'fab fa-amazon',
+    },
+    soundcloud: {
+      label: 'SoundCloud',
+      color: '#FF5500',
+      icon: 'fab fa-soundcloud',
+    },
+    deezer: {
+      label: 'Deezer',
+      color: '#9333E8',
+      imagePath: '../assets/deezer-logo.png',
+    },
+    audiomack: {
+      label: 'Audiomack',
+      color: '#FFBD00',
+      imagePath: '../assets/audiomack-logo.png',
+    },
+    pandora: {
+      label: 'Pandora',
+      color: '#3668FF',
+      imagePath: '../assets/pandora-logo.png',
+    },
+  };
+
+  public smartLinkData: any = null;
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -698,6 +755,81 @@ export class ReviewPageComponent implements OnInit {
       : false;
   }
 
+  openMusicAppClick(event: MouseEvent): void {
+    const preferredApp = localStorage.getItem('preferredMusicApp');
+
+    if (!preferredApp) {
+      event.preventDefault(); // Prevent default anchor nav
+      this.showAppPickerModal = true;
+    }
+
+    // If preferredApp exists, do nothing: anchor href will open as expected
+  }
+
+  setPreferredMusicApp(app: string): void {
+    this.preferredApp = app;
+    localStorage.setItem('preferredMusicApp', app);
+    this.showAppPickerModal = false;
+
+    // Use stored smartLinkData if available
+    const links = this.smartLinkData?.linksByPlatform || {};
+    const preferredUrl = links[app]?.url || this.smartLinkData?.pageUrl || null;
+
+    if (preferredUrl) {
+      this.smartLinkUrl = preferredUrl;
+      window.open(preferredUrl, '_blank', 'noopener');
+      return;
+    }
+
+    // Fallback: refetch smart link if data is missing or incomplete
+    const id = this.record.id;
+    const deezerUrl =
+      this.record.type === 'Album'
+        ? `https://www.deezer.com/album/${id}`
+        : `https://www.deezer.com/track/${id}`;
+
+    this.searchService.getSmartLink(deezerUrl).subscribe({
+      next: (res) => {
+        this.smartLinkData = res;
+        const fallbackUrl =
+          res.linksByPlatform?.[app]?.url || res.pageUrl || null;
+        this.smartLinkUrl = fallbackUrl;
+
+        if (fallbackUrl) {
+          window.open(fallbackUrl, '_blank', 'noopener');
+        } else {
+          this.toastr.error('No link available for this app.', 'Error');
+        }
+      },
+      error: () => {
+        console.error(
+          'Failed to fetch smart link after setting preferred app.'
+        );
+        this.toastr.error('Failed to open music app link.', 'Error');
+      },
+    });
+  }
+
+  shadeColor(color: string, percent: number) {
+    let R = parseInt(color.substring(1, 3), 16);
+    let G = parseInt(color.substring(3, 5), 16);
+    let B = parseInt(color.substring(5, 7), 16);
+
+    R = Math.round((R * (100 + percent)) / 100);
+    G = Math.round((G * (100 + percent)) / 100);
+    B = Math.round((B * (100 + percent)) / 100);
+
+    R = R < 255 ? R : 255;
+    G = G < 255 ? G : 255;
+    B = B < 255 ? B : 255;
+
+    const RR = R.toString(16).padStart(2, '0');
+    const GG = G.toString(16).padStart(2, '0');
+    const BB = B.toString(16).padStart(2, '0');
+
+    return `#${RR}${GG}${BB}`;
+  }
+
   public getExtraDetails(): Promise<void> {
     this.isLoadingExtraDetails = true;
 
@@ -720,6 +852,7 @@ export class ReviewPageComponent implements OnInit {
   }
 
   fetchSongDetails(done?: () => void) {
+    this.isLoadingSmartUrl = true;
     this.searchService.getTrackDetails(this.record.id).subscribe({
       next: (data: Song) => {
         const song = this.record as Song;
@@ -734,11 +867,26 @@ export class ReviewPageComponent implements OnInit {
         const deezerTrackUrl = `https://www.deezer.com/track/${song.id}`;
         this.searchService.getSmartLink(deezerTrackUrl).subscribe({
           next: (res) => {
-            this.smartLinkUrl = res.pageUrl || null;
+            this.smartLinkData = res; // Store the full smart link response
+
+            const preferredApp = localStorage.getItem('preferredMusicApp');
+            const links = res.linksByPlatform || {};
+
+            // Use preferred app URL if available
+            if (preferredApp && links[preferredApp]?.url) {
+              this.smartLinkUrl = links[preferredApp].url;
+            } else {
+              // fallback to smart page or ask user to pick one
+              this.smartLinkUrl = res.pageUrl || null;
+            }
           },
           error: (err) => {
             console.error('Failed to fetch smart link for song:', err);
             this.smartLinkUrl = null;
+            this.isLoadingSmartUrl = false;
+          },
+          complete: () => {
+            this.isLoadingSmartUrl = false;
           },
         });
 
@@ -752,12 +900,14 @@ export class ReviewPageComponent implements OnInit {
         const song = this.record as Song;
         song.releaseDate = '';
         this.isLoadingExtraDetails = false;
+        this.isLoadingSmartUrl = false;
         if (done) done();
       },
     });
   }
 
   fetchAlbumDetails(done?: () => void) {
+    this.isLoadingSmartUrl = true;
     this.searchService.getAlbumDetails(this.record.id).subscribe({
       next: (data: Album) => {
         const album = this.record as Album;
@@ -786,12 +936,26 @@ export class ReviewPageComponent implements OnInit {
         const deezerUrl = `https://www.deezer.com/album/${album.id}`;
         this.searchService.getSmartLink(deezerUrl).subscribe({
           next: (res) => {
-            this.smartLinkUrl = res.pageUrl || null;
-            // Optionally extract: res.linksByPlatform.spotify.url etc.
+            this.smartLinkData = res; // Store the full smart link response
+
+            const preferredApp = localStorage.getItem('preferredMusicApp');
+            const links = res.linksByPlatform || {};
+
+            // Use preferred app URL if available
+            if (preferredApp && links[preferredApp]?.url) {
+              this.smartLinkUrl = links[preferredApp].url;
+            } else {
+              // fallback to smart page or ask user to pick one
+              this.smartLinkUrl = res.pageUrl || null;
+            }
           },
           error: (err) => {
-            console.error('Smart link fetch failed:', err);
+            console.error('Failed to fetch smart link for song:', err);
             this.smartLinkUrl = null;
+            this.isLoadingSmartUrl = false;
+          },
+          complete: () => {
+            this.isLoadingSmartUrl = false;
           },
         });
 
@@ -802,6 +966,7 @@ export class ReviewPageComponent implements OnInit {
         album.releaseDate = 'Unknown';
         album.tracklist = [];
         this.isLoadingExtraDetails = false;
+        this.isLoadingSmartUrl = false;
       },
       complete: () => {
         const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
@@ -918,6 +1083,7 @@ export class ReviewPageComponent implements OnInit {
     this.isReviewsLoaded = false;
     this.isRatingLoaded = false;
     this.isImageLoaded = false;
+    this.smartLinkUrl = '';
 
     this.preloadLowResImageForGradient();
     this.resetScrollingState();
