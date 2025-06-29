@@ -168,13 +168,15 @@
           </span>
         </h2>
 
-<span
-  *ngIf="activeTab === 'myFriends'"
-  class="md:hidden block text-gray-400 text-lg pl-6"
->
-  <span class="text-white font-semibold">Friends</span>
-  <span class="text-base text-gray-400">({{ userProfile.friendInfo.friends.length || 0 }})</span>
-</span>
+        <span
+          *ngIf="activeTab === 'myFriends'"
+          class="md:hidden block text-gray-400 text-lg pl-6"
+        >
+          <span class="text-white font-semibold">Friends </span>
+          <span class="text-base text-gray-400"
+            >({{ userProfile.friendInfo.friends.length || 0 }})</span
+          >
+        </span>
 
         <!-- Search Bar -->
         <div
@@ -186,7 +188,7 @@
             [(ngModel)]="searchQuery"
             placeholder="{{ getSearchPlaceholder() }}"
             (keyup.enter)="searchUsers()"
-            class="w-full rounded-full bg-[#09101F] border border-gray-600 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg shadow-md"
+            class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg shadow-md"
           />
           <i
             class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pt-[.5rem] md:pt-0"
@@ -439,7 +441,7 @@
             [(ngModel)]="searchQuery"
             placeholder="{{ getSearchPlaceholder() }}"
             (keydown.enter)="searchUsers()"
-            class="w-full rounded-full bg-[#09101F] border border-gray-600 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg shadow-md"
+            class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg shadow-md"
           />
           <i
             (click)="searchUsers()"
