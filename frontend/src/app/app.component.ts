@@ -216,7 +216,7 @@ private handleToken(token: string) {
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     this.debugMessage = 'Token parsing failed: ' + (error?.message || 'Unknown');
     console.warn('Token parsing failed:', error);
     this.logout();
