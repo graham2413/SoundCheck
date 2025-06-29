@@ -107,6 +107,11 @@ export class AppComponent implements OnInit {
   navigationDirection: 'forward' | 'back' = 'forward';
   profileLoaded = false;
 
+  debugMessage = '';
+debugToken = '';
+debugProfileStatus = '';
+
+
   constructor(
     private router: Router,
     private toastr: ToastrService,
@@ -133,6 +138,9 @@ export class AppComponent implements OnInit {
     const queryParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = queryParams.get('token');
 
+    this.debugToken = localStorage.getItem('token') ?? 'null';
+
+
     if (tokenFromUrl) {
       localStorage.setItem('token', tokenFromUrl);
       this.handleToken(tokenFromUrl);
@@ -152,21 +160,28 @@ export class AppComponent implements OnInit {
 
 private handleToken(token: string) {
   try {
+    this.debugMessage = 'Decoding token...';
+
     const decoded: DecodedToken = jwtDecode(token);
 
     if (!decoded?.userId || !decoded.exp) {
+      this.debugMessage = 'Invalid token structure';
       throw new Error('Invalid token structure');
     }
 
     const currentTime = Math.floor(Date.now() / 1000);
     if (decoded.exp < currentTime) {
+      this.debugMessage = 'Token expired';
       this.logout();
       return;
     }
 
+    this.debugMessage = 'Token valid. Fetching user profile...';
+
     const delay$ = timer(3000);
     const profile$ = this.userService.getAuthenticatedUserProfile().pipe(
       catchError((error) => {
+        this.debugMessage = 'Profile fetch failed: ' + (error?.message || 'Unknown error');
         console.error('Failed to fetch user profile:', error);
         return of(null); // Let failsafe handle logout
       })
@@ -177,6 +192,7 @@ private handleToken(token: string) {
     const failsafe = setTimeout(() => {
       if (!this.profileLoaded) {
         timeoutTriggered = true;
+        this.debugMessage = 'Failsafe: Profile not loaded in 10s';
         console.warn('Failsafe triggered: profile not loaded in 10s');
         this.toastr.error('Profile loading timed out. Please try again.');
         this.profileLoaded = true;
@@ -185,12 +201,15 @@ private handleToken(token: string) {
     }, 10000); // 10s timeout
 
     forkJoin([delay$, profile$]).subscribe(([_, profile]) => {
-      if (timeoutTriggered) return; // Failsafe already triggered
-      clearTimeout(failsafe);       // Cleanup
+      if (timeoutTriggered) return;
+      clearTimeout(failsafe);
 
       if (!profile) {
-        this.logout(); // Profile explicitly failed (e.g. 401)
+        this.debugMessage = 'Profile is null or empty';
+        this.logout();
       } else {
+        this.debugMessage = 'Profile loaded successfully';
+        this.debugProfileStatus = JSON.stringify(profile); // useful!
         this.userService.setUserProfile(profile);
         this.profileLoaded = true;
         this.cdRef.detectChanges();
@@ -198,10 +217,12 @@ private handleToken(token: string) {
     });
 
   } catch (error) {
+    this.debugMessage = 'Token parsing failed: ' + (error?.message || 'Unknown');
     console.warn('Token parsing failed:', error);
     this.logout();
   }
 }
+
 
   private logout() {
     this.authService.logout();
