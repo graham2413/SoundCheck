@@ -166,13 +166,18 @@ private handleToken(token: string) {
 
     const delay$ = timer(3000);
     const profile$ = this.userService.getAuthenticatedUserProfile().pipe(
-      catchError(() => of(null))
+      catchError((error) => {
+        console.error('Failed to fetch user profile:', error);
+        this.logout(); // Immediate exit
+        return of(null);
+      })
     );
 
     forkJoin([delay$, profile$]).subscribe(([_, profile]) => {
       if (!profile) {
         this.logout();
       } else {
+        this.userService.setUserProfile(profile);
         this.profileLoaded = true;
         this.cdRef.detectChanges(); 
       }
