@@ -1,6 +1,6 @@
 <div class="sticky top-0 z-30 md:pt-[6rem] w-full bg-[#0F1722]">
   <!-- Buttons Row with shared border -->
-  <div class="relative bg-[#0F1722] border-b border-b-gray-800">
+  <div class="relative bg-[#09101F] border-b border-b-gray-800">
     <div class="flex justify-around items-center h-[3.5rem] relative">
       <!-- Highlight Underline: mobile -->
       <div
@@ -258,9 +258,9 @@
       <button
         (click)="onSearch('songs', false)"
         [disabled]="isLoading"
-        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl font-semibold rounded-full transition text-center"
+        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl rounded-full transition text-center"
         [ngClass]="{
-          'text-white': activeTab === 'songs',
+          'text-white font-semibold': activeTab === 'songs',
           'text-gray-300': activeTab !== 'songs'
         }"
       >
@@ -269,9 +269,9 @@
       <button
         (click)="onSearch('albums', false)"
         [disabled]="isLoading"
-        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl font-semibold rounded-full transition text-center"
+        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl rounded-full transition text-center"
         [ngClass]="{
-          'text-white': activeTab === 'albums',
+          'text-white font-semibold': activeTab === 'albums',
           'text-gray-300': activeTab !== 'albums'
         }"
       >
@@ -280,9 +280,9 @@
       <button
         (click)="onSearch('artists', false)"
         [disabled]="isLoading"
-        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl font-semibold rounded-full transition text-center"
+        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl rounded-full transition text-center"
         [ngClass]="{
-          'text-white': activeTab === 'artists',
+          'text-white font-semibold': activeTab === 'artists',
           'text-gray-300': activeTab !== 'artists'
         }"
       >
@@ -632,9 +632,9 @@
           <ng-container *ngFor="let type of popularTypes">
             <button
               (click)="setPopularType(type)"
-              class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl font-semibold rounded-full transition text-center"
+              class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl rounded-full transition text-center"
               [ngClass]="{
-                'text-white': activePopularType === type,
+                'text-white font-semibold': activePopularType === type,
                 'text-gray-300': activePopularType !== type
               }"
             >
@@ -693,7 +693,7 @@
               (click)="openModal(record, popularRecords, i)"
             >
               <!-- Rank -->
-              <div class="text-3xl text-[#0F5EE4] w-6 mr-2 text-center">
+              <div class="text-3xl text-[#F1F1F1] w-6 mr-2 text-center">
                 {{ i + 1 }}.
               </div>
 
@@ -750,7 +750,7 @@
               </div>
 
               <!-- Rating -->
-              <div class="text-2xl font-semibold text-gray-white pl-2">
+              <div class="text-2xl font-semibold text-[#FFD700] pl-2">
                 {{ record.avgRating }}
               </div>
             </div>
@@ -783,9 +783,9 @@
         <ng-container *ngFor="let feedType of activityFeedTypes">
           <button
             (click)="setFeedType(feedType)"
-            class="relative z-10 w-28 py-2 text-lg md:text-xl font-semibold rounded-full transition"
+            class="relative z-10 w-28 py-2 text-lg md:text-xl rounded-full transition"
             [ngClass]="{
-              'text-white': activeFeedType === feedType,
+              'text-white font-semibold': activeFeedType === feedType,
               'text-gray-300': activeFeedType !== feedType
             }"
           >
