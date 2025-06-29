@@ -1517,4 +1517,12 @@ export class ReviewPageComponent implements OnInit {
 
     return { count: totalTracks, durationDisplay };
   }
+
+  getSongDurationDisplay(song: Song): string {
+  const totalSeconds = song.duration || 0;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 }

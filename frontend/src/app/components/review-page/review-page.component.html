@@ -284,12 +284,29 @@
             </div>
 
             <div
+              *ngIf="record.type === 'Song'"
+              class="text-base sm:text-xl text-gray-400 pt-1"
+            >
+              Duration:
+              <span class="text-white">
+                {{ getSongDurationDisplay(record) }}
+              </span>
+            </div>
+
+            <div
               *ngIf="record.type === 'Album'"
               class="text-base text-gray-400 pt-1"
             >
               <div class="text-base sm:text-xl text-gray-400 pt-1">
-                <span class="text-white">{{ trackSummary?.count }}</span>
-                {{ trackSummary?.count === 1 ? " song" : " songs" }} ·
+                <ng-container
+                  *ngIf="trackSummary?.count === 1; else multipleTracks"
+                >
+                  Duration:
+                </ng-container>
+                <ng-template #multipleTracks>
+                  <span class="text-white">{{ trackSummary?.count }}</span>
+                  {{ trackSummary?.count === 1 ? " song" : " songs" }} ·
+                </ng-template>
                 <span class="text-white">{{
                   trackSummary?.durationDisplay
                 }}</span>
@@ -1825,6 +1842,38 @@
                       }}</span>
                     </div>
                   </div>
+
+                  <div
+                    *ngIf="record.type === 'Album'"
+                    class="text-lg text-gray-400 pt-1"
+                  >
+                    <div class="text-gray-400 pt-1">
+                      <ng-container
+                        *ngIf="trackSummary?.count === 1; else multipleTracks"
+                      >
+                        Duration:
+                      </ng-container>
+                      <ng-template #multipleTracks>
+                        <span class="text-white">{{
+                          trackSummary?.count
+                        }}</span>
+                        {{ trackSummary?.count === 1 ? " song" : " songs" }} ·
+                      </ng-template>
+                      <span class="text-white">{{
+                        trackSummary?.durationDisplay
+                      }}</span>
+                    </div>
+                  </div>
+
+                  <div
+                    *ngIf="record.type === 'Song'"
+                    class="text-lg text-gray-400 pt-1"
+                  >
+                    Duration:
+                    <span class="text-white">
+                      {{ getSongDurationDisplay(record) }}
+                    </span>
+                  </div>
                 </div>
                 <!-- Album Tracklist -->
                 <ul
@@ -2467,62 +2516,61 @@
   </div>
 </div>
 
-  <!-- App Picker Modal -->
-  <div
-    *ngIf="showAppPickerModal"
-    class="fixed inset-0 z-50 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4"
-  >
-    <div class="bg-[#1a1a1a] rounded-xl shadow-lg p-6 w-full max-w-xl relative">
-      <!-- Close button -->
-      <button
-        class="absolute top-3 right-3 text-gray-400 hover:text-white text-4xl"
-        (click)="showAppPickerModal = false"
-      >
-        &times;
-      </button>
+<!-- App Picker Modal -->
+<div
+  *ngIf="showAppPickerModal"
+  class="fixed inset-0 z-50 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4"
+>
+  <div class="bg-[#1a1a1a] rounded-xl shadow-lg p-6 w-full max-w-xl relative">
+    <!-- Close button -->
+    <button
+      class="absolute top-3 right-3 text-gray-400 hover:text-white text-4xl"
+      (click)="showAppPickerModal = false"
+    >
+      &times;
+    </button>
 
-      <!-- Preferred App Section (your existing UI) -->
-      <div class="w-full mx-auto mb-6">
-        <h2 class="block text-xl md:text-2xl font-semibold py-2 text-center">
-          <span class="text-gray-300">Select a Music App</span>
-        </h2>
+    <!-- Preferred App Section (your existing UI) -->
+    <div class="w-full mx-auto mb-6">
+      <h2 class="block text-xl md:text-2xl font-semibold py-2 text-center">
+        <span class="text-gray-300">Select a Music App</span>
+      </h2>
 
-        <div class="flex justify-center pb-3 pt-3">
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-5">
-            <button
-              *ngFor="let app of availablePlatforms"
-              (click)="setPreferredMusicApp(app)"
-              [ngStyle]="{
-                backgroundColor:
-                  preferredApp === app
-                    ? platformStyles[app].color
-                    : shadeColor(platformStyles[app].color, -30)
-              }"
-              [ngClass]="{
-                'text-white ring-2 ring-offset-1': preferredApp === app,
-                'text-gray-100 opacity-90 hover:opacity-100':
-                  preferredApp !== app
-              }"
-              class="py-2 px-4 min-w-[6.5rem] rounded-full text-sm font-medium transition duration-200 focus:outline-none flex items-center gap-2 justify-center"
-            >
-              <ng-container *ngIf="platformStyles[app].icon; else svgIcon">
-                <i
-                  [class]="platformStyles[app].icon"
-                  class="text-[2rem] leading-none"
-                ></i>
-              </ng-container>
+      <div class="flex justify-center pb-3 pt-3">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-5">
+          <button
+            *ngFor="let app of availablePlatforms"
+            (click)="setPreferredMusicApp(app)"
+            [ngStyle]="{
+              backgroundColor:
+                preferredApp === app
+                  ? platformStyles[app].color
+                  : shadeColor(platformStyles[app].color, -30)
+            }"
+            [ngClass]="{
+              'text-white ring-2 ring-offset-1': preferredApp === app,
+              'text-gray-100 opacity-90 hover:opacity-100': preferredApp !== app
+            }"
+            class="py-2 px-4 min-w-[6.5rem] rounded-full text-sm font-medium transition duration-200 focus:outline-none flex items-center gap-2 justify-center"
+          >
+            <ng-container *ngIf="platformStyles[app].icon; else svgIcon">
+              <i
+                [class]="platformStyles[app].icon"
+                class="text-[2rem] leading-none"
+              ></i>
+            </ng-container>
 
-              <ng-template #svgIcon>
-                <img
-                  *ngIf="platformStyles[app].imagePath"
-                  [src]="platformStyles[app].imagePath"
-                  alt="{{ platformStyles[app].label }} logo"
-                  class="w-[2rem] h-[2rem]"
-                />
-              </ng-template>
-            </button>
-          </div>
+            <ng-template #svgIcon>
+              <img
+                *ngIf="platformStyles[app].imagePath"
+                [src]="platformStyles[app].imagePath"
+                alt="{{ platformStyles[app].label }} logo"
+                class="w-[2rem] h-[2rem]"
+              />
+            </ng-template>
+          </button>
         </div>
       </div>
     </div>
   </div>
+</div>
