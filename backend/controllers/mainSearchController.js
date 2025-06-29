@@ -750,6 +750,41 @@ const getDeezerArtistReleases = async (req, res) => {
   }
 };
 
+// smartLinkController.js
+const https = require("https");
+const axios = require("axios");
+const fs = require("fs");
+
+const isProd = process.env.NODE_ENV === "production";
+
+// Use relaxed SSL agent in dev (if needed)
+const agent = isProd
+  ? new https.Agent()
+  : new https.Agent({
+      rejectUnauthorized: false, // allow self-signed certs
+      ca: fs.existsSync("cacert.pem") ? fs.readFileSync("cacert.pem") : undefined,
+    });
+
+const getSmartLink = async (req, res) => {
+  const { url } = req.query;
+
+  if (!url) {
+    return res.status(400).json({ error: 'Missing required "url" query parameter.' });
+  }
+
+  try {
+    const response = await axios.get(
+      `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(url)}`,
+      { httpsAgent: agent }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("Smart link fetch failed:", error.message);
+    res.status(500).json({ error: "Failed to fetch smart link" });
+  }
+};
+
 module.exports = {
   searchMusic,
   getAlbumGenre,
@@ -762,4 +797,5 @@ module.exports = {
   cronSyncAllArtists,
   getReleasesByArtistIds,
   getDeezerArtistReleases,
+  getSmartLink
 };

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getTrackDetails, getAlbumDetails, searchMusic, getArtistTopTracks, getAndStoreArtistAlbums, getReleasesByArtistIds, getDeezerArtistReleases } = require("../controllers/mainSearchController");
+const { getTrackDetails, getAlbumDetails, searchMusic, getArtistTopTracks, getAndStoreArtistAlbums, getReleasesByArtistIds, getDeezerArtistReleases, getSmartLink } = require("../controllers/mainSearchController");
 const authenticateUser = require("../middleware/authMiddleware");
 
 // Main search route
@@ -23,5 +23,8 @@ router.post("/artist/releases", getReleasesByArtistIds);
 
 // Get Deezer artist releases
 router.get('/artists/:artistId/releases', getDeezerArtistReleases);
+
+// Route to get a smart link from a Deezer URL
+router.get("/smartlink", getSmartLink);
 
 module.exports = router;
