@@ -9,6 +9,7 @@ const { callDeezer: mockCallDeezer } = require('../utils/callDeezer');
 
 jest.mock('fs', () => ({
   readFileSync: jest.fn().mockReturnValue('fake-certificate'),
+  existsSync: jest.fn().mockReturnValue(true), // ✅ this is what's missing
 }));
 
 jest.mock('ioredis', () => {
