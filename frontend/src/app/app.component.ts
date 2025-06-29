@@ -168,18 +168,32 @@ private handleToken(token: string) {
     const profile$ = this.userService.getAuthenticatedUserProfile().pipe(
       catchError((error) => {
         console.error('Failed to fetch user profile:', error);
-        this.logout(); // Immediate exit
-        return of(null);
+        return of(null); // Let failsafe handle logout
       })
     );
 
-    forkJoin([delay$, profile$]).subscribe(([_, profile]) => {
-      if (!profile) {
+    let timeoutTriggered = false;
+
+    const failsafe = setTimeout(() => {
+      if (!this.profileLoaded) {
+        timeoutTriggered = true;
+        console.warn('Failsafe triggered: profile not loaded in 10s');
+        this.toastr.error('Profile loading timed out. Please try again.');
+        this.profileLoaded = true;
         this.logout();
+      }
+    }, 10000); // 10s timeout
+
+    forkJoin([delay$, profile$]).subscribe(([_, profile]) => {
+      if (timeoutTriggered) return; // Failsafe already triggered
+      clearTimeout(failsafe);       // Cleanup
+
+      if (!profile) {
+        this.logout(); // Profile explicitly failed (e.g. 401)
       } else {
         this.userService.setUserProfile(profile);
         this.profileLoaded = true;
-        this.cdRef.detectChanges(); 
+        this.cdRef.detectChanges();
       }
     });
 
@@ -188,7 +202,6 @@ private handleToken(token: string) {
     this.logout();
   }
 }
-
 
   private logout() {
     this.authService.logout();
