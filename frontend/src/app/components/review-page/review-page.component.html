@@ -282,6 +282,19 @@
                 }}</span>
               </div>
             </div>
+
+            <div
+              *ngIf="record.type === 'Album'"
+              class="text-base text-gray-400 pt-1"
+            >
+              <div class="text-base sm:text-xl text-gray-400 pt-1">
+                <span class="text-white">{{ trackSummary?.count }}</span>
+                {{ trackSummary?.count === 1 ? " song" : " songs" }} ·
+                <span class="text-white">{{
+                  trackSummary?.durationDisplay
+                }}</span>
+              </div>
+            </div>
           </div>
           <!-- Album Tracklist -->
           <ul
@@ -647,6 +660,17 @@
       <i class="fas fa-spinner fa-spin mr-2"></i> Removing...
     </ng-template>
   </div>
+
+    <a
+      *ngIf="smartLinkUrl"
+      [href]="smartLinkUrl"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 transition"
+    >
+      <i class="fas fa-headphones mr-2 text-2xl"></i>
+      Open in Music App
+    </a>
 
   <!-- Reviews Section -->
   <div
@@ -1502,6 +1526,17 @@
                       <i class="fas fa-spinner fa-spin mr-2"></i> Removing...
                     </ng-template>
                   </div>
+
+                  <a
+                    *ngIf="smartLinkUrl"
+                    [href]="smartLinkUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="music-app-button mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 transition"
+                  >
+                    <i class="fas fa-headphones mr-2 text-2xl"></i>
+                    Open in Music App
+                  </a>
                 </div>
               </div>
             </div>

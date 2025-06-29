@@ -84,4 +84,10 @@ getArtistReleases(artistId: number, artistName: string): Observable<{ albums: Al
   );
 }
 
+  getSmartLink(deezerUrl: string): Observable<any> {
+    const endpoint = 'https://api.song.link/v1-alpha.1/links';
+    const fullUrl = `${endpoint}?url=${encodeURIComponent(deezerUrl)}`;
+    return this.http.get<any>(fullUrl);
+  }
+
 }

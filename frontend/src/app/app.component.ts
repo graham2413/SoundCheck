@@ -170,7 +170,7 @@ private handleToken(token: string) {
       return;
     }
 
-    const delay$ = timer(3000);
+    const delay$ = timer(1500);
     const profile$ = this.userService.getAuthenticatedUserProfile().pipe(
       catchError((error) => {
         console.error('Failed to fetch user profile:', error);

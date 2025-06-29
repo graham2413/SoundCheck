@@ -46,11 +46,7 @@ import { ColorThiefService } from '@soarlin/angular-color-thief';
   templateUrl: './review-page.component.html',
   styleUrls: ['./review-page.component.css'],
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    AudioPlayerComponent
-  ],
+  imports: [CommonModule, FormsModule, AudioPlayerComponent],
   animations: [
     trigger('overlayAnimation', [
       transition(':enter', [
@@ -268,7 +264,8 @@ export class ReviewPageComponent implements OnInit {
   public isSingleAlbum: boolean = false;
   backgroundGradient: string = 'linear-gradient(to bottom, #09101F, #000000)';
   isDarkBackground: boolean = false;
-  
+  smartLinkUrl: string | null = null;
+
   constructor(
     private activeModal: NgbActiveModal,
     private reviewService: ReviewService,
@@ -277,7 +274,8 @@ export class ReviewPageComponent implements OnInit {
     private modal: NgbModal,
     private userService: UserService,
     private colorThief: ColorThiefService,
-    private router: Router) {}
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.isMobileView = window.innerWidth <= 768;
@@ -344,85 +342,91 @@ export class ReviewPageComponent implements OnInit {
   }
 
   preloadLowResImageForGradient(): void {
-  const url = this.getImageUrl(true);
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = (e) => this.onImageLoad(e as Event);
-  img.src = url;
-}
-
-getImageUrl(lowRes = false): string {
-  let rawUrl = this.record.type === 'Artist'
-    ? this.record.picture ||
-        'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
-    : this.record.cover ||
-        'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801';
-
-  if (lowRes) {
-    rawUrl = this.getLowResImageUrl(rawUrl);
+    const url = this.getImageUrl(true);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = (e) => this.onImageLoad(e as Event);
+    img.src = url;
   }
 
-  return this.reviewService.getProxiedImageUrl(rawUrl);
-}
+  getImageUrl(lowRes = false): string {
+    let rawUrl =
+      this.record.type === 'Artist'
+        ? this.record.picture ||
+          'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
+        : this.record.cover ||
+          'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801';
 
-darkenColor(r: number, g: number, b: number, factor = 0.7): [number, number, number] {
-  return [r * factor, g * factor, b * factor];
-}
+    if (lowRes) {
+      rawUrl = this.getLowResImageUrl(rawUrl);
+    }
 
-async onImageLoad(event: Event): Promise<void> {
-  const img = event.target as HTMLImageElement;
+    return this.reviewService.getProxiedImageUrl(rawUrl);
+  }
 
-  try {
-    const [[r, g, b]] = await this.colorThief.getPalette(img, 3);
-    const [dr, dg, db] = this.darkenColor(r, g, b, 0.6); // 0.6 = 40% darker
-    const gradient = `linear-gradient(to bottom, rgb(${dr}, ${dg}, ${db}))`;
+  darkenColor(
+    r: number,
+    g: number,
+    b: number,
+    factor = 0.7
+  ): [number, number, number] {
+    return [r * factor, g * factor, b * factor];
+  }
 
-    const luminance = (0.299 * dr + 0.587 * dg + 0.114 * db) / 255;
-    this.isDarkBackground = luminance < 0.5;
+  async onImageLoad(event: Event): Promise<void> {
+    const img = event.target as HTMLImageElement;
 
-    requestAnimationFrame(() => {
+    try {
+      const [[r, g, b]] = await this.colorThief.getPalette(img, 3);
+      const [dr, dg, db] = this.darkenColor(r, g, b, 0.6); // 0.6 = 40% darker
+      const gradient = `linear-gradient(to bottom, rgb(${dr}, ${dg}, ${db}))`;
+
+      const luminance = (0.299 * dr + 0.587 * dg + 0.114 * db) / 255;
+      this.isDarkBackground = luminance < 0.5;
+
       requestAnimationFrame(() => {
-        this.backgroundGradient = gradient;
+        requestAnimationFrame(() => {
+          this.backgroundGradient = gradient;
+        });
       });
-    });
-
-  } catch (err) {
-    console.error('Color extraction failed:', err);
-    this.isDarkBackground = true;
-    const fallback = 'linear-gradient(to bottom, #09101F, #000000)';
-    requestAnimationFrame(() => {
+    } catch (err) {
+      console.error('Color extraction failed:', err);
+      this.isDarkBackground = true;
+      const fallback = 'linear-gradient(to bottom, #09101F, #000000)';
       requestAnimationFrame(() => {
-        this.backgroundGradient = fallback;
+        requestAnimationFrame(() => {
+          this.backgroundGradient = fallback;
+        });
       });
+    }
+  }
+
+  getLowResImageUrl(url: string): string {
+    // Handle Deezer-style ?size=xl → ?size=small
+    const urlObj = new URL(url);
+    if (urlObj.hostname.includes('deezer.com')) {
+      urlObj.searchParams.set('size', 'small');
+      return urlObj.toString();
+    }
+
+    // Fallback for legacy Cloudinary-style /1000x1000- → /50x50-
+    return url.replace(/\/\d+x\d+-/, '/50x50-');
+  }
+
+  openRecord() {
+    this.getExtraDetails().then(() => {
+      this.getReviews();
+
+      setTimeout(() => {
+        const modalElement = document.querySelector(
+          '.modal-content'
+        ) as HTMLElement;
+        if (modalElement) {
+          modalElement.scrollTop = 0;
+        }
+      }, 100);
     });
   }
-}
-
-
-getLowResImageUrl(url: string): string {
-  // Handle Deezer-style ?size=xl → ?size=small
-  const urlObj = new URL(url);
-  if (urlObj.hostname.includes('deezer.com')) {
-    urlObj.searchParams.set('size', 'small');
-    return urlObj.toString();
-  }
-
-  // Fallback for legacy Cloudinary-style /1000x1000- → /50x50-
-  return url.replace(/\/\d+x\d+-/, '/50x50-');
-}
-
-openRecord() {
-  this.getExtraDetails().then(() => {
-    this.getReviews();
-
-    setTimeout(() => {
-      const modalElement = document.querySelector('.modal-content') as HTMLElement;
-      if (modalElement) {
-        modalElement.scrollTop = 0;
-      }
-    }, 100);
-  });
-}
 
   scrollToReviews(): void {
     if (this.reviewsSection) {
@@ -510,12 +514,12 @@ openRecord() {
   }
 
   getReviews() {
-const inferredType =
-  this.record.type === 'Album' && this.record.tracklist?.length === 1
-    ? 'Song'
-    : this.record.type;
+    const inferredType =
+      this.record.type === 'Album' && this.record.tracklist?.length === 1
+        ? 'Song'
+        : this.record.type;
 
-this.reviewService.searchReviews(this.record.id, inferredType).subscribe({
+    this.reviewService.searchReviews(this.record.id, inferredType).subscribe({
       next: (data: Reviews) => {
         this.reviews = data.reviews;
         // this.reviews = Array.from({ length: 35 }, (_, i) => ({
@@ -694,152 +698,176 @@ this.reviewService.searchReviews(this.record.id, inferredType).subscribe({
       : false;
   }
 
-public getExtraDetails(): Promise<void> {
-  this.isLoadingExtraDetails = true;
+  public getExtraDetails(): Promise<void> {
+    this.isLoadingExtraDetails = true;
 
-  const isActuallyAnAlbum =
-    this.record.type === 'Song' &&
-    (this.record as any)?.wasOriginallyAlbumButTreatedAsSingle;
+    const isActuallyAnAlbum =
+      this.record.type === 'Song' &&
+      (this.record as any)?.wasOriginallyAlbumButTreatedAsSingle;
 
-  return new Promise<void>((resolve) => {
-    if (this.record.type === 'Song' && isActuallyAnAlbum) {
-      (this.record as any).type = 'Album';
-      this.fetchAlbumDetails(resolve);
-    } else if (this.record.type === 'Song') {
-      this.fetchSongDetails(resolve);
-    } else if (this.record.type === 'Album') {
-      this.fetchAlbumDetails(resolve);
-    } else {
-      this.fetchArtistDetails(resolve);
-    }
-  });
-}
-
-fetchSongDetails(done?: () => void) {
-  this.searchService.getTrackDetails(this.record.id).subscribe({
-    next: (data: Song) => {
-      const song = this.record as Song;
-
-      song.releaseDate = data.releaseDate;
-      song.contributors = data.contributors;
-      song.duration = data.duration;
-      song.preview = data.preview;
-      song.genre = data.genre;
-
-      const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
-      players.forEach((player) => player?.stopLoading());
-
-      this.isLoadingExtraDetails = false;
-      if (done) done();
-    },
-    error: () => {
-      const song = this.record as Song;
-      song.releaseDate = '';
-      this.isLoadingExtraDetails = false;
-      if (done) done();
-    }
-  });
-}
-
-fetchAlbumDetails(done?: () => void) {
-  this.searchService.getAlbumDetails(this.record.id).subscribe({
-    next: (data: Album) => {
-      const album = this.record as Album;
-
-      album.tracklist = data.tracklist.map((track) => ({
-        ...track,
-        isPlaying: false,
-        cover: album.cover,
-      }));
-
-      this.isSingleAlbum =
-            album.type === 'Album' &&
-            Array.isArray(album.tracklist) &&
-            album.tracklist.length === 1;
-
-
-      if (album.tracklist.length > 0) {
-        this.currentSong = album.tracklist[0];
+    return new Promise<void>((resolve) => {
+      if (this.record.type === 'Song' && isActuallyAnAlbum) {
+        (this.record as any).type = 'Album';
+        this.fetchAlbumDetails(resolve);
+      } else if (this.record.type === 'Song') {
+        this.fetchSongDetails(resolve);
+      } else if (this.record.type === 'Album') {
+        this.fetchAlbumDetails(resolve);
+      } else {
+        this.fetchArtistDetails(resolve);
       }
-
-      album.preview = data.preview;
-      album.genre = data.genre || 'Unknown';
-      album.isExplicit = data.isExplicit;
-      album.releaseDate = data.releaseDate || 'Unknown';
-
-      this.isLoadingExtraDetails = false;
-    },
-    error: () => {
-      const album = this.record as Album;
-      album.releaseDate = 'Unknown';
-      album.tracklist = [];
-      this.isLoadingExtraDetails = false;
-    },
-    complete: () => {
-      const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
-      players.forEach((player) => player?.stopLoading());
-
-      if (done) done();
-    },
-  });
-}
-
-fetchArtistDetails(done?: () => void) {
-  if ((this.record as Artist).name === undefined) {
-    console.warn('record is not an Artist');
-    if (done) done();
-    return;
+    });
   }
 
-  forkJoin({
-    tracks: this.searchService.getArtistTracks(this.record.id),
-    releases: this.searchService.getArtistReleases(
-      this.record.id,
-      (this.record as Artist).name
-    ),
-  }).subscribe({
-    next: ({ tracks, releases }) => {
-      const artist = this.record as Artist;
+  fetchSongDetails(done?: () => void) {
+    this.searchService.getTrackDetails(this.record.id).subscribe({
+      next: (data: Song) => {
+        const song = this.record as Song;
 
-      // Set tracklist with high-res covers
-      artist.tracklist = Array.isArray(tracks)
-        ? tracks.map((track) => ({
-            ...track,
-            isPlaying: false,
-            cover: this.getHighQualityImage(track.cover),
-          }))
-        : [];
+        song.releaseDate = data.releaseDate;
+        song.contributors = data.contributors;
+        song.duration = data.duration;
+        song.preview = data.preview;
+        song.genre = data.genre;
 
-      artist.preview = tracks[0]?.preview || '';
+        // Fetch smart link for this song
+        const deezerTrackUrl = `https://www.deezer.com/track/${song.id}`;
+        this.searchService.getSmartLink(deezerTrackUrl).subscribe({
+          next: (res) => {
+            this.smartLinkUrl = res.pageUrl || null;
+          },
+          error: (err) => {
+            console.error('Failed to fetch smart link for song:', err);
+            this.smartLinkUrl = null;
+          },
+        });
 
-      if (artist.tracklist.length > 0) {
-        this.currentSong = artist.tracklist[0];
-      }
+        const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+        players.forEach((player) => player?.stopLoading());
 
-      // Set releases with high-res covers
-      this.releases = Array.isArray(releases?.albums)
-        ? releases.albums.map((release) => ({
-            ...release,
-            cover: this.getHighQualityImage(release.cover),
-          }))
-        : [];
+        this.isLoadingExtraDetails = false;
+        if (done) done();
+      },
+      error: () => {
+        const song = this.record as Song;
+        song.releaseDate = '';
+        this.isLoadingExtraDetails = false;
+        if (done) done();
+      },
+    });
+  }
 
-      this.isLoadingExtraDetails = false;
+  fetchAlbumDetails(done?: () => void) {
+    this.searchService.getAlbumDetails(this.record.id).subscribe({
+      next: (data: Album) => {
+        const album = this.record as Album;
+
+        album.tracklist = data.tracklist.map((track) => ({
+          ...track,
+          isPlaying: false,
+          cover: album.cover,
+        }));
+
+        this.isSingleAlbum =
+          album.type === 'Album' &&
+          Array.isArray(album.tracklist) &&
+          album.tracklist.length === 1;
+
+        if (album.tracklist.length > 0) {
+          this.currentSong = album.tracklist[0];
+        }
+
+        album.preview = data.preview;
+        album.genre = data.genre || 'Unknown';
+        album.isExplicit = data.isExplicit;
+        album.releaseDate = data.releaseDate || 'Unknown';
+
+        // Fetch smart link after getting album details
+        const deezerUrl = `https://www.deezer.com/album/${album.id}`;
+        this.searchService.getSmartLink(deezerUrl).subscribe({
+          next: (res) => {
+            this.smartLinkUrl = res.pageUrl || null;
+            // Optionally extract: res.linksByPlatform.spotify.url etc.
+          },
+          error: (err) => {
+            console.error('Smart link fetch failed:', err);
+            this.smartLinkUrl = null;
+          },
+        });
+
+        this.isLoadingExtraDetails = false;
+      },
+      error: () => {
+        const album = this.record as Album;
+        album.releaseDate = 'Unknown';
+        album.tracklist = [];
+        this.isLoadingExtraDetails = false;
+      },
+      complete: () => {
+        const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+        players.forEach((player) => player?.stopLoading());
+
+        if (done) done();
+      },
+    });
+  }
+
+  fetchArtistDetails(done?: () => void) {
+    if ((this.record as Artist).name === undefined) {
+      console.warn('record is not an Artist');
       if (done) done();
-    },
-    error: () => {
-      const artist = this.record as Artist;
-      artist.tracklist = [];
-      this.releases = [];
-      this.isLoadingExtraDetails = false;
-      if (done) done();
-    },
-    complete: () => {
-      const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
-      players.forEach((player) => player?.stopLoading());
-    },
-  });
-}
+      return;
+    }
+
+    forkJoin({
+      tracks: this.searchService.getArtistTracks(this.record.id),
+      releases: this.searchService.getArtistReleases(
+        this.record.id,
+        (this.record as Artist).name
+      ),
+    }).subscribe({
+      next: ({ tracks, releases }) => {
+        const artist = this.record as Artist;
+
+        // Set tracklist with high-res covers
+        artist.tracklist = Array.isArray(tracks)
+          ? tracks.map((track) => ({
+              ...track,
+              isPlaying: false,
+              cover: this.getHighQualityImage(track.cover),
+            }))
+          : [];
+
+        artist.preview = tracks[0]?.preview || '';
+
+        if (artist.tracklist.length > 0) {
+          this.currentSong = artist.tracklist[0];
+        }
+
+        // Set releases with high-res covers
+        this.releases = Array.isArray(releases?.albums)
+          ? releases.albums.map((release) => ({
+              ...release,
+              cover: this.getHighQualityImage(release.cover),
+            }))
+          : [];
+
+        this.isLoadingExtraDetails = false;
+        if (done) done();
+      },
+      error: () => {
+        const artist = this.record as Artist;
+        artist.tracklist = [];
+        this.releases = [];
+        this.isLoadingExtraDetails = false;
+        if (done) done();
+      },
+      complete: () => {
+        const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
+        players.forEach((player) => player?.stopLoading());
+      },
+    });
+  }
 
   getHighQualityImage(imageUrl: string): string {
     if (!imageUrl) return '';
@@ -867,38 +895,36 @@ fetchArtistDetails(done?: () => void) {
     }
   }
 
-nextSong() {
+  nextSong() {
+    if (this.currentIndex < this.recordList.length - 1) {
+      this.currentIndex++;
+      this.record = this.recordList[this.currentIndex];
 
-  if (this.currentIndex < this.recordList.length - 1) {
-    this.currentIndex++;
-    this.record = this.recordList[this.currentIndex];
-
-    this.resetForNewRecord();
+      this.resetForNewRecord();
+    }
   }
-}
 
-prevSong() {
-    
-  if (this.currentIndex > 0) {
-    this.currentIndex--;
-    this.record = this.recordList[this.currentIndex];
+  prevSong() {
+    if (this.currentIndex > 0) {
+      this.currentIndex--;
+      this.record = this.recordList[this.currentIndex];
 
-    this.resetForNewRecord();
+      this.resetForNewRecord();
+    }
   }
-}
 
-resetForNewRecord() {
-  this.isSingleAlbum = false;
-  this.isReviewsLoaded = false;
-  this.isRatingLoaded = false;
-  this.isImageLoaded = false;
+  resetForNewRecord() {
+    this.isSingleAlbum = false;
+    this.isReviewsLoaded = false;
+    this.isRatingLoaded = false;
+    this.isImageLoaded = false;
 
-  this.preloadLowResImageForGradient()
-  this.resetScrollingState();
-  this.scrollToTopOfIpod();
-  this.openRecord();
-  this.updateIsInList();
-}
+    this.preloadLowResImageForGradient();
+    this.resetScrollingState();
+    this.scrollToTopOfIpod();
+    this.openRecord();
+    this.updateIsInList();
+  }
 
   openSongOrAlbum(record: Song | Album) {
     this.openNewReview.emit(record);
@@ -1296,5 +1322,33 @@ resetForNewRecord() {
     this.router.navigate(['/profile', userId], {
       state: { section: this.activeDiscoverTab },
     });
+  }
+
+  get trackSummary() {
+    if (this.record.type == 'Album') {
+      return this.getTrackSummaryParts(this.record.tracklist);
+    }
+    return;
+  }
+
+  getTrackSummaryParts(tracklist: Song[]): {
+    count: number;
+    durationDisplay: string;
+  } {
+    const totalTracks = tracklist.length;
+    const totalSeconds = tracklist.reduce((sum, t) => sum + t.duration, 0);
+
+    let durationDisplay = '';
+
+    if (totalTracks === 1) {
+      const min = Math.floor(totalSeconds / 60);
+      const sec = totalSeconds % 60;
+      durationDisplay = `${min}:${sec.toString().padStart(2, '0')}`;
+    } else {
+      const totalMinutes = Math.floor(totalSeconds / 60);
+      durationDisplay = `${totalMinutes} min`;
+    }
+
+    return { count: totalTracks, durationDisplay };
   }
 }

@@ -252,3 +252,10 @@ input[type='number'] {
   background: linear-gradient(to bottom, #09101F, #000000);
   transition: background 0.6s ease-in-out;
 }
+
+@media (min-width: 768px) and (max-width: 795px) {
+  .music-app-button {
+    font-size: 1rem;
+    padding: 0.5rem 1.25rem;
+  }
+}

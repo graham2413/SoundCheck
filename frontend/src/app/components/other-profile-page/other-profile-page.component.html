@@ -255,10 +255,10 @@
       [class.translate-y-0]="showPanel"
       [class.translate-y-8]="!showPanel"
       [class.pointer-events-none]="!showPanel"
-      class="fixed inset-0 bg-[#09101F] text-white z-50 overflow-y-auto transition-all duration-300 ease-in-out transform"
+      class="fixed inset-0 bg-[#09101F] text-white z-20 overflow-y-auto transition-all duration-300 ease-in-out transform"
     >
       <div
-        class="p-4 flex justify-center items-center border-b border-gray-700 relative sticky top-0 bg-[#09101F] z-10"
+        class="p-4 flex justify-center items-center z-20 border-b border-gray-700 relative sticky top-0 bg-[#09101F] z-10"
       >
         <h2 class="text-xl md:text-2xl font-semibold capitalize">
           {{ showPanel }}
@@ -345,6 +345,13 @@
                       (error)="markImageLoaded(i, 'review')"
                       [class.invisible]="!isImageLoaded(i, 'review')"
                       alt="Album Cover"
+                                            (click)="
+                        openReview(
+                          prepareRecord(review.albumSongOrArtist),
+                          reviewList,
+                          i
+                        )
+                      "
                       class="w-full h-[6rem] md:h-[10rem] rounded object-cover border border-gray-600"
                     />
                   </div>
