@@ -169,7 +169,7 @@
   class="fas fa-home text-xl transform transition-all duration-200 ease-out"
   [ngClass]="{
     'scale-110 text-white': activeTab === 'home',
-    'scale-100 text-gray-400 opacity-50': activeTab !== 'home'
+    'scale-100 text-gray-100 opacity-50': activeTab !== 'home'
   }"
 ></i>
 
@@ -177,7 +177,7 @@
   class="transition-all duration-200"
   [ngClass]="{
     'translate-y-[0px] text-white': activeTab === 'home',
-    'translate-y-[3px] text-gray-400 opacity-50': activeTab !== 'home'
+    'translate-y-[3px] text-gray-100 opacity-50': activeTab !== 'home'
   }"
 >Home</span>
 
@@ -198,7 +198,7 @@
       class="fas fa-users text-xl transform transition-all duration-200 ease-out"
       [ngClass]="{
         'scale-110 text-white': activeTab === 'friends',
-        'scale-100 text-gray-400 opacity-50': activeTab !== 'friends'
+        'scale-100 text-gray-100 opacity-50': activeTab !== 'friends'
       }"
     ></i>
 
@@ -214,7 +214,7 @@
     class="transition-all duration-200"
     [ngClass]="{
       'translate-y-[0px] text-white': activeTab === 'friends',
-      'translate-y-[3px] text-gray-400 opacity-50': activeTab !== 'friends'
+      'translate-y-[3px] text-gray-100 opacity-50': activeTab !== 'friends'
     }"
   >
     Friends
@@ -226,7 +226,7 @@
   (click)="setActiveTab('profile')"
   [ngClass]="{
     'text-white': activeTab === 'profile',
-    'text-gray-400 opacity-50': activeTab !== 'profile'
+    'text-gray-100 opacity-50': activeTab !== 'profile'
   }"
   class="flex flex-col items-center justify-center relative h-full flex-1 rounded-l"
 >
@@ -234,7 +234,7 @@
     class="fas fa-user text-xl transform transition-all duration-200 ease-out"
     [ngClass]="{
       'scale-110 text-white': activeTab === 'profile',
-      'scale-100 text-gray-400 opacity-50': activeTab !== 'profile'
+      'scale-100 text-gray-100 opacity-50': activeTab !== 'profile'
     }"
   ></i>
 
@@ -242,7 +242,7 @@
     class="transition-all duration-200"
     [ngClass]="{
       'translate-y-[0px] text-white': activeTab === 'profile',
-      'translate-y-[3px] text-gray-400 opacity-50': activeTab !== 'profile'
+      'translate-y-[3px] text-gray-100 opacity-50': activeTab !== 'profile'
     }"
   >
     Profile
