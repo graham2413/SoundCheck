@@ -133,7 +133,7 @@ const setAlbumImages = async () => {
 
       res.data.artists.forEach((artist) => {
         artistPopularityMap.set(artist.id, artist.popularity);
-        if (artist.popularity >= 75) {
+        if (artist.popularity >= 80) {
           popularArtistIds.add(artist.id);
         }
       });
