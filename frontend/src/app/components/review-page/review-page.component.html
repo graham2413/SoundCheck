@@ -680,7 +680,7 @@
 
   <!-- Loading state while fetching smart link -->
   <div
-    *ngIf="isLoadingSmartUrl"
+    *ngIf="isLoadingSmartUrl && !showSecondIpod && record.type !== 'Artist'"
     class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-medium py-2 px-6 rounded-full flex items-center justify-center text-lg bg-gray-700 opacity-75 animate-pulse"
   >
     <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i>
@@ -689,7 +689,7 @@
 
   <!-- Actual smart link once available -->
   <a
-    *ngIf="!isLoadingSmartUrl && smartLinkUrl"
+    *ngIf="!isLoadingSmartUrl && smartLinkUrl && !showSecondIpod && record.type !== 'Artist'"
     [href]="smartLinkUrl"
     target="_blank"
     rel="noopener noreferrer"

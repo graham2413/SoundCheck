@@ -524,36 +524,35 @@ export class MainSearchComponent implements OnInit {
     this.activeTab = tab;
   }
 
-setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
-  this.activeDiscoverTab = tab;
+  setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
+    this.activeDiscoverTab = tab;
 
-  if (tab === 'popular') {
-    this.popularImageLoaded = {
-      song: {},
-      album: {},
-      artist: {},
-    };
-    this.setPopularType('Song');
-    this.loadPopularReviews('Song');
+    if (tab === 'popular') {
+      this.popularImageLoaded = {
+        song: {},
+        album: {},
+        artist: {},
+      };
+      this.setPopularType('Song');
+      this.loadPopularReviews('Song');
+    }
+
+    if (tab === 'recentActivity') {
+      this.hasMoreActivityFeed = true;
+      this.artistImageLoaded = {};
+      this.activityImageLoaded = {};
+      this.activeFeedType = 'Friends';
+
+      // Force feed refresh to retrigger image loading
+      const cachedFeed = [...this.activityFeed];
+      this.activityFeed = [];
+      setTimeout(() => {
+        this.activityFeed = cachedFeed;
+      }, 0);
+
+      this.loadActivityFeed();
+    }
   }
-
-  if (tab === 'recentActivity') {
-    this.hasMoreActivityFeed = true;
-    this.artistImageLoaded = {};
-    this.activityImageLoaded = {};
-    this.activeFeedType = 'Friends';
-
-    // Force feed refresh to retrigger image loading
-    const cachedFeed = [...this.activityFeed];
-    this.activityFeed = [];
-    setTimeout(() => {
-      this.activityFeed = cachedFeed;
-    }, 0);
-
-    this.loadActivityFeed();
-  }
-}
-
 
   setPopularType(type: 'Song' | 'Album' | 'Artist') {
     this.isDiscoverContentLoading = true;
@@ -563,6 +562,8 @@ setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
 
   setFeedType(type: 'Friends' | 'Artists') {
     this.activeFeedType = type;
+    this.isFetchingArtistFeed = false;
+    this.isFetchingActivityFeed = false;
     if (type === 'Artists') {
       this.artistFeed = [];
       this.activityImageLoaded = {};
@@ -580,25 +581,29 @@ setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
   }
 
   loadArtistsFeed() {
-    const artistList = this.userProfile.artistList;
-
-    if (!artistList || artistList.length === 0) {
-      // Retry once after delay
-      setTimeout(() => {
-        if (
-          this.userProfile.artistList &&
-          this.userProfile.artistList.length > 0
-        ) {
-          this.loadArtistsFeed();
+    this.isFetchingArtistFeed = true;
+    if (
+      !this.userProfile ||
+      !this.userProfile.artistList ||
+      this.userProfile.artistList.length === 0
+    ) {
+      this.userService.getAuthenticatedUserProfile().subscribe((profile) => {
+        if (profile && profile.artistList && profile.artistList.length > 0) {
+          this.userProfile = profile;
+          this.loadArtistsFeed(); // retry after user profile is populated
         } else {
           this.isFetchingArtistFeed = false;
           this.artistFeed = [];
+          this.hasMoreArtistFeed = false;
         }
-      }, 200); // adjust delay as needed
+      });
       return;
     }
 
-    const artistIds = artistList.map((artist) => artist.id).filter(Boolean);
+    const artistIds = this.userProfile.artistList
+      .map((artist) => artist.id)
+      .filter(Boolean);
+
     if (artistIds.length === 0) {
       this.isFetchingArtistFeed = false;
       this.artistFeed = [];
@@ -617,14 +622,14 @@ setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
       .filter(Boolean);
     if (!artistIds?.length) return;
 
+    this.isFetchingArtistFeed = true;
+
     const { cursorDate, cursorId } = this.artistFeedCursor;
 
     this.getArtistFeed(artistIds, cursorDate, cursorId);
   }
 
   getArtistFeed(artistIds: string[], cursorDate?: string, cursorId?: string) {
-    this.isFetchingArtistFeed = true;
-
     this.searchService
       .getReleasesByArtistIds(
         artistIds,
