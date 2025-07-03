@@ -256,6 +256,17 @@
                 Artist: <span class="text-white">{{ record.artist }}</span>
               </div>
             </div>
+
+            <!-- Contributors -->
+            <div *ngIf="record.contributors?.length">
+              <div class="text-base sm:text-xl text-gray-400 pt-1">
+                Contributors:
+                <span class="text-white">{{
+                  record.contributors?.join(", ")
+                }}</span>
+              </div>
+            </div>
+
             <div class="text-base sm:text-xl text-gray-400 pt-1">
               Released:
               <span class="text-white">{{
@@ -271,16 +282,6 @@
             </div>
             <div class="text-base sm:text-xl text-gray-400 pt-1">
               Genre: <span class="text-white">{{ record.genre }}</span>
-            </div>
-
-            <!-- (Type: Song) Contributors -->
-            <div *ngIf="record.type === 'Song' && record.contributors?.length">
-              <div class="text-base sm:text-xl text-gray-400 pt-1">
-                Contributors:
-                <span class="text-white">{{
-                  record.contributors.join(", ")
-                }}</span>
-              </div>
             </div>
 
             <div
@@ -360,29 +361,18 @@
                 <div class="flex items-center gap-2 min-w-0 text-xl">
                   <span
                     (click)="openSongOrAlbum(track)"
-                    class="text-white text-base sm:text-xl truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0 flex items-center gap-1"
+                    class="text-white text-lg sm:text-xl truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0 flex items-center gap-1"
                   >
+                    <span
+                      *ngIf="track.isExplicit"
+                      class="bg-gray-600 text-white text-sm w-[1.2em] h-[1.3em] flex items-center justify-center font-bold rounded leading-none shrink-0"
+                    >
+                      E
+                    </span>
                     <span
                       class="pl-1 truncate overflow-hidden whitespace-nowrap text-ellipsis"
                       >{{ track.title }}</span
                     >
-                  </span>
-                </div>
-                <div
-                  (click)="openSongOrAlbum(track)"
-                  class="flex items-center gap-2 text-gray-400 text-sm sm:text-lg"
-                >
-                  <span
-                    *ngIf="track.isExplicit"
-                    class="bg-gray-600 text-white text-sm w-[1.2em] h-[1.3em] flex items-center justify-center font-bold rounded leading-none shrink-0"
-                  >
-                    E
-                  </span>
-                  <span
-                    class="truncate overflow-hidden whitespace-nowrap block flex-1"
-                    [ngClass]="{ 'pl-[.3rem]': !track.isExplicit }"
-                  >
-                    {{ track.artist }}
                   </span>
                 </div>
               </div>
@@ -689,7 +679,12 @@
 
   <!-- Actual smart link once available -->
   <a
-    *ngIf="!isLoadingSmartUrl && smartLinkUrl && !showSecondIpod && record.type !== 'Artist'"
+    *ngIf="
+      !isLoadingSmartUrl &&
+      smartLinkUrl &&
+      !showSecondIpod &&
+      record.type !== 'Artist'
+    "
     [href]="smartLinkUrl"
     target="_blank"
     rel="noopener noreferrer"
@@ -1557,7 +1552,11 @@
 
                   <!-- Loading state while fetching smart link -->
                   <div
-                    *ngIf="isLoadingSmartUrl"
+                    *ngIf="
+                      isLoadingSmartUrl &&
+                      !showSecondIpod &&
+                      record.type !== 'Artist'
+                    "
                     class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-medium py-2 px-6 rounded-full flex items-center justify-center text-lg bg-gray-700 opacity-75 animate-pulse"
                   >
                     <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i>
@@ -1812,6 +1811,15 @@
                       <span class="text-white">{{ record.artist }}</span>
                     </div>
                   </div>
+                  <!-- Contributors -->
+                  <div *ngIf="record.contributors?.length">
+                    <div class="text-lg text-gray-400 pt-1">
+                      Contributors:
+                      <span class="text-white">{{
+                        record.contributors?.join(", ")
+                      }}</span>
+                    </div>
+                  </div>
                   <div class="text-lg text-gray-400 pt-1">
                     Released:
                     <span class="text-white">{{
@@ -1827,20 +1835,6 @@
                   </div>
                   <div class="text-lg text-gray-400 pt-1">
                     Genre: <span class="text-white">{{ record.genre }}</span>
-                  </div>
-
-                  <!-- (Type: Song) Contributors -->
-                  <div
-                    *ngIf="
-                      record.type === 'Song' && record.contributors?.length
-                    "
-                  >
-                    <div class="text-lg text-gray-400 pt-1">
-                      Contributors:
-                      <span class="text-white">{{
-                        record.contributors.join(", ")
-                      }}</span>
-                    </div>
                   </div>
 
                   <div
@@ -1927,26 +1921,15 @@
                           class="text-white text-lg truncate overflow-hidden whitespace-nowrap text-ellipsis flex-1 min-w-0 flex items-center gap-1"
                         >
                           <span
+                            *ngIf="track.isExplicit"
+                            class="bg-gray-600 text-white text-sm w-[1.2em] h-[1.3em] flex items-center justify-center font-bold rounded leading-none shrink-0"
+                          >
+                            E
+                          </span>
+                          <span
                             class="pl-1 truncate overflow-hidden whitespace-nowrap text-ellipsis"
                             >{{ track.title }}</span
                           >
-                        </span>
-                      </div>
-                      <div
-                        (click)="openSongOrAlbum(track)"
-                        class="flex items-center gap-2 text-gray-400 text-base"
-                      >
-                        <span
-                          *ngIf="track.isExplicit"
-                          class="bg-gray-600 text-white text-sm w-[1.2em] h-[1.3em] flex items-center justify-center font-bold rounded leading-none shrink-0"
-                        >
-                          E
-                        </span>
-                        <span
-                          class="truncate overflow-hidden whitespace-nowrap block flex-1"
-                          [ngClass]="{ 'pl-[.3rem]': !track.isExplicit }"
-                        >
-                          {{ track.artist }}
                         </span>
                       </div>
                     </div>

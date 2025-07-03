@@ -354,6 +354,8 @@ const getAlbumDetails = async (req, res) => {
           genre: genre,
         })) || [],
       genre: genre,
+      artist: albumData.artist?.name || "Unknown",
+      contributors: albumData.contributors?.map((c) => c.name) || [],
       isExplicit: albumData.explicit_lyrics,
       preview: firstTrack?.preview || null,
     };

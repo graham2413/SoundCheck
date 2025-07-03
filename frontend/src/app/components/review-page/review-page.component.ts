@@ -950,9 +950,11 @@ export class ReviewPageComponent implements OnInit {
           }
 
           album.preview = data.preview;
+          album.artist = data.artist;
           album.genre = data.genre || 'Unknown';
           album.isExplicit = data.isExplicit;
           album.releaseDate = data.releaseDate || 'Unknown';
+          album.contributors = data.contributors || [];
 
           // Fetch smart link
           const deezerUrl = `https://www.deezer.com/album/${album.id}`;

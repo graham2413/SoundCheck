@@ -11,4 +11,5 @@ export interface Album {
     type: 'Album';
     isExplicit: boolean;
     preview: string;
+    contributors?: string[];
   }

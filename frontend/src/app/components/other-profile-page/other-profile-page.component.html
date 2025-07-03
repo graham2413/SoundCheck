@@ -1,3 +1,15 @@
+<!-- Fullscreen Loading Indicator -->
+<div
+  *ngIf="!otherUser"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-[#09101F] text-white w-screen h-screen"
+>
+  <div class="flex flex-col items-center gap-4">
+    <div class="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+    <p class="text-lg font-semibold">Loading profile...</p>
+  </div>
+</div>
+
+
 <!-- Outer Container -->
 <div
   *ngIf="otherUser"
