@@ -526,6 +526,7 @@ export class MainSearchComponent implements OnInit {
 
   setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
     this.activeDiscoverTab = tab;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (tab === 'popular') {
       this.popularImageLoaded = {

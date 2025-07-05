@@ -325,6 +325,8 @@ export class ReviewPageComponent implements OnInit {
   private trackDetailsSub?: Subscription;
   private smartLinkSub?: Subscription;
   private albumDetailsSub?: Subscription;
+  trackImageLoaded: { [key: number]: boolean } = {};
+  releaseImageLoaded: { [key: number]: boolean } = {};
 
   constructor(
     private activeModal: NgbActiveModal,
@@ -1007,6 +1009,9 @@ export class ReviewPageComponent implements OnInit {
       return;
     }
 
+    this.trackImageLoaded = {};
+    this.releaseImageLoaded = {};
+
     forkJoin({
       tracks: this.searchService.getArtistTracks(this.record.id),
       releases: this.searchService.getArtistReleases(
@@ -1056,6 +1061,22 @@ export class ReviewPageComponent implements OnInit {
       },
     });
   }
+
+  markTrackImageLoaded(i: number): void {
+  this.trackImageLoaded[i] = true;
+}
+
+isTrackImageLoaded(i: number): boolean {
+  return this.trackImageLoaded[i] === true;
+}
+
+markReleaseImageLoaded(i: number): void {
+  this.releaseImageLoaded[i] = true;
+}
+
+isReleaseImageLoaded(i: number): boolean {
+  return this.releaseImageLoaded[i] === true;
+}
 
   getHighQualityImage(imageUrl: string): string {
     if (!imageUrl) return '';
@@ -1107,6 +1128,8 @@ export class ReviewPageComponent implements OnInit {
     this.isRatingLoaded = false;
     this.isImageLoaded = false;
     this.smartLinkUrl = '';
+    this.trackImageLoaded = {};
+    this.releaseImageLoaded = {};
 
     this.preloadLowResImageForGradient();
     this.resetScrollingState();
@@ -1382,7 +1405,8 @@ export class ReviewPageComponent implements OnInit {
   }
 
   get isTracklistArray(): boolean {
-    return Array.isArray((this.record as Album | Artist).tracklist);
+    const tracklist = (this.record as Album | Artist)?.tracklist;
+    return Array.isArray(tracklist) && tracklist.length > 0;
   }
 
   getAverageRating(): number {

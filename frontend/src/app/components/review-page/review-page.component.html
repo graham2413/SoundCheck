@@ -91,15 +91,29 @@
               >
                 <!-- Album Image -->
                 <div
-                  class="flex-shrink-0 w-[5rem] h-[5rem] mr-2 sm:w-[8rem] sm:h-[8rem]"
+                  class="relative w-[5rem] h-[5rem] sm:w-[8rem] sm:h-[8rem] flex-shrink-0 mr-2"
                 >
+                  <!-- Spinner -->
+                  <div
+                    *ngIf="!isTrackImageLoaded(i)"
+                    class="absolute inset-0 z-10 flex items-center justify-center bg-gray-800 border border-gray-700 rounded-md"
+                  >
+                    <div
+                      class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                    ></div>
+                  </div>
+
+                  <!-- Image -->
                   <img
                     (click)="openSongOrAlbum(track)"
+                    (load)="markTrackImageLoaded(i)"
+                    (error)="markTrackImageLoaded(i)"
                     [src]="
                       track.cover ||
                       'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
                     "
-                    class="w-full h-full object-cover rounded-md border-2 border-gray-700"
+                    [style.opacity]="isTrackImageLoaded(i) ? '1' : '0'"
+                    class="w-full h-full object-cover rounded-md border-2 border-gray-700 transition-opacity duration-300"
                     alt="Album Cover"
                   />
                 </div>
@@ -180,7 +194,7 @@
               *ngIf="!isLoadingExtraDetails && !isTracklistArray"
               class="w-full bg-gray-800 p-6 rounded-lg text-center"
             >
-              <p class="text-gray-400">No tracklist available.</p>
+              <p class="text-gray-400">Top Tracks Unavailable.</p>
             </div>
           </div>
         </div>
@@ -190,18 +204,34 @@
             class="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-gray-800 p-4 mb-3 rounded-lg"
           >
             <div
-              *ngFor="let release of releases"
+              *ngFor="let release of releases; let i = index"
               class="text-center"
               (click)="openSongOrAlbum(release)"
             >
-              <img
-                [src]="
-                  release.cover ||
-                  'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-                "
-                alt="Release Cover"
-                class="aspect-square w-full object-cover rounded-md border border-gray-800"
-              />
+              <div class="relative aspect-square w-full">
+                <!-- Spinner -->
+                <div
+                  *ngIf="!isReleaseImageLoaded(i)"
+                  class="absolute inset-0 z-10 flex items-center justify-center bg-gray-800 border border-gray-700 rounded-md"
+                >
+                  <div
+                    class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                  ></div>
+                </div>
+
+                <!-- Image -->
+                <img
+                  [src]="
+                    release.cover ||
+                    'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                  "
+                  (load)="markReleaseImageLoaded(i)"
+                  (error)="markReleaseImageLoaded(i)"
+                  [style.opacity]="isReleaseImageLoaded(i) ? '1' : '0'"
+                  class="aspect-square w-full object-cover rounded-md border border-gray-800 transition-opacity duration-300"
+                  alt="Release Cover"
+                />
+              </div>
 
               <div class="mt-2 flex justify-center">
                 <span
@@ -1644,14 +1674,30 @@
                       }"
                     >
                       <!-- Album Image -->
-                      <div class="flex-shrink-0 w-[5rem] h-[5rem] mr-2">
+                      <div
+                        class="relative w-[5rem] h-[5rem] flex-shrink-0 mr-2"
+                      >
+                        <!-- Spinner -->
+                        <div
+                          *ngIf="!isTrackImageLoaded(i)"
+                          class="absolute inset-0 z-10 flex items-center justify-center bg-gray-900 border border-gray-600 rounded-md"
+                        >
+                          <div
+                            class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                          ></div>
+                        </div>
+
+                        <!-- Image -->
                         <img
                           (click)="openSongOrAlbum(track)"
+                          (load)="markTrackImageLoaded(i)"
+                          (error)="markTrackImageLoaded(i)"
                           [src]="
                             track.cover ||
                             'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
                           "
-                          class="w-full h-full object-cover rounded-md border-2 border-gray-500"
+                          [style.opacity]="isTrackImageLoaded(i) ? '1' : '0'"
+                          class="w-full h-full object-cover rounded-md border-2 border-gray-500 transition-opacity duration-300"
                           alt="Album Cover"
                         />
                       </div>
@@ -1734,7 +1780,7 @@
                     *ngIf="!isLoadingExtraDetails && !isTracklistArray"
                     class="w-full bg-gray-800 p-6 rounded-lg text-center"
                   >
-                    <p class="text-gray-400">No tracklist available.</p>
+                    <p class="text-gray-400">Top Tracks Unavailable</p>
                   </div>
                 </div>
               </div>
@@ -1744,18 +1790,36 @@
                   class="grid grid-cols-2 gap-4 bg-gray-800 p-4 mb-2 rounded-lg"
                 >
                   <div
-                    *ngFor="let release of releases"
+                    *ngFor="let release of releases; let i = index"
                     class="text-center"
                     (click)="openSongOrAlbum(release)"
                   >
-                    <img
-                      [src]="
-                        release.cover ||
-                        'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-                      "
-                      alt="Release Cover"
-                      class="aspect-square w-full object-cover rounded-md border border-gray-800"
-                    />
+                    <div
+                      class="relative aspect-square w-full max-w-[8rem] mx-auto"
+                    >
+                      <!-- Spinner -->
+                      <div
+                        *ngIf="!isReleaseImageLoaded(i)"
+                        class="absolute inset-0 z-10 flex items-center justify-center bg-gray-800 border border-gray-700 rounded-md"
+                      >
+                        <div
+                          class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                        ></div>
+                      </div>
+
+                      <!-- Image -->
+                      <img
+                        [src]="
+                          release.cover ||
+                          'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                        "
+                        (load)="markReleaseImageLoaded(i)"
+                        (error)="markReleaseImageLoaded(i)"
+                        [style.opacity]="isReleaseImageLoaded(i) ? '1' : '0'"
+                        class="aspect-square w-full object-cover rounded-md border border-gray-800 transition-opacity duration-300"
+                        alt="Release Cover"
+                      />
+                    </div>
 
                     <div class="mt-2 flex justify-center">
                       <span
