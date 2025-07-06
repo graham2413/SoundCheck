@@ -805,7 +805,7 @@
 
     <div>
       <ng-container *ngIf="!isReviewsLoaded; else reviewsContentMobile">
-        <div class="space-y-3 mt-3 px-2">
+        <div class="space-y-3 mt-3 px-2 pb-2">
           <div class="animate-pulse bg-gray-700 p-4 rounded-lg h-16"></div>
           <div class="animate-pulse bg-gray-700 p-4 rounded-lg h-16"></div>
           <div class="animate-pulse bg-gray-700 p-4 rounded-lg h-16"></div>
@@ -1138,9 +1138,15 @@
                         review._id === existingUserReview._id
                     }"
                   >
-                    <p class="text-white text-lg break-words">
+                    <p class="text-white text-lg break-words" *ngIf="review.reviewText && review.reviewText.trim().length > 0; else noReviewText">
                       {{ review.reviewText }}
                     </p>
+                    <ng-template #noReviewText>
+                        <p
+                          class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
+                        >
+                          “ No review written ”
+                        </p>                    </ng-template>
                   </div>
                 </ng-container>
 
@@ -2503,9 +2509,16 @@
                                 review._id === existingUserReview._id
                             }"
                           >
-                            <p class="text-gray-400 text-lg break-words">
+                            <p class="text-white text-lg break-words" *ngIf="review.reviewText && review.reviewText.trim().length > 0; else noReviewText">
                               {{ review.reviewText }}
                             </p>
+                            <ng-template #noReviewText>
+                              <p
+                                class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
+                              >
+                                “ No review written ”
+                              </p>
+                            </ng-template>
                           </div>
                         </ng-container>
 
