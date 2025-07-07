@@ -1,5 +1,9 @@
 const Review = require("../models/Review");
 const User = require("../models/User");
+const https = require("https");
+const fetch = require("node-fetch");
+const fs = require("fs");
+const mongoose = require("mongoose");
 
 // Create a new review
 exports.createReview = async (req, res) => {
@@ -289,9 +293,6 @@ const getTopByType = async (type) => {
   ]);
 };
 
-const https = require("https");
-const fetch = require("node-fetch");
-const fs = require("fs");
 
 const isProd = process.env.NODE_ENV === "production";
 const agent = isProd
@@ -319,4 +320,52 @@ exports.proxyImage = async function (req, res) {
     console.error("Image proxy failed:", err);
     res.status(500).send("Failed to proxy image");
   }
+};
+
+  exports.toggleLikeHandler = async (req, res) => {
+    const reviewId = req.params.id;
+    const userId = req.user._id;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Lock the document to avoid race conditions
+      const review = await Review.findById(reviewId).session(session);
+
+      if (!review) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      const alreadyLiked = review.likedBy.includes(userId);
+
+      if (alreadyLiked) {
+        // Unlike: Pull user from likedBy, decrement likes (min 0)
+        review.likedBy.pull(userId);
+        review.likes = Math.max(0, review.likes - 1);
+      } else {
+        // Like: Push user into likedBy, increment likes
+        review.likedBy.push(userId);
+        review.likes += 1;
+      }
+
+      await review.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return res.status(200).json({
+        message: alreadyLiked ? "Unliked" : "Liked",
+        likes: review.likes,
+        likedByUser: !alreadyLiked
+      });
+
+    } catch (err) {
+      await session.abortTransaction();
+      session.endSession();
+      console.error("Like toggle failed:", err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
 };

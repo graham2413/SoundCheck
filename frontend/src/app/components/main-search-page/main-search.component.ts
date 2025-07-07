@@ -145,6 +145,9 @@ export class MainSearchComponent implements OnInit {
   activityImageLoaded: { [key: string]: boolean } = {};
   artistImageLoaded: { [index: number]: boolean } = {};
 
+  likedByCurrentUser?: boolean;
+  animateHeart: { [reviewId: string]: boolean } = {};
+
   constructor(
     private searchService: SearchService,
     private modal: NgbModal,
@@ -693,12 +696,19 @@ export class MainSearchComponent implements OnInit {
 
     this.reviewService.getActivityFeed(params).subscribe({
       next: (res) => {
+        const currentUserId = this.userProfile?._id?.toString();
+
         const newReviews = (res.reviews || []).map((review) => {
           const wasAlbumTreatedAsSingle =
             review.albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle;
 
           return {
             ...review,
+            likedByCurrentUser: currentUserId
+              ? review.likedBy
+                  .map((id) => id.toString())
+                  .includes(currentUserId)
+              : false,
             albumSongOrArtist: {
               ...review.albumSongOrArtist,
               effectiveType: wasAlbumTreatedAsSingle
@@ -712,9 +722,9 @@ export class MainSearchComponent implements OnInit {
 
         this.activityFeedCursor = res.nextCursor || null;
         this.hasMoreActivityFeed = !!res.nextCursor;
-
         this.isFetchingActivityFeed = false;
       },
+
       error: (err) => {
         this.toastr.error('Failed to load user activity feed', err.message);
         this.isFetchingActivityFeed = false;
@@ -938,5 +948,33 @@ export class MainSearchComponent implements OnInit {
       // Past release
       return `Released ${this.timeAgoPipe.transform(releaseDate)}`;
     }
+  }
+
+  toggleLike(review: Review) {
+    // 1. Trigger the animation
+    this.animateHeart[review._id] = true;
+
+    // 2. Stop animation after 300ms
+    setTimeout(() => {
+      this.animateHeart[review._id] = false;
+    }, 300);
+
+    const originalLiked = review.likedByCurrentUser ?? false;
+    const originalLikes = review.likes;
+
+    review.likedByCurrentUser = !originalLiked;
+    review.likes += review.likedByCurrentUser ? 1 : -1;
+
+    this.reviewService.toggleLike(review._id).subscribe({
+      next: (res) => {
+        review.likes = res.likes;
+        review.likedByCurrentUser = res.likedByUser;
+      },
+      error: (err) => {
+        review.likedByCurrentUser = originalLiked;
+        review.likes = originalLikes;
+        console.error('Failed to toggle like:', err);
+      },
+    });
   }
 }

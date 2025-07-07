@@ -320,6 +320,8 @@ export class ReviewPageComponent implements OnInit {
       imagePath: '../assets/pandora-logo.png',
     },
   };
+  likedByCurrentUser?: boolean;
+  animateHeart: { [reviewId: string]: boolean } = {};
 
   public smartLinkData: any = null;
   private trackDetailsSub?: Subscription;
@@ -584,6 +586,13 @@ export class ReviewPageComponent implements OnInit {
     this.reviewService.searchReviews(this.record.id, inferredType).subscribe({
       next: (data: Reviews) => {
         this.reviews = data.reviews;
+        if (this.userProfile?._id) {
+          this.reviews.forEach((review) => {
+            review.likedByCurrentUser = review.likedBy
+              .map((id) => id.toString())
+              .includes(this.userProfile._id.toString());
+          });
+        }
         // this.reviews = Array.from({ length: 35 }, (_, i) => ({
         //   _id: `review${i + 1}`,
         //   __v: 0,
@@ -630,6 +639,13 @@ export class ReviewPageComponent implements OnInit {
         // }));
 
         this.existingUserReview = data.userReview;
+
+        if (this.userProfile?._id && this.existingUserReview) {
+          this.existingUserReview.likedByCurrentUser =
+            this.existingUserReview.likedBy
+              .map((id) => id.toString())
+              .includes(this.userProfile._id.toString());
+        }
 
         this.ratingBarFill = 0;
         this.circleDashOffset = 113.1;
@@ -1063,20 +1079,20 @@ export class ReviewPageComponent implements OnInit {
   }
 
   markTrackImageLoaded(i: number): void {
-  this.trackImageLoaded[i] = true;
-}
+    this.trackImageLoaded[i] = true;
+  }
 
-isTrackImageLoaded(i: number): boolean {
-  return this.trackImageLoaded[i] === true;
-}
+  isTrackImageLoaded(i: number): boolean {
+    return this.trackImageLoaded[i] === true;
+  }
 
-markReleaseImageLoaded(i: number): void {
-  this.releaseImageLoaded[i] = true;
-}
+  markReleaseImageLoaded(i: number): void {
+    this.releaseImageLoaded[i] = true;
+  }
 
-isReleaseImageLoaded(i: number): boolean {
-  return this.releaseImageLoaded[i] === true;
-}
+  isReleaseImageLoaded(i: number): boolean {
+    return this.releaseImageLoaded[i] === true;
+  }
 
   getHighQualityImage(imageUrl: string): string {
     if (!imageUrl) return '';
@@ -1570,5 +1586,33 @@ isReleaseImageLoaded(i: number): boolean {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  toggleLike(review: Review) {
+    // 1. Trigger the animation
+    this.animateHeart[review._id] = true;
+
+    // 2. Stop animation after 300ms
+    setTimeout(() => {
+      this.animateHeart[review._id] = false;
+    }, 300);
+
+    const originalLiked = review.likedByCurrentUser ?? false;
+    const originalLikes = review.likes;
+
+    review.likedByCurrentUser = !originalLiked;
+    review.likes += review.likedByCurrentUser ? 1 : -1;
+
+    this.reviewService.toggleLike(review._id).subscribe({
+      next: (res) => {
+        review.likes = res.likes;
+        review.likedByCurrentUser = res.likedByUser;
+      },
+      error: (err) => {
+        review.likedByCurrentUser = originalLiked;
+        review.likes = originalLikes;
+        console.error('Failed to toggle like:', err);
+      },
+    });
   }
 }

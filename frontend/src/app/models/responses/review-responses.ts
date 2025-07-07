@@ -22,6 +22,9 @@ export interface Review {
   rating: number;
   reviewText: string;
   createdAt: string;
+  likes: number;
+  likedBy: string[];
+  likedByCurrentUser?: boolean;
 }
 
 export interface NewReviewResponse {

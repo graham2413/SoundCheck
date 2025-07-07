@@ -20,6 +20,7 @@ import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/c
 import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 import { AppComponent } from 'src/app/app.component';
 import { BaseRecord } from 'src/app/models/responses/base-record';
+import { ReviewService } from 'src/app/services/review.service';
 
 type ModalRecord = Album | Song | Artist | BaseRecord;
 @Component({
@@ -105,13 +106,17 @@ export class ViewProfilePageComponent implements OnInit {
   smallImageLoaded = false;
   imageLoadState: { [key: string]: boolean } = {};
 
+  likedByCurrentUser?: boolean;
+  animateHeart: { [reviewId: string]: boolean } = {};
+
   constructor(
     private route: ActivatedRoute,
     private userService: UserService,
     private toastr: ToastrService,
     private router: Router,
     private modal: NgbModal,
-    private appComponent: AppComponent
+    private appComponent: AppComponent,
+    private reviewService: ReviewService
   ) {}
 
   ngOnInit(): void {
@@ -191,6 +196,17 @@ export class ViewProfilePageComponent implements OnInit {
         this.filteredFriends = [...(this.otherUser?.friends ?? [])];
 
         if (this.otherUser?.reviews) {
+          const currentUserId = this.loggedInUser?._id?.toString();
+
+          this.otherUser.reviews = this.otherUser.reviews.map((review) => ({
+            ...review,
+            likedByCurrentUser: currentUserId
+              ? (review.likedBy ?? [])
+                  .map((id) => id.toString())
+                  .includes(currentUserId)
+              : false,
+          }));
+
           this.reviewsByType = this.calculateReviewsByType(
             this.otherUser.reviews
           );
@@ -991,5 +1007,33 @@ export class ViewProfilePageComponent implements OnInit {
         : 'from-indigo-600 to-purple-500';
 
     return `bg-gradient-to-l ${gradient}`;
+  }
+
+  toggleLike(review: Review) {
+    // 1. Trigger the animation
+    this.animateHeart[review._id] = true;
+
+    // 2. Stop animation after 300ms
+    setTimeout(() => {
+      this.animateHeart[review._id] = false;
+    }, 300);
+
+    const originalLiked = review.likedByCurrentUser ?? false;
+    const originalLikes = review.likes;
+
+    review.likedByCurrentUser = !originalLiked;
+    review.likes += review.likedByCurrentUser ? 1 : -1;
+
+    this.reviewService.toggleLike(review._id).subscribe({
+      next: (res) => {
+        review.likes = res.likes;
+        review.likedByCurrentUser = res.likedByUser;
+      },
+      error: (err) => {
+        review.likedByCurrentUser = originalLiked;
+        review.likes = originalLikes;
+        console.error('Failed to toggle like:', err);
+      },
+    });
   }
 }

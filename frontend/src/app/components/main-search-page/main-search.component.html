@@ -79,7 +79,8 @@
       >
         <span
           [ngClass]="{
-            'text-gray-200 font-semibold': activeDiscoverTab === 'recentActivity',
+            'text-gray-200 font-semibold':
+              activeDiscoverTab === 'recentActivity',
             'text-gray-400': activeDiscoverTab !== 'recentActivity'
           }"
           class="text-lg md:text-2xl"
@@ -948,43 +949,76 @@
                   </div>
                 </div>
 
-                <!-- Bottom: Profile Info -->
-                <div
-                  class="flex items-center gap-2 mt-[3rem]"
-                  (click)="goToUserProfile(activity.user._id)"
-                >
+                <!-- Bottom: Profile Info and like button-->
+                <div class="flex items-center justify-between mt-[3rem] w-full">
+                  <!-- Left: profile picture + username -->
                   <div
-                    class="relative w-[4rem] h-[4rem] rounded-full overflow-hidden"
+                    class="flex items-center gap-2 cursor-pointer"
+                    (click)="goToUserProfile(activity.user._id)"
                   >
-                    <!-- Loader -->
                     <div
-                      *ngIf="!getActivityImageLoaded(i, 'profile')"
-                      class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
+                      class="relative w-[4rem] h-[4rem] rounded-full overflow-hidden"
                     >
+                      <!-- Loader -->
                       <div
-                        class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"
-                      ></div>
+                        *ngIf="!getActivityImageLoaded(i, 'profile')"
+                        class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
+                      >
+                        <div
+                          class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"
+                        ></div>
+                      </div>
+
+                      <!-- Profile Picture -->
+                      <img
+                        [src]="
+                          activity.user.profilePicture || 'assets/user.png'
+                        "
+                        (load)="setActivityImageLoaded(i, 'profile')"
+                        (error)="setActivityImageLoaded(i, 'profile')"
+                        [class.invisible]="
+                          !getActivityImageLoaded(i, 'profile')
+                        "
+                        alt="User"
+                        class="w-[4rem] h-[4rem] rounded-full object-cover"
+                      />
                     </div>
 
-                    <!-- Profile Picture -->
-                    <img
-                      [src]="activity.user.profilePicture || 'assets/user.png'"
-                      (load)="setActivityImageLoaded(i, 'profile')"
-                      (error)="setActivityImageLoaded(i, 'profile')"
-                      [class.invisible]="!getActivityImageLoaded(i, 'profile')"
-                      alt="User"
-                      class="w-[4rem] h-[4rem] rounded-full object-cover"
-                    />
+                    <div class="text-base md:text-xl text-gray-400">
+                      <p class="font-semibold text-white leading-tight">
+                        {{ activity.user.username }}
+                      </p>
+                      <p class="text-sm md:text-lg mt-1">
+                        {{ activity.createdAt | timeAgo }}
+                      </p>
+                    </div>
                   </div>
 
-                  <div class="text-base md:text-xl text-gray-400">
-                    <p class="font-semibold text-white leading-tight">
-                      {{ activity.user.username }}
-                    </p>
-                    <p class="text-sm md:text-lg mt-1">
-                      {{ activity.createdAt | timeAgo }}
-                    </p>
-                  </div>
+                  <!-- Right: like button -->
+                  <button
+                    (click)="toggleLike(activity)"
+                    class="flex items-center space-x-2 px-3 py-1 bg-gray-800 border border-gray-600 rounded-full text-white hover:bg-gray-700 transition"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      [attr.fill]="
+                        activity.likedByCurrentUser ? '#ec4899' : 'white'
+                      "
+                      viewBox="0 0 24 24"
+                      class="w-5 h-5 transition-transform duration-300 ease-out"
+                      [ngClass]="animateHeart[activity._id] ? 'scale-125' : ''"
+                    >
+                      <path
+                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+           2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09 
+           C13.09 3.81 14.76 3 16.5 3c3.08 0 5.5 2.42 5.5 5.5 
+           0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                      />
+                    </svg>
+                    <span class="text-yellow-400 font-semibold text-lg">
+                      {{ activity.likes }}
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>

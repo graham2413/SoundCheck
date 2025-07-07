@@ -26,4 +26,7 @@ router.get("/top-artists", authenticateUser, reviewController.getTopArtists);
 // Method to  proxy images for getting dynamic image gradient for SPA (color thief needs CORS setup)
 router.get("/image-proxy", reviewController.proxyImage);
 
+// Toggle like on a review (Only the review owner)
+router.post('/:id/toggle-like', authenticateUser, reviewController.toggleLikeHandler);
+
 module.exports = router;

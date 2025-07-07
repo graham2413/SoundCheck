@@ -447,11 +447,37 @@
                 </div>
               </div>
 
-              <div class="flex items-center gap-2 mt-[3rem]">
-                <p class="text-sm md:text-lg mt-1">
-                  {{ review.createdAt | timeAgo }}
-                </p>
-              </div>
+<div class="flex items-center justify-between mt-[5rem] w-full">
+  <!-- Left: time ago text -->
+  <p class="text-sm md:text-lg text-gray-400">
+    {{ review.createdAt | timeAgo }}
+  </p>
+
+  <!-- Right: like button -->
+  <button
+    (click)="toggleLike(review)"
+    class="flex items-center space-x-2 px-3 py-1 bg-gray-800 border border-gray-300 rounded-full text-white hover:bg-gray-700 transition"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      [attr.fill]="review.likedByCurrentUser ? '#ec4899' : 'white'"
+      viewBox="0 0 24 24"
+      class="w-5 h-5 transition-transform duration-300 ease-out"
+      [ngClass]="animateHeart[review._id] ? 'scale-125' : ''"
+    >
+      <path
+        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+           2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09 
+           C13.09 3.81 14.76 3 16.5 3c3.08 0 5.5 2.42 5.5 5.5 
+           0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+      />
+    </svg>
+    <span class="text-yellow-400 font-semibold text-lg">
+      {{ review.likes }}
+    </span>
+  </button>
+</div>
+
             </div>
           </ng-container>
 

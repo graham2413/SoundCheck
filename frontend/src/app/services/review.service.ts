@@ -158,4 +158,22 @@ getProxiedImageUrl(originalUrl: string): string {
   return `${this.apiUrl}/image-proxy?url=${encodeURIComponent(originalUrl)}`;
 }
 
+toggleLike(reviewId: string): Observable<{ likes: number; likedByUser: boolean }> {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    console.error('No authentication token found');
+    return new Observable();
+  }
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  return this.http.post<{ likes: number; likedByUser: boolean }>(
+    `${this.apiUrl}/${reviewId}/toggle-like`,
+    {},
+    { headers }
+  );
+}
+
+
 }

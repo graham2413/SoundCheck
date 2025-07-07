@@ -469,59 +469,65 @@
           <!-- Overall Rating -->
           <div class="flex justify-center w-full my-4">
             <div
-              class="relative w-[75%] flex flex-col items-center justify-center"
+              class="bg-gray-800 px-4 py-3 rounded-lg w-full mx-auto max-w-[85%] sm:max-w-[70%] min-w-[180px]"
             >
-              <ng-container
-                *ngIf="
-                  !isRatingLoaded ||
-                    isDeleteLoading ||
-                    isEditLoading ||
-                    isCreateLoading;
-                  else ratingAvailable
-                "
+              <div
+                class="flex flex-col items-center justify-center text-center"
               >
-                <!-- Loading Spinner -->
-                <div
-                  class="animate-pulse bg-gray-600 rounded w-full h-16 flex items-center justify-center"
-                >
-                  <i class="fas fa-spinner fa-spin text-gray-400 text-3xl"></i>
-                </div>
-              </ng-container>
-
-              <ng-template #ratingAvailable>
                 <ng-container
-                  *ngIf="getAverageRating() > 0; else noReviewsMessage"
+                  *ngIf="
+                    !isRatingLoaded ||
+                      isDeleteLoading ||
+                      isEditLoading ||
+                      isCreateLoading;
+                    else ratingAvailable
+                  "
                 >
-                  <!-- Rating Badge -->
+                  <!-- Loading Spinner -->
                   <div
-                    (click)="scrollToReviews()"
-                    class="rating-badge-bg px-3 py-1 rounded-full text-white text-3xl font-bold tracking-wide shadow mb-2 flex items-center justify-center"
+                    class="animate-pulse rounded w-full h-16 flex items-center justify-center"
                   >
-                    <ng-container
-                      *ngIf="getAverageRating() === 10; else formattedRating"
-                    >
-                      10
-                    </ng-container>
-                    <ng-template #formattedRating>
-                      {{ getAverageRating() | number : "1.1-1" }}
-                    </ng-template>
-                    <span class="text-lg font-medium text-gray-300 ml-1"
-                      >/ 10</span
-                    >
-                  </div>
-
-                  <!-- Progress Bar -->
-                  <div
-                    class="mt-1 w-full bg-gray-700 h-3 rounded-full overflow-hidden"
-                  >
-                    <div
-                      class="h-3 rounded-full transition-all duration-700 ease-out"
-                      [style.width.%]="ratingBarFill"
-                      [style.background]="getRatingGradient()"
-                    ></div>
+                    <i
+                      class="fas fa-spinner fa-spin text-gray-400 text-3xl"
+                    ></i>
                   </div>
                 </ng-container>
-              </ng-template>
+
+                <ng-template #ratingAvailable>
+                  <ng-container
+                    *ngIf="getAverageRating() > 0; else noReviewsMessage"
+                  >
+                    <!-- Rating Badge -->
+                    <div
+                      (click)="scrollToReviews()"
+                      class="rating-badge-bg px-3 py-1 rounded-full text-white text-3xl font-bold tracking-wide shadow mb-2 flex items-center justify-center"
+                    >
+                      <ng-container
+                        *ngIf="getAverageRating() === 10; else formattedRating"
+                      >
+                        10
+                      </ng-container>
+                      <ng-template #formattedRating>
+                        {{ getAverageRating() | number : "1.1-1" }}
+                      </ng-template>
+                      <span class="text-lg font-medium text-gray-300 ml-1"
+                        >/ 10</span
+                      >
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div
+                      class="mt-1 w-full bg-gray-700 h-3 rounded-full overflow-hidden"
+                    >
+                      <div
+                        class="h-3 rounded-full transition-all duration-700 ease-out"
+                        [style.width.%]="ratingBarFill"
+                        [style.background]="getRatingGradient()"
+                      ></div>
+                    </div>
+                  </ng-container>
+                </ng-template>
+              </div>
             </div>
           </div>
 
@@ -531,11 +537,11 @@
               class="flex flex-col items-center justify-center text-gray-300"
             >
               <div class="inline-flex space-x-1" (click)="scrollToReviews()">
-                <i class="far fa-star text-3xl"></i>
-                <i class="far fa-star text-3xl"></i>
-                <i class="far fa-star text-3xl"></i>
-                <i class="far fa-star text-3xl"></i>
-                <i class="far fa-star text-3xl"></i>
+                <i class="far fa-star text-2xl sm:text-3xl"></i>
+                <i class="far fa-star text-2xl sm:text-3xl"></i>
+                <i class="far fa-star text-2xl sm:text-3xl"></i>
+                <i class="far fa-star text-2xl sm:text-3xl"></i>
+                <i class="far fa-star text-2xl sm:text-3xl"></i>
               </div>
               <!-- Ensure only the text is clickable -->
               <span
@@ -1138,15 +1144,53 @@
                         review._id === existingUserReview._id
                     }"
                   >
-                    <p class="text-white text-lg break-words" *ngIf="review.reviewText && review.reviewText.trim().length > 0; else noReviewText">
+                    <p
+                      class="text-white text-lg break-words"
+                      *ngIf="
+                        review.reviewText &&
+                          review.reviewText.trim().length > 0;
+                        else noReviewText
+                      "
+                    >
                       {{ review.reviewText }}
                     </p>
                     <ng-template #noReviewText>
-                        <p
-                          class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
+                      <p
+                        class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
+                      >
+                        “ No review written ”
+                      </p>
+                    </ng-template>
+
+                    <div class="flex justify-end mt-2 px-1">
+                      <button
+                        (click)="toggleLike(review)"
+                        class="flex items-center space-x-2 px-3 py-1 bg-gray-800 border border-gray-600 rounded-full text-white hover:bg-gray-700 transition"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          [attr.fill]="
+                            review.likedByCurrentUser ? '#ec4899' : 'white'
+                          "
+                          viewBox="0 0 24 24"
+                          class="w-5 h-5 transition-transform duration-300 ease-out"
+                          [ngClass]="
+                            animateHeart[review._id] ? 'scale-125' : ''
+                          "
                         >
-                          “ No review written ”
-                        </p>                    </ng-template>
+                          <path
+                            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+                            2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09 
+                            C13.09 3.81 14.76 3 16.5 3c3.08 0 5.5 2.42 5.5 5.5 
+                            0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                          />
+                        </svg>
+
+                        <span class="text-yellow-400 font-semibold text-lg">
+                          {{ review.likes }}
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </ng-container>
 
@@ -2509,16 +2553,62 @@
                                 review._id === existingUserReview._id
                             }"
                           >
-                            <p class="text-white text-lg break-words" *ngIf="review.reviewText && review.reviewText.trim().length > 0; else noReviewText">
-                              {{ review.reviewText }}
-                            </p>
-                            <ng-template #noReviewText>
+                            <!-- Review Text + Like Button Aligned -->
+                            <div class="mt-3 px-2">
                               <p
-                                class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
+                                class="text-white text-lg break-words"
+                                *ngIf="
+                                  review.reviewText &&
+                                    review.reviewText.trim().length > 0;
+                                  else noReviewText
+                                "
                               >
-                                “ No review written ”
+                                {{ review.reviewText }}
                               </p>
-                            </ng-template>
+                              <ng-template #noReviewText>
+                                <p
+                                  class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
+                                >
+                                  “ No review written ”
+                                </p>
+                              </ng-template>
+
+                              <div class="flex justify-end mt-2 px-1">
+                                <button
+                                  (click)="toggleLike(review)"
+                                  class="flex items-center space-x-2 px-3 py-1 bg-gray-800 rounded-full hover:bg-gray-700 transition border border-gray-600"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    [attr.fill]="
+                                      review.likedByCurrentUser
+                                        ? '#ec4899'
+                                        : 'white'
+                                    "
+                                    viewBox="0 0 24 24"
+                                    class="w-5 h-5 transition-transform duration-300 ease-out"
+                                    [ngClass]="
+                                      animateHeart[review._id]
+                                        ? 'scale-125'
+                                        : ''
+                                    "
+                                  >
+                                    <path
+                                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+       2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09 
+       C13.09 3.81 14.76 3 16.5 3c3.08 0 5.5 2.42 5.5 5.5 
+       0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                    />
+                                  </svg>
+
+                                  <span
+                                    class="font-semibold text-base text-yellow-400"
+                                  >
+                                    {{ review.likes }}
+                                  </span>
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </ng-container>
 
