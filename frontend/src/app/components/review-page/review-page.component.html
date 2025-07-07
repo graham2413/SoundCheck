@@ -596,19 +596,19 @@
             class="text-center text-[1.8rem] mt-4 text-gray-200 font-semibold bg-gray-800 rounded-xl p-2"
           >
             <ng-container *ngIf="record.type === 'Artist'">
-              <span class="text-gray-400 text-xl block uppercase mb-1"
+              <span class="text-gray-400 text-xl block uppercase"
                 >Artist</span
               >
             </ng-container>
             <ng-container *ngIf="record.type === 'Album'">
               <span
-                class="text-gray-400 text-xl block uppercase mb-1"
+                class="text-gray-400 text-xl block uppercase"
                 *ngIf="isSingleAlbum"
               >
                 Single
               </span>
               <span
-                class="text-gray-400 text-xl block uppercase mb-1"
+                class="text-gray-400 text-xl block uppercase"
                 *ngIf="!isSingleAlbum && (record.tracklist?.length ?? 0) > 1"
               >
                 Album
@@ -634,7 +634,7 @@
               </div>
             </div>
             <p
-              class="text-gray-400 text-xl flex items-center justify-center mt-1"
+              class="text-gray-400 text-xl flex items-center justify-center"
             >
               <span
                 *ngIf="isExplicit"
