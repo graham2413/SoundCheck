@@ -122,6 +122,7 @@ export class ViewProfilePageComponent implements OnInit {
   ngOnInit(): void {
     this.route.params.subscribe((params) => {
       this.otherUserId = params['userId'];
+      this.imageLoadState['profile--1'] = false;
       this.otherUser = null;
       window.scrollTo(0, 0);
 

@@ -1,13 +1,12 @@
-<ng-container *ngIf="profileLoaded; else loading">
-  <app-navbar *ngIf="shouldShowNavbar()"></app-navbar>
+<app-navbar *ngIf="shouldShowNavbar()"></app-navbar>
 
-  <main [@routeAnimations]="prepareRoute(outlet)">
-    <router-outlet #outlet="outlet"></router-outlet>
-  </main>
-</ng-container>
-
-<ng-template #loading>
-  <div class="full-screen-loader">
+<!-- Animation wrapper -->
+<main [@routeAnimations]="prepareRoute(activeOutlet)">
+  <!-- Loader fallback -->
+  <div
+    *ngIf="!profileLoaded"
+    class="full-screen-loader z-50 fixed inset-0 flex items-center justify-center bg-[#09101F] text-white"
+  >
     <div class="background-underlay"></div>
     <div class="blur-overlay">
       <div class="equalizer-loader">
@@ -19,4 +18,9 @@
       </div>
     </div>
   </div>
-</ng-template>
+
+  <!-- Routed content -->
+  <ng-container *ngIf="profileLoaded">
+    <router-outlet #outlet="outlet" (activate)="setActiveOutlet(outlet)"></router-outlet>
+  </ng-container>
+</main>
