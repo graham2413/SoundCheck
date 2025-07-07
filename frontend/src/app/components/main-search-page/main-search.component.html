@@ -115,13 +115,33 @@
             class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[17rem]"
             (click)="openModal(album, albums, i)"
           >
-            <img
-              [src]="
-                album.cover ||
-                'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-              "
-              [alt]="album.title"
-            />
+            <div
+              class="relative w-full h-[11rem] md:h-[16rem] rounded overflow-hidden border border-gray-800"
+            >
+              <!-- Loader -->
+              <div
+                *ngIf="!marqueeImageLoaded[i]"
+                class="absolute inset-0 flex items-center justify-center bg-gray-800"
+              >
+                <div
+                  class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                ></div>
+              </div>
+
+              <!-- Image -->
+              <img
+                [src]="
+                  album.cover ||
+                  'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                "
+                [alt]="album.title"
+                (load)="marqueeImageLoaded[i] = true"
+                (error)="marqueeImageLoaded[i] = true"
+                [class.invisible]="!marqueeImageLoaded[i]"
+                class="w-full h-full object-cover"
+              />
+            </div>
+
             <div class="track-info w-full overflow-hidden">
               <p
                 class="title text-base md:text-lg truncate w-full text-left font-semibold"
@@ -152,13 +172,33 @@
             class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[17rem]"
             (click)="openModal(album, albums, i)"
           >
-            <img
-              [src]="
-                album.cover ||
-                'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-              "
-              [alt]="album.title"
-            />
+            <div
+              class="relative w-full h-[11rem] md:h-[16rem] rounded overflow-hidden border border-gray-800"
+            >
+              <!-- Loader -->
+              <div
+                *ngIf="!marqueeImageLoaded[i + albums.length]"
+                class="absolute inset-0 flex items-center justify-center bg-gray-800"
+              >
+                <div
+                  class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                ></div>
+              </div>
+
+              <!-- Image -->
+              <img
+                [src]="
+                  album.cover ||
+                  'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                "
+                [alt]="album.title"
+                (load)="marqueeImageLoaded[i + albums.length] = true"
+                (error)="marqueeImageLoaded[i + albums.length] = true"
+                [class.invisible]="!marqueeImageLoaded[i + albums.length]"
+                class="w-full h-full object-cover"
+              />
+            </div>
+
             <div class="track-info w-full overflow-hidden">
               <p
                 class="title text-base md:text-lg truncate w-full text-left"

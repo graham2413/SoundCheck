@@ -148,6 +148,8 @@ export class MainSearchComponent implements OnInit {
   likedByCurrentUser?: boolean;
   animateHeart: { [reviewId: string]: boolean } = {};
 
+  marqueeImageLoaded: boolean[] = [];
+
   constructor(
     private searchService: SearchService,
     private modal: NgbModal,
@@ -195,7 +197,7 @@ export class MainSearchComponent implements OnInit {
     }
   }
 
-  async setMarquee() {
+   setMarquee() {
     this.isMarqueeLoading = true;
     const storedAlbums = localStorage.getItem('albumImages');
     let baseAlbums: any[] = [];
@@ -223,9 +225,8 @@ export class MainSearchComponent implements OnInit {
       }));
     }
 
-    await this.preloadImages(baseAlbums);
-
     this.albums = baseAlbums;
+    this.marqueeImageLoaded = new Array(this.albums.length).fill(false);
     this.isMarqueeLoading = false;
   }
 
@@ -237,28 +238,6 @@ export class MainSearchComponent implements OnInit {
     lastFriday.setDate(now.getDate() - daysSinceFriday);
     lastFriday.setHours(12, 0, 0, 0); // set to 12:00 PM Friday
     return lastFriday.getTime();
-  }
-
-  preloadImages(albums: any[]): Promise<void> {
-    return new Promise((resolve) => {
-      let loadedCount = 0;
-
-      if (albums.length === 0) {
-        resolve();
-        return;
-      }
-
-      for (let album of albums) {
-        const img = new Image();
-        img.onload = img.onerror = () => {
-          loadedCount++;
-          if (loadedCount === albums.length) {
-            resolve();
-          }
-        };
-        img.src = album.cover;
-      }
-    });
   }
 
   fetchAndStoreAlbums(): Promise<void> {
