@@ -4,7 +4,7 @@ const https = require("https");
 const fetch = require("node-fetch");
 const fs = require("fs");
 const mongoose = require("mongoose");
-const { getCanonicalId } = require('../utils/canonical-id');
+const { getCanonicalId } = require("../utils/canonical-id");
 
 // Create a new review
 exports.createReview = async (req, res) => {
@@ -21,39 +21,42 @@ exports.createReview = async (req, res) => {
         .json({ message: "Album, Song, or Artist details are required." });
     }
 
-      let canonicalId = null;
+    let canonicalId = null;
 
-      if (albumSongOrArtist.type === "Song" || albumSongOrArtist.type === "Album") {
-        if (!albumSongOrArtist.title || !albumSongOrArtist.artist) {
-          return res
-            .status(400)
-            .json({ message: "Title and artist are required." });
-        }
-
-        canonicalId = getCanonicalId(
-          albumSongOrArtist.title,
-          albumSongOrArtist.artist
-        );
+    if (
+      albumSongOrArtist.type === "Song" ||
+      albumSongOrArtist.type === "Album"
+    ) {
+      if (!albumSongOrArtist.title || !albumSongOrArtist.artist) {
+        return res
+          .status(400)
+          .json({ message: "Title and artist are required." });
       }
+
+      canonicalId = getCanonicalId(
+        albumSongOrArtist.title,
+        albumSongOrArtist.artist
+      );
+    }
 
     // Check if the user has already submitted a review for this item
-      let existingReview;
+    let existingReview;
 
-      if (albumSongOrArtist.type === "Artist") {
-        // Fallback to ID-based check for artists
-        existingReview = await Review.findOne({
-          user: req.user._id,
-          "albumSongOrArtist.id": albumSongOrArtist.id,
-          "albumSongOrArtist.type": "Artist",
-        });
-      } else {
-        // Canonical check for Song/Album
-        existingReview = await Review.findOne({
-          user: req.user._id,
-          "albumSongOrArtist.canonicalId": canonicalId,
-          "albumSongOrArtist.type": albumSongOrArtist.type,
-        });
-      }
+    if (albumSongOrArtist.type === "Artist") {
+      // Fallback to ID-based check for artists
+      existingReview = await Review.findOne({
+        user: req.user._id,
+        "albumSongOrArtist.id": albumSongOrArtist.id,
+        "albumSongOrArtist.type": "Artist",
+      });
+    } else {
+      // Canonical check for Song/Album
+      existingReview = await Review.findOne({
+        user: req.user._id,
+        "albumSongOrArtist.canonicalId": canonicalId,
+        "albumSongOrArtist.type": albumSongOrArtist.type,
+      });
+    }
 
     if (existingReview) {
       return res.status(409).json({
@@ -87,11 +90,14 @@ exports.createReview = async (req, res) => {
     await newReview.save();
 
     // Populate the user details for the created review
-    await newReview.populate("user", "username profilePicture");
+    const populatedReview = await newReview.populate(
+      "user",
+      "username profilePicture"
+    );
 
     res.status(201).json({
       message: "Review created successfully!",
-      review: newReview,
+      review: populatedReview,
     });
   } catch (error) {
     res
@@ -113,23 +119,23 @@ exports.getReviewsWithUserReview = async (req, res) => {
       });
     }
 
-          if (type === "Artist") {
-        const reviews = await Review.find({
-          "albumSongOrArtist.id": id,
-          "albumSongOrArtist.type": type,
-        }).populate("user", "username profilePicture");
+    if (type === "Artist") {
+      const reviews = await Review.find({
+        "albumSongOrArtist.id": id,
+        "albumSongOrArtist.type": type,
+      }).populate("user", "username profilePicture");
 
-        const userReview = await Review.findOne({
-          user: userId,
-          "albumSongOrArtist.id": id,
-          "albumSongOrArtist.type": type,
-        }).populate("user", "username profilePicture");
+      const userReview = await Review.findOne({
+        user: userId,
+        "albumSongOrArtist.id": id,
+        "albumSongOrArtist.type": type,
+      }).populate("user", "username profilePicture");
 
-        return res.status(200).json({
-          reviews,
-          userReview,
-        });
-      }
+      return res.status(200).json({
+        reviews,
+        userReview,
+      });
+    }
 
     let canonicalId = null;
 
@@ -155,19 +161,19 @@ exports.getReviewsWithUserReview = async (req, res) => {
     }
 
     // Step 3: Fetch reviews by canonicalId
-      let reviews = await Review.find({
-        "albumSongOrArtist.canonicalId": canonicalId,
+    let reviews = await Review.find({
+      "albumSongOrArtist.canonicalId": canonicalId,
+      "albumSongOrArtist.type": type,
+    }).populate("user", "username profilePicture");
+
+    // Fallback: support older reviews with no canonicalId
+    if (reviews.length === 0 && title && artist) {
+      reviews = await Review.find({
+        "albumSongOrArtist.title": title,
+        "albumSongOrArtist.artist": artist,
         "albumSongOrArtist.type": type,
       }).populate("user", "username profilePicture");
-
-      // Fallback: support older reviews with no canonicalId
-      if (reviews.length === 0 && title && artist) {
-        reviews = await Review.find({
-          "albumSongOrArtist.title": title,
-          "albumSongOrArtist.artist": artist,
-          "albumSongOrArtist.type": type,
-        }).populate("user", "username profilePicture");
-      }
+    }
 
     // Step 4: Fetch current user's review
     const userReview = await Review.findOne({
@@ -180,7 +186,6 @@ exports.getReviewsWithUserReview = async (req, res) => {
       reviews,
       userReview,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -339,7 +344,10 @@ const getTopByType = async (type) => {
           $cond: {
             if: { $in: [type, ["Song", "Album"]] },
             then: {
-              $ifNull: ["$albumSongOrArtist.canonicalId", "$albumSongOrArtist.id"],
+              $ifNull: [
+                "$albumSongOrArtist.canonicalId",
+                "$albumSongOrArtist.id",
+              ],
             },
             else: "$albumSongOrArtist.id",
           },
@@ -390,7 +398,9 @@ const isProd = process.env.NODE_ENV === "production";
 const agent = isProd
   ? new https.Agent()
   : new https.Agent({
-    ca: fs.existsSync("cacert.pem") ? fs.readFileSync("cacert.pem") : undefined,
+      ca: fs.existsSync("cacert.pem")
+        ? fs.readFileSync("cacert.pem")
+        : undefined,
     });
 
 exports.proxyImage = async function (req, res) {
@@ -414,50 +424,49 @@ exports.proxyImage = async function (req, res) {
   }
 };
 
-  exports.toggleLikeHandler = async (req, res) => {
-    const reviewId = req.params.id;
-    const userId = req.user._id;
+exports.toggleLikeHandler = async (req, res) => {
+  const reviewId = req.params.id;
+  const userId = req.user._id;
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-    try {
-      // Lock the document to avoid race conditions
-      const review = await Review.findById(reviewId).session(session);
+  try {
+    // Lock the document to avoid race conditions
+    const review = await Review.findById(reviewId).session(session);
 
-      if (!review) {
-        await session.abortTransaction();
-        session.endSession();
-        return res.status(404).json({ message: "Review not found" });
-      }
-
-      const alreadyLiked = review.likedBy.includes(userId);
-
-      if (alreadyLiked) {
-        // Unlike: Pull user from likedBy, decrement likes (min 0)
-        review.likedBy.pull(userId);
-        review.likes = Math.max(0, review.likes - 1);
-      } else {
-        // Like: Push user into likedBy, increment likes
-        review.likedBy.push(userId);
-        review.likes += 1;
-      }
-
-      await review.save({ session });
-
-      await session.commitTransaction();
-      session.endSession();
-
-      return res.status(200).json({
-        message: alreadyLiked ? "Unliked" : "Liked",
-        likes: review.likes,
-        likedByUser: !alreadyLiked
-      });
-
-    } catch (err) {
+    if (!review) {
       await session.abortTransaction();
       session.endSession();
-      console.error("Like toggle failed:", err);
-      return res.status(500).json({ message: "Internal server error" });
+      return res.status(404).json({ message: "Review not found" });
     }
+
+    const alreadyLiked = review.likedBy.includes(userId);
+
+    if (alreadyLiked) {
+      // Unlike: Pull user from likedBy, decrement likes (min 0)
+      review.likedBy.pull(userId);
+      review.likes = Math.max(0, review.likes - 1);
+    } else {
+      // Like: Push user into likedBy, increment likes
+      review.likedBy.push(userId);
+      review.likes += 1;
+    }
+
+    await review.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.status(200).json({
+      message: alreadyLiked ? "Unliked" : "Liked",
+      likes: review.likes,
+      likedByUser: !alreadyLiked,
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Like toggle failed:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
