@@ -4,6 +4,7 @@ const https = require("https");
 const fetch = require("node-fetch");
 const fs = require("fs");
 const mongoose = require("mongoose");
+const { getCanonicalId } = require('../utils/canonical-id');
 
 // Create a new review
 exports.createReview = async (req, res) => {
@@ -20,12 +21,39 @@ exports.createReview = async (req, res) => {
         .json({ message: "Album, Song, or Artist details are required." });
     }
 
+      let canonicalId = null;
+
+      if (albumSongOrArtist.type === "Song" || albumSongOrArtist.type === "Album") {
+        if (!albumSongOrArtist.title || !albumSongOrArtist.artist) {
+          return res
+            .status(400)
+            .json({ message: "Title and artist are required." });
+        }
+
+        canonicalId = getCanonicalId(
+          albumSongOrArtist.title,
+          albumSongOrArtist.artist
+        );
+      }
+
     // Check if the user has already submitted a review for this item
-    const existingReview = await Review.findOne({
-      user: req.user._id,
-      "albumSongOrArtist.id": albumSongOrArtist.id,
-      "albumSongOrArtist.type": albumSongOrArtist.type,
-    });
+      let existingReview;
+
+      if (albumSongOrArtist.type === "Artist") {
+        // Fallback to ID-based check for artists
+        existingReview = await Review.findOne({
+          user: req.user._id,
+          "albumSongOrArtist.id": albumSongOrArtist.id,
+          "albumSongOrArtist.type": "Artist",
+        });
+      } else {
+        // Canonical check for Song/Album
+        existingReview = await Review.findOne({
+          user: req.user._id,
+          "albumSongOrArtist.canonicalId": canonicalId,
+          "albumSongOrArtist.type": albumSongOrArtist.type,
+        });
+      }
 
     if (existingReview) {
       return res.status(409).json({
@@ -39,6 +67,7 @@ exports.createReview = async (req, res) => {
       user: req.user._id,
       albumSongOrArtist: {
         id: albumSongOrArtist.id,
+        ...(albumSongOrArtist.type !== "Artist" && { canonicalId }),
         type: albumSongOrArtist.type,
         wasOriginallyAlbumButTreatedAsSingle:
           albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle || false,
@@ -75,40 +104,88 @@ exports.createReview = async (req, res) => {
 exports.getReviewsWithUserReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type } = req.query;
-    const user = req.user.id;
+    const { type, title, artist } = req.query;
+    const userId = req.user.id;
 
-    // Check if type is provided and is valid
     if (!type || !["Song", "Album", "Artist"].includes(type)) {
-      return res
-        .status(400)
-        .json({
-          message: "Type (song, album, artist) is required and must be valid.",
-        });
+      return res.status(400).json({
+        message: "Type (song, album, artist) is required and must be valid.",
+      });
     }
 
-    // Get all reviews for the song/album/artist (filter by both ID and type)
-    const reviews = await Review.find({
+          if (type === "Artist") {
+        const reviews = await Review.find({
+          "albumSongOrArtist.id": id,
+          "albumSongOrArtist.type": type,
+        }).populate("user", "username profilePicture");
+
+        const userReview = await Review.findOne({
+          user: userId,
+          "albumSongOrArtist.id": id,
+          "albumSongOrArtist.type": type,
+        }).populate("user", "username profilePicture");
+
+        return res.status(200).json({
+          reviews,
+          userReview,
+        });
+      }
+
+    let canonicalId = null;
+
+    // Step 1: Try to find anchor review by ID + type
+    const anchorReview = await Review.findOne({
       "albumSongOrArtist.id": id,
       "albumSongOrArtist.type": type,
-    }).populate("user", "username profilePicture");
+    });
 
-    // Get the current user's review (if it exists) for the specific type
+    // Step 2: Get canonicalId (from DB or derived from title + artist)
+    if (anchorReview?.albumSongOrArtist?.canonicalId) {
+      canonicalId = anchorReview.albumSongOrArtist.canonicalId;
+    } else if (title && artist) {
+      canonicalId = getCanonicalId(title, artist);
+    }
+
+    if (!canonicalId) {
+      return res.status(200).json({
+        message: "No reviews found for this item.",
+        reviews: [],
+        userReview: null,
+      });
+    }
+
+    // Step 3: Fetch reviews by canonicalId
+      let reviews = await Review.find({
+        "albumSongOrArtist.canonicalId": canonicalId,
+        "albumSongOrArtist.type": type,
+      }).populate("user", "username profilePicture");
+
+      // Fallback: support older reviews with no canonicalId
+      if (reviews.length === 0 && title && artist) {
+        reviews = await Review.find({
+          "albumSongOrArtist.title": title,
+          "albumSongOrArtist.artist": artist,
+          "albumSongOrArtist.type": type,
+        }).populate("user", "username profilePicture");
+      }
+
+    // Step 4: Fetch current user's review
     const userReview = await Review.findOne({
-      "albumSongOrArtist.id": id,
-      user,
+      user: userId,
+      "albumSongOrArtist.canonicalId": canonicalId,
       "albumSongOrArtist.type": type,
     }).populate("user", "username profilePicture");
 
     return res.status(200).json({
-      reviews, // List of all reviews
-      userReview, // Current user's review (if it exists)
+      reviews,
+      userReview,
     });
+
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ message: "An error occurred while fetching reviews." });
+    return res.status(500).json({
+      message: "An error occurred while fetching reviews.",
+    });
   }
 };
 
@@ -257,21 +334,36 @@ const getTopByType = async (type) => {
       },
     },
     {
-      $group: {
-        _id: "$albumSongOrArtist.id",
-        avgRating: { $avg: "$rating" },
-        count: { $sum: 1 },
-        info: { $first: "$albumSongOrArtist" },
+      $addFields: {
+        groupKey: {
+          $cond: {
+            if: { $in: [type, ["Song", "Album"]] },
+            then: {
+              $ifNull: ["$albumSongOrArtist.canonicalId", "$albumSongOrArtist.id"],
+            },
+            else: "$albumSongOrArtist.id",
+          },
+        },
+        wasAlbumTied: "$albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle",
       },
     },
     {
-      $match: { count: { $gte: 2 } }, // Filter for at least 2 reviews (once more users update this)
+      $group: {
+        _id: "$groupKey",
+        avgRating: { $avg: "$rating" },
+        count: { $sum: 1 },
+        info: { $first: "$albumSongOrArtist" },
+        allAlbumTied: { $min: "$wasAlbumTied" },
+      },
+    },
+    {
+      $match: { count: { $gte: 2 } },
     },
     {
       $sort: { avgRating: -1, count: -1 },
     },
     {
-      $limit: 10, // Only shows the top 10 for now (can increment once more users)
+      $limit: 10,
     },
     {
       $project: {
@@ -288,11 +380,11 @@ const getTopByType = async (type) => {
         type: type,
         avgRating: { $round: ["$avgRating", 1] },
         reviewCount: "$count",
+        wasOriginallyAlbumButTreatedAsSingle: "$allAlbumTied",
       },
     },
   ]);
 };
-
 
 const isProd = process.env.NODE_ENV === "production";
 const agent = isProd

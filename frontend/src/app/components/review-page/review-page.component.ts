@@ -583,89 +583,109 @@ export class ReviewPageComponent implements OnInit {
         ? 'Song'
         : this.record.type;
 
-    this.reviewService.searchReviews(this.record.id, inferredType).subscribe({
-      next: (data: Reviews) => {
-        this.reviews = data.reviews;
-        if (this.userProfile?._id) {
-          this.reviews.forEach((review) => {
-            review.likedByCurrentUser = review.likedBy
-              .map((id) => id.toString())
-              .includes(this.userProfile._id.toString());
-          });
-        }
-        // this.reviews = Array.from({ length: 35 }, (_, i) => ({
-        //   _id: `review${i + 1}`,
-        //   __v: 0,
-        //   user: {
-        //     _id: `user${i + 1}`,
-        //     username: `User${i + 1}`,
-        //     email: `user${i + 1}@example.com`,
-        //     profilePicture: `https://i.pravatar.cc/150?img=${(i % 70) + 1}`,
-        //     friendInfo: {
-        //       friends: [],
-        //       pendingRequests: [],
-        //       sentRequests: [],
-        //       friendRequestsSent: [],
-        //       friendRequestsReceived: [],
-        //     },
-        //     googleId: `google-${i + 1}`,
-        //     reviews: [],
-        //     friends: [],
-        //     createdAt: new Date().toISOString(),
-        //     artistList: [],
-        //     gradient: 'linear-gradient(to right, #ff7e5f, #feb47b)',
-        //   },
-        //   rating: Math.floor(Math.random() * 10) + 1,
-        //   reviewText: `This is a mock review #${i + 1}.`,
-        //   createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-        //   albumOrSongId: `song-${i + 1}`,
-        //   type: 'Song',
-        //   title: `Mock Song Title ${i + 1}`,
-        //   albumSongOrArtist: {
-        //     id: i + 1,
-        //     title: `Mock Song Title ${i + 1}`,
-        //     artist: `Artist ${i + 1}`,
-        //     album: `Album ${i + 1}`,
-        //     cover: `https://via.placeholder.com/150?text=Cover+${i + 1}`,
-        //     preview: '',
-        //     isExplicit: i % 3 === 0,
-        //     genre: 'Pop',
-        //     releaseDate: new Date(2023, 0, 1 + i).toISOString(),
-        //     contributors: [`Contributor ${i + 1}`],
-        //     duration: 200 + i,
-        //     type: 'Song',
-        //     isPlaying: false,
-        //   }
-        // }));
+    let title = '';
+    let artist = '';
 
-        this.existingUserReview = data.userReview;
+    if ('title' in this.record) {
+      title = this.record.title;
+    }
 
-        if (this.userProfile?._id && this.existingUserReview) {
-          this.existingUserReview.likedByCurrentUser =
-            this.existingUserReview.likedBy
-              .map((id) => id.toString())
-              .includes(this.userProfile._id.toString());
-        }
+    if ('artist' in this.record) {
+      artist = this.record.artist;
+    }
 
-        this.ratingBarFill = 0;
-        this.circleDashOffset = 113.1;
-        this.isRatingLoaded = true;
-        this.isReviewsLoaded = true;
-        this.isImageLoaded = true;
+    if ('name' in this.record && !title) {
+      title = this.record.name;
+    }
 
-        setTimeout(() => {
-          this.ratingBarFill = this.getAverageRating() * 10;
-          this.circleDashOffset =
-            113.1 - (this.getAverageRating() / 10) * 113.1;
-        }, 50);
-      },
-      error: (error) => {
-        this.toastr.error('Error occurred while retrieving reviews.', 'Error');
-        this.isRatingLoaded = true;
-        this.isReviewsLoaded = true;
-        this.isImageLoaded = true;
-      },
-    });
+    this.reviewService
+      .searchReviews(this.record.id, inferredType, title, artist)
+      .subscribe({
+        next: (data: Reviews) => {
+          this.reviews = data.reviews;
+          if (this.userProfile?._id) {
+            this.reviews.forEach((review) => {
+              review.likedByCurrentUser = review.likedBy
+                .map((id) => id.toString())
+                .includes(this.userProfile._id.toString());
+            });
+          }
+          // this.reviews = Array.from({ length: 35 }, (_, i) => ({
+          //   _id: `review${i + 1}`,
+          //   __v: 0,
+          //   user: {
+          //     _id: `user${i + 1}`,
+          //     username: `User${i + 1}`,
+          //     email: `user${i + 1}@example.com`,
+          //     profilePicture: `https://i.pravatar.cc/150?img=${(i % 70) + 1}`,
+          //     friendInfo: {
+          //       friends: [],
+          //       pendingRequests: [],
+          //       sentRequests: [],
+          //       friendRequestsSent: [],
+          //       friendRequestsReceived: [],
+          //     },
+          //     googleId: `google-${i + 1}`,
+          //     reviews: [],
+          //     friends: [],
+          //     createdAt: new Date().toISOString(),
+          //     artistList: [],
+          //     gradient: 'linear-gradient(to right, #ff7e5f, #feb47b)',
+          //   },
+          //   rating: Math.floor(Math.random() * 10) + 1,
+          //   reviewText: `This is a mock review #${i + 1}.`,
+          //   createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+          //   albumOrSongId: `song-${i + 1}`,
+          //   type: 'Song',
+          //   title: `Mock Song Title ${i + 1}`,
+          //   albumSongOrArtist: {
+          //     id: i + 1,
+          //     title: `Mock Song Title ${i + 1}`,
+          //     artist: `Artist ${i + 1}`,
+          //     album: `Album ${i + 1}`,
+          //     cover: `https://via.placeholder.com/150?text=Cover+${i + 1}`,
+          //     preview: '',
+          //     isExplicit: i % 3 === 0,
+          //     genre: 'Pop',
+          //     releaseDate: new Date(2023, 0, 1 + i).toISOString(),
+          //     contributors: [`Contributor ${i + 1}`],
+          //     duration: 200 + i,
+          //     type: 'Song',
+          //     isPlaying: false,
+          //   }
+          // }));
+
+          this.existingUserReview = data.userReview;
+
+          if (this.userProfile?._id && this.existingUserReview) {
+            this.existingUserReview.likedByCurrentUser =
+              this.existingUserReview.likedBy
+                .map((id) => id.toString())
+                .includes(this.userProfile._id.toString());
+          }
+
+          this.ratingBarFill = 0;
+          this.circleDashOffset = 113.1;
+          this.isRatingLoaded = true;
+          this.isReviewsLoaded = true;
+          this.isImageLoaded = true;
+
+          setTimeout(() => {
+            this.ratingBarFill = this.getAverageRating() * 10;
+            this.circleDashOffset =
+              113.1 - (this.getAverageRating() / 10) * 113.1;
+          }, 50);
+        },
+        error: (error) => {
+          this.toastr.error(
+            'Error occurred while retrieving reviews.',
+            'Error'
+          );
+          this.isRatingLoaded = true;
+          this.isReviewsLoaded = true;
+          this.isImageLoaded = true;
+        },
+      });
   }
 
   get combinedReviews(): Review[] {

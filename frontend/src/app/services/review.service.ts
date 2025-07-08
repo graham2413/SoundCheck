@@ -32,19 +32,26 @@ export class ReviewService {
 
   constructor(private http: HttpClient) {}
 
-  searchReviews(id: number, type: string): Observable<Reviews> {
-    const token = localStorage.getItem('token');
+searchReviews(id: number | string, type: string, title: string, artist: string): Observable<Reviews> {
+  const token = localStorage.getItem('token');
 
-    if (!token) {
-      console.error('No authentication token found');
-      return new Observable();
-    }
-
-    const headers = { Authorization: `Bearer ${token}` };
-    return this.http.get<Reviews>(`${this.apiUrl}/${id}/reviews?type=${type}`, {
-      headers,
-    });
+  if (!token) {
+    console.error('No authentication token found');
+    return new Observable();
   }
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const params = new HttpParams()
+    .set('type', type)
+    .set('title', title)
+    .set('artist', artist);
+
+  return this.http.get<Reviews>(`${this.apiUrl}/${id}/reviews`, {
+    headers,
+    params,
+  });
+}
 
   createReview(
     command: CreateReviewCommandModel

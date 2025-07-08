@@ -251,6 +251,7 @@ export class AppComponent implements OnInit {
         clearTimeout(failsafe);
 
         if (!profile) {
+          this.profileLoaded = true;
           this.logout();
         } else {
           this.userService.setUserProfile(profile);
@@ -259,6 +260,7 @@ export class AppComponent implements OnInit {
         }
       });
     } catch (error: any) {
+      this.profileLoaded = true;
       console.warn('Token parsing failed:', error);
       this.logout();
     }
