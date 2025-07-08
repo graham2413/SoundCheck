@@ -839,7 +839,7 @@
       <!-- Activity Feed Loaded -->
       <div *ngIf="activeFeedType == 'Friends'">
         <div
-          *ngIf="!isFetchingActivityFeed && activityFeed.length > 0; else noActivity"
+          *ngIf="activityFeed.length > 0; else noActivity"
           infiniteScroll
           [infiniteScrollDistance]="2"
           [infiniteScrollThrottle]="150"
