@@ -206,7 +206,6 @@ export class AppComponent implements OnInit {
         this.handleToken(tokenFromStorage);
       } else {
         console.warn('No token found in localStorage');
-        this.profileLoaded = true; // stop spinner so user sees UI
         this.logout(); // or route to login
       }
     }
@@ -240,32 +239,30 @@ export class AppComponent implements OnInit {
         if (!this.profileLoaded) {
           timeoutTriggered = true;
           console.warn('Failsafe triggered: profile not loaded in 10s');
-          this.profileLoaded = true;
           this.logout();
         }
-      }, 10000); // 10s timeout
+      }, 8000); // 8s timeout
 
       forkJoin([delay$, profile$]).subscribe(([_, profile]) => {
         if (timeoutTriggered) return;
         clearTimeout(failsafe);
 
         if (!profile) {
-          this.profileLoaded = true;
           this.logout();
         } else {
           this.userService.setUserProfile(profile);
-          this.profileLoaded = true;
           this.cdRef.detectChanges();
         }
       });
     } catch (error: any) {
-      this.profileLoaded = true;
       console.warn('Token parsing failed:', error);
       this.logout();
     }
   }
 
   private logout() {
+    console.warn('Logging out due to error or invalid/expired token');
+    this.profileLoaded = true;
     this.authService.logout();
     this.router.navigate(['/login']);
   }
