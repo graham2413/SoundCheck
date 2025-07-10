@@ -269,7 +269,6 @@ export class AppComponent implements OnInit {
   private logout() {
     this.authService.logout();
     this.router.navigate(['/login']);
-    this.toastr.error('Session expired. Please log in again.', 'Error');
   }
 
   prepareRoute(outlet: RouterOutlet | null): string | null {
