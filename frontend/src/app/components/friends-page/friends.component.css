@@ -1,16 +1,4 @@
-@media (min-width: 1400px) {
-    .larger-desktop-icons {
-      font-size: 2rem; /* increase text size */
-    }
-  
-    .larger-desktop-icons i {
-      font-size: 2.4rem; /* increase icon size */
-      margin-bottom: .6em;
-    }
-  }
-  
-  
-  @media (max-width: 380px) {
+@media (max-width: 380px) {
     .tab-title {
       font-size: 1.5rem;
     }

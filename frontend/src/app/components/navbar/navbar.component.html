@@ -31,16 +31,16 @@
           </div>
 
           <!-- Profile Icon -->
-        <img
-          *ngIf="!isProfileLoading && userProfile?.profilePicture"
-          [src]="getTransformedImageUrl(userProfile.profilePicture)"
-          alt="Profile Picture"
-          class="absolute inset-0 h-full w-full object-cover rounded-full border-2 border-gray-700"
-        />
-            <i
-              *ngIf="!isProfileLoading && !userProfile?.profilePicture"
-              class="fas fa-user-circle absolute inset-0 text-white text-6xl flex items-center justify-center"
-            ></i>
+          <img
+            *ngIf="!isProfileLoading && userProfile?.profilePicture"
+            [src]="getTransformedImageUrl(userProfile.profilePicture)"
+            alt="Profile Picture"
+            class="absolute inset-0 h-full w-full object-cover rounded-full border-2 border-gray-700"
+          />
+          <i
+            *ngIf="!isProfileLoading && !userProfile?.profilePicture"
+            class="fas fa-user-circle absolute inset-0 text-white text-6xl flex items-center justify-center"
+          ></i>
         </div>
       </button>
 
@@ -59,9 +59,9 @@
         </a>
 
         <a
-        [routerLink]="['/profile', userProfile._id]"
-        class="flex items-center px-5 py-5 text-lg hover:bg-gray-700/60 hover:text-white transition-all duration-200"
-        (click)="closeProfileMenu()"
+          [routerLink]="['/profile', userProfile._id]"
+          class="flex items-center px-5 py-5 text-lg hover:bg-gray-700/60 hover:text-white transition-all duration-200"
+          (click)="closeProfileMenu()"
         >
           <i class="fas fa-user w-6 text-center"></i>
           <span class="ml-3">Profile</span>
@@ -156,33 +156,32 @@
 <div
   class="bg-[#09101F] p-0 shadow-lg flex md:hidden fixed bottom-0 w-full z-20 justify-around items-center h-[4rem] rounded-t-xl border-t border-t-gray-800"
 >
-<button
-  routerLink="/"
-  (click)="setActiveTab('home')"
-  [ngClass]="{
-    'text-white': activeTab === 'home',
-    'text-gray-400 opacity-50': activeTab !== 'home'
-  }"
-  class="flex flex-col items-center justify-center h-full flex-1 rounded-r"
->
-<i
-  class="fas fa-home text-xl transform transition-all duration-200 ease-out"
-  [ngClass]="{
-    'scale-110 text-white': activeTab === 'home',
-    'scale-100 text-gray-100 opacity-50': activeTab !== 'home'
-  }"
-></i>
+  <button
+    routerLink="/"
+    (click)="setActiveTab('home')"
+    [ngClass]="{
+      'text-white': activeTab === 'home',
+      'text-gray-400 opacity-50': activeTab !== 'home'
+    }"
+    class="flex flex-col items-center justify-center h-full flex-1 rounded-r"
+  >
+    <i
+      class="fas fa-home text-xl transform transition-all duration-200 ease-out"
+      [ngClass]="{
+        'scale-110 text-white': activeTab === 'home',
+        'scale-100 text-gray-100 opacity-50': activeTab !== 'home'
+      }"
+    ></i>
 
-<span
-  class="transition-all duration-200"
-  [ngClass]="{
-    'translate-y-[0px] text-white': activeTab === 'home',
-    'translate-y-[3px] text-gray-100 opacity-50': activeTab !== 'home'
-  }"
->Home</span>
-
-</button>
-
+    <span
+      class="transition-all duration-200"
+      [ngClass]="{
+        'translate-y-[0px] text-white': activeTab === 'home',
+        'translate-y-[3px] text-gray-100 opacity-50': activeTab !== 'home'
+      }"
+      >Home</span
+    >
+  </button>
 
   <button
     routerLink="/friends"
@@ -194,59 +193,58 @@
     class="flex flex-col items-center justify-center h-full flex-1 rounded"
   >
     <div class="relative">
-    <i
-      class="fas fa-users text-xl transform transition-all duration-200 ease-out"
+      <i
+        class="fas fa-users text-xl transform transition-all duration-200 ease-out"
+        [ngClass]="{
+          'scale-110 text-white': activeTab === 'friends',
+          'scale-100 text-gray-100 opacity-50': activeTab !== 'friends'
+        }"
+      ></i>
+
+      <span
+        *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
+        class="absolute -top-1 -right-[2rem] bg-red-500 text-white text-[0.8rem] font-bold px-[5px] py-[1px] rounded-full leading-none flex items-center justify-center w-[1.3rem] h-[1.3rem]"
+      >
+        {{ userProfile.friendInfo.friendRequestsReceived.length }}
+      </span>
+    </div>
+
+    <span
+      class="transition-all duration-200"
       [ngClass]="{
-        'scale-110 text-white': activeTab === 'friends',
-        'scale-100 text-gray-100 opacity-50': activeTab !== 'friends'
+        'translate-y-[0px] text-white': activeTab === 'friends',
+        'translate-y-[3px] text-gray-100 opacity-50': activeTab !== 'friends'
+      }"
+    >
+      Friends
+    </span>
+  </button>
+
+  <button
+    [routerLink]="['/profile', userProfile._id]"
+    (click)="setActiveTab('profile')"
+    [ngClass]="{
+      'text-white': activeTab === 'profile',
+      'text-gray-100 opacity-50': activeTab !== 'profile'
+    }"
+    class="flex flex-col items-center justify-center relative h-full flex-1 rounded-l"
+  >
+    <i
+      class="fas fa-user text-xl transform transition-all duration-200 ease-out"
+      [ngClass]="{
+        'scale-110 text-white': activeTab === 'profile',
+        'scale-100 text-gray-100 opacity-50': activeTab !== 'profile'
       }"
     ></i>
 
     <span
-      *ngIf="userProfile.friendInfo.friendRequestsReceived?.length"
-      class="absolute -top-1 -right-[2rem] bg-red-500 text-white text-[0.8rem] font-bold px-[5px] py-[1px] rounded-full leading-none flex items-center justify-center w-[1.3rem] h-[1.3rem]"
+      class="transition-all duration-200"
+      [ngClass]="{
+        'translate-y-[0px] text-white': activeTab === 'profile',
+        'translate-y-[3px] text-gray-100 opacity-50': activeTab !== 'profile'
+      }"
     >
-      {{ userProfile.friendInfo.friendRequestsReceived.length }}
+      Profile
     </span>
-  </div>
-
-  <span
-    class="transition-all duration-200"
-    [ngClass]="{
-      'translate-y-[0px] text-white': activeTab === 'friends',
-      'translate-y-[3px] text-gray-100 opacity-50': activeTab !== 'friends'
-    }"
-  >
-    Friends
-  </span>
   </button>
-
-<button
-  [routerLink]="['/profile', userProfile._id]"
-  (click)="setActiveTab('profile')"
-  [ngClass]="{
-    'text-white': activeTab === 'profile',
-    'text-gray-100 opacity-50': activeTab !== 'profile'
-  }"
-  class="flex flex-col items-center justify-center relative h-full flex-1 rounded-l"
->
-  <i
-    class="fas fa-user text-xl transform transition-all duration-200 ease-out"
-    [ngClass]="{
-      'scale-110 text-white': activeTab === 'profile',
-      'scale-100 text-gray-100 opacity-50': activeTab !== 'profile'
-    }"
-  ></i>
-
-  <span
-    class="transition-all duration-200"
-    [ngClass]="{
-      'translate-y-[0px] text-white': activeTab === 'profile',
-      'translate-y-[3px] text-gray-100 opacity-50': activeTab !== 'profile'
-    }"
-  >
-    Profile
-  </span>
-</button>
-
 </div>

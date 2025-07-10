@@ -52,8 +52,8 @@ export class FriendsComponent implements OnInit {
     friendInfo: {
       friends: [],
       friendRequestsReceived: [],
-      friendRequestsSent: []
-    }
+      friendRequestsSent: [],
+    },
   } as User;
 
   declineLoadingMap: { [userId: string]: boolean } = {};
@@ -85,6 +85,8 @@ export class FriendsComponent implements OnInit {
     this.activeTab = tab;
     this.searchQuery = '';
     this.imageLoadState = {};
+    this.addFriendsSearchInitiated = false;
+    this.usersToAdd = [];
 
     setTimeout(() => {
       this.scrollToTop();
@@ -115,12 +117,12 @@ export class FriendsComponent implements OnInit {
   }
 
   markImageLoaded(i: number, context: string): void {
-  this.imageLoadState[`${i}-${context}`] = true;
-}
+    this.imageLoadState[`${i}-${context}`] = true;
+  }
 
-isImageLoaded(i: number, context: string): boolean {
-  return this.imageLoadState[`${i}-${context}`] === true;
-}
+  isImageLoaded(i: number, context: string): boolean {
+    return this.imageLoadState[`${i}-${context}`] === true;
+  }
 
   getSearchPlaceholder() {
     switch (this.activeTab) {
@@ -170,6 +172,8 @@ isImageLoaded(i: number, context: string): boolean {
         //   email: 'test@example.com',
         //   profilePicture: 'https://i.pravatar.cc/150?img=99',
         //   googleId: 'google-mock-id',
+        //   createdAt: new Date().toISOString(),
+        //   gradient: 'bg-gradient-to-r from-green-400 to-blue-500',
         //   friendInfo: {
         //     friends: Array.from({ length: 10 }, (_, i) => ({
         //       _id: `friend-${i + 1}`,
@@ -177,6 +181,8 @@ isImageLoaded(i: number, context: string): boolean {
         //       email: `friend${i + 1}@test.com`,
         //       profilePicture: `https://i.pravatar.cc/150?img=${i + 1}`,
         //       googleId: `google-friend-${i + 1}`,
+        //       createdAt: new Date().toISOString(),
+        //       gradient: 'bg-gradient-to-r from-blue-400 to-purple-500',
         //       friendInfo: {
         //         friends: [],
         //         friendRequestsReceived: [],
@@ -189,6 +195,8 @@ isImageLoaded(i: number, context: string): boolean {
         //       email: `requester${i + 1}@test.com`,
         //       profilePicture: `https://i.pravatar.cc/150?img=${i + 20}`,
         //       googleId: `google-requester-${i + 1}`,
+        //       createdAt: new Date().toISOString(),
+        //       gradient: 'bg-gradient-to-r from-red-400 to-pink-500',
         //       friendInfo: {
         //         friends: [],
         //         friendRequestsReceived: [],
@@ -201,6 +209,8 @@ isImageLoaded(i: number, context: string): boolean {
         //       email: `sentto${i + 1}@test.com`,
         //       profilePicture: `https://i.pravatar.cc/150?img=${i + 40}`,
         //       googleId: `google-sentto-${i + 1}`,
+        //       createdAt: new Date().toISOString(),
+        //       gradient: 'bg-gradient-to-r from-yellow-400 to-orange-500',
         //       friendInfo: {
         //         friends: [],
         //         friendRequestsReceived: [],
@@ -209,6 +219,7 @@ isImageLoaded(i: number, context: string): boolean {
         //     })),
         //   },
         // };
+
         setTimeout(() => {
           this.retrievingFriendInfo = false;
         }, 500);
@@ -219,15 +230,6 @@ isImageLoaded(i: number, context: string): boolean {
 
   searchUsers() {
     if (!this.searchQuery.trim() || this.activeTab === 'myFriends') return;
-
-    // Scroll the search bar into view
-    setTimeout(() => {
-      const searchBarEl = this.searchBar.nativeElement;
-      const elementTop =
-        searchBarEl.getBoundingClientRect().top + window.pageYOffset;
-      const offset = elementTop - 110;
-      window.scrollTo({ top: offset, behavior: 'smooth' });
-    }, 0);
 
     this.addFriendsSearchLoading = true;
     this.addFriendsSearchInitiated = true;
@@ -311,7 +313,9 @@ isImageLoaded(i: number, context: string): boolean {
             ) || [];
         }
 
-        const alreadyFriend = this.userProfile.friendInfo.friends.some(f => f._id === fromUser._id);
+        const alreadyFriend = this.userProfile.friendInfo.friends.some(
+          (f) => f._id === fromUser._id
+        );
         if (!alreadyFriend) {
           this.userProfile.friendInfo.friends.push(fromUser);
         }
@@ -332,10 +336,10 @@ isImageLoaded(i: number, context: string): boolean {
   }
 
   declineFriendRequest(fromUser: User) {
-  this.declineLoadingMap[fromUser._id] = true;
+    this.declineLoadingMap[fromUser._id] = true;
 
     this.userService.declineFriendRequest(fromUser._id).subscribe({
-        next: (_: unknown) => {
+      next: (_: unknown) => {
         if (
           this.userProfile &&
           this.userProfile.friendInfo.friendRequestsReceived
@@ -345,19 +349,19 @@ isImageLoaded(i: number, context: string): boolean {
               (r) => r._id !== fromUser._id
             );
         }
-      
+
         // update the global profile
         this.userService.setUserProfile(this.userProfile);
         this.declineLoadingMap[fromUser._id] = false;
         this.toastrService.success('Friend request declined', 'Success');
-      },      
-    error: (error: { error?: { message?: string } }) => {
-      this.declineLoadingMap[fromUser._id] = false;
-      this.toastrService.error(
-        error.error?.message || 'Error removing request',
-        'Error'
-      );
-    }
+      },
+      error: (error: { error?: { message?: string } }) => {
+        this.declineLoadingMap[fromUser._id] = false;
+        this.toastrService.error(
+          error.error?.message || 'Error removing request',
+          'Error'
+        );
+      },
     });
   }
 
@@ -366,7 +370,7 @@ isImageLoaded(i: number, context: string): boolean {
     this.removingFriendId = friend._id;
 
     this.userService.removeFriend(friend._id).subscribe({
-        next: (_: unknown) => {
+      next: (_: unknown) => {
         if (this.userProfile && this.userProfile.friendInfo.friends) {
           this.userProfile.friendInfo.friends =
             this.userProfile.friendInfo.friends.filter(
@@ -402,7 +406,7 @@ isImageLoaded(i: number, context: string): boolean {
           error.error?.message || 'Error removing friend',
           'Error'
         );
-      }
+      },
     });
   }
 
