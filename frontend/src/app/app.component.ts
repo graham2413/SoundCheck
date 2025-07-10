@@ -251,6 +251,7 @@ export class AppComponent implements OnInit {
           this.logout();
         } else {
           this.userService.setUserProfile(profile);
+          this.profileLoaded = true;
           this.cdRef.detectChanges();
         }
       });
