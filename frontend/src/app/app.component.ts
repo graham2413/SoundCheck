@@ -240,7 +240,6 @@ export class AppComponent implements OnInit {
         if (!this.profileLoaded) {
           timeoutTriggered = true;
           console.warn('Failsafe triggered: profile not loaded in 10s');
-          this.toastr.error('Profile loading timed out. Please try again.');
           this.profileLoaded = true;
           this.logout();
         }
