@@ -212,6 +212,7 @@
 
         <!-- Search Bar -->
         <div
+        *ngIf="!retrievingFriendInfo"
           #searchBar
           class="relative w-[95%] sm:max-w-[800px] mb-6 mx-auto pt-[.5rem] md:pt-0"
         >
@@ -226,7 +227,7 @@
 
         <div
           *ngIf="retrievingFriendInfo"
-          class="mt-6 w-full max-w-3xl mx-auto flex flex-col justify-center items-center"
+          class="mt-[5rem] w-full max-w-3xl mx-auto flex flex-col justify-center items-center"
         >
           <div
             class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
