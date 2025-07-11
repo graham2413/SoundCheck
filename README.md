@@ -8,9 +8,9 @@
 
 ## ✨ Features
 
-* ▶️ **Search and Discover:** Explore recent releases by artist or title using the Deezer API.
+* ▶️ **Search and Discover:** Explore recent releases by searching for the artist or title, as well as using the Friends and Artist feeds.
 * 🔍 **Marquee of new music:** Auto-refreshing preview carousel of weekly releases.
-* 🔊 **Review Anything:** Rate and comment on albums, singles, or individual tracks.
+* 🔊 **Review Anything:** Rate and comment on albums, singles, or artists.
 * ⭐ **Fuzzy Deduplication:** Prevents duplicate reviews across song vs single vs album releases.
 * 👥 **Social Layer:** Add friends, view their activity feed, and like their reviews.
 * 💎 **Profile Stats:** Track your top artists, genres, and reviews by type.
@@ -23,7 +23,8 @@
 
 | Explore                                            | Review Page                                     | Activity Feed                                   | Profile                                    |
 | -------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- | ------------------------------------------ |
-| ![Explore](./screenshots/explore_music_mobile.png) | ![Review](./screenshots/track_review_modal.png) | ![Activity](./screenshots/activity_friends.png) | ![Profile](./screenshots/user_profile.png) |
+| ![Explore](<img width="390" height="845" alt="image" src="https://github.com/user-attachments/assets/e88b44a6-28ed-4699-a198-4b567426da66" />
+) | ![Review](./screenshots/track_review_modal.png) | ![Activity](./screenshots/activity_friends.png) | ![Profile](./screenshots/user_profile.png) |
 
 ---
 
@@ -71,6 +72,7 @@ $ npm run dev
   * `REDIS_URL=...`
   * `GOOGLE_CLIENT_ID=...`
   * `GOOGLE_CLIENT_SECRET=...`
+  * etc.
 
 ---
 
