@@ -2,8 +2,6 @@
 
 > **A music discovery and review platform where friends rate music and artists, like IMDB for music.**
 
-![screenshot](./screenshots/explore_music_desktop.png)
-
 ---
 
 ## ✨ Features
@@ -87,8 +85,8 @@ $ npm run dev
 ## 🌐 Live Demo - https://di5r6h6unwhwg.cloudfront.net
 
 Backend Hosted on **Render**
-
 Frontend hosted on AWS **Cloudfront**
+
 ---
 
 ## 🌟 Author
