@@ -45,48 +45,11 @@
 
 ---
 
-## 🚫 Preventing Review Dupes
-
-Reviews are deduplicated across different Deezer IDs for the **same song content**:
-
-* Tracks released as both singles and albums won't be reviewed twice.
-* Fuzzy matching + normalization ensures consistent review logic.
-
----
-
-## ⚡ Getting Started (Local Dev)
-
-```bash
-# Clone
-$ git clone https://github.com/graham2413/soundcheck.git
-$ cd soundcheck
-
-# Frontend
-$ cd frontend
-$ npm install && npm start
-
-# Backend
-$ cd ../backend
-$ npm install
-$ npm run dev
-```
-
-**Environment variables required:**
-
-* `.env` for backend:
-
-  * `MONGO_URI=...`
-  * `REDIS_URL=...`
-  * `GOOGLE_CLIENT_ID=...`
-  * `GOOGLE_CLIENT_SECRET=...`
-  * etc.
-
----
 
 ## 🌐 Live Demo - https://di5r6h6unwhwg.cloudfront.net
 
 Backend Hosted on **Render** and 
-Frontend hosted on AWS **Cloudfront**
+Frontend hosted on **AWS Cloudfront**
 
 ---
 
@@ -94,4 +57,4 @@ Frontend hosted on AWS **Cloudfront**
 
 Built with passion by [Graham Norris](https://github.com/graham2413)
 
-If you find this project interesting, feel free to star it ⭐ or reach out!
+If you find this project interesting or have feature or enhancement suggestions, feel free to star it ⭐ or reach out!
