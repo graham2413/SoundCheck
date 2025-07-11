@@ -21,10 +21,10 @@
 
 ## 📊 Screenshots
 
-### 🔍 Explore Music (Mobile & Desktop)
+### 🔍 Explore Music
 <img src="https://github.com/user-attachments/assets/e39613d6-5a22-4864-8753-a3e25a26d84e" width="300" />
 
-### ⭐ Track Review Modal
+### ⭐ Review Modal
 <img src="https://github.com/user-attachments/assets/bcb05c07-d1b4-4348-90f6-490f929e3acc" width="300" />
 
 ### 👥 Friend Activity Feed
