@@ -27,6 +27,7 @@
 
 ### 👥 Friend and Artist Feeds
 <img src="https://github.com/user-attachments/assets/0a65d847-4485-41b1-abd8-5a63c1a3e348" width="300" />
+&nbsp;&nbsp;&nbsp;&nbsp;
 <img src="https://github.com/user-attachments/assets/0a65d847-4485-41b1-abd8-5a63c1a3e348" width="300" />
 
 ### 🙋‍♂️ Profile Page
