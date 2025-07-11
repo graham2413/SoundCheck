@@ -25,11 +25,11 @@
 ### ⭐ Review Modal
 <img src="https://github.com/user-attachments/assets/bcb05c07-d1b4-4348-90f6-490f929e3acc" width="300" />
 
-### 👥 Friend Activity Feed
+### 👥 Friend and Artist Feeds
 <img src="https://github.com/user-attachments/assets/0a65d847-4485-41b1-abd8-5a63c1a3e348" width="300" />
 <img src="https://github.com/user-attachments/assets/0a65d847-4485-41b1-abd8-5a63c1a3e348" width="300" />
 
-### 🙋‍♂️ Profile and Stats
+### 🙋‍♂️ Profile Page
 <img src="https://github.com/user-attachments/assets/cfeadb79-1503-47b3-b0f9-28fa6e2da742" width="300" />
 
 
@@ -46,7 +46,9 @@
 ---
 
 
-## 🌐 Live Demo - https://di5r6h6unwhwg.cloudfront.net
+## 🌐 Live Demo 
+
+➡️ [SoundCheck](https://di5r6h6unwhwg.cloudfront.net)
 
 Backend Hosted on **Render** and 
 Frontend hosted on **AWS Cloudfront**
