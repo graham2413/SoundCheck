@@ -27,6 +27,7 @@
 
 ### 👥 Friend Activity Feed
 <img src="https://github.com/user-attachments/assets/0a65d847-4485-41b1-abd8-5a63c1a3e348" width="300" />
+<img src="https://github.com/user-attachments/assets/0a65d847-4485-41b1-abd8-5a63c1a3e348" width="300" />
 
 ### 🙋‍♂️ Profile and Stats
 <img src="https://github.com/user-attachments/assets/cfeadb79-1503-47b3-b0f9-28fa6e2da742" width="300" />
@@ -84,7 +85,7 @@ $ npm run dev
 
 ## 🌐 Live Demo - https://di5r6h6unwhwg.cloudfront.net
 
-Backend Hosted on **Render**
+Backend Hosted on **Render** and 
 Frontend hosted on AWS **Cloudfront**
 
 ---
