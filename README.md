@@ -23,8 +23,12 @@
 
 | Explore                                            | Review Page                                     | Activity Feed                                   | Profile                                    |
 | -------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- | ------------------------------------------ |
-| ![Explore](<img width="390" height="845" alt="image" src="https://github.com/user-attachments/assets/e88b44a6-28ed-4699-a198-4b567426da66" />
-) | ![Review](./screenshots/track_review_modal.png) | ![Activity](./screenshots/activity_friends.png) | ![Profile](./screenshots/user_profile.png) |
+| <img width="383" height="834" alt="image" src="https://github.com/user-attachments/assets/e39613d6-5a22-4864-8753-a3e25a26d84e" />
+
+ | <img width="391" height="845" alt="image" src="https://github.com/user-attachments/assets/bcb05c07-d1b4-4348-90f6-490f929e3acc" />
+ | <img width="382" height="841" alt="image" src="https://github.com/user-attachments/assets/0a65d847-4485-41b1-abd8-5a63c1a3e348" />
+ | <img width="389" height="842" alt="image" src="https://github.com/user-attachments/assets/cfeadb79-1503-47b3-b0f9-28fa6e2da742" />
+ |
 
 ---
 
