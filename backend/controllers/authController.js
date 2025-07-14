@@ -4,7 +4,7 @@ const User = require("../models/User");
 const { Resend } = require("resend");
 const crypto = require("crypto");
 
-// REGISTER (Signup for non spotify registering users)
+// REGISTER (Signup for non google registering users)
 exports.registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;

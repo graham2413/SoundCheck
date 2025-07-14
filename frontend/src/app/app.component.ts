@@ -198,7 +198,6 @@ export class AppComponent implements OnInit {
       // Clear URL params
       window.history.replaceState({}, document.title, window.location.pathname);
       this.router.navigate(['/']);
-      this.toastr.success('Logged in successfully!', 'Success');
     } else {
       // No token in URL, maybe one exists already
       const tokenFromStorage = localStorage.getItem('token');
@@ -214,6 +213,8 @@ export class AppComponent implements OnInit {
   private handleToken(token: string) {
     try {
       const decoded: DecodedToken = jwtDecode(token);
+
+      const isNewUser = decoded.isNewUser === true;
 
       if (!decoded?.userId || !decoded.exp) {
         throw new Error('Invalid token structure');
@@ -252,6 +253,13 @@ export class AppComponent implements OnInit {
         } else {
           this.userService.setUserProfile(profile);
           this.profileLoaded = true;
+
+          if (isNewUser) {
+            this.toastr.success('Account created successfully!', 'Welcome');
+          } else {
+            this.toastr.success('Welcome back!', 'Logged in');
+          }
+
           this.cdRef.detectChanges();
         }
       });

@@ -639,7 +639,7 @@ export class ReviewPageComponent implements OnInit {
           //   type: 'Song',
           //   title: `Mock Song Title ${i + 1}`,
           //   albumSongOrArtist: {
-          //     id: i + 1,
+          //     id: (i + 1).toString(),
           //     title: `Mock Song Title ${i + 1}`,
           //     artist: `Artist ${i + 1}`,
           //     album: `Album ${i + 1}`,
@@ -652,7 +652,9 @@ export class ReviewPageComponent implements OnInit {
           //     duration: 200 + i,
           //     type: 'Song',
           //     isPlaying: false,
-          //   }
+          //   },
+          //   likes: Math.floor(Math.random() * 100), // Add mock likes
+          //   likedBy: [], // Add mock likedBy array
           // }));
 
           this.existingUserReview = data.userReview;
@@ -1175,6 +1177,10 @@ export class ReviewPageComponent implements OnInit {
   }
 
   openSongOrAlbum(record: Song | Album) {
+    // Stop any currently playing audio
+    this.audioPlayerMobile?.stop();
+    this.audioPlayerDesktop?.stop();
+
     this.openNewReview.emit(record);
   }
 

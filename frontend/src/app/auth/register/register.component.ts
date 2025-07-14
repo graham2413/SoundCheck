@@ -59,9 +59,9 @@ export class RegisterComponent {
 
     this.authService.register(userData).subscribe({
       next: (response) => {
-        this.toastr.success('Account created successfully!', 'Success');
+        this.toastr.success('Account created successfully!', 'Welcome');
         localStorage.setItem('token', response.token);
-        this.router.navigate(['/login']);
+        this.router.navigate(['/']);
       },
       error: (error) => {
         this.isLoading = false;

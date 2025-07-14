@@ -250,7 +250,7 @@
     </form>
 
     <!-- Delete Account -->
-    <div class="mt-4 text-center">
+    <div class="mt-4 sm:mb-[3rem] md:mb-0 text-center">
       <button
         (click)="confirmDeleteAccount()"
         class="w-full py-3 text-white-500 border border-red-500 bg-red-600 hover:bg-red-500 rounded-full max-w-[20rem] font-semibold text-lg hover:bg-red-500 hover:text-white transition-colors duration-200"
@@ -289,7 +289,7 @@
         type="email"
         [(ngModel)]="confirmEmail"
         name="confirmEmail"
-        class="w-full px-2 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:outline-none text-base"
+        class="w-full px-2 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:outline-none text-lg sm:text-xl"
         placeholder="Enter your email"
         (input)="validateEmail()"
       />

@@ -197,7 +197,7 @@ export class MainSearchComponent implements OnInit {
     }
   }
 
-   setMarquee() {
+  setMarquee() {
     this.isMarqueeLoading = true;
     const storedAlbums = localStorage.getItem('albumImages');
     let baseAlbums: any[] = [];
@@ -741,10 +741,10 @@ export class MainSearchComponent implements OnInit {
     index?: number
   ): NgbModalRef {
     const modalOptions: NgbModalOptions = {
-      backdrop: false,
+      backdrop: 'static',
       keyboard: true,
       centered: true,
-      scrollable: true,
+      scrollable: false,
     };
 
     const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
@@ -833,10 +833,17 @@ export class MainSearchComponent implements OnInit {
           (record as Album).type = 'Album';
         }
 
-        const newModal = this.openModal(record, [], 0);
-        newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
+        modalRef.componentInstance.showSecondIpod = false;
+        modalRef.componentInstance.record = record;
+        modalRef.componentInstance.recordList = [record];
+        modalRef.componentInstance.currentIndex = 0;
+        modalRef.componentInstance.showForwardAndBackwardButtons = false;
+
+        // Reset state to mimic a fresh open
+        modalRef.componentInstance.resetForNewRecord();
       }
     );
+
     return modalRef;
   }
 

@@ -96,6 +96,16 @@ export class AudioPlayerComponent implements AfterViewInit {
     }
   }
 
+  public stop(): void {
+  if (this.audio) {
+    this.audio.pause();
+    this.audio.currentTime = 0;
+    this.isPlaying = false;
+    this.playStatus.emit(false);
+  }
+}
+
+
   setSource(previewUrl: string, autoPlay: boolean = true) {
     const audio = this.myAudioRef.nativeElement;
     audio.pause();

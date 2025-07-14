@@ -596,9 +596,7 @@
             class="text-center text-[1.8rem] mt-4 text-gray-200 font-semibold bg-gray-800 rounded-xl p-2"
           >
             <ng-container *ngIf="record.type === 'Artist'">
-              <span class="text-gray-400 text-xl block uppercase"
-                >Artist</span
-              >
+              <span class="text-gray-400 text-xl block uppercase">Artist</span>
             </ng-container>
             <ng-container *ngIf="record.type === 'Album'">
               <span
@@ -633,9 +631,7 @@
                 <span *ngIf="record.type === 'Artist'">{{ record.name }}</span>
               </div>
             </div>
-            <p
-              class="text-gray-400 text-xl flex items-center justify-center"
-            >
+            <p class="text-gray-400 text-xl flex items-center justify-center">
               <span
                 *ngIf="isExplicit"
                 class="bg-gray-600 text-white text-base w-[1.5em] h-[1.5em] flex items-center justify-center font-bold rounded leading-none mr-1"
@@ -1289,7 +1285,7 @@
   class="hidden md:flex min-h-[95vh] fixed inset-0 items-center justify-center bg-black bg-opacity-50 overflow-y-auto custom-scrollbar z-50"
 >
   <div
-    class="relative bg-[#1E1E1E] text-white w-[95%] sm:rounded-xl shadow-lg p-3 flex flex-col min-h-[95vh] max-h-[95vh]"
+    class="relative bg-[#1E1E1E] text-white w-[95%] max-w-[1300px] sm:rounded-xl shadow-lg p-3 flex flex-col h-[95vh] min-h-0 overflow-hidden"
   >
     <!-- Exit Button -->
     <button
@@ -1459,12 +1455,12 @@
       </div>
     </ng-template>
 
-    <div class="flex-1 flex flex-col pr-2">
+    <div class="flex-1 min-h-0 flex flex-col pr-2 overflow-hidden">
       <!-- Two-Column Layout -->
-      <div class="flex flex-col md:flex-row items-start gap-4 mt-2">
+      <div class="flex flex-row flex-1 min-h-0 gap-4 mt-2 overflow-hidden">
         <!-- Wrapper for both iPods -->
         <div
-          class="relative flex-[2] max-w-[400px] h-[80vh] overflow-auto overflow-hidden"
+          class="relative flex-[1] max-w-[400px] h-[80vh] overflow-auto overflow-hidden"
         >
           <!-- First iPod -->
           <div
@@ -2088,7 +2084,7 @@
 
         <!-- Right Side: Reviews section -->
         <div
-          class="bg-[#262729] shadow-md flex-[3] mx-auto rounded-t-lg rounded-b-lg"
+          class="flex flex-col flex-1 min-h-0 bg-[#262729] shadow-md rounded-t-lg rounded-b-lg overflow-hidden"
         >
           <div
             class="sticky top-0 z-30 bg-[#000000] px-3 py-2 shadow-[rgba(0,0,0,0.2)_0px_2px_6px] rounded-t-lg"
@@ -2166,500 +2162,469 @@
             </div>
           </div>
 
-          <div>
-            <ng-container *ngIf="!isReviewsLoaded; else reviewsContentMobile">
-              <div class="space-y-3 mt-3 px-3 pb-3">
-                <div
-                  class="animate-pulse bg-gray-700 p-4 rounded-lg h-16"
-                ></div>
-                <div
-                  class="animate-pulse bg-gray-700 p-4 rounded-lg h-16"
-                ></div>
-                <div
-                  class="animate-pulse bg-gray-700 p-4 rounded-lg h-16"
-                ></div>
-              </div>
-            </ng-container>
+          <ng-template #loadingReviews>
+            <div class="space-y-3 mt-3 px-3 pb-3">
+              <div class="animate-pulse bg-gray-700 p-4 rounded-lg h-16"></div>
+              <div class="animate-pulse bg-gray-700 p-4 rounded-lg h-16"></div>
+              <div class="animate-pulse bg-gray-700 p-4 rounded-lg h-16"></div>
+            </div>
+          </ng-template>
 
-            <ng-template #reviewsContentMobile>
-              <!-- Fullscreen Overlay for Creating -->
+          <ng-container *ngIf="isReviewsLoaded; else loadingReviews">
+            <!-- Fullscreen Overlay for Creating -->
+            <div
+              *ngIf="isAddingReview"
+              @overlayAnimation
+              class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
+              style="height: 100dvh"
+            >
               <div
-                *ngIf="isAddingReview"
-                @overlayAnimation
-                class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
-                style="height: 100dvh"
+                class="bg-[#262729] shadow-lg flex flex-col items-center justify-between"
+                style="width: 100vw; height: 100dvh"
               >
+                <!-- Header with Back Button -->
                 <div
-                  class="bg-[#262729] shadow-lg flex flex-col items-center justify-between"
-                  style="width: 100vw; height: 100dvh"
+                  class="relative w-full h-[64px] flex items-center justify-center border-b-2 border-gray-500 px-4"
                 >
-                  <!-- Header with Back Button -->
-                  <div
-                    class="relative w-full h-[64px] flex items-center justify-center border-b-2 border-gray-500 px-4"
+                  <button
+                    [disabled]="isCreateLoading"
+                    (click)="cancelReview()"
+                    class="text-white px-4 py-2 rounded-full flex items-center justify-center absolute left-4"
                   >
-                    <button
-                      [disabled]="isCreateLoading"
-                      (click)="cancelReview()"
-                      class="text-white px-4 py-2 rounded-full flex items-center justify-center absolute left-4"
-                    >
-                      <i class="fas fa-circle-arrow-left text-3xl"></i>
-                    </button>
-                    <p class="text-white font-semibold text-2xl text-center">
-                      Write Review
-                    </p>
-                  </div>
+                    <i class="fas fa-circle-arrow-left text-3xl"></i>
+                  </button>
+                  <p class="text-white font-semibold text-2xl text-center">
+                    Write Review
+                  </p>
+                </div>
 
-                  <!-- Rating Section -->
-                  <div
-                    class="flex flex-col flex-grow w-full px-4 pt-4 overflow-hidden items-center"
-                  >
-                    <div class="w-full max-w-[640px] text-center mx-auto">
-                      <!-- Star Rating Display -->
-                      <div class="flex justify-center mb-4 gap-0.5">
-                        <ng-container
-                          *ngFor="let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
-                        >
-                          <ng-container
-                            [ngSwitch]="getStarType(star, newRating)"
-                          >
-                            <i
-                              *ngSwitchCase="'full'"
-                              class="fas fa-star text-3xl text-yellow-400"
-                            ></i>
-                            <i
-                              *ngSwitchCase="'half'"
-                              class="fas fa-star-half-alt text-3xl text-yellow-400"
-                            ></i>
-                            <i
-                              *ngSwitchCase="'empty'"
-                              class="far fa-star text-3xl text-gray-500"
-                            ></i>
-                          </ng-container>
-                        </ng-container>
-                      </div>
-
-                      <p
-                        class="text-white font-medium text-2xl mb-2 text-center"
+                <!-- Rating Section -->
+                <div
+                  class="flex flex-col flex-grow w-full px-4 pt-4 overflow-hidden items-center"
+                >
+                  <div class="w-full max-w-[640px] text-center mx-auto">
+                    <!-- Star Rating Display -->
+                    <div class="flex justify-center mb-4 gap-0.5">
+                      <ng-container
+                        *ngFor="let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
                       >
-                        Rating:
-                        <input
-                          type="number"
-                          min="0"
-                          max="10"
-                          step="0.1"
-                          [(ngModel)]="newRating"
-                          (keypress)="onKeyPressRating($event, 'new')"
-                          (blur)="onBlurRating('new')"
-                          class="w-[3.4rem] text-[1.8rem] leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
-                        />
-                        <span
-                          class="text-gray-300 text-[1.5rem] opacity-70 font-medium"
-                          >/ 10</span
-                        >
-                      </p>
+                        <ng-container [ngSwitch]="getStarType(star, newRating)">
+                          <i
+                            *ngSwitchCase="'full'"
+                            class="fas fa-star text-3xl text-yellow-400"
+                          ></i>
+                          <i
+                            *ngSwitchCase="'half'"
+                            class="fas fa-star-half-alt text-3xl text-yellow-400"
+                          ></i>
+                          <i
+                            *ngSwitchCase="'empty'"
+                            class="far fa-star text-3xl text-gray-500"
+                          ></i>
+                        </ng-container>
+                      </ng-container>
+                    </div>
 
-                      <!-- Slider -->
+                    <p class="text-white font-medium text-2xl mb-2 text-center">
+                      Rating:
                       <input
-                        type="range"
+                        type="number"
                         min="0"
                         max="10"
                         step="0.1"
                         [(ngModel)]="newRating"
-                        [style.background]="getSliderBackground(newRating)"
-                        class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
+                        (keypress)="onKeyPressRating($event, 'new')"
+                        (blur)="onBlurRating('new')"
+                        class="w-[3.4rem] text-[1.8rem] leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
                       />
-                    </div>
-
-                    <!-- Textarea -->
-                    <div class="w-full max-w-[800px] pt-3 flex-grow">
-                      <textarea
-                        [(ngModel)]="newReview"
-                        [disabled]="isCreateLoading"
-                        class="w-full h-full p-3 text-lg bg-[#1E2125] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
-                        placeholder="Leave your feedback..."
-                        style="
-                          min-height: 120px;
-                          max-height: calc(100dvh - 300px);
-                        "
-                      ></textarea>
-                    </div>
-
-                    <!-- Submit Button -->
-                    <div
-                      class="flex font-medium w-full mt-3 pb-3 max-w-[640px]"
-                    >
-                      <button
-                        [disabled]="isCreateLoading"
-                        (click)="submitReview()"
-                        class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
+                      <span
+                        class="text-gray-300 text-[1.5rem] opacity-70 font-medium"
+                        >/ 10</span
                       >
-                        <ng-container *ngIf="!isCreateLoading">
-                          <i class="fas fa-paper-plane"></i> Create
-                        </ng-container>
-                        <ng-container *ngIf="isCreateLoading">
-                          <i class="fas fa-spinner fa-spin"></i> Creating
-                        </ng-container>
-                      </button>
-                    </div>
+                    </p>
+
+                    <!-- Slider -->
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      [(ngModel)]="newRating"
+                      [style.background]="getSliderBackground(newRating)"
+                      class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
+                    />
+                  </div>
+
+                  <!-- Textarea -->
+                  <div class="w-full max-w-[800px] pt-3 flex-grow">
+                    <textarea
+                      [(ngModel)]="newReview"
+                      [disabled]="isCreateLoading"
+                      class="w-full h-full p-3 text-lg bg-[#1E2125] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
+                      placeholder="Leave your feedback..."
+                      style="
+                        min-height: 120px;
+                        max-height: calc(100dvh - 300px);
+                      "
+                    ></textarea>
+                  </div>
+
+                  <!-- Submit Button -->
+                  <div class="flex font-medium w-full mt-3 pb-3 max-w-[640px]">
+                    <button
+                      [disabled]="isCreateLoading"
+                      (click)="submitReview()"
+                      class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
+                    >
+                      <ng-container *ngIf="!isCreateLoading">
+                        <i class="fas fa-paper-plane"></i> Create
+                      </ng-container>
+                      <ng-container *ngIf="isCreateLoading">
+                        <i class="fas fa-spinner fa-spin"></i> Creating
+                      </ng-container>
+                    </button>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <!-- All Reviews Section -->
-              <div class="max-h-[65vh] overflow-y-auto custom-scrollbar">
-                <ng-container
-                  *ngIf="
-                    existingUserReview || filteredReviews.length > 0;
-                    else noReviewsDesktop
-                  "
+            <!-- All Reviews Section -->
+            <ng-container
+              *ngIf="
+                existingUserReview || filteredReviews.length > 0;
+                else noReviewsDesktop
+              "
+            >
+              <div
+                class="flex flex-col flex-1 min-h-0 overflow-hidden bg-[#262729] rounded-b-lg"
+              >
+                <ul
+                  #reviewsSectionDesktop
+                  class="flex-1 min-h-0 overflow-y-auto custom-scrollbar pt-0"
+                  @fadeIn
                 >
-                  <div
-                    class="bg-[#262729] rounded-lg overflow-hidden flex flex-col h-full"
+                  <li
+                    *ngFor="
+                      let review of pagedReviews;
+                      let i = index;
+                      trackBy: trackById
+                    "
+                    class="review-card p-2 flex flex-col relative bg-[#171a21]"
+                    [ngClass]="{
+                      'border-b border-gray-500': i < pagedReviews.length - 1
+                    }"
                   >
-                    <ul
-                      #reviewsSectionDesktop
-                      class="space-y-4 p-4 pt-0 overflow-y-auto custom-scrollbar flex-1 max-h-[50vh]"
-                      @fadeIn
+                    <!-- Fullscreen Overlay for Editing -->
+                    <div
+                      *ngIf="isEditingReview"
+                      @overlayAnimation
+                      class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
+                      style="height: 100dvh"
                     >
-                      <li
-                        *ngFor="
-                          let review of pagedReviews;
-                          let i = index;
-                          trackBy: trackById
-                        "
-                        class="review-card p-2 flex flex-col gap-2 relative bg-[#262729]"
-                        [ngClass]="{
-                          'border-b border-gray-500':
-                            i < pagedReviews.length - 1
-                        }"
+                      <div
+                        class="bg-[#262729] shadow-lg flex flex-col items-center justify-between"
+                        style="width: 100vw; height: 100dvh"
                       >
-                        <!-- Fullscreen Overlay for Editing -->
+                        <!-- Header with Back Button -->
                         <div
-                          *ngIf="isEditingReview"
-                          @overlayAnimation
-                          class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
-                          style="height: 100dvh"
+                          class="relative w-full h-[64px] flex items-center justify-center border-b-2 border-gray-500 px-4"
                         >
-                          <div
-                            class="bg-[#262729] shadow-lg flex flex-col items-center justify-between"
-                            style="width: 100vw; height: 100dvh"
+                          <button
+                            [disabled]="isEditLoading"
+                            (click)="cancelEditReview()"
+                            class="text-white px-4 py-2 rounded-full flex items-center justify-center absolute left-4"
                           >
-                            <!-- Header with Back Button -->
-                            <div
-                              class="relative w-full h-[64px] flex items-center justify-center border-b-2 border-gray-500 px-4"
-                            >
-                              <button
-                                [disabled]="isEditLoading"
-                                (click)="cancelEditReview()"
-                                class="text-white px-4 py-2 rounded-full flex items-center justify-center absolute left-4"
-                              >
-                                <i
-                                  class="fas fa-circle-arrow-left text-3xl"
-                                ></i>
-                              </button>
-                              <p
-                                class="text-white font-semibold text-2xl text-center"
-                              >
-                                Editing Review
-                              </p>
-                            </div>
-
-                            <!-- Edit Rating Section -->
-                            <div
-                              class="flex flex-col flex-grow w-full px-4 pt-4 overflow-hidden items-center"
-                            >
-                              <div
-                                class="w-full max-w-[640px] text-center mx-auto"
-                              >
-                                <!-- Star Rating Display -->
-                                <div class="flex justify-center mb-4 gap-0.5">
-                                  <ng-container
-                                    *ngFor="
-                                      let star of [
-                                        1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-                                      ]
-                                    "
-                                  >
-                                    <ng-container
-                                      [ngSwitch]="
-                                        getStarType(star, editedRating)
-                                      "
-                                    >
-                                      <i
-                                        *ngSwitchCase="'full'"
-                                        class="fas fa-star text-3xl text-yellow-400"
-                                      ></i>
-                                      <i
-                                        *ngSwitchCase="'half'"
-                                        class="fas fa-star-half-alt text-3xl text-yellow-400"
-                                      ></i>
-                                      <i
-                                        *ngSwitchCase="'empty'"
-                                        class="far fa-star text-3xl text-gray-500"
-                                      ></i>
-                                    </ng-container>
-                                  </ng-container>
-                                </div>
-
-                                <p
-                                  class="text-white font-medium text-2xl mb-2 text-center"
-                                >
-                                  Rating:
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max="10"
-                                    step="0.1"
-                                    [(ngModel)]="editedRating"
-                                    (keypress)="
-                                      onKeyPressRating($event, 'edit')
-                                    "
-                                    (blur)="onBlurRating('edit')"
-                                    class="w-[3.4rem] text-[1.8rem] leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
-                                  />
-                                  <span
-                                    class="text-gray-300 text-[1.5rem] opacity-70 font-medium"
-                                    >/ 10</span
-                                  >
-                                </p>
-
-                                <!-- Slider Control -->
-                                <input
-                                  type="range"
-                                  min="0"
-                                  max="10"
-                                  step="0.1"
-                                  [(ngModel)]="editedRating"
-                                  [style.background]="
-                                    getSliderBackground(editedRating)
-                                  "
-                                  class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
-                                />
-                              </div>
-
-                              <!-- Review Text -->
-                              <div class="w-full pt-3 max-w-[800px] flex-grow">
-                                <textarea
-                                  [(ngModel)]="editedReviewText"
-                                  [disabled]="isEditLoading"
-                                  class="w-full h-full p-3 text-xl bg-[#1E2125] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
-                                  placeholder="Leave your feedback..."
-                                  style="
-                                    min-height: 120px;
-                                    max-height: calc(100dvh - 300px);
-                                  "
-                                ></textarea>
-                              </div>
-
-                              <!-- Button -->
-                              <div
-                                class="flex font-medium w-full px-4 py-4 max-w-[640px]"
-                              >
-                                <button
-                                  [disabled]="isEditLoading"
-                                  (click)="submitEditReview()"
-                                  class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
-                                >
-                                  <ng-container *ngIf="!isEditLoading">
-                                    <i class="fas fa-save mr-1"></i> Save
-                                  </ng-container>
-                                  <ng-container *ngIf="isEditLoading">
-                                    <i class="fas fa-spinner fa-spin mr-1"></i>
-                                    Saving
-                                  </ng-container>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
+                            <i class="fas fa-circle-arrow-left text-3xl"></i>
+                          </button>
+                          <p
+                            class="text-white font-semibold text-2xl text-center"
+                          >
+                            Editing Review
+                          </p>
                         </div>
-                        <ng-container
-                          *ngIf="
-                            !(
-                              existingUserReview &&
-                              review._id === existingUserReview._id &&
-                              isDeleteLoading
-                            );
-                            else deletingReviewLoaderMobile
-                          "
+
+                        <!-- Edit Rating Section -->
+                        <div
+                          class="flex flex-col flex-grow w-full px-4 pt-4 overflow-hidden items-center"
                         >
-                          <!-- Edit/Delete Buttons for User's Review -->
-                          <ng-container
-                            *ngIf="
-                              existingUserReview &&
-                              review._id === existingUserReview._id &&
-                              !isEditingReview
-                            "
-                          >
-                            <button
-                              (click)="toggleEditReview(review)"
-                              class="absolute bottom-3.5 right-[1rem] text-gray-400 transition"
-                            >
-                              <i class="fas fa-edit text-2xl"></i>
-                            </button>
-                            <button
-                              (click)="showdeleteConfirmation(review)"
-                              class="absolute bottom-3.5 left-[1rem] text-gray-400 transition"
-                            >
-                              <i class="fas fa-trash text-[1.3rem]"></i>
-                            </button>
-                          </ng-container>
-
-                          <div class="flex items-start mt-[1rem]">
-                            <!-- Profile Picture -->
-                            <img
-                              [src]="
-                                review.user.profilePicture || 'assets/user.png'
-                              "
-                              alt="Profile Picture"
-                              (click)="goToProfile(review.user._id)"
-                              class="w-[4rem] h-[4rem] rounded-full object-cover"
-                            />
-
-                            <!-- Username and Review Info -->
-                            <div class="ml-3 flex-1">
-                              <p
-                                class="text-white text-lg textFixUsername font-medium pr-[.8rem]"
+                          <div class="w-full max-w-[640px] text-center mx-auto">
+                            <!-- Star Rating Display -->
+                            <div class="flex justify-center mb-4 gap-0.5">
+                              <ng-container
+                                *ngFor="
+                                  let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                                "
                               >
-                                {{
-                                  existingUserReview &&
-                                  review._id === existingUserReview._id
-                                    ? "Your Review"
-                                    : review.user.username
-                                }}
-                              </p>
-                              <p
-                                class="text-gray-400 text-sm textFixCreatedAtDate"
-                              >
-                                {{ review.createdAt | date : "short" }}
-                              </p>
+                                <ng-container
+                                  [ngSwitch]="getStarType(star, editedRating)"
+                                >
+                                  <i
+                                    *ngSwitchCase="'full'"
+                                    class="fas fa-star text-3xl text-yellow-400"
+                                  ></i>
+                                  <i
+                                    *ngSwitchCase="'half'"
+                                    class="fas fa-star-half-alt text-3xl text-yellow-400"
+                                  ></i>
+                                  <i
+                                    *ngSwitchCase="'empty'"
+                                    class="far fa-star text-3xl text-gray-500"
+                                  ></i>
+                                </ng-container>
+                              </ng-container>
                             </div>
 
-                            <!-- Rating Badge -->
                             <p
-                              class="rating-badge text-white text-lg rounded-md px-3 py-1.5 text-center"
-                              style="width: 6.95rem"
+                              class="text-white font-medium text-2xl mb-2 text-center"
                             >
-                              <i class="fas fa-star text-yellow-400"></i>
-                              {{ review.rating }} / 10
+                              Rating:
+                              <input
+                                type="number"
+                                min="0"
+                                max="10"
+                                step="0.1"
+                                [(ngModel)]="editedRating"
+                                (keypress)="onKeyPressRating($event, 'edit')"
+                                (blur)="onBlurRating('edit')"
+                                class="w-[3.4rem] text-[1.8rem] leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
+                              />
+                              <span
+                                class="text-gray-300 text-[1.5rem] opacity-70 font-medium"
+                                >/ 10</span
+                              >
                             </p>
+
+                            <!-- Slider Control -->
+                            <input
+                              type="range"
+                              min="0"
+                              max="10"
+                              step="0.1"
+                              [(ngModel)]="editedRating"
+                              [style.background]="
+                                getSliderBackground(editedRating)
+                              "
+                              class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
+                            />
                           </div>
 
                           <!-- Review Text -->
-                          <div
-                            class="mt-3 px-2"
-                            [ngClass]="{
-                              'pb-[4rem]':
-                                existingUserReview &&
-                                review._id === existingUserReview._id
-                            }"
-                          >
-                            <!-- Review Text + Like Button Aligned -->
-                            <div class="mt-3 px-2">
-                              <p
-                                class="text-white text-lg break-words"
-                                *ngIf="
-                                  review.reviewText &&
-                                    review.reviewText.trim().length > 0;
-                                  else noReviewText
-                                "
-                              >
-                                {{ review.reviewText }}
-                              </p>
-                              <ng-template #noReviewText>
-                                <p
-                                  class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
-                                >
-                                  “ No review written ”
-                                </p>
-                              </ng-template>
-
-                              <div class="flex justify-end mt-2 px-1">
-                                <button
-                                  (click)="toggleLike(review)"
-                                  class="flex items-center space-x-2 px-3 py-1 bg-gray-800 rounded-full hover:bg-gray-700 transition border border-gray-600"
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    [attr.fill]="
-                                      review.likedByCurrentUser
-                                        ? '#ec4899'
-                                        : 'white'
-                                    "
-                                    viewBox="0 0 24 24"
-                                    class="w-5 h-5 transition-transform duration-300 ease-out"
-                                    [ngClass]="
-                                      animateHeart[review._id]
-                                        ? 'scale-125'
-                                        : ''
-                                    "
-                                  >
-                                    <path
-                                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
-       2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09 
-       C13.09 3.81 14.76 3 16.5 3c3.08 0 5.5 2.42 5.5 5.5 
-       0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                                    />
-                                  </svg>
-
-                                  <span
-                                    class="font-semibold text-base text-yellow-400"
-                                  >
-                                    {{ review.likes }}
-                                  </span>
-                                </button>
-                              </div>
-                            </div>
+                          <div class="w-full pt-3 max-w-[800px] flex-grow">
+                            <textarea
+                              [(ngModel)]="editedReviewText"
+                              [disabled]="isEditLoading"
+                              class="w-full h-full p-3 text-xl bg-[#1E2125] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
+                              placeholder="Leave your feedback..."
+                              style="
+                                min-height: 120px;
+                                max-height: calc(100dvh - 300px);
+                              "
+                            ></textarea>
                           </div>
-                        </ng-container>
 
-                        <ng-template #deletingReviewLoaderMobile>
+                          <!-- Button -->
                           <div
-                            class="flex items-center justify-center h-16 bg-gray-800 rounded-lg p-4"
+                            class="flex font-medium w-full px-4 py-4 max-w-[640px]"
                           >
-                            <i
-                              class="fas fa-spinner fa-spin text-gray-400 text-xl"
-                            ></i>
-                            <span class="ml-2 text-gray-300 text-lg"
-                              >Deleting...</span
+                            <button
+                              [disabled]="isEditLoading"
+                              (click)="submitEditReview()"
+                              class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
                             >
+                              <ng-container *ngIf="!isEditLoading">
+                                <i class="fas fa-save mr-1"></i> Save
+                              </ng-container>
+                              <ng-container *ngIf="isEditLoading">
+                                <i class="fas fa-spinner fa-spin mr-1"></i>
+                                Saving
+                              </ng-container>
+                            </button>
                           </div>
-                        </ng-template>
-                      </li>
-                    </ul>
-                    <div
-                      class="px-4 py-3 bg-[#1e1f22] border-t border-gray-700 rounded-b-md text-base text-white flex flex-col items-center"
-                      *ngIf="totalPages > 1"
-                    >
-                      <span class="mb-2 font-medium text-base text-gray-400"
-                        >Page</span
-                      >
-                      <div class="flex gap-2">
-                        <button
-                          *ngFor="
-                            let p of [].constructor(totalPages);
-                            let i = index
-                          "
-                          (click)="changePage(i + 1)"
-                          [ngClass]="{
-                            'bg-indigo-600': page === i + 1,
-                            'bg-gray-600': page !== i + 1
-                          }"
-                          class="px-3 py-1 rounded text-sm font-medium text-white transition"
-                        >
-                          {{ i + 1 }}
-                        </button>
+                        </div>
                       </div>
                     </div>
+                    <ng-container
+                      *ngIf="
+                        !(
+                          existingUserReview &&
+                          review._id === existingUserReview._id &&
+                          isDeleteLoading
+                        );
+                        else deletingReviewLoaderMobile
+                      "
+                    >
+                      <!-- Edit/Delete Buttons for User's Review -->
+                      <ng-container
+                        *ngIf="
+                          existingUserReview &&
+                          review._id === existingUserReview._id &&
+                          !isEditingReview
+                        "
+                      >
+                        <button
+                          (click)="toggleEditReview(review)"
+                          class="absolute bottom-3.5 right-[1rem] text-gray-400 transition"
+                        >
+                          <i class="fas fa-edit text-2xl"></i>
+                        </button>
+                        <button
+                          (click)="showdeleteConfirmation(review)"
+                          class="absolute bottom-3.5 left-[1rem] text-gray-400 transition"
+                        >
+                          <i class="fas fa-trash text-[1.3rem]"></i>
+                        </button>
+                      </ng-container>
+
+                      <div class="flex items-start mt-[1rem]">
+                        <!-- Profile Picture -->
+                        <img
+                          [src]="
+                            review.user.profilePicture || 'assets/user.png'
+                          "
+                          alt="Profile Picture"
+                          (click)="goToProfile(review.user._id)"
+                          class="w-[4rem] h-[4rem] rounded-full object-cover"
+                        />
+
+                        <!-- Username and Review Info -->
+                        <div class="ml-3 flex-1">
+                          <p
+                            class="text-white text-lg textFixUsername font-medium pr-[.8rem]"
+                          >
+                            {{
+                              existingUserReview &&
+                              review._id === existingUserReview._id
+                                ? "Your Review"
+                                : review.user.username
+                            }}
+                          </p>
+                          <p class="text-gray-400 text-sm textFixCreatedAtDate">
+                            {{ review.createdAt | date : "short" }}
+                          </p>
+                        </div>
+
+                        <!-- Rating Badge -->
+                        <p
+                          class="rating-badge text-white text-lg rounded-md px-3 py-1.5 text-center"
+                          style="width: 6.95rem"
+                        >
+                          <i class="fas fa-star text-yellow-400"></i>
+                          {{ review.rating }} / 10
+                        </p>
+                      </div>
+
+                      <!-- Review Text -->
+                      <div
+                        class="mt-3 px-2"
+                        [ngClass]="{
+                          'pb-[4rem]':
+                            existingUserReview &&
+                            review._id === existingUserReview._id
+                        }"
+                      >
+                        <!-- Review Text + Like Button Aligned -->
+                        <div class="mt-3 px-2">
+                          <p
+                            class="text-white text-lg break-words"
+                            *ngIf="
+                              review.reviewText &&
+                                review.reviewText.trim().length > 0;
+                              else noReviewText
+                            "
+                          >
+                            {{ review.reviewText }}
+                          </p>
+                          <ng-template #noReviewText>
+                            <p
+                              class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
+                            >
+                              “ No review written ”
+                            </p>
+                          </ng-template>
+
+                          <div class="flex justify-end mt-2 px-1 pb-2">
+                            <button
+                              (click)="toggleLike(review)"
+                              class="flex items-center space-x-2 px-3 py-1 bg-gray-800 rounded-full hover:bg-gray-700 transition border border-gray-600"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                [attr.fill]="
+                                  review.likedByCurrentUser
+                                    ? '#ec4899'
+                                    : 'white'
+                                "
+                                viewBox="0 0 24 24"
+                                class="w-5 h-5 transition-transform duration-300 ease-out"
+                                [ngClass]="
+                                  animateHeart[review._id] ? 'scale-125' : ''
+                                "
+                              >
+                                <path
+                                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+                                        2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09 
+                                        C13.09 3.81 14.76 3 16.5 3c3.08 0 5.5 2.42 5.5 5.5 
+                                        0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                />
+                              </svg>
+
+                              <span
+                                class="font-semibold text-base text-yellow-400"
+                              >
+                                {{ review.likes }}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </ng-container>
+
+                    <ng-template #deletingReviewLoaderMobile>
+                      <div
+                        class="flex items-center justify-center h-16 bg-gray-800 rounded-lg p-4"
+                      >
+                        <i
+                          class="fas fa-spinner fa-spin text-gray-400 text-xl"
+                        ></i>
+                        <span class="ml-2 text-gray-300 text-lg"
+                          >Deleting...</span
+                        >
+                      </div>
+                    </ng-template>
+                  </li>
+                </ul>
+                <div
+                  class="px-4 py-3 bg-[#1e1f22] rounded-b-md text-base text-white flex flex-col items-center"
+                  *ngIf="totalPages > 1"
+                >
+                  <span class="mb-2 font-medium text-base text-gray-400"
+                    >Page</span
+                  >
+                  <div class="flex gap-2">
+                    <button
+                      *ngFor="
+                        let p of [].constructor(totalPages);
+                        let i = index
+                      "
+                      (click)="changePage(i + 1)"
+                      [ngClass]="{
+                        'bg-indigo-600': page === i + 1,
+                        'bg-gray-600': page !== i + 1
+                      }"
+                      class="px-3 py-1 rounded text-sm font-medium text-white transition"
+                    >
+                      {{ i + 1 }}
+                    </button>
                   </div>
-                </ng-container>
-                <ng-template #noReviewsDesktop>
-                  <p class="text-gray-400 mt-8 pb-5 text-center text-xl">
-                    No reviews yet.
-                  </p>
-                </ng-template>
+                </div>
               </div>
+            </ng-container>
+            <ng-template #noReviewsDesktop>
+              <p class="text-gray-400 mt-8 pb-5 text-center text-xl">
+                No reviews yet.
+              </p>
             </ng-template>
-          </div>
+          </ng-container>
         </div>
       </div>
     </div>

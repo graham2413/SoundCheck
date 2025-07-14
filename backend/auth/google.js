@@ -15,6 +15,7 @@ passport.use(new GoogleStrategy({
     try {
         // Check if user exists by Google ID
         let user = await User.findOne({ googleId: profile.id });
+        let isNewUser = false;
 
         if (!user) {
             // Check if user exists by email (from normal signup)
@@ -24,6 +25,7 @@ passport.use(new GoogleStrategy({
                 // If found by email, link Google ID to existing user (prevents duplicate accounts for same email)
                 user.googleId = profile.id;
             } else {
+                isNewUser = true;
                 // If no existing account, create new user
                 user = new User({
                     googleId: profile.id,
@@ -36,6 +38,8 @@ passport.use(new GoogleStrategy({
 
             await user.save();
         }
+
+        user.isNewUser = isNewUser;
 
         return done(null, user);
     } catch (error) {
@@ -55,9 +59,15 @@ router.get('/google/callback', passport.authenticate('google', { session: false 
             .populate("friendRequestsReceived", "username profilePicture")
             .populate("friends", "username profilePicture");
     
+            const isNewUser = req.user.isNewUser || false;
+
         // Embed formatted user directly in JWT payload
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    
+        const token = jwt.sign(
+            { userId: user._id, isNewUser },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
         res.redirect(`${process.env.FRONTEND_URL}/?token=${token}`);
     } catch (error) {
         res.status(500).json({ message: 'Google login failed', error: error });

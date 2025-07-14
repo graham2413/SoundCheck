@@ -779,10 +779,10 @@ export class ViewProfilePageComponent implements OnInit {
     index?: number
   ): NgbModalRef {
     const modalOptions: NgbModalOptions = {
-      backdrop: false,
+      backdrop: 'static',
       keyboard: true,
       centered: true,
-      scrollable: true,
+      scrollable: false,
     };
 
     const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
@@ -849,8 +849,14 @@ export class ViewProfilePageComponent implements OnInit {
           (record as Album).type = 'Album';
         }
 
-        const newModal = this.openReview(record, [], 0);
-        newModal.componentInstance.showForwardAndBackwardButtons = false; // Hide buttons for this modal
+        modalRef.componentInstance.showSecondIpod = false;
+        modalRef.componentInstance.record = record;
+        modalRef.componentInstance.recordList = [record];
+        modalRef.componentInstance.currentIndex = 0;
+        modalRef.componentInstance.showForwardAndBackwardButtons = false;
+
+        // Reset state to mimic a fresh open
+        modalRef.componentInstance.resetForNewRecord();
       }
     );
     return modalRef;
