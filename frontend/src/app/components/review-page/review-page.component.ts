@@ -1232,14 +1232,12 @@ export class ReviewPageComponent implements OnInit {
       this.newRating = 5;
       this.newReview = '';
     }
-    document.body.style.overflow = 'hidden'; // prevent background scroll
   }
 
   cancelReview() {
     this.newReview = '';
     this.newRating = 5.0;
     this.isAddingReview = false;
-    document.body.style.overflow = ''; // restore scrolling
   }
 
   submitReview() {
@@ -1314,14 +1312,10 @@ export class ReviewPageComponent implements OnInit {
     this.isEditingReview = true;
     this.editedRating = review.rating;
     this.editedReviewText = review.reviewText;
-
-    document.body.style.overflow = 'hidden'; // prevent background scroll
   }
 
   cancelEditReview() {
     this.isEditingReview = false;
-
-    document.body.style.overflow = ''; // restore scrolling
   }
 
   submitEditReview() {
