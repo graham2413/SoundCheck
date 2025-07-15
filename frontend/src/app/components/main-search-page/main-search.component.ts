@@ -299,7 +299,17 @@ export class MainSearchComponent implements OnInit {
       const searchBarEl = this.searchBar.nativeElement;
       const elementTop =
         searchBarEl.getBoundingClientRect().top + window.pageYOffset;
-      const offset = elementTop - 105;
+
+      let offsetPadding: number;
+
+      const width = window.innerWidth;
+      if (width >= 768) {
+        offsetPadding = 170;
+      } else {
+        offsetPadding = 75; // Less padding for mobile screens
+      }
+
+      const offset = elementTop - offsetPadding;
       window.scrollTo({ top: offset, behavior: 'smooth' });
     }, 0);
 
@@ -962,5 +972,15 @@ export class MainSearchComponent implements OnInit {
         console.error('Failed to toggle like:', err);
       },
     });
+  }
+
+  transformCloudinaryUrl(url: string): string {
+    // Ensure this logic only applies to Cloudinary URLs
+    if (!url.includes('res.cloudinary.com')) return url;
+
+    return url.replace(
+      /\/upload\//,
+      '/upload/w_1600,h_1600,c_fill,g_face,f_auto,q_auto,dpr_auto/'
+    );
   }
 }

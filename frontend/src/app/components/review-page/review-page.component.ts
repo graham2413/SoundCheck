@@ -1641,4 +1641,13 @@ export class ReviewPageComponent implements OnInit {
       },
     });
   }
+
+  transformCloudinaryUrl(url: string): string {
+    if (!url.includes('res.cloudinary.com')) return url;
+
+    return url.replace(
+      /\/upload\//,
+      '/upload/w_1600,h_1600,c_fill,g_face,f_auto,q_auto,dpr_auto/'
+    );
+  }
 }

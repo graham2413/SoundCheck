@@ -99,8 +99,7 @@
       Explore Music
     </h1>
     <p class="mt-1 text-base md:text-xl text-gray-300">
-      The marquee below updates with new music every Friday to inspire your next
-      search.
+      Start your search to discover music you love.
     </p>
   </div>
   <div
@@ -250,7 +249,7 @@
   <!-- Search Bar -->
   <div
     #searchBar
-    class="relative mt-5 md:mt-1 w-full max-w-md sm:max-w-lg mx-auto px-4"
+    class="relative mt-5 md:mt-1 w-full max-w-[450px] sm:max-w-[550px] md:max-w-[700px] mx-auto px-4"
   >
     <input
       type="search"
@@ -258,8 +257,8 @@
       autofocus
       [(ngModel)]="query"
       (keydown.enter)="onSearch('songs')"
-      placeholder="Search music & artists"
-      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-white-500 focus:border-white-500 outline-none text-lg text-ellipsis overflow-hidden"
+      placeholder="Search music & artists..."
+      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-white-500 focus:border-white-500 outline-none text-lg md:text-xl text-ellipsis overflow-hidden"
       style="direction: ltr; text-align: left"
     />
     <button
@@ -845,220 +844,218 @@
           [infiniteScrollThrottle]="150"
           (scrolled)="onScrollActivityFeed()"
         >
-            <div class="space-y-4 md:space-y-8">
-              <div
-                *ngFor="
-                  let activity of activityFeed;
-                  let i = index;
-                  last as isLast
-                "
-                class="px-1 pb-4"
-                [ngClass]="{
-                  'border-b border-gray-600': !isLast,
-                  'mt-1': i === 0
-                }"
-              >
-                <!-- Review + Album layout -->
-                <div class="block md:pb-[3rem]">
-                  <!-- Float Right: Album Art + Rating -->
+          <div class="space-y-4 md:space-y-8">
+            <div
+              *ngFor="
+                let activity of activityFeed;
+                let i = index;
+                last as isLast
+              "
+              class="px-1 pb-4"
+              [ngClass]="{
+                'border-b border-gray-600': !isLast,
+                'mt-1': i === 0
+              }"
+            >
+              <!-- Review + Album layout -->
+              <div class="block md:pb-[3rem]">
+                <!-- Float Right: Album Art + Rating -->
+                <div
+                  class="float-right flex flex-col items-end ml-4 w-[6rem] md:w-[10rem] pb-1 relative"
+                >
+                  <!-- Review Type Icon -->
                   <div
-                    class="float-right flex flex-col items-end ml-4 w-[6rem] md:w-[10rem] pb-1 relative"
+                    class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2 z-10"
                   >
-                    <!-- Review Type Icon -->
-                    <div
-                      class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2 z-10"
-                    >
-                      <i
-                        class="fas text-sm md:text-xl"
-                        [ngClass]="{
-                          'fa-music text-blue-400':
-                            activity.albumSongOrArtist.effectiveType === 'Song',
-                          'fa-compact-disc text-green-400':
-                            activity.albumSongOrArtist.effectiveType ===
-                            'Album',
-                          'fa-user text-purple-400':
-                            activity.albumSongOrArtist.effectiveType ===
-                            'Artist'
-                        }"
-                        title="{{ activity.albumSongOrArtist.effectiveType }}"
-                      ></i>
-                    </div>
-                    <div class="relative w-full h-[6rem] md:h-[10rem]">
-                      <!-- Loader -->
-                      <div
-                        *ngIf="!activityImageLoaded[i]"
-                        class="absolute inset-0 flex items-center justify-center rounded border border-gray-600 bg-gray-900"
-                      >
-                        <div
-                          class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
-                        ></div>
-                      </div>
-
-                      <!-- Image -->
-                      <img
-                        [src]="
+                    <i
+                      class="fas text-sm md:text-xl"
+                      [ngClass]="{
+                        'fa-music text-blue-400':
+                          activity.albumSongOrArtist.effectiveType === 'Song',
+                        'fa-compact-disc text-green-400':
+                          activity.albumSongOrArtist.effectiveType === 'Album',
+                        'fa-user text-purple-400':
                           activity.albumSongOrArtist.effectiveType === 'Artist'
-                            ? activity.albumSongOrArtist.picture ||
-                              'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
-                            : activity.albumSongOrArtist.cover ||
-                              activity.albumSongOrArtist.picture ||
-                              'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-                        "
-                        (load)="activityImageLoaded[i] = true"
-                        [class.invisible]="!activityImageLoaded[i]"
-                        (click)="
-                          openModal(
-                            activity.albumSongOrArtist,
-                            activityRecords,
-                            i
-                          )
-                        "
-                        alt="Album Cover"
-                        class="w-full h-[6rem] md:h-[10rem] rounded object-cover border border-gray-600"
-                      />
+                      }"
+                      title="{{ activity.albumSongOrArtist.effectiveType }}"
+                    ></i>
+                  </div>
+                  <div class="relative w-full h-[6rem] md:h-[10rem]">
+                    <!-- Loader -->
+                    <div
+                      *ngIf="!activityImageLoaded[i]"
+                      class="absolute inset-0 flex items-center justify-center rounded border border-gray-600 bg-gray-900"
+                    >
+                      <div
+                        class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                      ></div>
                     </div>
 
-                    <!-- Star + Rating on one line, no wrap -->
-                    <span
-                      class="text-[1.4rem] md:text-3xl font-bold text-[#0F5EE4] mt-2 inline-flex items-center whitespace-nowrap"
-                    >
-                      <i
-                        class="fas fa-star text-yellow-500 text-xl md:text-2xl mr-1"
-                      ></i>
-                      {{ activity.rating }}
-                      <span class="text-gray-400 text-[1rem] md:text-xl ml-1"
-                        >/ 10</span
-                      >
-                    </span>
+                    <!-- Image -->
+                    <img
+                      [src]="
+                        activity.albumSongOrArtist.effectiveType === 'Artist'
+                          ? activity.albumSongOrArtist.picture ||
+                            'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
+                          : activity.albumSongOrArtist.cover ||
+                            activity.albumSongOrArtist.picture ||
+                            'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                      "
+                      (load)="activityImageLoaded[i] = true"
+                      [class.invisible]="!activityImageLoaded[i]"
+                      (click)="
+                        openModal(
+                          activity.albumSongOrArtist,
+                          activityRecords,
+                          i
+                        )
+                      "
+                      alt="Album Cover"
+                      class="w-full h-[6rem] md:h-[10rem] rounded object-cover border border-gray-600"
+                    />
                   </div>
 
-                  <!-- Review block wraps beside or under album -->
-                  <div>
-                    <p
-                      class="text-[#0F5EE4] text-lg md:text-2xl font-semibold line-clamp-2"
+                  <!-- Star + Rating on one line, no wrap -->
+                  <span
+                    class="text-[1.4rem] md:text-3xl font-bold text-[#0F5EE4] mt-2 inline-flex items-center whitespace-nowrap"
+                  >
+                    <i
+                      class="fas fa-star text-yellow-500 text-xl md:text-2xl mr-1"
+                    ></i>
+                    {{ activity.rating }}
+                    <span class="text-gray-400 text-[1rem] md:text-xl ml-1"
+                      >/ 10</span
                     >
-                      <span
-                        (click)="
-                          openModal(
-                            activity.albumSongOrArtist,
-                            activityRecords,
-                            i
-                          )
-                        "
-                        >{{
-                          activity.albumSongOrArtist.title ||
-                            activity.albumSongOrArtist.name
-                        }}</span
-                      >
-                    </p>
-                    <p
-                      class="text-sm text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis"
+                  </span>
+                </div>
+
+                <!-- Review block wraps beside or under album -->
+                <div>
+                  <p
+                    class="text-[#0F5EE4] text-lg md:text-2xl font-semibold line-clamp-2"
+                  >
+                    <span
+                      (click)="
+                        openModal(
+                          activity.albumSongOrArtist,
+                          activityRecords,
+                          i
+                        )
+                      "
+                      >{{
+                        activity.albumSongOrArtist.title ||
+                          activity.albumSongOrArtist.name
+                      }}</span
                     >
-                      <span
-                        *ngIf="activity.albumSongOrArtist?.isExplicit"
-                        class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded md:mr-2 leading-none mr-1 align-middle"
-                        title="Explicit"
+                  </p>
+                  <p
+                    class="text-sm text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis"
+                  >
+                    <span
+                      *ngIf="activity.albumSongOrArtist?.isExplicit"
+                      class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] w-4 h-4 md:text-[15px] md:w-5 md:h-5 font-bold px-[1px] rounded md:mr-2 leading-none mr-1 align-middle"
+                      title="Explicit"
+                    >
+                      E
+                    </span>
+                    <span
+                      class="md:text-xl"
+                      (click)="
+                        openModal(
+                          activity.albumSongOrArtist,
+                          activityRecords,
+                          i
+                        )
+                      "
+                      >{{ activity.albumSongOrArtist.artist }}</span
+                    >
+                  </p>
+                  <p class="text-white text-base md:text-xl mt-2">
+                    <ng-container *ngIf="activity.reviewText; else noReview">
+                      {{ activity.reviewText }}
+                    </ng-container>
+                    <ng-template #noReview>
+                      <p
+                        class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
                       >
-                        E
-                      </span>
-                      <span
-                        class="md:text-xl"
-                        (click)="
-                          openModal(
-                            activity.albumSongOrArtist,
-                            activityRecords,
-                            i
-                          )
-                        "
-                        >{{ activity.albumSongOrArtist.artist }}</span
-                      >
+                        “ No review written ”
+                      </p>
+                    </ng-template>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Bottom: Profile Info and like button-->
+              <div class="flex items-center justify-between mt-[3rem] w-full">
+                <!-- Left: profile picture + username -->
+                <div
+                  class="flex items-center gap-2 cursor-pointer"
+                  (click)="goToUserProfile(activity.user._id)"
+                >
+                  <div
+                    class="relative w-[4rem] h-[4rem] rounded-full overflow-hidden"
+                  >
+                    <!-- Loader -->
+                    <div
+                      *ngIf="!getActivityImageLoaded(i, 'profile')"
+                      class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
+                    >
+                      <div
+                        class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"
+                      ></div>
+                    </div>
+
+                    <!-- Profile Picture -->
+                    <img
+                      [src]="
+                        activity.user.profilePicture
+                          ? transformCloudinaryUrl(activity.user.profilePicture)
+                          : 'assets/user.png'
+                      "
+                      (load)="setActivityImageLoaded(i, 'profile')"
+                      (error)="setActivityImageLoaded(i, 'profile')"
+                      [class.invisible]="!getActivityImageLoaded(i, 'profile')"
+                      alt="User"
+                      class="w-[4rem] h-[4rem] rounded-full object-cover"
+                    />
+                  </div>
+
+                  <div class="text-base md:text-xl text-gray-400">
+                    <p class="font-semibold text-white leading-tight">
+                      {{ activity.user.username }}
                     </p>
-                    <p class="text-white text-base md:text-xl mt-2">
-                      <ng-container *ngIf="activity.reviewText; else noReview">
-                        {{ activity.reviewText }}
-                      </ng-container>
-                      <ng-template #noReview>
-                        <p
-                          class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
-                        >
-                          “ No review written ”
-                        </p>
-                      </ng-template>
+                    <p class="text-sm md:text-lg mt-1">
+                      {{ activity.createdAt | timeAgo }}
                     </p>
                   </div>
                 </div>
 
-                <!-- Bottom: Profile Info and like button-->
-                <div class="flex items-center justify-between mt-[3rem] w-full">
-                  <!-- Left: profile picture + username -->
-                  <div
-                    class="flex items-center gap-2 cursor-pointer"
-                    (click)="goToUserProfile(activity.user._id)"
+                <!-- Right: like button -->
+                <button
+                  (click)="toggleLike(activity)"
+                  class="flex items-center space-x-2 px-3 py-1 bg-gray-800 border border-gray-600 rounded-full text-white hover:bg-gray-700 transition"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    [attr.fill]="
+                      activity.likedByCurrentUser ? '#ec4899' : 'white'
+                    "
+                    viewBox="0 0 24 24"
+                    class="w-5 h-5 transition-transform duration-300 ease-out"
+                    [ngClass]="animateHeart[activity._id] ? 'scale-125' : ''"
                   >
-                    <div
-                      class="relative w-[4rem] h-[4rem] rounded-full overflow-hidden"
-                    >
-                      <!-- Loader -->
-                      <div
-                        *ngIf="!getActivityImageLoaded(i, 'profile')"
-                        class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
-                      >
-                        <div
-                          class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"
-                        ></div>
-                      </div>
-
-                      <!-- Profile Picture -->
-                      <img
-                        [src]="
-                          activity.user.profilePicture || 'assets/user.png'
-                        "
-                        (load)="setActivityImageLoaded(i, 'profile')"
-                        (error)="setActivityImageLoaded(i, 'profile')"
-                        [class.invisible]="
-                          !getActivityImageLoaded(i, 'profile')
-                        "
-                        alt="User"
-                        class="w-[4rem] h-[4rem] rounded-full object-cover"
-                      />
-                    </div>
-
-                    <div class="text-base md:text-xl text-gray-400">
-                      <p class="font-semibold text-white leading-tight">
-                        {{ activity.user.username }}
-                      </p>
-                      <p class="text-sm md:text-lg mt-1">
-                        {{ activity.createdAt | timeAgo }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Right: like button -->
-                  <button
-                    (click)="toggleLike(activity)"
-                    class="flex items-center space-x-2 px-3 py-1 bg-gray-800 border border-gray-600 rounded-full text-white hover:bg-gray-700 transition"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      [attr.fill]="
-                        activity.likedByCurrentUser ? '#ec4899' : 'white'
-                      "
-                      viewBox="0 0 24 24"
-                      class="w-5 h-5 transition-transform duration-300 ease-out"
-                      [ngClass]="animateHeart[activity._id] ? 'scale-125' : ''"
-                    >
-                      <path
-                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+                    <path
+                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
                         2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09 
                         C13.09 3.81 14.76 3 16.5 3c3.08 0 5.5 2.42 5.5 5.5 
                         0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                      />
-                    </svg>
-                    <span class="text-yellow-400 font-semibold text-lg">
-                      {{ activity.likes }}
-                    </span>
-                  </button>
-                </div>
+                    />
+                  </svg>
+                  <span class="text-yellow-400 font-semibold text-lg">
+                    {{ activity.likes }}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
           <!-- End-of-feed message -->
@@ -1085,14 +1082,14 @@
       </div>
 
       <!-- No activity message -->
-        <ng-template #noActivity>
-          <div
-            *ngIf="!isFetchingActivityFeed"
-            class="text-center text-gray-400 mt-8 text-lg italic bg-gray-800 p-4 rounded-lg"
-          >
-            No activity to display yet.
-          </div>
-        </ng-template>
+      <ng-template #noActivity>
+        <div
+          *ngIf="!isFetchingActivityFeed"
+          class="text-center text-gray-400 mt-8 text-lg italic bg-gray-800 p-4 rounded-lg"
+        >
+          No activity to display yet.
+        </div>
+      </ng-template>
 
       <!-- Artist Activities Feed -->
       <div *ngIf="activeFeedType === 'Artists'">

@@ -1100,12 +1100,15 @@
                   <div class="flex items-start mt-[1rem]">
                     <!-- Profile Picture -->
                     <img
-                      [src]="review.user.profilePicture || 'assets/user.png'"
+                      [src]="
+                        review.user.profilePicture
+                          ? transformCloudinaryUrl(review.user.profilePicture)
+                          : 'assets/user.png'
+                      "
                       alt="Profile Picture"
                       class="w-[4rem] h-[4rem] rounded-full object-cover"
                       (click)="goToProfile(review.user._id)"
                     />
-
                     <!-- Username and Review Info -->
                     <div class="ml-3 flex-1">
                       <p class="text-white text-lg font-semibold pr-[.8rem]">
@@ -2479,7 +2482,11 @@
                         <!-- Profile Picture -->
                         <img
                           [src]="
-                            review.user.profilePicture || 'assets/user.png'
+                            review.user.profilePicture
+                              ? transformCloudinaryUrl(
+                                  review.user.profilePicture
+                                )
+                              : 'assets/user.png'
                           "
                           alt="Profile Picture"
                           (click)="goToProfile(review.user._id)"
