@@ -668,7 +668,7 @@
   <div *ngIf="!showSecondIpod && record.type == 'Artist'">
     <button
       *ngIf="!isProfileLoading && !isInList"
-      class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+      class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-gradient-to-r from-sky-500 to-blue-600 hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
       [disabled]="addingToList"
       (click)="addToArtistList(record)"
     >
@@ -721,7 +721,7 @@
     target="_blank"
     rel="noopener noreferrer"
     (click)="openMusicAppClick($event)"
-    class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 transition"
+    class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-gradient-to-r from-sky-500 to-blue-600 hover:bg-indigo-600 transition"
   >
     <i class="fas fa-headphones mr-2 text-2xl"></i>
     Open in Music App
@@ -793,7 +793,7 @@
             (click)="toggleReviewForm()"
             [disabled]="existingUserReview"
             [ngClass]="{
-              'bg-[#0F5EE4] text-white': !existingUserReview,
+              'bg-gradient-to-r from-sky-500 to-blue-600 text-white': !existingUserReview,
               'bg-gray-500 text-gray-300': existingUserReview
             }"
             class="flex items-center gap-1 px-3 py-1 rounded-md font-medium text-lg"
@@ -823,21 +823,22 @@
           style="height: 100dvh"
         >
           <div
-            class="bg-[#262729] shadow-lg flex flex-col items-center justify-between"
+            class="bg-[#1c2127] shadow-lg flex flex-col items-center justify-between"
             style="width: 100vw; height: 100dvh"
           >
             <!-- Header with Back Button -->
             <div
-              class="relative w-full h-[64px] flex items-center justify-center border-b-2 border-gray-500 px-4"
+              class="relative w-full h-[64px] flex items-center justify-center px-4"
             >
-              <button
-                [disabled]="isCreateLoading"
-                (click)="cancelReview()"
-                class="text-white px-4 py-2 rounded-full flex items-center justify-center absolute left-4"
-              >
-                <i class="fas fa-circle-arrow-left text-3xl"></i>
-              </button>
-              <p class="text-white font-semibold text-2xl text-center">
+                    <button
+                    [disabled]="isCreateLoading"
+                    (click)="cancelReview()"
+                    class="w-10 h-10 sm:w-14 sm:h-14 sm:mt-3 flex items-center justify-center absolute left-4 rounded-full"
+                    style="background: #2d323a"
+                    >
+                    <i class="fas fa-times text-2xl sm:text-3xl text-white"></i>
+                    </button>
+              <p class="text-white font-semibold text-2xl sm:text-3xl text-center mt-[2rem]">
                 Write Review
               </p>
             </div>
@@ -848,28 +849,28 @@
             >
               <div class="text-center w-full mx-auto">
                 <!-- Star Rating Display -->
-                <div class="flex justify-center mb-4 gap-0.5">
+                <div class="flex justify-center mb-4 gap-1">
                   <ng-container
                     *ngFor="let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
                   >
                     <ng-container [ngSwitch]="getStarType(star, newRating)">
                       <i
                         *ngSwitchCase="'full'"
-                        class="fas fa-star text-3xl text-yellow-400 star-size"
+                        class="fas fa-star text-2xl text-yellow-400 star-size"
                       ></i>
                       <i
                         *ngSwitchCase="'half'"
-                        class="fas fa-star-half-alt text-3xl text-yellow-400 star-size"
+                        class="fas fa-star-half-alt text-2xl text-yellow-400 star-size"
                       ></i>
                       <i
                         *ngSwitchCase="'empty'"
-                        class="far fa-star text-3xl text-gray-500 star-size"
+                        class="far fa-star text-2xl text-gray-500 star-size"
                       ></i>
                     </ng-container>
                   </ng-container>
                 </div>
 
-                <p class="text-white font-medium text-2xl mb-2 text-center">
+                <p class="text-white font-medium text-xl mb-2 text-center">
                   Rating:
                   <input
                     type="number"
@@ -879,10 +880,10 @@
                     [(ngModel)]="newRating"
                     (keypress)="onKeyPressRating($event, 'new')"
                     (blur)="onBlurRating('new')"
-                    class="w-[3.4rem] text-[1.8rem] leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
+                    class="w-[3.2rem] text-[1.5rem] leading-none text-yellow-400 bg-[#2d323a] border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded mr-2"
                   />
                   <span
-                    class="text-gray-300 text-[1.5rem] opacity-70 font-medium"
+                    class="text-gray-300 text-[1.3rem] opacity-70 font-medium"
                     >/ 10</span
                   >
                 </p>
@@ -895,7 +896,7 @@
                   step="0.1"
                   [(ngModel)]="newRating"
                   [style.background]="getSliderBackground(newRating)"
-                  class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
+                  class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern my-3"
                 />
               </div>
 
@@ -903,17 +904,17 @@
               <textarea
                 [(ngModel)]="newReview"
                 [disabled]="isCreateLoading"
-                class="w-full flex-grow mt-5 p-3 text-lg bg-[#1E2125] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
+                class="w-full flex-grow mt-5 p-3 text-lg sm:text-2xl bg-[#14171a] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
                 placeholder="Leave your feedback..."
                 style="min-height: 120px; max-height: calc(100dvh - 300px)"
               ></textarea>
 
               <!-- Submit Button -->
-              <div class="flex font-medium w-full mt-3 pb-3">
+              <div class="flex font-medium w-full mt-[2rem] pb-3">
                 <button
                   [disabled]="isCreateLoading"
                   (click)="submitReview()"
-                  class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
+                  class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-2xl text-white w-full flex items-center justify-center gap-2"
                 >
                   <ng-container *ngIf="!isCreateLoading">
                     <i class="fas fa-paper-plane"></i> Create
@@ -955,24 +956,25 @@
                   style="height: 100dvh"
                 >
                   <div
-                    class="bg-[#262729] shadow-lg flex flex-col items-center justify-between"
+                    class="bg-[#1c2127] shadow-lg flex flex-col items-center justify-between"
                     style="width: 100vw; height: 100dvh"
                   >
-                    <!-- Header with Back Button -->
-                    <div
-                      class="relative w-full h-[64px] flex items-center justify-center border-b-2 border-gray-500 px-4"
+            <!-- Header with Back Button -->
+            <div
+              class="relative w-full h-[64px] flex items-center justify-center px-4"
+            >
+                    <button
+                    [disabled]="isEditLoading"
+                    (click)="cancelEditReview()"
+                    class="w-10 h-10 sm:w-14 sm:h-14 sm:mt-3 flex items-center justify-center absolute left-4 rounded-full"
+                    style="background: #2d323a"
                     >
-                      <button
-                        [disabled]="isEditLoading"
-                        (click)="cancelEditReview()"
-                        class="text-white px-4 py-2 rounded-full flex items-center justify-center absolute left-4"
-                      >
-                        <i class="fas fa-circle-arrow-left text-3xl"></i>
-                      </button>
-                      <p class="text-white font-semibold text-2xl text-center">
-                        Editing Review
-                      </p>
-                    </div>
+                    <i class="fas fa-times text-2xl sm:text-3xl text-white"></i>
+                    </button>
+              <p class="text-white font-semibold text-2xl sm:text-3xl text-center mt-[2rem]">
+                Edit Review
+              </p>
+            </div>
 
                     <!-- Edit Rating Section -->
                     <div
@@ -980,7 +982,7 @@
                     >
                       <div class="text-center w-full mx-auto">
                         <!-- Star Rating Display -->
-                        <div class="flex justify-center mb-4 gap-0.5">
+                        <div class="flex justify-center mb-4 gap-1">
                           <ng-container
                             *ngFor="let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
                           >
@@ -989,22 +991,22 @@
                             >
                               <i
                                 *ngSwitchCase="'full'"
-                                class="fas fa-star text-3xl text-yellow-400 star-size"
+                                class="fas fa-star text-2xl text-yellow-400 star-size"
                               ></i>
                               <i
                                 *ngSwitchCase="'half'"
-                                class="fas fa-star-half-alt text-3xl text-yellow-400 star-size"
+                                class="fas fa-star-half-alt text-2xl text-yellow-400 star-size"
                               ></i>
                               <i
                                 *ngSwitchCase="'empty'"
-                                class="far fa-star text-3xl text-gray-500 star-size"
+                                class="far fa-star text-2xl text-gray-500 star-size"
                               ></i>
                             </ng-container>
                           </ng-container>
                         </div>
 
                         <p
-                          class="text-white font-medium text-2xl mb-2 text-center"
+                          class="text-white font-medium text-xl mb-2 text-center"
                         >
                           Rating:
                           <input
@@ -1015,15 +1017,15 @@
                             [(ngModel)]="editedRating"
                             (keypress)="onKeyPressRating($event, 'edit')"
                             (blur)="onBlurRating('edit')"
-                            class="w-[3.4rem] text-[1.8rem] leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
+                            class="w-[3.2rem] text-[1.5rem] leading-none text-yellow-400 bg-[#2d323a] border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
                           />
                           <span
-                            class="text-gray-300 text-[1.5rem] opacity-70 font-medium"
+                            class="text-gray-300 text-[1.3rem] opacity-70 font-medium"
                             >/ 10</span
                           >
                         </p>
 
-                        <!-- Slider Control -->
+                        <!-- Slider -->
                         <input
                           type="range"
                           min="0"
@@ -1031,15 +1033,15 @@
                           step="0.1"
                           [(ngModel)]="editedRating"
                           [style.background]="getSliderBackground(editedRating)"
-                          class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
+                          class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern my-3"
                         />
                       </div>
 
-                      <!-- Review Text -->
+                      <!-- Textarea -->
                       <textarea
                         [(ngModel)]="editedReviewText"
                         [disabled]="isEditLoading"
-                        class="w-full flex-grow mt-5 p-3 text-lg bg-[#1E2125] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
+                        class="w-full flex-grow mt-5 p-3 text-lg sm:text-2xl bg-[#14171a] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
                         placeholder="Leave your feedback..."
                         style="
                           min-height: 120px;
@@ -1047,12 +1049,12 @@
                         "
                       ></textarea>
 
-                      <!-- Button -->
-                      <div class="flex font-medium w-full px-4 py-4">
+                      <!-- Submit Button -->
+                      <div class="flex font-medium w-full mt-[2rem] pb-3">
                         <button
                           [disabled]="isEditLoading"
                           (click)="submitEditReview()"
-                          class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
+                          class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-2xl text-white w-full flex items-center justify-center gap-2"
                         >
                           <ng-container *ngIf="!isEditLoading">
                             <i class="fas fa-save mr-1"></i> Save
@@ -1597,7 +1599,7 @@
                   <div *ngIf="record.type == 'Artist'">
                     <button
                       *ngIf="!isProfileLoading && !isInList"
-                      class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                      class="mt-4 w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-gradient-to-r from-sky-500 to-blue-600 hover:bg-indigo-600 disabled:bg-gray-500 disabled:cursor-not-allowed"
                       [disabled]="addingToList"
                       (click)="addToArtistList(record)"
                     >
@@ -1649,7 +1651,7 @@
                     target="_blank"
                     rel="noopener noreferrer"
                     (click)="openMusicAppClick($event)"
-                    class="music-app-button mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-[#0F5EE4] hover:bg-indigo-600 transition"
+                    class="music-app-button mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-bold py-2 px-6 rounded-full flex items-center justify-center text-lg bg-gradient-to-r from-sky-500 to-blue-600 hover:bg-indigo-600 transition"
                   >
                     <i class="fas fa-headphones mr-2 text-2xl"></i>
                     Open in Music App
@@ -2152,7 +2154,7 @@
                     [disabled]="existingUserReview"
                     (click)="toggleReviewForm()"
                     [ngClass]="{
-                      'bg-[#0F5EE4] text-white': !existingUserReview,
+                      'bg-gradient-to-r from-sky-500 to-blue-600 text-white': !existingUserReview,
                       'bg-gray-500 text-gray-300': existingUserReview
                     }"
                     class="flex items-center gap-1 px-3 py-1 rounded-md font-medium"
@@ -2178,25 +2180,25 @@
             <div
               *ngIf="isAddingReview"
               @overlayAnimation
-              class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
-              style="height: 100dvh"
+              class="fixed inset-0 bg-gradient-to-br from-black/30 to-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
             >
               <div
-                class="bg-[#262729] shadow-lg flex flex-col items-center justify-between"
-                style="width: 100vw; height: 100dvh"
+                class="bg-[#1c2127] shadow-xl border border-white/5 flex flex-col items-center justify-between w-[90vw] max-w-2xl min-h-[40rem] p-3 rounded-2xl"
               >
                 <!-- Header with Back Button -->
                 <div
-                  class="relative w-full h-[64px] flex items-center justify-center border-b-2 border-gray-500 px-4"
+                  class="relative w-full h-[64px] flex items-center justify-center px-4"
                 >
-                  <button
+                    <button
                     [disabled]="isCreateLoading"
                     (click)="cancelReview()"
-                    class="text-white px-4 py-2 rounded-full flex items-center justify-center absolute left-4"
-                  >
-                    <i class="fas fa-circle-arrow-left text-3xl"></i>
-                  </button>
-                  <p class="text-white font-semibold text-2xl text-center">
+                    class="w-14 h-14 flex items-center justify-center absolute left-4 rounded-full"
+                    style="background: #2d323a"
+                    >
+                    <i class="fas fa-times text-3xl text-white"></i>
+                    </button>
+
+                  <p class="text-white font-semibold text-3xl text-center mt-[2rem]">
                     Write Review
                   </p>
                 </div>
@@ -2238,7 +2240,7 @@
                         [(ngModel)]="newRating"
                         (keypress)="onKeyPressRating($event, 'new')"
                         (blur)="onBlurRating('new')"
-                        class="w-[3.4rem] text-[1.8rem] leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
+                        class="w-[3.4rem] text-[1.8rem] leading-none text-yellow-400 bg-[#2d323a] border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
                       />
                       <span
                         class="text-gray-300 text-[1.5rem] opacity-70 font-medium"
@@ -2254,30 +2256,30 @@
                       step="0.1"
                       [(ngModel)]="newRating"
                       [style.background]="getSliderBackground(newRating)"
-                      class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
+                      class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern my-5"
                     />
                   </div>
 
-                  <!-- Textarea -->
-                  <div class="w-full max-w-[800px] pt-3 flex-grow">
-                    <textarea
-                      [(ngModel)]="newReview"
-                      [disabled]="isCreateLoading"
-                      class="w-full h-full p-3 text-lg bg-[#1E2125] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
-                      placeholder="Leave your feedback..."
-                      style="
-                        min-height: 120px;
-                        max-height: calc(100dvh - 300px);
-                      "
-                    ></textarea>
-                  </div>
+
+              <!-- Textarea -->
+              <div class="w-full max-w-[800px] flex-grow flex flex-col min-h-0">
+                <textarea
+                  [(ngModel)]="newReview"
+                  [disabled]="isCreateLoading"
+                  class="w-full flex-grow min-h-0 p-4 text-xl bg-[#14171a] rounded-xl text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
+                  placeholder="Leave your feedback..."
+                  style="height:100%;"
+                ></textarea>
+              </div>
 
                   <!-- Submit Button -->
-                  <div class="flex font-medium w-full mt-3 pb-3 max-w-[640px]">
+                  <div
+                    class="flex font-medium w-full mt-[2rem] pb-3 max-w-[640px]"
+                  >
                     <button
                       [disabled]="isCreateLoading"
                       (click)="submitReview()"
-                      class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
+                      class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-2xl text-white w-full flex items-center justify-center gap-2"
                     >
                       <ng-container *ngIf="!isCreateLoading">
                         <i class="fas fa-paper-plane"></i> Create
@@ -2318,33 +2320,31 @@
                     }"
                   >
                     <!-- Fullscreen Overlay for Editing -->
-                    <div
-                      *ngIf="isEditingReview"
-                      @overlayAnimation
-                      class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
-                      style="height: 100dvh"
+            <div
+              *ngIf="isEditingReview"
+              @overlayAnimation
+              class="fixed inset-0 bg-gradient-to-br from-black/30 to-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
+            >
+              <div
+                class="bg-[#1c2127] shadow-xl border border-white/5 flex flex-col items-center justify-between w-[90vw] max-w-2xl min-h-[40rem] p-3 rounded-2xl"
+              >
+                <!-- Header with Back Button -->
+                <div
+                  class="relative w-full h-[64px] flex items-center justify-center px-4"
+                >
+                    <button
+                    [disabled]="isEditLoading"
+                    (click)="cancelEditReview()"
+                    class="w-14 h-14 flex items-center justify-center absolute left-4 rounded-full"
+                    style="background: #2d323a"
                     >
-                      <div
-                        class="bg-[#262729] shadow-lg flex flex-col items-center justify-between"
-                        style="width: 100vw; height: 100dvh"
-                      >
-                        <!-- Header with Back Button -->
-                        <div
-                          class="relative w-full h-[64px] flex items-center justify-center border-b-2 border-gray-500 px-4"
-                        >
-                          <button
-                            [disabled]="isEditLoading"
-                            (click)="cancelEditReview()"
-                            class="text-white px-4 py-2 rounded-full flex items-center justify-center absolute left-4"
-                          >
-                            <i class="fas fa-circle-arrow-left text-3xl"></i>
-                          </button>
-                          <p
-                            class="text-white font-semibold text-2xl text-center"
-                          >
-                            Editing Review
-                          </p>
-                        </div>
+                    <i class="fas fa-times text-3xl text-white"></i>
+                    </button>
+
+                  <p class="text-white font-semibold text-3xl text-center mt-[2rem]">
+                    Edit Review
+                  </p>
+                </div>
 
                         <!-- Edit Rating Section -->
                         <div
@@ -2389,7 +2389,7 @@
                                 [(ngModel)]="editedRating"
                                 (keypress)="onKeyPressRating($event, 'edit')"
                                 (blur)="onBlurRating('edit')"
-                                class="w-[3.4rem] text-[1.8rem] leading-none text-yellow-400 bg-transparent border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
+                                class="w-[3.4rem] text-[1.8rem] leading-none text-yellow-400 bg-[#2d323a] border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
                               />
                               <span
                                 class="text-gray-300 text-[1.5rem] opacity-70 font-medium"
@@ -2407,32 +2407,28 @@
                               [style.background]="
                                 getSliderBackground(editedRating)
                               "
-                              class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern"
+                              class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern my-5"
                             />
                           </div>
 
-                          <!-- Review Text -->
-                          <div class="w-full pt-3 max-w-[800px] flex-grow">
-                            <textarea
-                              [(ngModel)]="editedReviewText"
-                              [disabled]="isEditLoading"
-                              class="w-full h-full p-3 text-xl bg-[#1E2125] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
-                              placeholder="Leave your feedback..."
-                              style="
-                                min-height: 120px;
-                                max-height: calc(100dvh - 300px);
-                              "
-                            ></textarea>
-                          </div>
-
-                          <!-- Button -->
-                          <div
-                            class="flex font-medium w-full px-4 py-4 max-w-[640px]"
-                          >
+              <!-- Textarea -->
+              <div class="w-full max-w-[800px] flex-grow flex flex-col min-h-0">
+                <textarea
+                  [(ngModel)]="editedReviewText"
+                  [disabled]="isEditLoading"
+                  class="w-full flex-grow min-h-0 p-4 text-xl bg-[#14171a] rounded-xl text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
+                  placeholder="Leave your feedback..."
+                  style="height:100%;"
+                ></textarea>
+              </div>
+                  <!-- Submit Button -->
+                  <div
+                    class="flex font-medium w-full mt-[2rem] pb-3 max-w-[640px]"
+                  >
                             <button
                               [disabled]="isEditLoading"
                               (click)="submitEditReview()"
-                              class="bg-[#0F5EE4] text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
+                              class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-2xl text-white w-full flex items-center justify-center gap-2"
                             >
                               <ng-container *ngIf="!isEditLoading">
                                 <i class="fas fa-save mr-1"></i> Save
