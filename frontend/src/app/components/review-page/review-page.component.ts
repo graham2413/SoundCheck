@@ -1181,6 +1181,9 @@ export class ReviewPageComponent implements OnInit {
     this.audioPlayerMobile?.stop();
     this.audioPlayerDesktop?.stop();
 
+    // Scroll to top of the page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     this.openNewReview.emit(record);
   }
 
@@ -1229,12 +1232,14 @@ export class ReviewPageComponent implements OnInit {
       this.newRating = 5;
       this.newReview = '';
     }
+    document.body.style.overflow = 'hidden'; // prevent background scroll
   }
 
   cancelReview() {
     this.newReview = '';
     this.newRating = 5.0;
     this.isAddingReview = false;
+    document.body.style.overflow = ''; // restore scrolling
   }
 
   submitReview() {
@@ -1309,10 +1314,14 @@ export class ReviewPageComponent implements OnInit {
     this.isEditingReview = true;
     this.editedRating = review.rating;
     this.editedReviewText = review.reviewText;
+
+    document.body.style.overflow = 'hidden'; // prevent background scroll
   }
 
   cancelEditReview() {
     this.isEditingReview = false;
+
+    document.body.style.overflow = ''; // restore scrolling
   }
 
   submitEditReview() {
@@ -1422,36 +1431,35 @@ export class ReviewPageComponent implements OnInit {
     return 'linear-gradient(to right, #fde047, #facc15, #f59e0b, #b45309)';
   }
 
-getSliderBackground(value: number): string {
-  const rawPercent = (value / 10) * 100;
+  getSliderBackground(value: number): string {
+    const rawPercent = (value / 10) * 100;
 
-  // Small dynamic correction curve based on empirical testing
-  const correction =
-    value < 1
-      ? 0.8
-      : value < 2
-      ? 0.5
-      : value < 3
-      ? 0.3
-      : value > 9
-      ? -0.3
-      : value > 8
-      ? -0.5
-      : value > 7
-      ? -0.7
-      : 0;
+    // Small dynamic correction curve based on empirical testing
+    const correction =
+      value < 1
+        ? 0.8
+        : value < 2
+        ? 0.5
+        : value < 3
+        ? 0.3
+        : value > 9
+        ? -0.3
+        : value > 8
+        ? -0.5
+        : value > 7
+        ? -0.7
+        : 0;
 
-  const adjustedPercent = Math.min(Math.max(rawPercent + correction, 0), 100);
+    const adjustedPercent = Math.min(Math.max(rawPercent + correction, 0), 100);
 
-  return `linear-gradient(
+    return `linear-gradient(
     to right,
     #0ea5e9 0%,
     #2563eb ${adjustedPercent}%,
     #858585 ${adjustedPercent}%,
     #858585 100%
   )`;
-}
-
+  }
 
   get isTracklistArray(): boolean {
     const tracklist = (this.record as Album | Artist)?.tracklist;
