@@ -1,6 +1,7 @@
 <!-- MOBILE MODAL -->
 <div
   *ngIf="isModalOpen"
+  #modalScrollContainer
   class="fixed inset-0 flex flex-col text-white overflow-y-auto md:hidden z-50 gradient-background"
   @slideUp
   [ngStyle]="{ background: backgroundGradient }"

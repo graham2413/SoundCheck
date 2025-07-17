@@ -246,6 +246,8 @@ export class ReviewPageComponent implements OnInit {
   @ViewChild('audioPlayerMobile') audioPlayerMobile!: AudioPlayerComponent;
   @ViewChild('audioPlayerDesktop') audioPlayerDesktop!: AudioPlayerComponent;
 
+  @ViewChild('modalScrollContainer') modalScrollContainer!: ElementRef<HTMLDivElement>;
+
   @Input() record!: Album | Artist | Song;
   @Input() recordList: (Album | Artist | Song)[] = [];
   @Input() currentIndex: number = 0;
@@ -1180,9 +1182,6 @@ export class ReviewPageComponent implements OnInit {
     // Stop any currently playing audio
     this.audioPlayerMobile?.stop();
     this.audioPlayerDesktop?.stop();
-
-    // Scroll to top of the page
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     this.openNewReview.emit(record);
   }

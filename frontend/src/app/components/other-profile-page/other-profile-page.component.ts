@@ -857,6 +857,15 @@ export class ViewProfilePageComponent implements OnInit {
 
         // Reset state to mimic a fresh open
         modalRef.componentInstance.resetForNewRecord();
+
+        setTimeout(() => {
+          modalRef.componentInstance.modalScrollContainer?.nativeElement?.scrollTo(
+            {
+              top: 0,
+              behavior: 'auto',
+            }
+          );
+        });
       }
     );
     return modalRef;
