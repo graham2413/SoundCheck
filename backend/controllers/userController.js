@@ -25,6 +25,11 @@ exports.getUserProfile = async (req, res) => {
       .sort({ createdAt: -1 }) // Sort reviews by newest first
       .lean();
 
+    // Sort artistList by addedAt descending (most recent first)
+    const sortedArtistList = (user.artistList || []).slice().sort((a, b) => {
+      return new Date(b.addedAt) - new Date(a.addedAt);
+    });
+
     res.json({
       _id: user._id,
       username: user.username,
@@ -33,7 +38,7 @@ exports.getUserProfile = async (req, res) => {
       reviews: reviews,
       createdAt: user.createdAt,
       gradient: user.gradient,
-      artistList: user.artistList || [],
+      artistList: sortedArtistList,
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
