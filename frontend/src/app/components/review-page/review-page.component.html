@@ -2193,8 +2193,7 @@
                     <button
                     [disabled]="isCreateLoading"
                     (click)="cancelReview()"
-                    class="w-14 h-14 flex items-center justify-center absolute left-4 rounded-full"
-                    style="background: #2d323a"
+                    class="w-14 h-14 flex items-center justify-center absolute left-4 rounded-full hover:bg-[#2d323a]"
                     >
                     <i class="fas fa-times text-3xl text-white"></i>
                     </button>
@@ -2280,7 +2279,7 @@
                     <button
                       [disabled]="isCreateLoading"
                       (click)="submitReview()"
-                      class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-2xl text-white w-full flex items-center justify-center gap-2"
+                      class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-2xl text-white w-full flex items-center justify-center gap-2 hover:brightness-110 hover:shadow-md transition duration-150"
                     >
                       <ng-container *ngIf="!isCreateLoading">
                         <i class="fas fa-paper-plane"></i> Create
@@ -2336,8 +2335,7 @@
                     <button
                     [disabled]="isEditLoading"
                     (click)="cancelEditReview()"
-                    class="w-14 h-14 flex items-center justify-center absolute left-4 rounded-full"
-                    style="background: #2d323a"
+                    class="w-14 h-14 flex items-center justify-center absolute left-4 rounded-full hover:bg-[#2d323a]"
                     >
                     <i class="fas fa-times text-3xl text-white"></i>
                     </button>
@@ -2429,7 +2427,7 @@
                             <button
                               [disabled]="isEditLoading"
                               (click)="submitEditReview()"
-                              class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-2xl text-white w-full flex items-center justify-center gap-2"
+                              class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-2xl text-white w-full flex items-center justify-center gap-2 hover:brightness-110"
                             >
                               <ng-container *ngIf="!isEditLoading">
                                 <i class="fas fa-save mr-1"></i> Save
