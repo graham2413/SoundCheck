@@ -552,7 +552,7 @@
                     </div>
 
                     <!-- Username -->
-                    <p class="text-base md:text-xl font-semibold text-white">
+                    <p class="text-lg sm:text-xl md:text-2xl font-semibold text-white">
                       {{ friend.username }}
                     </p>
                   </div>
@@ -562,46 +562,46 @@
           </ng-container>
 
           <ng-container *ngSwitchCase="'artists'">
-            <ul class="mt-2 space-y-4">
-              <li
-                *ngFor="let item of this.otherUser?.artistList; let i = index"
-                class="relative flex flex-row cursor-pointer items-center p-2"
-                (click)="
-                  openReview(prepareRecord(item), filteredFullRecordList, i)
-                "
-              >
-                <!-- Cover or Picture -->
-                <div class="relative h-20 w-20 md:h-32 md:w-32 flex-shrink-0">
-                  <div
-                    *ngIf="!isImageLoaded(i, 'artist')"
-                    class="absolute inset-0 flex items-center justify-center rounded-md border border-gray-800 bg-gray-900"
-                  >
+            <div class="flex justify-center">
+              <ul class="mt-2 space-y-4 w-full max-w-[540px] md:max-w-[800px]">
+                <li
+                  *ngFor="let item of this.otherUser?.artistList; let i = index"
+                  class="relative flex flex-row cursor-pointer items-center p-2"
+                  (click)="openReview(prepareRecord(item), filteredFullRecordList, i)"
+                >
+                  <!-- Cover or Picture -->
+                  <div class="relative h-20 w-20 md:h-32 md:w-32 flex-shrink-0">
                     <div
-                      class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
-                    ></div>
+                      *ngIf="!isImageLoaded(i, 'artist')"
+                      class="absolute inset-0 flex items-center justify-center rounded-md border border-gray-800 bg-gray-900"
+                    >
+                      <div
+                        class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                      ></div>
+                    </div>
+
+                    <img
+                      [src]="item.picture || 'assets/user.png'"
+                      (load)="markImageLoaded(i, 'artist')"
+                      (error)="markImageLoaded(i, 'artist')"
+                      [class.invisible]="!isImageLoaded(i, 'artist')"
+                      alt="Artist"
+                      class="h-20 w-20 md:h-32 md:w-32 object-cover rounded-md shadow-md border border-gray-800"
+                    />
                   </div>
 
-                  <img
-                    [src]="item.picture || 'assets/user.png'"
-                    (load)="markImageLoaded(i, 'artist')"
-                    (error)="markImageLoaded(i, 'artist')"
-                    [class.invisible]="!isImageLoaded(i, 'artist')"
-                    alt="Artist"
-                    class="h-20 w-20 md:h-32 md:w-32 object-cover rounded-md shadow-md border border-gray-800"
-                  />
-                </div>
-
-                <!-- Text Info -->
-                <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
-                  <p
-                    class="text-lg md:text-xl font-semibold text-white leading-tight truncate overflow-hidden whitespace-nowrap"
-                    [title]="item.name"
-                  >
-                    {{ item.name }}
-                  </p>
-                </div>
-              </li>
-            </ul>
+                  <!-- Text Info -->
+                  <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
+                    <p
+                      class="text-lg sm:text-xl md:text-2xl font-semibold text-white leading-tight truncate overflow-hidden whitespace-nowrap"
+                      [title]="item.name"
+                    >
+                      {{ item.name }}
+                    </p>
+                  </div>
+                </li>
+              </ul>
+            </div>
           </ng-container>
         </ng-container>
       </div>
