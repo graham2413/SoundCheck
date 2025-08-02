@@ -246,7 +246,8 @@ export class ReviewPageComponent implements OnInit {
   @ViewChild('audioPlayerMobile') audioPlayerMobile!: AudioPlayerComponent;
   @ViewChild('audioPlayerDesktop') audioPlayerDesktop!: AudioPlayerComponent;
 
-  @ViewChild('modalScrollContainer') modalScrollContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('modalScrollContainer')
+  modalScrollContainer!: ElementRef<HTMLDivElement>;
 
   @Input() record!: Album | Artist | Song;
   @Input() recordList: (Album | Artist | Song)[] = [];
@@ -1144,7 +1145,35 @@ export class ReviewPageComponent implements OnInit {
     }
   }
 
+  stopAllAudioAndResetState(): void {
+    console.log('🔇 Stopping all audio and resetting state...');
+
+    this.audioPlayerMobile?.stop();
+    this.audioPlayerDesktop?.stop();
+
+    // Reset all track isPlaying flags
+    if (this.record.type !== 'Song' && this.record?.tracklist) {
+      this.record.tracklist.forEach((track) => (track.isPlaying = false));
+    }
+
+    const rogueAudios = document.querySelectorAll('audio');
+    rogueAudios.forEach((audioEl) => {
+      audioEl.pause();
+      audioEl.currentTime = 0;
+      audioEl.src = ''; // Unset src to force browser to kill it
+      audioEl.load(); // Force refresh/reset
+    });
+
+    this.currentSong = null;
+  }
+
   nextSong() {
+    this.stopAllAudioAndResetState();
+
+    if (this.record.type !== 'Song') {
+      this.record?.tracklist?.forEach((track) => (track.isPlaying = false));
+    }
+
     if (this.currentIndex < this.recordList.length - 1) {
       this.currentIndex++;
       this.record = this.recordList[this.currentIndex];
@@ -1154,6 +1183,8 @@ export class ReviewPageComponent implements OnInit {
   }
 
   prevSong() {
+    this.stopAllAudioAndResetState();
+
     if (this.currentIndex > 0) {
       this.currentIndex--;
       this.record = this.recordList[this.currentIndex];

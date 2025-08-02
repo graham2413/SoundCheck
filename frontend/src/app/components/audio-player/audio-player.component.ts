@@ -21,7 +21,6 @@ import { Song } from 'src/app/models/responses/song-response';
   imports: [CommonModule, FormsModule],
 })
 export class AudioPlayerComponent implements AfterViewInit {
-  
   @ViewChild('myAudio') myAudioRef!: ElementRef<HTMLAudioElement>;
 
   @Input() record!: Album | Artist | Song;
@@ -29,7 +28,7 @@ export class AudioPlayerComponent implements AfterViewInit {
   @Input() currentIndex!: number;
   @Input() recordList: (Album | Artist | Song)[] = [];
   @Input() song: Song | null = null;
-  
+
   @Output() playStatus = new EventEmitter<boolean>();
   @Output() next = new EventEmitter<void>();
   @Output() previous = new EventEmitter<void>();
@@ -71,52 +70,60 @@ export class AudioPlayerComponent implements AfterViewInit {
     }
   }
 
-  togglePlay(): void {
-    if (!this.audio || !this.audio.src) {
-      if (this.song?.preview) {
-        this.setSource(this.song.preview);
-      }
-      return;
-    }
-  
-    if (this.audio.paused) {
-      this.audio.play().then(() => {
+togglePlay(): void {
+  const preview = this.song?.preview || this.record?.preview;
+
+  if (!this.audio || !preview) {
+    console.warn('🎧 No audio preview available to play.');
+    return;
+  }
+
+  if (!this.audio.src || this.audio.src !== preview) {
+    this.setSource(preview);
+    return; // this is fine now — setSource will trigger playback when ready
+  }
+
+  if (this.audio.paused) {
+    this.audio.play()
+      .then(() => {
         this.isPlaying = true;
         this.playStatus.emit(true);
         if (this.record?.type !== 'Song') {
-          this.playStarted.emit(this.song?.preview || '');
+          this.playStarted.emit(preview);
         }
-      }).catch(err => {
-        console.error('Failed to play:', err);
+      })
+      .catch((err) => {
+        console.error('Failed to play:', err.message);
       });
-    } else {
-      this.audio.pause();
-      this.isPlaying = false;
-      this.playStatus.emit(false);
-    }
-  }
-
-  public stop(): void {
-  if (this.audio) {
+  } else {
     this.audio.pause();
-    this.audio.currentTime = 0;
     this.isPlaying = false;
     this.playStatus.emit(false);
   }
 }
 
+  public stop(): void {
+    if (this.audio) {
+      this.audio.pause();
+      this.audio.currentTime = 0;
+      this.isPlaying = false;
+      this.playStatus.emit(false);
+    }
+  }
 
   setSource(previewUrl: string, autoPlay: boolean = true) {
     const audio = this.myAudioRef.nativeElement;
     audio.pause();
     audio.src = previewUrl;
     audio.load();
-  
-    audio.onloadeddata = () => {
+
+    audio.oncanplaythrough = () => {
+      audio.oncanplaythrough = null; // prevent multiple fires
+
       if (autoPlay) {
         this.isPlaying = true;
-        audio.play().catch(err => {
-          console.error('Playback failed:', err);
+        audio.play().catch((err) => {
+          console.error('❌ Playback failed:', err.message);
         });
         this.playStatus.emit(true);
         this.playStarted.emit(previewUrl);
@@ -126,11 +133,11 @@ export class AudioPlayerComponent implements AfterViewInit {
       }
     };
   }
-  
+
   public stopLoading(): void {
     this.isLoading = false;
   }
-  
+
   seekAudio() {
     if (this.audio) {
       this.audio.currentTime = this.currentTime;

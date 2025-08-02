@@ -149,5 +149,13 @@ cron.schedule('0 3 * * *', async () => {
 //   await cronSyncAllArtists();
 // });
 
+process.on('SIGTERM', () => {
+  console.log("🛑 Caught SIGTERM: shutting down gracefully...");
+  server.close(() => {
+    console.log("🧹 Closed out remaining connections.");
+    process.exit(0);
+  });
+});
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -80,11 +80,11 @@
           <div *ngIf="activeTab === 'Top Tracks'" class="px-2">
             <ul
               *ngIf="isTracklistArray"
-              class="w-full mt-1 p-1 mb-3 rounded-lg bg-gray-800"
+              class="w-full mt-1 mb-3 rounded-lg space-y-3"
             >
               <li
                 *ngFor="let track of record.tracklist; let i = index"
-                class="flex items-center justify-between py-2 px-1 rounded-xl transition-all duration-300"
+                class="flex items-center justify-between py-2 px-2 rounded-xl transition-all duration-300 bg-gray-800"
                 [ngClass]="{
                   'opacity-50': !track.preview || track.preview.length <= 1,
                   'shadow-[0_0_8px_rgba(59,130,246,0.5)]': track.isPlaying
@@ -114,7 +114,7 @@
                       'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
                     "
                     [style.opacity]="isTrackImageLoaded(i) ? '1' : '0'"
-                    class="w-full h-full object-cover rounded-md border-2 border-gray-700 transition-opacity duration-300"
+                    class="w-full h-full object-cover rounded-md border-2 border-gray-500 transition-opacity duration-300"
                     alt="Album Cover"
                   />
                 </div>
@@ -202,11 +202,11 @@
         <!-- All Releases View -->
         <div *ngIf="activeTab === 'All Releases'" class="px-2">
           <div
-            class="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-gray-800 p-4 mb-3 rounded-lg"
+            class="grid grid-cols-2 sm:grid-cols-3 gap-4 p-2 mb-3 rounded-lg"
           >
             <div
               *ngFor="let release of releases; let i = index"
-              class="text-center"
+              class="text-center bg-gray-800 p-3 rounded-lg"
               (click)="openSongOrAlbum(release)"
             >
               <div class="relative aspect-square w-full">
@@ -229,7 +229,7 @@
                   (load)="markReleaseImageLoaded(i)"
                   (error)="markReleaseImageLoaded(i)"
                   [style.opacity]="isReleaseImageLoaded(i) ? '1' : '0'"
-                  class="aspect-square w-full object-cover rounded-md border border-gray-800 transition-opacity duration-300"
+                  class="aspect-square w-full object-cover rounded-md border-2 border-gray-500 transition-opacity duration-300"
                   alt="Release Cover"
                 />
               </div>
@@ -353,11 +353,11 @@
               record.tracklist &&
               record.tracklist.length > 1
             "
-            class="space-y-1 w-full mt-3 p-2 mb-3 rounded-lg bg-gray-800"
+            class="space-y-3 w-full mt-3  mb-3 rounded-lg"
           >
             <li
               *ngFor="let track of record.tracklist; let i = index"
-              class="flex items-center justify-between py-4 px-1 rounded-xl transition-all duration-300"
+              class="flex items-center justify-between py-3 px-1 rounded-xl transition-all duration-300 bg-gray-800"
               [ngClass]="{
                 'opacity-50': !track.preview || track.preview.length <= 1,
                 'shadow-[0_0_8px_rgba(59,130,246,0.5)]': track.isPlaying
@@ -366,7 +366,7 @@
               <!-- Play Button -->
               <ng-container *ngIf="track.preview && track.preview.length > 1">
                 <div
-                  class="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gray-500 text-white rounded-full mr-3 px-3 transition-all duration-300"
+                  class="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gray-500 text-white rounded-full mr-3 ml-1 px-3 transition-all duration-300"
                   [ngClass]="{
                     'transition-all duration-700 border border-[#1E3A8A] shadow-[0_0_6px_rgba(59,130,246,0.5)]':
                       track.isPlaying
@@ -411,7 +411,7 @@
               <!-- Duration -->
               <span
                 (click)="openSongOrAlbum(track)"
-                class="text-white bg-gray-500 text-base sm:text-lg shrink-0 ml-2.5 p-1 px-1.5 rounded-md"
+                class="text-white bg-gray-500 text-base sm:text-lg shrink-0 ml-2.5 mr-2 p-1 px-1.5 rounded-md"
               >
                 {{ formatDuration(track.duration) || "?" }}
               </span>
@@ -1714,11 +1714,11 @@
                 <div *ngIf="activeTab === 'Top Tracks'" class="px-2">
                   <ul
                     *ngIf="isTracklistArray"
-                    class="w-full mt-1 mb-2 p-1 rounded-lg bg-gray-800"
+                    class="w-full mt-1 mb-2 rounded-lg space-y-3"
                   >
                     <li
                       *ngFor="let track of record.tracklist; let i = index"
-                      class="flex items-center justify-between py-2 px-1 rounded-xl transition-all duration-300"
+                      class="flex items-center justify-between py-2 px-1 rounded-xl transition-all duration-300 bg-gray-800"
                       [ngClass]="{
                         'opacity-50':
                           !track.preview || track.preview.length <= 1,
@@ -1793,7 +1793,7 @@
                         *ngIf="track.preview && track.preview.length > 1"
                       >
                         <div
-                          class="flex items-center justify-center w-12 h-12 bg-gray-500 text-white rounded-full px-3 transition-all duration-300"
+                          class="flex items-center justify-center w-12 h-12 bg-gray-500 text-white rounded-full px-3 mr-1 transition-all duration-300"
                           [ngClass]="{
                             'transition-all duration-300 border border-[#1E3A8A] shadow-[0_0_6px_rgba(59,130,246,0.5)]':
                               track.isPlaying
@@ -1839,11 +1839,11 @@
               <!-- All Releases View -->
               <div *ngIf="activeTab === 'All Releases'" class="px-2">
                 <div
-                  class="grid grid-cols-2 gap-4 bg-gray-800 p-4 mb-2 rounded-lg"
+                  class="grid grid-cols-2 gap-4 p-2 mb-2 rounded-lg"
                 >
                   <div
                     *ngFor="let release of releases; let i = index"
-                    class="text-center"
+                    class="text-center bg-gray-800 rounded-lg py-2"
                     (click)="openSongOrAlbum(release)"
                   >
                     <div
@@ -1868,7 +1868,7 @@
                         (load)="markReleaseImageLoaded(i)"
                         (error)="markReleaseImageLoaded(i)"
                         [style.opacity]="isReleaseImageLoaded(i) ? '1' : '0'"
-                        class="aspect-square w-full object-cover rounded-md border border-gray-800 transition-opacity duration-300"
+                        class="aspect-square w-full object-cover rounded-md border-2 border-gray-500 transition-opacity duration-300"
                         alt="Release Cover"
                       />
                     </div>
@@ -1993,11 +1993,11 @@
                     record.tracklist &&
                     record.tracklist.length > 1
                   "
-                  class="w-full mt-3 p-2 mb-3 rounded-lg bg-gray-800"
+                  class="w-full mt-3 mb-3 space-y-3 rounded-lg"
                 >
                   <li
                     *ngFor="let track of record.tracklist; let i = index"
-                    class="flex items-center justify-between py-3 px-1 rounded-xl transition-all duration-300"
+                    class="flex items-center justify-between py-3 px-1 rounded-xl transition-all duration-300 bg-gray-800"
                     [ngClass]="{
                       'opacity-50': !track.preview || track.preview.length <= 1,
                       'shadow-[0_0_8px_rgba(59,130,246,0.5)]': track.isPlaying
@@ -2008,7 +2008,7 @@
                       *ngIf="track.preview && track.preview.length > 1"
                     >
                       <div
-                        class="flex items-center justify-center w-12 h-12 bg-gray-500 text-white rounded-full mr-3 px-3 transition-all duration-300"
+                        class="flex items-center justify-center w-12 h-12 bg-gray-500 text-white rounded-full mr-3 ml-1 px-3 transition-all duration-300"
                         [ngClass]="{
                           'transition-all duration-700 border border-[#1E3A8A] shadow-[0_0_6px_rgba(59,130,246,0.5)]':
                             track.isPlaying
@@ -2053,7 +2053,7 @@
                     <!-- Duration -->
                     <span
                       (click)="openSongOrAlbum(track)"
-                      class="text-white bg-gray-500 text-base shrink-0 ml-2.5 p-1 px-1.5 rounded-md"
+                      class="text-white bg-gray-500 text-base shrink-0 ml-2.5 p-1 px-1.5 rounded-md mr-2"
                     >
                       {{ formatDuration(track.duration) || "?" }}
                     </span>
