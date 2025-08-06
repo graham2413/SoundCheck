@@ -21,6 +21,8 @@ export class RegisterComponent {
   errorMessages: { username?: string; email?: string; password?: string; confirmPassword?: string} = {};
   isLoading: boolean = false;
   isGoogleLoading: boolean = false;
+  showPassword: boolean = false;
+  showConfirmPassword: boolean = false;
 
   constructor(private authService: AuthService, private router: Router, private toastr: ToastrService) {}
 

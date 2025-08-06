@@ -21,6 +21,7 @@ export class LoginComponent {
   errorMessages: { email?: string; password?: string; general?: string } = {};
   isLoading: boolean = false;
   isGoogleLoading = false;
+  showPassword: boolean = false;
 
   constructor(private authService: AuthService, private router: Router, private toastr: ToastrService, private userService: UserService) {}
 
