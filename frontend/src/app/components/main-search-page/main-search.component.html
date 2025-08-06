@@ -99,7 +99,7 @@
       Explore Music
     </h1>
     <p class="mt-1 text-base md:text-xl text-gray-300">
-      Start your search to discover music you love.
+        Find your next favorite track.
     </p>
   </div>
   <div
@@ -334,10 +334,14 @@
   <!-- Skeleton Loader -->
   <div
     *ngIf="isLoading"
-    class="mx-auto mb-2 pt-6 rounded-lg shadow-lg sm:w-full max-w-3xl"
+    [ngClass]="{
+      'mx-auto mb-2 rounded-lg shadow-lg sm:w-full max-w-3xl': true,
+      'pt-[2rem]': activeTab === 'artists',
+      'pt-[4rem]': activeTab !== 'artists'
+    }"
   >
     <div class="animate-pulse space-y-2">
-      <!-- Skeleton Loader for Songs -->
+      <!-- Skeleton Loader for Songs/Albums/Artists -->
       <div class="space-y-4">
         <div
           *ngFor="let i of [1, 2, 3, 4, 5]"
@@ -384,7 +388,7 @@
           <div
             #dropdownContainer
             *ngIf="showGenreDropdown.songs"
-            class="absolute right-0 mt-2 w-48 bg-[#09101F]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
+            class="absolute right-0 mt-2 w-[15rem] bg-[#09101F]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
           >
             <!-- "Clear Filter" Option (Only Shows When a Filter is Applied) -->
             <button
@@ -400,14 +404,16 @@
               <button
                 *ngFor="let genre of genres.songs"
                 (click)="filterByGenre('songs', genre)"
-                class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium text-lg"
-                [ngClass]="
-                  selectedGenre.songs === genre
-                    ? 'bg-blue-500 text-white shadow-md hover:bg-blue-400'
-                    : 'hover:bg-gray-600/80'
-                "
+                class="block w-full text-left px-4 py-1 mb-1 rounded-md transition-all duration-200 font-medium text-lg group"
               >
-                {{ genre }}
+                <span
+                  class="text-gray-100 opacity-50 transition-all duration-200 group-hover:text-white group-hover:opacity-100 group-hover:text-[1.25rem]"
+                  [ngClass]="{
+                    'text-white opacity-100 text-[1.25rem]': selectedGenre.songs === genre
+                  }"
+                >
+                  {{ genre }}
+                </span>
               </button>
             </div>
           </div>
@@ -497,7 +503,7 @@
           <div
             #dropdownContainer
             *ngIf="showGenreDropdown.albums"
-            class="absolute right-0 mt-2 w-48 bg-[#09101F]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
+            class="absolute right-0 mt-2 w-[15rem] bg-[#09101F]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
           >
             <!-- "Clear Filter" Option (Only Shows When a Filter is Applied) -->
             <button
@@ -510,18 +516,20 @@
 
             <!-- Smooth Scroll for Many Items -->
             <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
-              <button
+                <button
                 *ngFor="let genre of genres.albums"
                 (click)="filterByGenre('albums', genre)"
-                class="block w-full text-left px-4 py-1 mb-1 rounded-md transition font-medium"
-                [ngClass]="
-                  selectedGenre.albums === genre
-                    ? 'bg-blue-500 text-white shadow-md hover:bg-blue-400'
-                    : 'hover:bg-gray-600/80'
-                "
-              >
-                {{ genre }}
-              </button>
+                class="block w-full text-left px-4 py-1 mb-1 rounded-md transition-all duration-200 font-medium text-lg group"
+                >
+                <span
+                  class="text-gray-100 opacity-50 transition-all duration-200 group-hover:text-white group-hover:opacity-100 group-hover:text-[1.25rem]"
+                  [ngClass]="{
+                  'text-white opacity-100 text-[1.25rem]': selectedGenre.albums === genre
+                  }"
+                >
+                  {{ genre }}
+                </span>
+                </button>
             </div>
           </div>
         </div>
