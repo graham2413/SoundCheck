@@ -32,6 +32,7 @@ import {
 } from 'src/app/models/responses/release-response';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { SpotifyService } from 'src/app/services/spotify.service';
+import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 
 type ActivityRecord = Review['albumSongOrArtist'];
 type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
@@ -41,6 +42,27 @@ type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
   styleUrls: ['./main-search.component.css'],
   standalone: true,
   imports: [CommonModule, FormsModule, TimeAgoPipe, InfiniteScrollDirective],
+  animations: [
+    trigger('fadeSlideIn', [
+      // Animate the container
+      transition(':enter', [
+        query('@itemAnim', [
+          stagger(50, animateChild())
+        ], { optional: true })
+      ])
+    ]),
+
+    // This handles each individual item
+    trigger('itemAnim', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateX(-20px)' }), // swipe in from left
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateX(0)' }))
+      ]),
+      transition(':leave', [
+        animate('200ms ease-in', style({ opacity: 0, transform: 'translateX(20px)' })) // swipe out to right
+      ])
+    ])
+  ]
 })
 export class MainSearchComponent implements OnInit {
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
@@ -529,7 +551,6 @@ export class MainSearchComponent implements OnInit {
         artist: {},
       };
       this.setPopularType('Song');
-      this.loadPopularReviews('Song');
     }
 
     if (tab === 'recentActivity') {

@@ -364,6 +364,7 @@
   >
     <!-- Songs -->
     <div
+      @fadeSlideIn
       *ngIf="activeTab === 'songs'"
       class="mt-6 mx-auto mb-6 p-1 pt-1 sm:p-3 rounded-lg shadow-lg sm:w-full max-w-5xl"
     >
@@ -423,6 +424,7 @@
 
       <ul class="mt-2 space-y-2">
         <li
+          @itemAnim
           *ngFor="let song of filteredResults.songs; let i = index"
           class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
           (click)="openModal(song)"
@@ -480,6 +482,7 @@
 
     <!-- Albums -->
     <div
+      @fadeSlideIn
       *ngIf="activeTab === 'albums'"
       class="mt-6 mx-auto mb-6 p-1 rounded-lg shadow-lg sm:w-full max-w-5xl"
     >
@@ -539,6 +542,7 @@
 
       <ul class="mt-2 space-y-2">
         <li
+          @itemAnim
           *ngFor="let album of filteredResults.albums; let i = index"
           class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
           (click)="openModal(album)"
@@ -596,12 +600,14 @@
 
     <!-- Artists -->
     <div
+      @fadeSlideIn
       *ngIf="activeTab === 'artists'"
       class="mt-6 mx-auto mb-6 p-1 rounded-lg shadow-lg sm:w-full max-w-5xl"
     >
       <div class="relative mb-[2.8rem]">
         <ul class="mt-2 2">
           <li
+            @itemAnim
             *ngFor="let artist of filteredResults.artists; let i = index"
             class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
             (click)="openModal(artist)"
@@ -681,6 +687,7 @@
           <!-- Toggle Buttons -->
           <ng-container *ngFor="let type of popularTypes">
             <button
+              [disabled]="isDiscoverContentLoading"
               (click)="setPopularType(type)"
               class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl rounded-full transition text-center"
               [ngClass]="{
@@ -723,22 +730,26 @@
           </div>
 
           <!-- Loading Indicator -->
-  <ng-template #loadingSpinner>
-    <div
-      class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
-    >
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
-      ></div>
-      <p class="mt-4 text-gray-400 text-lg md:text-2xl">
-        Loading Top {{ activePopularType }}s...
-      </p>
-    </div>
-  </ng-template>
+          <ng-template #loadingSpinner>
+            <div
+              class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
+            >
+              <div
+                class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
+              ></div>
+              <p class="mt-4 text-gray-400 text-lg md:text-2xl">
+                Loading Top {{ activePopularType }}s...
+              </p>
+            </div>
+          </ng-template>
 
           <!-- Records -->
-    <ng-container *ngIf="!isDiscoverContentLoading; else loadingSpinner">
+          <div
+            @fadeSlideIn
+            *ngIf="!isDiscoverContentLoading; else loadingSpinner"
+          >
             <div
+              @itemAnim
               *ngFor="let record of popularRecords; let i = index"
               class="flex items-center mb-3 last:mb-0"
               (click)="openModal(record, popularRecords, i)"
@@ -871,7 +882,7 @@
                 </div>
               </ng-container>
             </div>
-          </ng-container> 
+          </div>
         </div>
       </div>
     </div>
@@ -915,6 +926,7 @@
       <!-- Activity Feed Loaded -->
       <div *ngIf="activeFeedType == 'Friends'">
         <div
+          @fadeSlideIn
           *ngIf="activityFeed.length > 0; else noActivity"
           infiniteScroll
           [infiniteScrollDistance]="2"
@@ -923,6 +935,7 @@
         >
           <div class="space-y-4 md:space-y-8">
             <div
+              @itemAnim
               *ngFor="
                 let activity of activityFeed;
                 let i = index;
@@ -1171,6 +1184,7 @@
       <!-- Artist Activities Feed -->
       <div *ngIf="activeFeedType === 'Artists'">
         <div
+          @fadeSlideIn
           *ngIf="!isLoading && artistFeed.length > 0"
           infiniteScroll
           [infiniteScrollDistance]="2"
@@ -1179,6 +1193,7 @@
           class="space-y-3"
         >
           <div
+            @itemAnim
             *ngFor="let release of artistFeed; let i = index"
             class="flex items-start p-2 rounded-lg w-full overflow-hidden"
             (click)="
