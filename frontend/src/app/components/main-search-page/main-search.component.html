@@ -99,7 +99,7 @@
       Explore Music
     </h1>
     <p class="mt-1 text-base md:text-xl text-gray-300">
-        Find your next favorite track.
+      Find your next favorite track.
     </p>
   </div>
   <div
@@ -409,7 +409,8 @@
                 <span
                   class="text-gray-100 opacity-50 transition-all duration-200 group-hover:text-white group-hover:opacity-100 group-hover:text-[1.25rem]"
                   [ngClass]="{
-                    'text-white opacity-100 text-[1.25rem]': selectedGenre.songs === genre
+                    'text-white opacity-100 text-[1.25rem]':
+                      selectedGenre.songs === genre
                   }"
                 >
                   {{ genre }}
@@ -516,20 +517,21 @@
 
             <!-- Smooth Scroll for Many Items -->
             <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
-                <button
+              <button
                 *ngFor="let genre of genres.albums"
                 (click)="filterByGenre('albums', genre)"
                 class="block w-full text-left px-4 py-1 mb-1 rounded-md transition-all duration-200 font-medium text-lg group"
-                >
+              >
                 <span
                   class="text-gray-100 opacity-50 transition-all duration-200 group-hover:text-white group-hover:opacity-100 group-hover:text-[1.25rem]"
                   [ngClass]="{
-                  'text-white opacity-100 text-[1.25rem]': selectedGenre.albums === genre
+                    'text-white opacity-100 text-[1.25rem]':
+                      selectedGenre.albums === genre
                   }"
                 >
                   {{ genre }}
                 </span>
-                </button>
+              </button>
             </div>
           </div>
         </div>
@@ -721,20 +723,21 @@
           </div>
 
           <!-- Loading Indicator -->
-          <div
-            *ngIf="isDiscoverContentLoading"
-            class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
-          >
-            <div
-              class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
-            ></div>
-            <p class="mt-4 text-gray-400 text-lg md:text-2xl">
-              Loading Top {{ activePopularType }}s...
-            </p>
-          </div>
+  <ng-template #loadingSpinner>
+    <div
+      class="mt-6 w-full max-w-3xl mx-auto flex flex-col items-center justify-center"
+    >
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
+      ></div>
+      <p class="mt-4 text-gray-400 text-lg md:text-2xl">
+        Loading Top {{ activePopularType }}s...
+      </p>
+    </div>
+  </ng-template>
 
           <!-- Records -->
-          <div *ngIf="!isDiscoverContentLoading">
+    <ng-container *ngIf="!isDiscoverContentLoading; else loadingSpinner">
             <div
               *ngFor="let record of popularRecords; let i = index"
               class="flex items-center mb-3 last:mb-0"
@@ -797,12 +800,78 @@
                 </p>
               </div>
 
-              <!-- Rating -->
-              <div class="text-2xl font-semibold text-[#FFD700] pl-2">
-                {{ record.avgRating }}
-              </div>
+              <ng-container *ngIf="!isDiscoverContentLoading">
+                <div
+                  class="relative w-[3.5rem] h-[3.5rem] sm:w-[4.5rem] sm:h-[4.5rem] md:w-[5.5rem] md:h-[5.5rem] flex items-center justify-center"
+                >
+                  <svg
+                    viewBox="0 0 42 42"
+                    class="circular-chart absolute w-full h-full"
+                  >
+                    <defs>
+                      <linearGradient
+                        id="ratingGradient"
+                        x1="0%"
+                        y1="0%"
+                        x2="100%"
+                        y2="0%"
+                      >
+                        <stop
+                          offset="0%"
+                          style="stop-color: #facc15; stop-opacity: 1"
+                        />
+                        <stop
+                          offset="100%"
+                          style="stop-color: #f59e0b; stop-opacity: 1"
+                        />
+                      </linearGradient>
+                    </defs>
+
+                    <circle
+                      class="circle-bg"
+                      cx="21"
+                      cy="21"
+                      r="18"
+                      stroke-width="4"
+                      transform="rotate(-90 21 21)"
+                      [attr.style]="
+                        record.avgRating === 0 ? 'stroke-opacity: 0;' : ''
+                      "
+                    />
+
+                    <circle
+                      class="circle"
+                      cx="21"
+                      cy="21"
+                      r="18"
+                      stroke="url(#ratingGradient)"
+                      stroke-width="4"
+                      stroke-dasharray="113.1"
+                      stroke-linecap="butt"
+                      transform="rotate(-90 21 21)"
+                      [attr.stroke-dashoffset]="ratingDashOffsets[record.id]"
+                      [attr.style]="
+                        record.avgRating === 0 ? 'stroke-opacity: 0;' : ''
+                      "
+                    />
+                  </svg>
+
+                  <span
+                    class="absolute inset-0 flex flex-col items-center justify-center text-white font-bold text-xl sm:text-2xl md:text-3xl"
+                  >
+                    <ng-container
+                      *ngIf="record.avgRating === 10; else formatRating"
+                    >
+                      10
+                    </ng-container>
+                    <ng-template #formatRating>
+                      {{ record.avgRating | number : "1.1-1" }}
+                    </ng-template>
+                  </span>
+                </div>
+              </ng-container>
             </div>
-          </div>
+          </ng-container> 
         </div>
       </div>
     </div>

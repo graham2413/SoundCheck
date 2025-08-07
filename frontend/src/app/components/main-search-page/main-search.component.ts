@@ -150,6 +150,8 @@ export class MainSearchComponent implements OnInit {
 
   marqueeImageLoaded: boolean[] = [];
 
+  ratingDashOffsets: { [recordId: number]: number } = {};
+
   constructor(
     private searchService: SearchService,
     private modal: NgbModal,
@@ -657,9 +659,26 @@ export class MainSearchComponent implements OnInit {
     this.reviewService.getTopReviewsByType(type).subscribe({
       next: (res) => {
         this.popularRecords = res.songs || res.albums || res.artists || [];
+        this.isDiscoverContentLoading = false;
+
+        // Step 1: Start with hidden state
+        this.popularRecords.forEach((record) => {
+          this.ratingDashOffsets[record.id] = 113.1;
+        });
+
+        // Step 2: Let Angular render that first state
         setTimeout(() => {
-          this.isDiscoverContentLoading = false;
-        }, 250);
+          requestAnimationFrame(() => {
+            // 👇 Force one more frame to guarantee DOM paint
+            requestAnimationFrame(() => {
+              this.popularRecords.forEach((record) => {
+                this.ratingDashOffsets[record.id] = this.calculateDashOffset(
+                  record.avgRating
+                );
+              });
+            });
+          });
+        }, 20); // delay needs to be long enough to break batching
       },
       error: (err) => {
         this.toastr.error('Failed to load popular reviews:', err);
@@ -991,5 +1010,11 @@ export class MainSearchComponent implements OnInit {
       /\/upload\//,
       '/upload/w_1600,h_1600,c_fill,g_face,f_auto,q_auto,dpr_auto/'
     );
+  }
+
+  calculateDashOffset(rating: number): number {
+    const maxCircumference = 2 * Math.PI * 18; // 18 = r
+    const percent = Math.min(Math.max(rating, 0), 10) / 10;
+    return +(maxCircumference * (1 - percent)).toFixed(1);
   }
 }
