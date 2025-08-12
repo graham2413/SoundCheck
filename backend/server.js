@@ -149,6 +149,9 @@ cron.schedule('0 3 * * *', async () => {
 //   await cronSyncAllArtists();
 // });
 
+const PORT = process.env.PORT || 5000;
+const server = app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
 process.on('SIGTERM', () => {
   console.log("🛑 Caught SIGTERM: shutting down gracefully...");
   server.close(() => {
@@ -156,6 +159,3 @@ process.on('SIGTERM', () => {
     process.exit(0);
   });
 });
-
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
