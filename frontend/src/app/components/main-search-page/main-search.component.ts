@@ -542,7 +542,11 @@ export class MainSearchComponent implements OnInit {
 
   setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
     this.activeDiscoverTab = tab;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Defer scroll until after Angular paints new content
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 0);
 
     if (tab === 'popular') {
       this.popularImageLoaded = {
