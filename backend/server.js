@@ -1,7 +1,3 @@
-const https = require("https");
-const fs = require("fs");
-const fetch = require("node-fetch");
-
 const dotenv = require("dotenv");
 if (process.env.NODE_ENV === "development") {
   dotenv.config({ path: ".env.development" });
@@ -12,6 +8,9 @@ if (process.env.NODE_ENV === "development") {
 const express = require("express");
 const app = express();
 app.use(express.json());
+
+app.get('/health', (_req, res) => res.sendStatus(200));
+
 const connectDB = require("./config/db");
 require("ssl-root-cas").inject();
 const cors = require("cors");
@@ -106,33 +105,12 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/spotify", spotifyRoutes);
 
-// Set up HTTPS agent for production and development
-const isProd = process.env.NODE_ENV === "production";
-const agent = isProd
-  ? new https.Agent()
-  : new https.Agent({
-    ca: fs.existsSync("cacert.pem") ? fs.readFileSync("cacert.pem") : undefined,
-    });
-
-
 // CRON JOBS
 
 // Get new spotify releases every Friday at 12:00pm
 cron.schedule("0 12 * * 5", async () => {
 
   await spotifyController.setAlbumImages();
-});
-
-// Keep-alive ping (every 14 minutes - prevents cold starts)
-cron.schedule("*/14 * * * *", async () => {
-  try {
-    await fetch("https://soundcheck-backend-k7ec.onrender.com/", {
-      agent,
-    });
-    console.log("Keep-alive ping sent");
-  } catch (err) {
-    console.error("Keep-alive failed:", err.message);
-  }
 });
 
 // Sync all artists albums in DB daily at 3 AM
@@ -150,7 +128,9 @@ cron.schedule('0 3 * * *', async () => {
 // });
 
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+const server = app.listen(PORT, '0.0.0.0', () =>
+  console.log(`🚀 Server running on port ${PORT}`)
+);
 
 process.on('SIGTERM', () => {
   console.log("🛑 Caught SIGTERM: shutting down gracefully...");
