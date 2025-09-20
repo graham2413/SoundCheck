@@ -141,11 +141,22 @@ process.on('SIGTERM', () => {
 });
 
 const axios = require("axios");
-app.get("/debug/ip", async (req, res) => {
+app.get("/debug/deezer", async (req, res) => {
   try {
-    const ip = await axios.get("https://ifconfig.me/ip", { timeout: 5000 });
-    res.json({ ip: ip.data.trim() });
+    const resp = await axios.get(
+      "https://api.deezer.com/search/artist?q=ygtut&limit=1",
+      {
+        timeout: 7000,
+        headers: {
+          "User-Agent": "Mozilla/5.0",
+          "Accept": "application/json,text/plain,*/*",
+        },
+      }
+    );
+    res.status(resp.status).json(resp.data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res
+      .status(err.response?.status || 500)
+      .json({ error: err.message, status: err.response?.status });
   }
 });
