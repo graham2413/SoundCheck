@@ -139,3 +139,13 @@ process.on('SIGTERM', () => {
     process.exit(0);
   });
 });
+
+const axios = require("axios");
+app.get("/debug/ip", async (req, res) => {
+  try {
+    const ip = await axios.get("https://ifconfig.me/ip", { timeout: 5000 });
+    res.json({ ip: ip.data.trim() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
