@@ -5,6 +5,19 @@ const crypto = require("crypto");
 const fs = require("fs");
 const redis = require("./redisClient");
 
+const PROXY_BASE = process.env.DEEZER_BASE_URL || "https://api.deezer.com";
+
+  // Normalize any incoming URL to use PROXY_BASE (to counter Deezer 403 issue for prod IP)
+  function rewriteUrl(u) {
+    if (!u) return u;
+    if (/^https?:\/\//i.test(u)) {
+      // full URL -> swap api.deezer.com with PROXY_BASE
+      return u.replace(/^https:\/\/api\.deezer\.com/i, PROXY_BASE);
+    }
+    // path-only -> prepend base
+    return `${PROXY_BASE}${u.startsWith("/") ? "" : "/"}${u}`;
+  }
+
 async function callDeezer(url) {
   const key = `deezer-rate-limit`;
   const now = Math.floor(Date.now() / 1000);
@@ -47,7 +60,7 @@ async function callDeezer(url) {
   let attempt = 0;
   while (attempt < 5) {
     try {
-      const response = await axios.get(url, {
+        const response = await axios.get(rewriteUrl(url), {
         httpsAgent: agent,
         timeout: 7000,
         headers: {
