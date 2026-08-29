@@ -567,7 +567,7 @@
           class="flex-1 min-h-0 flex flex-col items-center justify-center overflow-hidden px-2"
         >
           <div
-            class="relative max-w-[85%] w-full flex justify-center items-center"
+            class="relative max-w-[85%] w-full min-h-0 flex-shrink flex justify-center items-center"
           >
             <img
               [src]="
@@ -578,7 +578,7 @@
                     'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
               "
               [alt]="record.type === 'Artist' ? record.name : record.title"
-              class="rounded-lg w-full max-w-[420px] max-h-[420px] object-contain imageHeight border border-gray-800"
+              class="rounded-lg w-full max-w-[340px] max-h-[340px] object-contain imageHeight border border-gray-800"
               (load)="isImageLoaded = true"
             />
 
@@ -594,7 +594,7 @@
 
           <!-- Title/Text -->
           <div
-            class="text-center text-[1.8rem] mt-4 text-gray-200 font-semibold bg-gray-800 rounded-xl p-2"
+            class="text-center text-[1.8rem] mt-6 text-gray-200 font-semibold bg-gray-800 rounded-xl p-2 flex-shrink-0"
           >
             <ng-container *ngIf="record.type === 'Artist'">
               <span class="text-gray-400 text-xl block uppercase">Artist</span>
@@ -1466,25 +1466,27 @@
       <div class="flex flex-row flex-1 min-h-0 gap-4 mt-2 overflow-hidden">
         <!-- Wrapper for both iPods -->
           <div
-            class="relative flex-[1] max-w-[400px] h-[80vh] overflow-hidden"
+            class="relative flex-none overflow-hidden flex flex-col mx-auto"
+            [style.width.px]="desktopCardWidth"
           >
           <!-- First iPod -->
           <div
-            class="relative transition-transform duration-500"
+            class="relative transition-transform duration-500 flex-1 min-h-0 w-full"
             [@iPodTransition]="iPodState"
             [ngClass]="{ 'invisible-view': showSecondIpod }"
           >
             <div
-              class="bg-[#09101F] rounded-lg p-3 md:p-4 w-full overflow-hidden"
+              class="bg-[#09101F] rounded-lg p-3 md:p-4 w-full h-full overflow-hidden"
             >
-              <div class="flex flex-col h-full">
+              <div class="flex flex-col h-full min-h-0">
                 <!-- Image Area -->
                 <div
-                  class="relative flex-1 flex items-center justify-center w-full min-h-[200px] max-h-[60vh]"
+                  #desktopImageArea
+                  class="relative flex-1 min-h-0 flex items-start justify-center w-full"
                 >
                   <!-- Image Wrapper (Matches Mobile Structure) -->
                   <div
-                    class="relative w-full aspect-square flex items-center justify-center overflow-hidden rounded-lg"
+                    class="relative w-full aspect-square mx-auto flex items-center justify-center overflow-hidden rounded-lg"
                   >
                     <!-- Skeleton Loader -->
                     <div
@@ -1512,10 +1514,10 @@
 
                 <!-- Info and Audio Player -->
                 <div
-                  class="flex flex-col items-center justify-center flex-1 pb-4 pt-2 w-full"
+                  class="flex flex-col items-center justify-center flex-shrink-0 pb-4 pt-2 w-full"
                 >
                   <div
-                    class="text-center text-2xl mb-4 text-gray-200 font-semibold w-full"
+                    class="text-center text-2xl mb-4 text-gray-200 font-semibold w-fullbg-gray-800 rounded-xl p-2"
                   >
                     <ng-container *ngIf="record.type === 'Artist'">
                       <span class="text-gray-400 text-xl block uppercase mt-2">

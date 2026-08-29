@@ -4,6 +4,8 @@ import {
   ElementRef,
   EventEmitter,
   Input,
+  NgZone,
+  OnDestroy,
   OnInit,
   Output,
   ViewChild,
@@ -176,7 +178,7 @@ import { ColorThiefService } from '@soarlin/angular-color-thief';
     ]),
   ],
 })
-export class ReviewPageComponent implements OnInit {
+export class ReviewPageComponent implements OnInit, OnDestroy {
   existingUserReview: Review | null = null;
   reviews: Review[] = [];
   isRatingLoaded = false;
@@ -248,6 +250,14 @@ export class ReviewPageComponent implements OnInit {
 
   @ViewChild('modalScrollContainer')
   modalScrollContainer!: ElementRef<HTMLDivElement>;
+
+  @ViewChild('desktopImageArea')
+  desktopImageArea!: ElementRef<HTMLDivElement>;
+
+  // Card width tracks whichever is smaller: 400px, or the actual available
+  // vertical space, so the square artwork never overflows nor leaves a gap.
+  desktopCardWidth = 400;
+  private desktopImageAreaResizeObserver?: ResizeObserver;
 
   @Input() record!: Album | Artist | Song;
   @Input() recordList: (Album | Artist | Song)[] = [];
@@ -341,7 +351,8 @@ export class ReviewPageComponent implements OnInit {
     private modal: NgbModal,
     private userService: UserService,
     private colorThief: ColorThiefService,
-    private router: Router
+    private router: Router,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -396,6 +407,42 @@ export class ReviewPageComponent implements OnInit {
         }
       });
     }, 200);
+
+    this.setupDesktopImageAreaObserver();
+  }
+
+  ngOnDestroy(): void {
+    this.desktopImageAreaResizeObserver?.disconnect();
+  }
+
+  private setupDesktopImageAreaObserver(): void {
+    if (!this.desktopImageArea || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    this.ngZone.runOutsideAngular(() => {
+      this.desktopImageAreaResizeObserver = new ResizeObserver((entries) => {
+        const availableHeight = entries[0]?.contentRect.height ?? 0;
+        if (!availableHeight) return;
+
+        // Card uses md:p-4 (16px) padding; keep the image square so its
+        // gap to the card's top matches its gap to the sides.
+        const cardPaddingPx = 16;
+        const maxSquareSize = 400 - cardPaddingPx * 2;
+        const squareSize = Math.min(maxSquareSize, availableHeight);
+        const nextWidth = Math.round(squareSize + cardPaddingPx * 2);
+
+        if (Math.abs(nextWidth - this.desktopCardWidth) > 1) {
+          this.ngZone.run(() => {
+            this.desktopCardWidth = nextWidth;
+          });
+        }
+      });
+
+      this.desktopImageAreaResizeObserver.observe(
+        this.desktopImageArea.nativeElement
+      );
+    });
   }
 
   ngOnChanges() {
