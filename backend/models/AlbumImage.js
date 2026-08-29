@@ -8,6 +8,8 @@ const AlbumImageSchema = new mongoose.Schema({
   releaseDate: Date,
   type: { type: String, enum: ['Album'], default: 'Album' },
   isExplicit: Boolean,
+  genre: String,
+  order: Number,
 }, { timestamps: true });
 
 module.exports = mongoose.model("AlbumImage", AlbumImageSchema);

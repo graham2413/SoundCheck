@@ -7,5 +7,6 @@ export const environment = {
     user: `${backendUrl}/api/users`,
     review: `${backendUrl}/api/reviews`,
     search: `${backendUrl}/api/search`,
-    spotify: `${backendUrl}/api/spotify`
+    spotify: `${backendUrl}/api/spotify`,
+    cinema: `${backendUrl}/api/cinema`
   };

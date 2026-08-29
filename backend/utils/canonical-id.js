@@ -15,4 +15,13 @@ function getCanonicalId(title, artist) {
   return `${normalize(title)}-${normalize(artist)}`;
 }
 
-module.exports = { getCanonicalId };
+/**
+ * Generates a canonical ID string from title + release year (Movies/TV).
+ * Example: "The Matrix" (1999) => "the matrix-1999"
+ */
+function getMediaCanonicalId(title, releaseYear) {
+  if (!title || !releaseYear) return null;
+  return `${normalize(title)}-${releaseYear}`;
+}
+
+module.exports = { getCanonicalId, getMediaCanonicalId };

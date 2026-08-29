@@ -28,6 +28,7 @@ const mainSearchRoutes = require("./routes/mainSearchRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const authRoutes = require("./routes/authRoutes");
 const spotifyRoutes = require("./routes/spotifyRoutes");
+const cinemaRoutes = require("./routes/cinemaRoutes");
 
 connectDB();
 
@@ -104,6 +105,7 @@ app.use("/api/search", mainSearchRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/spotify", spotifyRoutes);
+app.use("/api/cinema", cinemaRoutes);
 
 // CRON JOBS
 
