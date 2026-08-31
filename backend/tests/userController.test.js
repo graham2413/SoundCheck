@@ -10,10 +10,12 @@ jest.mock("../middleware/authMiddleware", () =>
   const express = require("express");
   const User = require("../models/User");
   const Review = require("../models/Review");
+  const CinemaItem = require("../models/CinemaItem");
   const userRoutes = require("../routes/userRoutes");
   
   jest.mock("../models/User");
   jest.mock("../models/Review");
+  jest.mock("../models/CinemaItem");
   
   const app = express();
   app.use(express.json());
@@ -53,6 +55,11 @@ describe("GET /api/users/:id", () => {
         sort: jest.fn().mockReturnThis(),
         lean: jest.fn().mockResolvedValue([])
       });
+
+      CinemaItem.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([])
+      });
     
         const res = await request(app).get("/api/users/profile/user123");
     
@@ -80,6 +87,11 @@ describe("GET /api/users/profile", () => {
         select: jest.fn().mockReturnThis(),
         populate: jest.fn().mockReturnThis(),
         lean: jest.fn().mockResolvedValue(mockUser)
+      });
+  
+      CinemaItem.find.mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([])
       });
   
       const res = await request(app).get("/api/users/profile");
