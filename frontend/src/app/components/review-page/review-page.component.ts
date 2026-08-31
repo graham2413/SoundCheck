@@ -1541,6 +1541,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
           const newReview = this.mapCinemaItemToOwnReview(data);
           this.existingUserReview = newReview;
           this.reviews = [...this.reviews, newReview];
+          this.reviewCreated.emit(newReview);
 
           this.isAddingReview = false;
           this.isCreateLoading = false;
@@ -1630,6 +1631,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
           this.reviews = this.reviews.map((review) =>
             review._id === updated._id ? updated : review
           );
+          this.reviewEdited.emit(updated);
 
           if (this.cinemaRecord) {
             this.cinemaRecord.decimalRating = data.decimalRating;

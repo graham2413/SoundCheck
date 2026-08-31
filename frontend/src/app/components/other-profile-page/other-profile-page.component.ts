@@ -932,6 +932,70 @@ export class ViewProfilePageComponent implements OnInit {
     modalRef.componentInstance.currentIndex = index;
     modalRef.componentInstance.record = cinemaList[index];
 
+    // Cinema edits/creates are emitted as normalized Review objects
+    // (rating/reviewText) - map them back onto the cached CinemaItem shape.
+    modalRef.componentInstance.reviewEdited.subscribe(
+      (updatedReview: Review) => {
+        if (this.otherUser?.cinemaReviews) {
+          const i = this.otherUser.cinemaReviews.findIndex(
+            (item) => item._id === updatedReview._id
+          );
+          if (i !== -1) {
+            const updated = {
+              ...this.otherUser.cinemaReviews[i],
+              reviewText: updatedReview.reviewText,
+              decimalRating: updatedReview.rating,
+              createdAt: updatedReview.createdAt,
+            };
+            this.otherUser.cinemaReviews.splice(i, 1);
+            this.otherUser.cinemaReviews.unshift(updated);
+          }
+        }
+      }
+    );
+
+    modalRef.componentInstance.reviewCreated?.subscribe(
+      (newReview: Review) => {
+        if (!this.otherUser?.cinemaReviews) return;
+        const i = this.otherUser.cinemaReviews.findIndex(
+          (item) => item._id === newReview._id
+        );
+        if (i !== -1) {
+          const updated = {
+            ...this.otherUser.cinemaReviews[i],
+            reviewText: newReview.reviewText,
+            decimalRating: newReview.rating,
+            createdAt: newReview.createdAt,
+          };
+          this.otherUser.cinemaReviews.splice(i, 1);
+          this.otherUser.cinemaReviews.unshift(updated);
+        } else {
+          // Newly-refined item (e.g. from the watchlist) wasn't in the
+          // rated list yet - use the record it was opened from as the base.
+          const base = cinemaList.find((r) => r._id === newReview._id);
+          if (base) {
+            this.otherUser.cinemaReviews.unshift({
+              ...base,
+              reviewText: newReview.reviewText,
+              decimalRating: newReview.rating,
+              createdAt: newReview.createdAt,
+              isUnrefinedImport: false,
+            });
+          }
+        }
+      }
+    );
+
+    modalRef.componentInstance.reviewDeleted?.subscribe(
+      (deletedReview: Review) => {
+        if (this.otherUser?.cinemaReviews) {
+          this.otherUser.cinemaReviews = this.otherUser.cinemaReviews.filter(
+            (item) => item._id !== deletedReview._id
+          );
+        }
+      }
+    );
+
     return modalRef;
   }
 
@@ -1104,6 +1168,7 @@ export class ViewProfilePageComponent implements OnInit {
         );
         this.isImportingTraktExport = false;
         this.loadWatchlistIfVisible();
+        this.fetchUserDetails();
       },
       error: (error) => {
         this.toastr.error(

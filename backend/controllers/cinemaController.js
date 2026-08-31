@@ -225,10 +225,15 @@ exports.editCinemaItem = async (req, res) => {
       return res.status(404).json({ success: false, message: "Item not found" });
     }
 
+    // Refining an unrated/imported item (first rating) keeps its original
+    // createdAt so import history stays intact; only a later, regular edit
+    // of an already-refined item bumps createdAt (matches music's editReview()).
+    const isRefinement = item.isUnrefinedImport;
+
     item.decimalRating = decimalRating;
     item.isUnrefinedImport = false;
     if (reviewText !== undefined) item.reviewText = reviewText;
-    item.createdAt = new Date(); // matches music's editReview() behavior
+    if (!isRefinement) item.createdAt = new Date();
     await item.save();
 
     res.status(200).json({ success: true, data: item });
