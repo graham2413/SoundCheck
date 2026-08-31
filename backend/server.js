@@ -11,6 +11,14 @@ app.use(express.json());
 
 app.get('/health', (_req, res) => res.sendStatus(200));
 
+// TMDb requires the v4 "Read Access Token" (a long JWT, starts with "eyJ") sent
+// as a Bearer header - the shorter v3 "API Key" will silently 401 every request.
+if (!process.env.TMDB_API_KEY) {
+  console.warn("⚠️  TMDB_API_KEY is not set - cinema cover art/details will fail with 401.");
+} else if (!process.env.TMDB_API_KEY.startsWith("eyJ")) {
+  console.warn("⚠️  TMDB_API_KEY doesn't look like a TMDb v4 Read Access Token (should start with 'eyJ') - double-check it's not the v3 API key.");
+}
+
 const connectDB = require("./config/db");
 require("ssl-root-cas").inject();
 const cors = require("cors");

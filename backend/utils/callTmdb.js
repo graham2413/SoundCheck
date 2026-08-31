@@ -63,6 +63,15 @@ async function callTmdb(path, params = {}) {
         error.response?.status,
         error.message
       );
+
+      // Auth/client errors (401/403/404) will never succeed on retry - failing
+      // fast avoids wasting ~31s of backoff per item (multiplied across an
+      // entire import) when e.g. TMDB_API_KEY is missing/invalid.
+      const status = error.response?.status;
+      if (status && status !== 429 && status < 500) {
+        break;
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000)); // Exponential backoff
       attempt++;
     }

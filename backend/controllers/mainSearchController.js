@@ -782,7 +782,11 @@ const getSmartLink = async (req, res) => {
 
     res.json(response.data);
   } catch (error) {
-    console.error("Smart link fetch failed:", error.message);
+    console.error(
+      "Smart link fetch failed:",
+      error.response?.status ?? error.code ?? error.message,
+      error.response?.data ?? ""
+    );
     res.status(500).json({ error: "Failed to fetch smart link" });
   }
 };
