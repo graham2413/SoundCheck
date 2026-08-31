@@ -35,7 +35,7 @@ import { SearchService } from 'src/app/services/search.service';
 import { Album } from 'src/app/models/responses/album-response';
 import { Artist } from 'src/app/models/responses/artist-response';
 import { Song } from 'src/app/models/responses/song-response';
-import { CinemaItem } from 'src/app/models/responses/cinema-response';
+import { CinemaItem, CinemaReview } from 'src/app/models/responses/cinema-response';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { CreateReviewCommandModel } from 'src/app/models/command-models/create-review-commandmodel';
 import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
@@ -632,21 +632,8 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   }
 
   getReviews() {
-    // Cinema has no "reviews across all users for this item" endpoint yet -
-    // this record already carries its own rating/review directly.
     if (this.isCinemaRecord) {
-      this.reviews = [];
-      this.existingUserReview = null;
-      this.ratingBarFill = 0;
-      this.circleDashOffset = 113.1;
-      this.isRatingLoaded = true;
-      this.isReviewsLoaded = true;
-      this.isImageLoaded = true;
-
-      setTimeout(() => {
-        this.ratingBarFill = this.getAverageRating() * 10;
-        this.circleDashOffset = 113.1 - (this.getAverageRating() / 10) * 113.1;
-      }, 50);
+      this.getCinemaReviews();
       return;
     }
 
@@ -762,6 +749,80 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  getCinemaReviews() {
+    this.cinemaService.getCinemaReviews(this.record as CinemaItem).subscribe({
+      next: ({ data }) => {
+        this.reviews = data.reviews.map((r) => this.mapCinemaReviewToReview(r));
+        this.existingUserReview = data.userReview
+          ? this.mapCinemaReviewToReview(data.userReview)
+          : null;
+
+        this.ratingBarFill = 0;
+        this.circleDashOffset = 113.1;
+        this.isRatingLoaded = true;
+        this.isReviewsLoaded = true;
+        this.isImageLoaded = true;
+
+        setTimeout(() => {
+          this.ratingBarFill = this.getAverageRating() * 10;
+          this.circleDashOffset =
+            113.1 - (this.getAverageRating() / 10) * 113.1;
+        }, 50);
+      },
+      error: () => {
+        this.toastr.error(
+          'Error occurred while retrieving reviews.',
+          'Error'
+        );
+        this.reviews = [];
+        this.existingUserReview = null;
+        this.isRatingLoaded = true;
+        this.isReviewsLoaded = true;
+        this.isImageLoaded = true;
+      },
+    });
+  }
+
+  // Cinema reviews are CinemaItem documents, not the music Review shape -
+  // normalize into a Review-compatible object so the shared reviews-list
+  // template/edit/delete/like logic works unmodified for both record types.
+  private mapCinemaReviewToReview(cr: CinemaReview): Review {
+    const likedBy = cr.likedBy ?? [];
+    return {
+      _id: cr._id,
+      user: cr.user,
+      albumSongOrArtist: { id: cr._id, type: 'Album' } as any,
+      rating: cr.decimalRating ?? 0,
+      reviewText: cr.reviewText ?? '',
+      createdAt: cr.createdAt,
+      likes: cr.likes ?? 0,
+      likedBy,
+      likedByCurrentUser: this.userProfile?._id
+        ? likedBy.map((id) => id.toString()).includes(this.userProfile._id.toString())
+        : false,
+    };
+  }
+
+  // Same normalization, but for the current user's own CinemaItem (returned
+  // directly from cinemaService.editCinemaItem, which has no populated user).
+  private mapCinemaItemToOwnReview(item: CinemaItem): Review {
+    return {
+      _id: item._id,
+      user: {
+        _id: this.userProfile?._id ?? '',
+        username: this.userProfile?.username ?? 'You',
+        profilePicture: this.userProfile?.profilePicture ?? '',
+      },
+      albumSongOrArtist: { id: item._id, type: 'Album' } as any,
+      rating: item.decimalRating ?? 0,
+      reviewText: item.reviewText ?? '',
+      createdAt: item.createdAt,
+      likes: item.likes ?? 0,
+      likedBy: item.likedBy ?? [],
+      likedByCurrentUser: false,
+    };
+  }
+
   get combinedReviews(): Review[] {
     if (!this.isReviewsLoaded) return [];
 
@@ -783,6 +844,10 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     const start = (this.page - 1) * this.pageSize;
     const end = start + this.pageSize;
     return this.combinedReviews.slice(start, end);
+  }
+
+  get reviewsHeaderCount(): number {
+    return this.combinedReviews.length;
   }
 
   changePage(pageNumber: number) {
@@ -881,6 +946,12 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
 
   get cinemaTypeLabel(): string {
     return this.cinemaRecord?.mediaType === 'tv' ? 'TV Show' : 'Movie';
+  }
+
+  // False for an untracked cinema search result (no real CinemaItem _id yet) -
+  // there's no document to attach a rating to until it's imported/tracked.
+  get canAddReview(): boolean {
+    return this.isCinemaRecord ? !!this.cinemaRecord?._id : true;
   }
 
   // Safe cast for the audio-player, which is only ever rendered (via *ngIf)
@@ -1024,30 +1095,30 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
           song.genre = data.genre;
 
           // Fetch smart link for this song
-          const deezerTrackUrl = `https://www.deezer.com/track/${song.id}`;
-          this.smartLinkSub = this.searchService
-            .getSmartLink(deezerTrackUrl)
-            .subscribe({
-              next: (res) => {
-                this.smartLinkData = res;
+          // const deezerTrackUrl = `https://www.deezer.com/track/${song.id}`;
+          // this.smartLinkSub = this.searchService
+          //   .getSmartLink(deezerTrackUrl)
+          //   .subscribe({
+          //     next: (res) => {
+          //       this.smartLinkData = res;
 
-                const preferredApp = localStorage.getItem('preferredMusicApp');
-                const links = res.linksByPlatform || {};
+          //       const preferredApp = localStorage.getItem('preferredMusicApp');
+          //       const links = res.linksByPlatform || {};
 
-                this.smartLinkUrl =
-                  preferredApp && links[preferredApp]?.url
-                    ? links[preferredApp].url
-                    : res.pageUrl || null;
-              },
-              error: (err) => {
-                console.error('Failed to fetch smart link for song:', err);
-                this.smartLinkUrl = null;
-                this.isLoadingSmartUrl = false;
-              },
-              complete: () => {
-                this.isLoadingSmartUrl = false;
-              },
-            });
+          //       this.smartLinkUrl =
+          //         preferredApp && links[preferredApp]?.url
+          //           ? links[preferredApp].url
+          //           : res.pageUrl || null;
+          //     },
+          //     error: (err) => {
+          //       console.error('Failed to fetch smart link for song:', err);
+          //       this.smartLinkUrl = null;
+          //       this.isLoadingSmartUrl = false;
+          //     },
+          //     complete: () => {
+          //       this.isLoadingSmartUrl = false;
+          //     },
+          //   });
 
           const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
           players.forEach((player) => player?.stopLoading());
@@ -1377,6 +1448,11 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   }
 
   submitReview() {
+    if (this.isCinemaRecord) {
+      this.submitCinemaRating();
+      return;
+    }
+
     this.isCreateLoading = true;
     const record = this.musicRecord;
 
@@ -1442,6 +1518,47 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  // The "Add" flow for cinema - the CinemaItem already exists (from
+  // import/watchlist), so this just sets its rating/text for the first time
+  // via the same endpoint the "Refine" UI uses.
+  submitCinemaRating() {
+    this.isCreateLoading = true;
+    const cinemaItem = this.cinemaRecord;
+
+    if (!cinemaItem) {
+      this.isCreateLoading = false;
+      return;
+    }
+
+    this.cinemaService
+      .editCinemaItem(cinemaItem._id, this.newRating, this.newReview)
+      .subscribe({
+        next: ({ data }) => {
+          cinemaItem.decimalRating = data.decimalRating;
+          cinemaItem.reviewText = data.reviewText;
+          cinemaItem.isUnrefinedImport = data.isUnrefinedImport;
+
+          const newReview = this.mapCinemaItemToOwnReview(data);
+          this.existingUserReview = newReview;
+          this.reviews = [...this.reviews, newReview];
+
+          this.isAddingReview = false;
+          this.isCreateLoading = false;
+
+          this.ratingBarFill = this.getAverageRating() * 10;
+          setTimeout(() => {
+            this.circleDashOffset =
+              113.1 - (this.getAverageRating() / 10) * 113.1;
+          }, 50);
+          this.toastr.success('Review created successfully.', 'Success');
+        },
+        error: () => {
+          this.toastr.error('Error occurred while creating review.', 'Error');
+          this.isCreateLoading = false;
+        },
+      });
+  }
+
   toggleEditReview(review: Review) {
     this.isEditingReview = true;
     this.editedRating = review.rating;
@@ -1453,6 +1570,11 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   }
 
   submitEditReview() {
+    if (this.isCinemaRecord) {
+      this.submitCinemaEditReview();
+      return;
+    }
+
     this.isEditLoading = true;
     if (this.existingUserReview && this.existingUserReview._id) {
       this.reviewService
@@ -1488,10 +1610,54 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  submitCinemaEditReview() {
+    this.isEditLoading = true;
+    if (!this.existingUserReview?._id) {
+      this.isEditLoading = false;
+      return;
+    }
+
+    this.cinemaService
+      .editCinemaItem(
+        this.existingUserReview._id,
+        this.editedRating,
+        this.editedReviewText
+      )
+      .subscribe({
+        next: ({ data }) => {
+          const updated = this.mapCinemaItemToOwnReview(data);
+          this.existingUserReview = updated;
+          this.reviews = this.reviews.map((review) =>
+            review._id === updated._id ? updated : review
+          );
+
+          if (this.cinemaRecord) {
+            this.cinemaRecord.decimalRating = data.decimalRating;
+            this.cinemaRecord.reviewText = data.reviewText;
+            this.cinemaRecord.isUnrefinedImport = data.isUnrefinedImport;
+          }
+
+          this.isEditingReview = false;
+          this.isEditLoading = false;
+          this.ratingBarFill = this.getAverageRating() * 10;
+          setTimeout(() => {
+            this.circleDashOffset =
+              113.1 - (this.getAverageRating() / 10) * 113.1;
+          }, 50);
+          this.toastr.success('Review edited successfully.', 'Success');
+        },
+        error: () => {
+          this.isEditLoading = false;
+          this.toastr.error('Error occurred while editing review.', 'Error');
+        },
+      });
+  }
+
   deleteReview(review: Review) {
     this.isDeleteLoading = true;
     if (this.existingUserReview && this.existingUserReview._id) {
-      this.reviewService.deleteReview(review._id).subscribe({
+      const type = this.isCinemaRecord ? 'cinema' : undefined;
+      this.reviewService.deleteReview(review._id, type).subscribe({
         next: () => {
           this.reviews = this.reviews.filter((r) => r._id !== review._id);
           this.existingUserReview = null;
@@ -1595,14 +1761,10 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   }
 
   getAverageRating(): number {
-    // Cinema doesn't have a "community average across users" endpoint yet -
-    // just show this record's own rating directly.
-    if (this.isCinemaRecord) {
-      return this.cinemaRecord?.decimalRating ?? 0;
-    }
-
     if (!this.reviews || this.reviews.length === 0) {
-      return 0;
+      // Before the community reviews finish loading, fall back to this
+      // cinema record's own rating so the circle doesn't flash 0.
+      return this.isCinemaRecord ? this.cinemaRecord?.decimalRating ?? 0 : 0;
     }
     const total = this.reviews.reduce((sum, review) => sum + review.rating, 0);
     return total / this.reviews.length;
@@ -1778,7 +1940,8 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     review.likedByCurrentUser = !originalLiked;
     review.likes += review.likedByCurrentUser ? 1 : -1;
 
-    this.reviewService.toggleLike(review._id).subscribe({
+    const type = this.isCinemaRecord ? 'cinema' : undefined;
+    this.reviewService.toggleLike(review._id, type).subscribe({
       next: (res) => {
         review.likes = res.likes;
         review.likedByCurrentUser = res.likedByUser;

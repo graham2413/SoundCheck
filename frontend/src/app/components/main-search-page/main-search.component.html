@@ -96,10 +96,22 @@
   <!-- Heading -->
   <div class="text-center max-w-5xl mx-auto px-3">
     <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mt-5">
-      Explore Music
+      Explore
+      <span
+        (click)="toggleSearchType()"
+        class="cursor-pointer text-[#0F5EE4] hover:text-[#3b82f6] transition inline-flex items-center gap-1.5"
+        title="Click to switch between Music and Cinema"
+      >
+        {{ searchType === 'music' ? 'Music' : 'Cinema' }}
+        <i class="fas fa-repeat text-base md:text-xl animate-bounce-twice"></i>
+      </span>
     </h1>
     <p class="mt-1 text-base md:text-xl text-gray-300">
-      Find your next favorite track.
+      {{
+        searchType === 'music'
+          ? 'Find your next favorite track.'
+          : 'Find your next favorite movie or show.'
+      }}
     </p>
   </div>
   <div
@@ -111,11 +123,11 @@
         <!-- First copy -->
         <ng-container *ngFor="let album of albums; let i = index">
           <div
-            class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[17rem]"
+            class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[13.5rem]"
             (click)="openModal(album, albums, i)"
           >
             <div
-              class="relative w-full h-[11rem] md:h-[16rem] rounded overflow-hidden border border-gray-800"
+              class="relative w-full h-[11rem] md:h-[12rem] rounded overflow-hidden border border-gray-800"
             >
               <!-- Loader -->
               <div
@@ -168,11 +180,11 @@
         <!-- Second copy (duplicate for infinite scroll) -->
         <ng-container *ngFor="let album of albums; let i = index">
           <div
-            class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[17rem]"
+            class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[13.5rem]"
             (click)="openModal(album, albums, i)"
           >
             <div
-              class="relative w-full h-[11rem] md:h-[16rem] rounded overflow-hidden border border-gray-800"
+              class="relative w-full h-[11rem] md:h-[12rem] rounded overflow-hidden border border-gray-800"
             >
               <!-- Loader -->
               <div
@@ -233,7 +245,7 @@
         >
           <div
             *ngFor="let _ of skeletonArray"
-            class="skeleton-card bg-[#1F2937] p-3 rounded-lg h-[15.2rem] md:h-[20.7rem] w-[12rem] md:w-[17rem] mx-[0.5rem] shrink-0"
+            class="skeleton-card bg-[#1F2937] p-3 rounded-lg h-[15.2rem] md:h-[17.2rem] w-[12rem] md:w-[13.5rem] mx-[0.5rem] shrink-0"
           >
             <div class="skeleton-img"></div>
             <div class="skeleton-text-group w-full flex flex-col items-start">
@@ -251,19 +263,34 @@
     #searchBar
     class="relative mt-5 md:mt-1 w-full max-w-[450px] sm:max-w-[550px] md:max-w-[700px] mx-auto px-4"
   >
+    <button
+      *ngIf="searchType === 'music'"
+      type="button"
+      [disabled]="isLoading"
+      (click)="cycleSearchTab()"
+      title="Click to switch between Songs, Albums, and Artists"
+      class="absolute inset-y-0 left-6 my-auto h-8 flex items-center rounded-full bg-[#0F5EE4] px-3 text-white text-sm md:text-base font-medium capitalize hover:bg-[#0D51CC] transition"
+    >
+      {{ selectedSearchTab }}
+    </button>
     <input
       type="search"
       [disabled]="isLoading"
       autofocus
       [(ngModel)]="query"
-      (keydown.enter)="onSearch('songs')"
-      placeholder="Search music & artists..."
-      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-white-500 focus:border-white-500 outline-none text-lg md:text-xl text-ellipsis overflow-hidden"
+      (keydown.enter)="searchType === 'music' ? onSearch(selectedSearchTab, false) : onSearch('songs')"
+      placeholder="{{
+        searchType === 'music'
+          ? 'Search music & artists...'
+          : 'Search movies and shows...'
+      }}"
+      class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pr-12 focus:ring-2 focus:ring-white-500 focus:border-white-500 outline-none text-lg md:text-xl text-ellipsis overflow-hidden"
+      [ngClass]="searchType === 'music' ? 'pl-24 md:pl-28' : 'pl-5'"
       style="direction: ltr; text-align: left"
     />
     <button
       [disabled]="isLoading"
-      (click)="onSearch('songs')"
+      (click)="searchType === 'music' ? onSearch(selectedSearchTab, false) : onSearch('songs')"
       class="absolute inset-y-0 right-10 flex items-center"
     >
       <svg
@@ -283,7 +310,10 @@
   </div>
 
   <!-- Search Tabs with Sliding Highlight -->
-  <div *ngIf="searchAttempted || isLoading" class="mt-6 flex justify-center">
+  <div
+    *ngIf="searchType === 'music' && (searchAttempted || isLoading)"
+    class="mt-6 flex justify-center"
+  >
     <div class="relative flex bg-gray-800 rounded-full p-1 w-fit">
       <!-- Sliding highlight -->
       <div
@@ -333,7 +363,7 @@
 
   <!-- Skeleton Loader -->
   <div
-    *ngIf="isLoading"
+    *ngIf="searchType === 'music' && isLoading"
     [ngClass]="{
       'mx-auto mb-2 rounded-lg shadow-lg sm:w-full max-w-3xl': true,
       'pt-[2rem]': activeTab === 'artists',
@@ -379,8 +409,8 @@
               selectedGenre.songs ? 'bg-blue-600 md:hover:bg-blue-500' : ''
             "
           >
-            <span class="inline">
-              {{ selectedGenre.songs ? selectedGenre.songs : "Filter" }}
+            <span *ngIf="selectedGenre.songs" class="inline">
+              {{ selectedGenre.songs }}
             </span>
             <i class="fa-solid fa-sliders"></i>
           </button>
@@ -497,8 +527,8 @@
               selectedGenre.albums ? 'bg-blue-600 md:hover:bg-blue-500' : ''
             "
           >
-            <span class="inline">
-              {{ selectedGenre.albums ? selectedGenre.albums : "Filter" }}
+            <span *ngIf="selectedGenre.albums" class="inline">
+              {{ selectedGenre.albums }}
             </span>
             <i class="fa-solid fa-sliders text-base"></i>
           </button>
@@ -653,7 +683,84 @@
   </div>
   <!-- No Results Found -->
   <div
-    *ngIf="searchAttempted && !isLoading && !resultsHasValues()"
+    *ngIf="
+      searchType === 'music' &&
+      searchAttempted &&
+      !isLoading &&
+      !resultsHasValues()
+    "
+    class="pb-[10rem]"
+  >
+    <div
+      class="mt-12 mx-4 text-center text-gray-400 text-lg bg-gray-800 p-4 rounded-lg"
+    >
+      <i class="fas fa-search-minus text-4xl mb-2"></i>
+      <p>No results found. Try searching for something else.</p>
+    </div>
+  </div>
+
+  <!-- Cinema Skeleton Loader -->
+  <div
+    *ngIf="searchType === 'cinema' && isLoading"
+    class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-[1000px] mx-auto px-2"
+  >
+    <div
+      *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8]"
+      class="animate-pulse aspect-[2/3] bg-gray-700 rounded-lg"
+    ></div>
+  </div>
+
+  <!-- Cinema Search Results -->
+  <div
+    *ngIf="searchType === 'cinema' && !isLoading && cinemaResults.length > 0"
+    class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-[1000px] mx-auto px-2 pb-[5rem]"
+  >
+    <div
+      *ngFor="let item of cinemaResults"
+      (click)="openCinemaSearchResult(item)"
+      class="text-center bg-gray-800 p-3 rounded-lg cursor-pointer"
+    >
+      <div class="relative aspect-[2/3] w-full">
+        <img
+          [src]="
+            item.cover ||
+            'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+          "
+          alt="{{ item.title }}"
+          class="aspect-[2/3] w-full object-cover rounded-md border-2 border-gray-500"
+        />
+        <div
+          class="absolute top-1 left-1 bg-gray-900/80 p-1.5 rounded-full"
+        >
+          <i
+            class="fas text-sm"
+            [ngClass]="{
+              'fa-film text-green-400': item.mediaType === 'movie',
+              'fa-tv text-purple-400': item.mediaType === 'tv'
+            }"
+          ></i>
+        </div>
+      </div>
+      <span
+        class="text-white font-semibold text-sm truncate overflow-hidden whitespace-nowrap block mt-2"
+        [title]="item.title"
+      >
+        {{ item.title }}
+      </span>
+      <p class="text-gray-400 text-xs">
+        {{ item.releaseDate | date : "yyyy" }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Cinema No Results Found -->
+  <div
+    *ngIf="
+      searchType === 'cinema' &&
+      searchAttempted &&
+      !isLoading &&
+      cinemaResults.length === 0
+    "
     class="pb-[10rem]"
   >
     <div

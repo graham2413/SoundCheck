@@ -7,6 +7,23 @@
   position: relative;
 }
 
+/* Bounces twice, then pauses for a few seconds before repeating */
+@keyframes bounce-twice {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  10%, 30% {
+    transform: translateY(-25%);
+  }
+  20%, 40% {
+    transform: translateY(0);
+  }
+}
+
+.animate-bounce-twice {
+  animation: bounce-twice 4s ease-in-out infinite;
+}
+
 .marquee-track {
   display: flex;
   animation: scroll 350s linear infinite;

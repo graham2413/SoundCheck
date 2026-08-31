@@ -257,7 +257,7 @@ export class AppComponent implements OnInit {
           if (isNewUser) {
             this.toastr.success('Account created successfully!', 'Welcome');
           } else {
-            this.toastr.success('Welcome back!', 'Logged in');
+            // this.toastr.success('Welcome back!', 'Logged in');
           }
 
           this.cdRef.detectChanges();

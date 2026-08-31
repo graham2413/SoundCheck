@@ -1,5 +1,6 @@
 const Review = require("../models/Review");
 const User = require("../models/User");
+const CinemaItem = require("../models/CinemaItem");
 const https = require("https");
 const fetch = require("node-fetch");
 const fs = require("fs");
@@ -225,9 +226,28 @@ exports.editReview = async (req, res) => {
   }
 };
 
-// Delete a review (Only the review owner)
+// Delete a review (Only the review owner). `type=cinema` deletes the
+// CinemaItem instead - for cinema, the "review" IS the tracked item, so
+// deleting it removes it from the user's watchlist/tracked list entirely.
 exports.deleteReview = async (req, res) => {
   try {
+    if (req.query.type === "cinema") {
+      const item = await CinemaItem.findById(req.params.id);
+
+      if (!item) {
+        return res.status(404).json({ message: "Item not found" });
+      }
+
+      if (item.user.toString() !== req.user._id.toString()) {
+        return res
+          .status(403)
+          .json({ message: "Unauthorized to delete this item" });
+      }
+
+      await item.deleteOne();
+      return res.json({ message: "Item deleted successfully" });
+    }
+
     const review = await Review.findById(req.params.id);
 
     if (!review) {
@@ -425,42 +445,43 @@ exports.proxyImage = async function (req, res) {
 };
 
 exports.toggleLikeHandler = async (req, res) => {
-  const reviewId = req.params.id;
+  const itemId = req.params.id;
   const userId = req.user._id;
+  const Model = req.query.type === "cinema" ? CinemaItem : Review;
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     // Lock the document to avoid race conditions
-    const review = await Review.findById(reviewId).session(session);
+    const item = await Model.findById(itemId).session(session);
 
-    if (!review) {
+    if (!item) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: "Review not found" });
+      return res.status(404).json({ message: "Item not found" });
     }
 
-    const alreadyLiked = review.likedBy.includes(userId);
+    const alreadyLiked = item.likedBy.includes(userId);
 
     if (alreadyLiked) {
       // Unlike: Pull user from likedBy, decrement likes (min 0)
-      review.likedBy.pull(userId);
-      review.likes = Math.max(0, review.likes - 1);
+      item.likedBy.pull(userId);
+      item.likes = Math.max(0, item.likes - 1);
     } else {
       // Like: Push user into likedBy, increment likes
-      review.likedBy.push(userId);
-      review.likes += 1;
+      item.likedBy.push(userId);
+      item.likes += 1;
     }
 
-    await review.save({ session });
+    await item.save({ session });
 
     await session.commitTransaction();
     session.endSession();
 
     return res.status(200).json({
       message: alreadyLiked ? "Unliked" : "Liked",
-      likes: review.likes,
+      likes: item.likes,
       likedByUser: !alreadyLiked,
     });
   } catch (err) {

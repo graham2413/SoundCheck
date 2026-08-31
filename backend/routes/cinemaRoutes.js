@@ -9,6 +9,8 @@ const {
   importTraktExport,
   getWatchlist,
   editCinemaItem,
+  getCinemaReviews,
+  searchCinema,
 } = require("../controllers/cinemaController");
 
 // Zip never touches disk/Cloudinary - parsed directly from the in-memory buffer
@@ -17,8 +19,14 @@ const traktUpload = multer({ storage: multer.memoryStorage() });
 // Live IMDb community stats (cached in Redis, not persisted in Mongo)
 router.get("/imdb-stats/:imdbId", getImdbStats);
 
+// Search movies/shows via TMDb (Protected)
+router.get("/search", authenticateUser, searchCinema);
+
 // A user's watchlist - owner always allowed, others only if public (Protected)
 router.get("/watchlist/:userId", authenticateUser, getWatchlist);
+
+// Everyone's reviews (rating + text) for the same movie/show (Protected)
+router.get("/reviews", authenticateUser, getCinemaReviews);
 
 // Import a Trakt data-export zip (ratings + watchlist) as CinemaItems (Protected)
 router.post("/import-trakt", authenticateUser, traktUpload.single("file"), importTraktExport);

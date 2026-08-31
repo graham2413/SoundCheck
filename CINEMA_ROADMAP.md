@@ -9,9 +9,9 @@ decisions already made (see "Already Done" and inline notes).
 - [ ] Build real TMDb search endpoint (replace debug route) + frontend search UI
 - [ ] Build real TMDb detail endpoint (replace debug route)
 - [ ] Map `watch/providers` response into `streamingPlatforms` when saving a record
-- [ ] Build a cinema detail page (movie/show view)
+- [x] Build a cinema detail page (movie/show view) — reused `review-page.component` (the existing music modal) instead of a new page; front panel (poster, type label, rating circle, genre-less for now) and full reviews section (list, filter, add/edit/delete, like) now work for cinema records the same as music
 - [ ] Wire detail page to call `getImdbStats` for live IMDb rating/votes
-- [ ] Display `reviewText`/`likes` on the detail page (fields already exist on `CinemaItem`)
+- [x] Display `reviewText`/`likes` on the detail page — done via the shared reviews-list UI (`getCinemaReviews` endpoint + `mapCinemaReviewToReview` normalization)
 - [ ] Display full cast list (name, character played, photo) on the detail page — **data already available**: `getTmdbDetails` now requests `credits` via `append_to_response`, just needs mapping to UI (profile photos need the same `image.tmdb.org` prefix used for posters)
 - [ ] Pending decision: Nested TV Hierarchy (seasons/episodes, per-episode watched flags, progress bar) — schema already exists (`CinemaItem.seasons`), nothing populates or displays it yet. Build later in development, or drop? (see Open Questions)
 

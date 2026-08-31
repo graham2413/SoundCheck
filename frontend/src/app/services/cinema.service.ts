@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
-import { CinemaItem, ImdbStatsResponse } from '../models/responses/cinema-response';
+import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse } from '../models/responses/cinema-response';
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +20,14 @@ export class CinemaService {
   // Live IMDb community rating/vote count (Redis-cached on backend, no auth required)
   getImdbStats(imdbId: string): Observable<ImdbStatsResponse> {
     return this.http.get<ImdbStatsResponse>(`${this.apiUrl}/imdb-stats/${imdbId}`);
+  }
+
+  // Search movies/shows via TMDb
+  searchCinema(query: string): Observable<{ success: boolean; data: CinemaSearchResult[] }> {
+    return this.http.get<{ success: boolean; data: CinemaSearchResult[] }>(`${this.apiUrl}/search`, {
+      headers: this.authHeaders(),
+      params: { query },
+    });
   }
 
   // A user's watchlist - owner always allowed, others only if public
@@ -53,5 +61,23 @@ export class CinemaService {
       { decimalRating, ...(reviewText !== undefined ? { reviewText } : {}) },
       { headers: this.authHeaders() }
     );
+  }
+
+  // Everyone's reviews (rating + text) for the same movie/show as `item`
+  getCinemaReviews(item: CinemaItem): Observable<{ success: boolean; data: CinemaReviewsResponse }> {
+    let params = new HttpParams();
+
+    if (item.imdbId) {
+      params = params.set('imdbId', item.imdbId);
+    } else if (item.tmdbId) {
+      params = params.set('tmdbId', item.tmdbId).set('mediaType', item.mediaType);
+    } else if (item.canonicalId) {
+      params = params.set('canonicalId', item.canonicalId).set('mediaType', item.mediaType);
+    }
+
+    return this.http.get<{ success: boolean; data: CinemaReviewsResponse }>(`${this.apiUrl}/reviews`, {
+      headers: this.authHeaders(),
+      params,
+    });
   }
 }

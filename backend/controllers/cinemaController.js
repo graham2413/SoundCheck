@@ -9,6 +9,35 @@ const CinemaItem = require("../models/CinemaItem");
 const User = require("../models/User");
 
 const IMDB_STATS_CACHE_TTL = 86400; // 24h
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/original"; // matches backfillCinemaCovers.js
+
+// GET /api/cinema/search?query=... (Protected)
+// Searches movies/shows via TMDb's /search/multi, filtered down to just
+// movie/tv results (no "person" entries) and mapped to a clean shape.
+exports.searchCinema = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || !query.trim()) {
+      return res.status(400).json({ success: false, message: "query is required" });
+    }
+
+    const data = await searchTmdb(query.trim());
+    const results = (data?.results || [])
+      .filter((r) => r.media_type === "movie" || r.media_type === "tv")
+      .map((r) => ({
+        tmdbId: r.id.toString(),
+        mediaType: r.media_type,
+        title: r.title || r.name,
+        cover: r.poster_path ? `${TMDB_IMAGE_BASE}${r.poster_path}` : null,
+        releaseDate: r.release_date || r.first_air_date || null,
+      }));
+
+    res.status(200).json({ success: true, data: results });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
 
 // GET /api/cinema/imdb-stats/:imdbId
 // Fetches live IMDb community rating/vote count via OMDb (no stale data stored in Mongo)
@@ -232,6 +261,44 @@ exports.getWatchlist = async (req, res) => {
     }).sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, data: items });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// GET /api/cinema/reviews (Protected)
+// Everyone's rated CinemaItems for the same movie/show (mirrors music's
+// getReviewsWithUserReview) - identifies "the same title" by imdbId first
+// (most reliable), then tmdbId, then canonicalId (title+year, scoped to
+// mediaType since canonicalId alone can't distinguish a movie from a show
+// sharing the same title/year).
+exports.getCinemaReviews = async (req, res) => {
+  try {
+    const { imdbId, tmdbId, canonicalId, mediaType } = req.query;
+    const userId = req.user._id;
+
+    let identityQuery;
+    if (imdbId) {
+      identityQuery = { imdbId };
+    } else if (tmdbId) {
+      identityQuery = { tmdbId, ...(mediaType ? { mediaType } : {}) };
+    } else if (canonicalId) {
+      identityQuery = { canonicalId, ...(mediaType ? { mediaType } : {}) };
+    } else {
+      return res.status(400).json({ success: false, message: "imdbId, tmdbId, or canonicalId is required." });
+    }
+
+    const reviews = await CinemaItem.find({
+      ...identityQuery,
+      decimalRating: { $ne: null },
+    })
+      .populate("user", "username profilePicture")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const userReview =
+      reviews.find((item) => item.user?._id?.toString() === userId.toString()) || null;
+    res.status(200).json({ success: true, data: { reviews, userReview } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }

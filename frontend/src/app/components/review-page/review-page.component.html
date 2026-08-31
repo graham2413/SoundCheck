@@ -716,7 +716,7 @@
   </div>
 
   <!-- Loading state while fetching smart link -->
-  <div
+  <!-- <div
     *ngIf="
       isLoadingSmartUrl &&
       !showSecondIpod &&
@@ -727,7 +727,7 @@
   >
     <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i>
     Loading link...
-  </div>
+  </div> -->
 
   <!-- Actual smart link once available -->
   <!--
@@ -766,8 +766,8 @@
           Reviews
           <span class="text-base text-gray-400 font-medium">
             {{
-              combinedReviews.length > 0
-                ? "(" + combinedReviews.length + ")"
+              reviewsHeaderCount > 0
+                ? "(" + reviewsHeaderCount + ")"
                 : ""
             }}
           </span>
@@ -779,8 +779,7 @@
         <div class="flex items-center">
           <ng-container *ngIf="isFilterActive(); else filterButton">
             <div class="flex items-center gap-2 text-amber-400 font-semibold">
-              <i class="fas fa-filter text-lg ml-2"></i>
-              <span class="capitalize text-lg"
+              <span class="capitalize text-lg ml-2"
                 >Filtered: {{ activeFilter }}</span
               >
               <button
@@ -797,14 +796,9 @@
             <button
               (click)="toggleFilterMenu()"
               [disabled]="combinedReviews.length <= 1"
-              class="flex items-center gap-1 text-lg font-semibold"
-              [ngClass]="{
-                'text-amber-400': combinedReviews.length > 1,
-                'text-white': combinedReviews.length <= 1
-              }"
+              class="flex items-center gap-1 text-lg font-semibold text-white"
             >
-              <i class="fas fa-filter text-lg mr-1 ml-2"></i>
-              <span>Filter</span>
+              <i class="fa-solid fa-sliders text-lg mr-1 ml-2"></i>
             </button>
           </ng-template>
         </div>
@@ -813,10 +807,10 @@
         <div *ngIf="!isAddingReview && isReviewsLoaded">
           <button
             (click)="toggleReviewForm()"
-            [disabled]="existingUserReview"
+            [disabled]="existingUserReview || !canAddReview"
             [ngClass]="{
-              'bg-gradient-to-r from-sky-500 to-blue-600 text-white': !existingUserReview,
-              'bg-gray-500 text-gray-300': existingUserReview
+              'bg-gradient-to-r from-sky-500 to-blue-600 text-white': !existingUserReview && canAddReview,
+              'bg-gray-500 text-gray-300': existingUserReview || !canAddReview
             }"
             class="flex items-center gap-1 px-3 py-1 rounded-md font-medium text-lg"
           >
@@ -1666,7 +1660,7 @@
                   </div>
 
                   <!-- Loading state while fetching smart link -->
-                  <div
+                  <!-- <div
                     *ngIf="
                       isLoadingSmartUrl &&
                       !showSecondIpod &&
@@ -1677,7 +1671,7 @@
                   >
                     <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i>
                     Loading link...
-                  </div>
+                  </div> -->
 
                   <!-- Actual smart link once available -->
                   <!--
@@ -2140,8 +2134,8 @@
                   Reviews
                   <span class="text-base text-gray-400 font-medium">
                     {{
-                      combinedReviews.length > 0
-                        ? "(" + combinedReviews.length + ")"
+                      reviewsHeaderCount > 0
+                        ? "(" + reviewsHeaderCount + ")"
                         : ""
                     }}
                   </span>
@@ -2155,8 +2149,7 @@
                     <div
                       class="flex items-center gap-2 text-amber-400 font-semibold"
                     >
-                      <i class="fas fa-filter text-lg ml-2"></i>
-                      <span class="capitalize text-lg"
+                      <span class="capitalize text-lg ml-2"
                         >Filtered: {{ activeFilter }}</span
                       >
                       <button
@@ -2173,14 +2166,9 @@
                     <button
                       (click)="toggleFilterMenu()"
                       [disabled]="combinedReviews.length <= 1"
-                      class="flex items-center gap-1 text-lg font-semibold"
-                      [ngClass]="{
-                        'text-amber-400': combinedReviews.length > 1,
-                        'text-white': combinedReviews.length <= 1
-                      }"
+                      class="flex items-center gap-1 text-lg font-semibold text-white"
                     >
-                      <i class="fas fa-filter text-lg mr-1 ml-2"></i>
-                      <span>Filter</span>
+                      <i class="fa-solid fa-sliders text-lg mr-1 ml-2"></i>
                     </button>
                   </ng-template>
                 </div>
@@ -2188,11 +2176,11 @@
                 <!-- Right: Add Button -->
                 <div *ngIf="!isAddingReview && isReviewsLoaded">
                   <button
-                    [disabled]="existingUserReview"
+                    [disabled]="existingUserReview || !canAddReview"
                     (click)="toggleReviewForm()"
                     [ngClass]="{
-                      'bg-gradient-to-r from-sky-500 to-blue-600 text-white': !existingUserReview,
-                      'bg-gray-500 text-gray-300': existingUserReview
+                      'bg-gradient-to-r from-sky-500 to-blue-600 text-white': !existingUserReview && canAddReview,
+                      'bg-gray-500 text-gray-300': existingUserReview || !canAddReview
                     }"
                     class="flex items-center gap-1 px-3 py-1 rounded-md font-medium"
                   >

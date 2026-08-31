@@ -41,6 +41,30 @@ export interface CinemaItem {
   createdAt: string;
 }
 
+// A raw TMDb search result (movie or TV show), not yet tracked as a CinemaItem
+export interface CinemaSearchResult {
+  tmdbId: string;
+  mediaType: 'movie' | 'tv';
+  title: string;
+  cover: string | null;
+  releaseDate: string | null;
+}
+
+// A CinemaItem as returned by getCinemaReviews, with `user` populated
+// (mirrors music's Review.user shape).
+export interface CinemaReview extends Omit<CinemaItem, 'user'> {
+  user: {
+    _id: string;
+    username: string;
+    profilePicture: string;
+  };
+}
+
+export interface CinemaReviewsResponse {
+  reviews: CinemaReview[];
+  userReview: CinemaReview | null;
+}
+
 export interface ImdbStats {
   imdbId: string;
   imdbRating: string | null;

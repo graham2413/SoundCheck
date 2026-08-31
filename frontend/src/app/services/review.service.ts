@@ -93,7 +93,7 @@ searchReviews(id: number | string, type: string, title: string, artist: string):
     );
   }
 
-  deleteReview(reviewId: string): Observable<void> {
+  deleteReview(reviewId: string, type?: 'cinema'): Observable<void> {
     const token = localStorage.getItem('token');
 
     if (!token) {
@@ -102,8 +102,9 @@ searchReviews(id: number | string, type: string, title: string, artist: string):
     }
 
     const headers = { Authorization: `Bearer ${token}` };
+    const params = type ? new HttpParams().set('type', type) : undefined;
 
-    return this.http.delete<void>(`${this.apiUrl}/${reviewId}`, { headers });
+    return this.http.delete<void>(`${this.apiUrl}/${reviewId}`, { headers, params });
   }
 
   getTopReviewsByType(
@@ -165,7 +166,7 @@ getProxiedImageUrl(originalUrl: string): string {
   return `${this.apiUrl}/image-proxy?url=${encodeURIComponent(originalUrl)}`;
 }
 
-toggleLike(reviewId: string): Observable<{ likes: number; likedByUser: boolean }> {
+toggleLike(reviewId: string, type?: 'cinema'): Observable<{ likes: number; likedByUser: boolean }> {
   const token = localStorage.getItem('token');
 
   if (!token) {
@@ -174,11 +175,12 @@ toggleLike(reviewId: string): Observable<{ likes: number; likedByUser: boolean }
   }
 
   const headers = { Authorization: `Bearer ${token}` };
+  const params = type ? new HttpParams().set('type', type) : undefined;
 
   return this.http.post<{ likes: number; likedByUser: boolean }>(
     `${this.apiUrl}/${reviewId}/toggle-like`,
     {},
-    { headers }
+    { headers, params }
   );
 }
 

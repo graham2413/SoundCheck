@@ -32,6 +32,8 @@ import {
 } from 'src/app/models/responses/release-response';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { SpotifyService } from 'src/app/services/spotify.service';
+import { CinemaService } from 'src/app/services/cinema.service';
+import { CinemaSearchResult } from 'src/app/models/responses/cinema-response';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 
 type ActivityRecord = Review['albumSongOrArtist'];
@@ -73,7 +75,12 @@ export class MainSearchComponent implements OnInit {
   query: string = '';
   isLoading: boolean = false;
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
+  // What the search-bar type button will search as next - independent of
+  // `activeTab` so switching it doesn't change the currently shown results.
+  selectedSearchTab: 'songs' | 'albums' | 'artists' = 'songs';
   activeDiscoverTab: 'mainSearch' | 'popular' | 'recentActivity' = 'mainSearch';
+  searchType: 'music' | 'cinema' = 'music';
+  cinemaResults: CinemaSearchResult[] = [];
   isModalOpen = false;
   selectedRecord: Album | Artist | Song | null = null;
   searchAttempted = false;
@@ -182,7 +189,8 @@ export class MainSearchComponent implements OnInit {
     private router: Router,
     private userService: UserService,
     private timeAgoPipe: TimeAgoPipe,
-    private spotifyService: SpotifyService
+    private spotifyService: SpotifyService,
+    private cinemaService: CinemaService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -316,6 +324,11 @@ export class MainSearchComponent implements OnInit {
   onSearch(type: 'songs' | 'albums' | 'artists', useFallback: boolean = true) {
     const query = this.query.trim();
     if (!query) return;
+
+    if (this.searchType === 'cinema') {
+      this.searchCinemaResults();
+      return;
+    }
 
     (document.activeElement as HTMLElement)?.blur();
 
@@ -475,6 +488,46 @@ export class MainSearchComponent implements OnInit {
     attemptSearch(startIndex);
   }
 
+  searchCinemaResults() {
+    const query = this.query.trim();
+    if (!query) return;
+
+    (document.activeElement as HTMLElement)?.blur();
+
+    setTimeout(() => {
+      const searchBarEl = this.searchBar.nativeElement;
+      const elementTop =
+        searchBarEl.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPadding = window.innerWidth >= 768 ? 170 : 75;
+      window.scrollTo({
+        top: elementTop - offsetPadding,
+        behavior: 'smooth',
+      });
+    }, 0);
+
+    this.isLoading = true;
+
+    if (!this.searchAttempted) {
+      this.searchAttempted = true;
+    }
+
+    this.cinemaResults = [];
+
+    this.cinemaService.searchCinema(query).subscribe({
+      next: ({ data }) => {
+        this.cinemaResults = data;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.toastr.error(
+          `Error occurred while searching for "${this.query}"`,
+          'Error'
+        );
+        this.isLoading = false;
+      },
+    });
+  }
+
   extractGenres() {
     this.genres.songs = [
       ...new Set(
@@ -538,6 +591,40 @@ export class MainSearchComponent implements OnInit {
 
   setActiveTab(tab: 'songs' | 'albums' | 'artists') {
     this.activeTab = tab;
+    this.selectedSearchTab = tab;
+  }
+
+  // Only controls what type the *next* search runs as - does not touch
+  // `activeTab` (which drives the currently displayed results grid), so
+  // switching this before searching doesn't blank out existing results.
+  cycleSearchTab() {
+    const order: ('songs' | 'albums' | 'artists')[] = [
+      'songs',
+      'albums',
+      'artists',
+    ];
+    const next =
+      order[(order.indexOf(this.selectedSearchTab) + 1) % order.length];
+    this.selectedSearchTab = next;
+  }
+
+  getSearchTabIcon(tab: 'songs' | 'albums' | 'artists'): string {
+    return tab === 'songs'
+      ? 'fa-music'
+      : tab === 'albums'
+      ? 'fa-compact-disc'
+      : 'fa-user';
+  }
+
+  toggleSearchType() {
+    this.searchType = this.searchType === 'music' ? 'cinema' : 'music';
+
+    // Reset search state so stale results from the other mode don't show
+    this.query = '';
+    this.searchAttempted = false;
+    this.cinemaResults = [];
+    this.results = { songs: [], albums: [], artists: [] };
+    this.filteredResults = { songs: [], albums: [], artists: [] };
   }
 
   setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
@@ -787,6 +874,40 @@ export class MainSearchComponent implements OnInit {
       avgRating: 0,
       reviewCount: 0,
     };
+  }
+
+  openCinemaSearchResult(item: CinemaSearchResult): NgbModalRef {
+    const modalOptions: NgbModalOptions = {
+      backdrop: 'static',
+      keyboard: true,
+      centered: true,
+      scrollable: false,
+    };
+
+    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+
+    // Untracked stub - no CinemaItem exists yet for this search result, so
+    // there's no real _id/user/rating until the user imports/tracks it.
+    const record = {
+      type: 'Cinema' as const,
+      _id: '',
+      user: '',
+      mediaType: item.mediaType,
+      tmdbId: item.tmdbId,
+      title: item.title,
+      cover: item.cover ?? undefined,
+      releaseDate: item.releaseDate ?? undefined,
+      isWatchlist: false,
+      isUnrefinedImport: false,
+      traktSynced: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    modalRef.componentInstance.recordList = [record];
+    modalRef.componentInstance.currentIndex = 0;
+    modalRef.componentInstance.record = record;
+
+    return modalRef;
   }
 
   openModal(
