@@ -1,10 +1,10 @@
-<div class="sticky top-0 z-30 md:pt-[6rem] w-full bg-[#0F1722]">
+<div class="sticky top-0 z-30 md:pt-[4.5rem] w-full bg-[#0F1722]">
   <!-- Buttons Row with shared border -->
   <div class="relative bg-[#09101F] border-b border-b-gray-800">
-    <div class="flex justify-around items-center h-[3.5rem] relative">
+    <div class="flex justify-around items-center h-[3.5rem] md:h-[2.75rem] relative">
       <!-- Highlight Underline: mobile -->
       <div
-        class="absolute bottom-[0rem] h-[2px] bg-[#4C79F4] transition-all duration-300 md:hidden"
+        class="absolute bottom-[0rem] h-[2px] bg-[#0F5EE4] transition-all duration-300 md:hidden"
         [ngStyle]="{
           width:
             activeDiscoverTab === 'mainSearch'
@@ -23,7 +23,7 @@
 
       <!-- Highlight Underline: md+ -->
       <div
-        class="absolute bottom-[0rem] h-[2px] bg-[#4C79F4] transition-all duration-300 hidden md:block"
+        class="absolute bottom-[0rem] h-[2px] bg-[#0F5EE4] transition-all duration-300 hidden md:block"
         [ngStyle]="{
           width:
             activeDiscoverTab === 'mainSearch'
@@ -50,7 +50,7 @@
             'text-gray-200 font-semibold': activeDiscoverTab === 'mainSearch',
             'text-gray-400': activeDiscoverTab !== 'mainSearch'
           }"
-          class="text-lg md:text-2xl"
+          class="text-lg md:text-xl"
         >
           Search
         </span>
@@ -66,7 +66,7 @@
             'text-gray-200 font-semibold': activeDiscoverTab === 'popular',
             'text-gray-400': activeDiscoverTab !== 'popular'
           }"
-          class="text-lg md:text-2xl"
+          class="text-lg md:text-xl"
         >
           Popular
         </span>
@@ -83,7 +83,7 @@
               activeDiscoverTab === 'recentActivity',
             'text-gray-400': activeDiscoverTab !== 'recentActivity'
           }"
-          class="text-lg md:text-2xl"
+          class="text-lg md:text-xl"
         >
           Activity
         </span>
@@ -269,7 +269,7 @@
       [disabled]="isLoading"
       (click)="cycleSearchTab()"
       title="Click to switch between Songs, Albums, and Artists"
-      class="absolute inset-y-0 left-6 my-auto h-8 flex items-center rounded-full bg-[#0F5EE4] px-3 text-white text-sm md:text-base font-medium capitalize hover:bg-[#0D51CC] transition"
+      class="absolute inset-y-0 left-6 my-auto h-8 flex items-center rounded-full bg-[#0F5EE4] px-3 text-white text-base md:text-lg font-medium capitalize hover:bg-[#0D51CC] transition"
     >
       {{ selectedSearchTab }}
     </button>
@@ -294,7 +294,7 @@
       class="absolute inset-y-0 right-10 flex items-center"
     >
       <svg
-        class="h-6 w-6 text-[#4C79F4] md:hover:text-white transition"
+        class="h-6 w-6 text-[#0F5EE4] md:hover:text-white transition"
         fill="currentColor"
         viewBox="0 0 24 24"
       >
@@ -406,7 +406,7 @@
             (click)="toggleGenreFilter('songs')"
             class="p-2 rounded-md transition flex items-center gap-2 md:text-xl border border-gray-700"
             [ngClass]="
-              selectedGenre.songs ? 'bg-blue-600 md:hover:bg-blue-500' : ''
+              selectedGenre.songs ? 'bg-[#0F5EE4] md:hover:bg-blue-500' : ''
             "
           >
             <span *ngIf="selectedGenre.songs" class="inline">
@@ -524,7 +524,7 @@
             (click)="toggleGenreFilter('albums')"
             class="p-2 rounded-md transition flex items-center gap-2 md:text-xl border border-gray-700"
             [ngClass]="
-              selectedGenre.albums ? 'bg-blue-600 md:hover:bg-blue-500' : ''
+              selectedGenre.albums ? 'bg-[#0F5EE4] md:hover:bg-blue-500' : ''
             "
           >
             <span *ngIf="selectedGenre.albums" class="inline">

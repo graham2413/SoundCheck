@@ -73,7 +73,7 @@
         </button>
         <button
           (click)="saveGradient()"
-          class="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700"
+          class="px-4 py-2 bg-[#0F5EE4] rounded-lg hover:bg-blue-700"
         >
           <i class="fas fa-save"></i> Save
         </button>
@@ -215,7 +215,7 @@
             <button
               (click)="goToUserProfile()"
               [disabled]="decliningFriendRequest"
-              class="p-2 px-4 text-sm md:text-base font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+              class="p-2 px-4 text-sm md:text-base font-medium rounded-lg bg-[#0F5EE4] text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
             >
               <ng-container *ngIf="!decliningFriendRequest; else loadingIcon">
                 <i class="fas fa-user-edit"></i> Edit Profile
@@ -301,7 +301,7 @@
       [class.translate-y-0]="showPanel"
       [class.translate-y-8]="!showPanel"
       [class.pointer-events-none]="!showPanel"
-      class="fixed inset-0 bg-[#09101F] md:pt-[6rem] text-white z-20 overflow-y-auto transition-all duration-300 ease-in-out transform"
+      class="fixed inset-0 bg-[#09101F] md:pt-[4.5rem] text-white z-20 overflow-y-auto transition-all duration-300 ease-in-out transform"
     >
       <div
         class="p-4 flex justify-center items-center z-20 border-b border-gray-700 relative sticky top-0 bg-[#09101F] z-10"
@@ -689,7 +689,7 @@
                   class="relative text-center bg-gray-800 p-3 rounded-lg cursor-pointer"
                 >
                   <button
-                    *ngIf="item.isUnrefinedImport && refiningItemId !== item._id"
+                    *ngIf="isOwnProfile && item.isUnrefinedImport && refiningItemId !== item._id"
                     (click)="$event.stopPropagation(); startRefine(item)"
                     class="absolute top-1 right-1 z-10 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                     title="Needs precise rating - click to refine"
@@ -744,7 +744,7 @@
 
                   <!-- Refine Rating inline form -->
                   <div
-                    *ngIf="refiningItemId === item._id"
+                    *ngIf="isOwnProfile && refiningItemId === item._id"
                     (click)="$event.stopPropagation()"
                     class="absolute inset-0 z-20 bg-gray-900/95 rounded-lg flex flex-col items-center justify-center gap-2 p-2"
                   >
@@ -923,19 +923,19 @@
             >
               <div class="w-1/3 flex flex-col items-center">
                 <div class="text-gray-300 text-base mb-1">Songs</div>
-                <div class="text-[#4C79F4] font-semibold text-xl">
+                <div class="text-[#0F5EE4] font-semibold text-xl">
                   {{ reviewsByType.songs }}
                 </div>
               </div>
               <div class="w-1/3 flex flex-col items-center">
                 <div class="text-gray-300 text-base mb-1">Albums</div>
-                <div class="text-[#4C79F4] font-semibold text-xl">
+                <div class="text-[#0F5EE4] font-semibold text-xl">
                   {{ reviewsByType.albums }}
                 </div>
               </div>
               <div class="w-1/3 flex flex-col items-center">
                 <div class="text-gray-300 text-base mb-1">Artists</div>
-                <div class="text-[#4C79F4] font-semibold text-xl">
+                <div class="text-[#0F5EE4] font-semibold text-xl">
                   {{ reviewsByType.artists }}
                 </div>
               </div>
@@ -950,7 +950,7 @@
               >
             </div>
             <div class="bg-gray-800 p-3 rounded-lg text-center">
-              <span class="font-bold text-[#4C79F4] text-lg">
+              <span class="font-bold text-[#0F5EE4] text-lg">
                 {{ mostReviewedGenre }}
               </span>
             </div>
@@ -964,7 +964,7 @@
               >
             </div>
             <div class="bg-gray-800 p-3 rounded-lg text-center">
-              <span class="font-bold text-[#4C79F4] text-lg">
+              <span class="font-bold text-[#0F5EE4] text-lg">
                 {{ mostReviewedArtist }}
               </span>
             </div>
@@ -981,13 +981,13 @@
             >
               <div class="w-1/2">
                 <div class="text-gray-300 text-base mb-1">Total</div>
-                <div class="text-[#4C79F4] font-semibold text-xl">
+                <div class="text-[#0F5EE4] font-semibold text-xl">
                   {{ formatNumber(totalWordsWritten) }}
                 </div>
               </div>
               <div class="w-1/2">
                 <div class="text-gray-300 text-base mb-1">Average</div>
-                <div class="text-[#4C79F4] font-semibold text-xl">
+                <div class="text-[#0F5EE4] font-semibold text-xl">
                   {{ averageWordsPerReview }}
                 </div>
               </div>
@@ -1002,7 +1002,7 @@
               >
             </div>
             <div class="bg-gray-800 p-3 rounded-lg text-center">
-              <div class="text-[#4C79F4] font-semibold text-xl">
+              <div class="text-[#0F5EE4] font-semibold text-xl">
                 {{ averageRating }}
                 <span class="text-gray-400 text-base">/ 10</span>
               </div>
@@ -1017,7 +1017,7 @@
               >
             </div>
             <div class="bg-gray-800 p-3 rounded-lg text-center">
-              <div class="text-[#4C79F4] font-semibold text-xl">
+              <div class="text-[#0F5EE4] font-semibold text-xl">
                 {{ totalGenresReviewed }}
               </div>
             </div>
@@ -1031,7 +1031,7 @@
               >
             </div>
             <div class="bg-gray-800 p-3 rounded-lg text-center">
-              <div class="text-[#4C79F4] font-semibold text-xl">
+              <div class="text-[#0F5EE4] font-semibold text-xl">
                 {{ longestReviewStreak }} Day{{
                   longestReviewStreak > 1 ? "s" : ""
                 }}
@@ -1068,7 +1068,7 @@
     >
       <button
         *ngFor="let badge of unlockedBadges"
-        class="px-3 py-1 rounded-full flex items-center gap-2 bg-blue-600 text-white"
+        class="px-3 py-1 rounded-full flex items-center gap-2 bg-[#0F5EE4] text-white"
         (click)="openBadgesOverlay(badge)"
       >
         {{ badge.name }}
@@ -1102,7 +1102,7 @@
           class="px-3 py-1 rounded-full flex items-center gap-2"
           [ngClass]="
             badge.unlocked
-              ? 'bg-blue-600 text-white'
+              ? 'bg-[#0F5EE4] text-white'
               : 'bg-gray-400 text-gray-700'
           "
           (click)="showBadgeInfo(badge)"

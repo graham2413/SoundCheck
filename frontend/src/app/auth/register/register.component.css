@@ -6,7 +6,7 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: #9ca3af !important; /* Placeholder text in light gray */
+  color: #6b7280 !important; /* gray-500 */
 }
 
 input:-webkit-autofill,

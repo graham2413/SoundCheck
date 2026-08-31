@@ -1,23 +1,35 @@
 <div
-  class="flex min-h-screen flex-col justify-start px-2 py-2 lg:px-8 bg-[#09101F] text-white mt-[1rem]"
+  class="flex min-h-screen flex-col justify-start px-2 lg:px-8 bg-[#09101F] text-white mt-[1rem]"
 >
-<div class="sm:mx-auto text-center mb-3">
-  <div class="inline-block border-b-2 border-[#1F249C] pb-2">
+<div class="sm:mx-auto text-center">
+  <div class="inline-block">
     <img
-      class="h-auto w-48 mx-auto logoQuery object-contain"
+      class="h-auto w-40 mx-auto logoQuery object-contain"
       src="../assets/scLogo.png"
       alt="Sound Check Logo"
     />
   </div>
 </div>
 
-<div class="space-y-1">
-  <h2 class="text-2xl font-bold text-center">Create Account</h2>
-  <p class="text-gray-400 mt-2 text-center mb-2">Sign up to get started</p>
+<div class="text-center mb-3 -mt-3">
+  <h1
+    class="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-b from-gray-100 via-gray-300 to-gray-500 bg-clip-text text-transparent drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"
+  >
+    Sound &amp; Screen
+  </h1>
+  <p class="text-gray-400 text-base md:text-lg mt-1">Audio-Visual Discovery &amp; Reviews</p>
+</div>
+
+<div class="space-y-1 mt-4">
+  <h2
+    class="text-2xl font-extrabold tracking-tight text-center bg-gradient-to-b from-gray-100 via-gray-300 to-gray-500 bg-clip-text text-transparent drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"
+  >
+    Create Account
+  </h2>
 </div>
 
   <div
-    class="sm:mx-auto sm:w-full sm:max-w-xl bg-[#11192B] mt-2 p-4 md:p-6 rounded-lg shadow-md"
+    class="sm:mx-auto sm:w-full sm:max-w-xl bg-[#11192B] mt-2 p-4 md:p-6 rounded-lg shadow-md border border-gray-700/60"
   >
     <form class="space-y-4">
       <!-- Full Name -->
@@ -25,12 +37,16 @@
         <label class="block text-gray-300 text-base md:text-lg font-semibold mb-1"
           >Full Name</label
         >
-        <input
-          type="text"
-          [(ngModel)]="username"
-          name="fullName"
-          class="w-full px-4 py-2 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base md:text-lg"
-        />
+        <div class="relative">
+          <i class="far fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+          <input
+            type="text"
+            [(ngModel)]="username"
+            name="fullName"
+            placeholder="Enter your full name"
+            class="w-full pl-10 pr-4 py-2 rounded-md text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base md:text-lg"
+          />
+        </div>
         <p *ngIf="errorMessages.username" class="text-red-500 text-base md:text-lg mt-1">
           {{ errorMessages.username }}
         </p>
@@ -41,12 +57,16 @@
         <label class="block text-gray-300 text-base md:text-lg font-semibold mb-1"
           >Email</label
         >
-        <input
-          type="email"
-          [(ngModel)]="email"
-          name="email"
-          class="w-full px-4 py-2 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base md:text-lg"
-        />
+        <div class="relative">
+          <i class="far fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+          <input
+            type="email"
+            [(ngModel)]="email"
+            name="email"
+            placeholder="Enter your email"
+            class="w-full pl-10 pr-4 py-2 rounded-md text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base md:text-lg"
+          />
+        </div>
         <p *ngIf="errorMessages.email" class="text-red-500 text-base md:text-lg mt-1">
           {{ errorMessages.email }}
         </p>
@@ -58,17 +78,28 @@
           >Password</label
         >
         <div class="relative">
+          <svg
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="5" y="11" width="14" height="10" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
           <input
         [type]="showPassword ? 'text' : 'password'"
         [(ngModel)]="password"
         name="password"
-        class="w-full px-4 py-2 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base md:text-lg"
+        placeholder="Enter your password"
+        class="w-full pl-10 pr-4 py-2 rounded-md text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base md:text-lg"
         autocomplete="new-password"
           />
           <i
         [ngClass]="[
           showPassword ? 'fa-eye-slash' : 'fa-eye',
-          'fas absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-gray-200'
+          'far absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-200'
         ]"
         (click)="showPassword = !showPassword"
           ></i>
@@ -84,17 +115,28 @@
           >Confirm Password</label
         >
         <div class="relative">
+          <svg
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="5" y="11" width="14" height="10" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
           <input
         [type]="showConfirmPassword ? 'text' : 'password'"
         [(ngModel)]="confirmPassword"
         name="confirmPassword"
-        class="w-full px-4 py-2 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base md:text-lg"
+        placeholder="Confirm your password"
+        class="w-full pl-10 pr-4 py-2 rounded-md text-white placeholder-gray-500 border border-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base md:text-lg"
         autocomplete="new-password"
           />
           <i
         [ngClass]="[
           showConfirmPassword ? 'fa-eye-slash' : 'fa-eye',
-          'fas absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-gray-200'
+          'far absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-200'
         ]"
         (click)="showConfirmPassword = !showConfirmPassword"
           ></i>
@@ -133,7 +175,7 @@
       <button
         (click)="loginWithGoogle()"
         [disabled]="isGoogleLoading"
-        class="w-full flex items-center justify-center gap-2 bg-[#1B2539] hover:bg-gray-600 px-4 py-2 rounded-md text-white transition"
+        class="w-full flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-100 px-4 py-2 rounded-md text-gray-800 font-medium transition"
       >
         <img
           src="../assets/google.png"
@@ -141,7 +183,7 @@
           *ngIf="!isGoogleLoading"
         />
         <div *ngIf="isGoogleLoading" class="google-loader"></div>
-        <span *ngIf="!isGoogleLoading">Sign up with Google</span>
+        <span *ngIf="!isGoogleLoading">Continue with Google</span>
         <span *ngIf="isGoogleLoading">Redirecting...</span>
       </button>
     </div>

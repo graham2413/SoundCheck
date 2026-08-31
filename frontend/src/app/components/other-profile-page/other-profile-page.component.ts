@@ -814,6 +814,11 @@ export class ViewProfilePageComponent implements OnInit {
     );
   }
 
+  // Refining a rating is only ever allowed on your own records.
+  get isOwnProfile(): boolean {
+    return !!this.otherUser && this.otherUser._id === this.loggedInUser?._id;
+  }
+
   loadWatchlistIfVisible(): void {
     if (!this.canViewWatchlist || !this.otherUser) {
       this.watchlistItems = [];
