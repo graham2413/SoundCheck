@@ -2,6 +2,7 @@ const User = require("../models/User");
 const { cloudinary } = require("../config/cloudinaryConfig");
 const bcrypt = require("bcryptjs");
 const Review = require("../models/Review");
+const CinemaItem = require("../models/CinemaItem");
 const Release = require('../models/Release');
 const redis = require('../utils/redisClient');
 
@@ -25,6 +26,14 @@ exports.getUserProfile = async (req, res) => {
       .sort({ createdAt: -1 }) // Sort reviews by newest first
       .lean();
 
+    // Cinema reviews are public just like music reviews, no visibility gate
+    const cinemaReviews = await CinemaItem.find({
+      user: user._id,
+      decimalRating: { $ne: null },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
     // Sort artistList by addedAt descending (most recent first)
     const sortedArtistList = (user.artistList || []).slice().sort((a, b) => {
       return new Date(b.addedAt) - new Date(a.addedAt);
@@ -36,9 +45,11 @@ exports.getUserProfile = async (req, res) => {
       profilePicture: user.profilePicture || "assets/user.png",
       friends: user.friends,
       reviews: reviews,
+      cinemaReviews: cinemaReviews,
       createdAt: user.createdAt,
       gradient: user.gradient,
       artistList: sortedArtistList,
+      cinemaWatchlistIsPublic: user.cinemaWatchlistIsPublic || false,
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
@@ -58,6 +69,14 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Cinema reviews are public just like music reviews, no visibility gate
+    const cinemaReviews = await CinemaItem.find({
+      user: user._id,
+      decimalRating: { $ne: null },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
     const formattedUser = {
       _id: user._id,
       username: user.username,
@@ -66,6 +85,8 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
       artistList: user.artistList || [],
       profilePicture: user.profilePicture,
       createdAt: user.createdAt,
+      cinemaWatchlistIsPublic: user.cinemaWatchlistIsPublic || false,
+      cinemaReviews: cinemaReviews,
       friendInfo: {
         friends: user.friends.map((friend) => ({
           _id: friend._id,
@@ -161,6 +182,10 @@ exports.updateUserProfile = async (req, res) => {
       user.gradient = req.body.gradient;
     }
 
+    if (req.body.cinemaWatchlistIsPublic !== undefined) {
+      user.cinemaWatchlistIsPublic = req.body.cinemaWatchlistIsPublic === "true" || req.body.cinemaWatchlistIsPublic === true;
+    }
+
     user.profilePicture = profilePictureUrl;
 
     // Save updated user data
@@ -173,6 +198,7 @@ exports.updateUserProfile = async (req, res) => {
       profilePicture: updatedUser.profilePicture,
       createdAt: updatedUser.createdAt,
       gradient: updatedUser.gradient,
+      cinemaWatchlistIsPublic: updatedUser.cinemaWatchlistIsPublic || false,
     });
   } catch (error) {
     console.error("Error updating profile:", error);

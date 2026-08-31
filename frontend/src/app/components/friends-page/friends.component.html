@@ -273,7 +273,7 @@
 
                 <!-- Image -->
                 <img
-                  [src]="friend.profilePicture || 'assets/user.png'"
+                  [src]="getTransformedImageUrl(friend.profilePicture)"
                   (load)="markImageLoaded(i, 'friend')"
                   (error)="markImageLoaded(i, 'friend')"
                   [class.invisible]="!isImageLoaded(i, 'friend')"
@@ -396,7 +396,7 @@
             >
               <!-- Left: Profile Image -->
               <img
-                [src]="request.profilePicture || 'assets/user.png'"
+                [src]="getTransformedImageUrl(request.profilePicture)"
                 alt="Profile"
                 class="w-[3.5rem] h-[3.5rem] md:w-[5rem] md:h-[5rem] lg:w-[7rem] lg:h-[7rem] object-cover rounded-full object-cover shadow-md mr-4"
               />
@@ -541,7 +541,7 @@
 
                 <!-- Image -->
                 <img
-                  [src]="user.profilePicture || 'assets/user.png'"
+                  [src]="getTransformedImageUrl(user.profilePicture)"
                   (load)="markImageLoaded(i, 'user')"
                   (error)="markImageLoaded(i, 'user')"
                   [class.invisible]="!isImageLoaded(i, 'user')"

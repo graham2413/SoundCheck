@@ -1,6 +1,6 @@
 <!-- Fullscreen Loading Indicator -->
 <div
-  *ngIf="!otherUser"
+  *ngIf="!isProfileReady"
   class="fixed inset-0 z-10 flex items-center justify-center bg-[#09101F] text-white w-screen h-screen"
 >
   <div class="flex flex-col items-center gap-4">
@@ -13,7 +13,7 @@
 
 <!-- Outer Container -->
 <div
-  *ngIf="otherUser"
+  *ngIf="isProfileReady && otherUser"
   class="container mx-auto max-w-[1000px] pb-6 bg-[#09101F] text-white rounded-lg"
 >
   <!-- Top Gradient Banner -->
@@ -211,18 +211,41 @@
 
         <!-- Else (you're viewing your own profile) -->
         <ng-template #editProfileButton>
-          <button
-            (click)="goToUserProfile()"
-            [disabled]="decliningFriendRequest"
-            class="p-2 px-4 text-sm md:text-base font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition mt-[3rem] flex items-center gap-2"
-          >
-            <ng-container *ngIf="!decliningFriendRequest; else loadingIcon">
-              <i class="fas fa-user-edit"></i> Edit Profile
-            </ng-container>
-            <ng-template #loadingIcon>
-              <i class="fas fa-spinner fa-spin"></i>
-            </ng-template>
-          </button>
+          <div class="flex flex-col items-center gap-2 mt-[3rem]">
+            <button
+              (click)="goToUserProfile()"
+              [disabled]="decliningFriendRequest"
+              class="p-2 px-4 text-sm md:text-base font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+            >
+              <ng-container *ngIf="!decliningFriendRequest; else loadingIcon">
+                <i class="fas fa-user-edit"></i> Edit Profile
+              </ng-container>
+              <ng-template #loadingIcon>
+                <i class="fas fa-spinner fa-spin"></i>
+              </ng-template>
+            </button>
+
+            <!-- Import Trakt Export -->
+            <input
+              #traktExportInput
+              type="file"
+              accept=".zip"
+              class="hidden"
+              (change)="onTraktExportSelected($event)"
+            />
+            <button
+              (click)="traktExportInput.click()"
+              [disabled]="isImportingTraktExport"
+              class="p-2 px-4 text-sm md:text-base font-medium rounded-lg bg-gray-700 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+            >
+              <ng-container *ngIf="!isImportingTraktExport; else importingIcon">
+                <i class="fas fa-file-zipper"></i> Import Trakt
+              </ng-container>
+              <ng-template #importingIcon>
+                <i class="fas fa-spinner fa-spin"></i> Importing...
+              </ng-template>
+            </button>
+          </div>
         </ng-template>
       </ng-container>
     </div>
@@ -243,7 +266,7 @@
     >
       <div class="p-1" (click)="openReviews()">
         <span class="block text-center text-lg">{{
-          otherUser.reviews?.length
+          (otherUser.reviews?.length || 0) + (otherUser.cinemaReviews?.length || 0)
         }}</span>
         <span class="block text-center text-gray-400">Reviews</span>
       </div>
@@ -258,6 +281,16 @@
           otherUser.artistList?.length || 0
         }}</span>
         <span class="block text-center text-gray-400">Artists</span>
+      </div>
+      <div
+        class="p-1"
+        *ngIf="canViewWatchlist"
+        (click)="openWatchlist()"
+      >
+        <span class="block text-center text-lg">{{
+          watchlistItems.length
+        }}</span>
+        <span class="block text-center text-gray-400">Watchlist</span>
       </div>
     </div>
 
@@ -277,13 +310,20 @@
           {{ showPanel }}
           <span class="text-lg md:text-xl text-gray-500 ml-2">
             <span *ngIf="showPanel === 'reviews'">
-              ({{ otherUser.reviews?.length || 0 }})
+              ({{
+                (reviewMode === 'music'
+                  ? otherUser.reviews?.length
+                  : otherUser.cinemaReviews?.length) || 0
+              }})
             </span>
             <span *ngIf="showPanel === 'friends'"
               >({{ otherUser.friends?.length || 0 }})</span
             >
             <span *ngIf="showPanel === 'artists'">
               ({{ otherUser.artistList?.length || 0 }})
+            </span>
+            <span *ngIf="showPanel === 'watchlist'">
+              ({{ watchlistItems.length }})
             </span>
           </span>
         </h2>
@@ -297,10 +337,128 @@
 
       <div class="p-4">
         <ng-container [ngSwitch]="showPanel">
+          <ng-container *ngSwitchCase="'watchlist'">
+            <div *ngIf="isLoadingWatchlist" class="flex justify-center py-8">
+              <i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i>
+            </div>
+
+            <p
+              *ngIf="!isLoadingWatchlist && watchlistItems.length === 0"
+              class="text-gray-400 text-center mt-8"
+            >
+              Your watchlist is empty.
+            </p>
+
+            <div
+              *ngIf="!isLoadingWatchlist && watchlistItems.length > 0"
+              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-[1000px] mx-auto"
+            >
+              <div
+                *ngFor="let item of watchlistItems; let i = index"
+                (click)="openCinemaRecord(item, watchlistItems, i)"
+                class="text-center bg-gray-800 p-3 rounded-lg cursor-pointer"
+              >
+                <div class="relative aspect-[2/3] w-full">
+                  <!-- Loader -->
+                  <div
+                    *ngIf="!isImageLoaded(i, 'watchlist')"
+                    class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-md"
+                  >
+                    <div
+                      class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                    ></div>
+                  </div>
+                  <img
+                    [src]="
+                      item.cover ||
+                      'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                    "
+                    (load)="markImageLoaded(i, 'watchlist')"
+                    (error)="markImageLoaded(i, 'watchlist')"
+                    [class.invisible]="!isImageLoaded(i, 'watchlist')"
+                    alt="{{ item.title }}"
+                    class="aspect-[2/3] w-full object-cover rounded-md border-2 border-gray-500"
+                  />
+                  <div
+                    class="absolute top-1 left-1 bg-gray-900/80 p-1.5 rounded-full"
+                  >
+                    <i
+                      class="fas text-sm"
+                      [ngClass]="{
+                        'fa-film text-green-400': item.mediaType === 'movie',
+                        'fa-tv text-purple-400': item.mediaType === 'tv'
+                      }"
+                    ></i>
+                  </div>
+                </div>
+                <span
+                  class="text-white font-semibold text-sm truncate overflow-hidden whitespace-nowrap block mt-2"
+                  [title]="item.title"
+                >
+                  {{ item.title }}
+                </span>
+                <p class="text-gray-400 text-xs">
+                  {{ item.releaseDate | date : "yyyy" }}
+                </p>
+              </div>
+            </div>
+          </ng-container>
+
           <ng-container *ngSwitchCase="'reviews'">
+            <!-- Music/Cinema Toggle -->
+            <div
+              class="flex justify-center gap-2 mb-4 max-w-[540px] md:max-w-[1000px] mx-auto"
+            >
+              <button
+                (click)="setReviewMode('music')"
+                [ngClass]="{
+                  'bg-[#0F5EE4] text-white': reviewMode === 'music',
+                  'bg-gray-800 text-gray-400': reviewMode !== 'music'
+                }"
+                class="px-4 py-1.5 rounded-full font-semibold text-sm transition"
+              >
+                Music
+              </button>
+              <button
+                (click)="setReviewMode('cinema')"
+                [ngClass]="{
+                  'bg-[#0F5EE4] text-white': reviewMode === 'cinema',
+                  'bg-gray-800 text-gray-400': reviewMode !== 'cinema'
+                }"
+                class="px-4 py-1.5 rounded-full font-semibold text-sm transition"
+              >
+                Cinema
+              </button>
+            </div>
+
+            <ng-container *ngIf="reviewMode === 'music'">
+            <!-- Sort/Filter Controls -->
+            <div
+              class="flex flex-wrap justify-center gap-2 mb-4 max-w-[540px] md:max-w-[1000px] mx-auto"
+            >
+              <select
+                [(ngModel)]="reviewSort"
+                class="bg-gray-800 text-white text-sm rounded-lg px-2 py-1.5 border border-gray-600"
+              >
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="highest">Highest Rated</option>
+                <option value="lowest">Lowest Rated</option>
+              </select>
+              <select
+                [(ngModel)]="musicTypeFilter"
+                class="bg-gray-800 text-white text-sm rounded-lg px-2 py-1.5 border border-gray-600"
+              >
+                <option value="All">All Types</option>
+                <option value="Song">Song</option>
+                <option value="Album">Album</option>
+                <option value="Artist">Artist</option>
+              </select>
+            </div>
+
             <div
               *ngFor="
-                let review of otherUser.reviews;
+                let review of filteredMusicReviews;
                 let i = index;
                 last as isLast
               "
@@ -450,7 +608,7 @@
 <div class="flex items-center justify-between mt-[5rem] w-full">
   <!-- Left: time ago text -->
   <p class="text-sm md:text-lg text-gray-400">
-    {{ review.createdAt | timeAgo }}
+    {{ review.createdAt | date : "MMM d, y" }}
   </p>
 
   <!-- Right: like button -->
@@ -479,6 +637,143 @@
 </div>
 
             </div>
+            </ng-container>
+
+            <ng-container *ngIf="reviewMode === 'cinema'">
+              <!-- Sort/Filter Controls -->
+              <div
+                class="flex flex-wrap justify-center gap-2 mb-4 max-w-[1000px] mx-auto"
+              >
+                <select
+                  [(ngModel)]="reviewSort"
+                  class="bg-gray-800 text-white text-sm rounded-lg px-2 py-1.5 border border-gray-600"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="highest">Highest Rated</option>
+                  <option value="lowest">Lowest Rated</option>
+                </select>
+                <select
+                  [(ngModel)]="cinemaTypeFilter"
+                  class="bg-gray-800 text-white text-sm rounded-lg px-2 py-1.5 border border-gray-600"
+                >
+                  <option value="All">All Types</option>
+                  <option value="movie">Movie</option>
+                  <option value="tv">TV</option>
+                </select>
+                <select
+                  [(ngModel)]="cinemaGenreFilter"
+                  class="bg-gray-800 text-white text-sm rounded-lg px-2 py-1.5 border border-gray-600"
+                >
+                  <option value="All">All Genres</option>
+                  <option *ngFor="let genre of cinemaGenreOptions" [value]="genre">
+                    {{ genre }}
+                  </option>
+                </select>
+              </div>
+
+              <p
+                *ngIf="filteredCinemaReviews.length === 0"
+                class="text-gray-400 text-center mt-8"
+              >
+                No cinema reviews yet.
+              </p>
+
+              <div
+                *ngIf="filteredCinemaReviews.length > 0"
+                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-[1000px] mx-auto"
+              >
+                <div
+                  *ngFor="let item of filteredCinemaReviews; let i = index"
+                  (click)="openCinemaRecord(item, filteredCinemaReviews, i)"
+                  class="relative text-center bg-gray-800 p-3 rounded-lg cursor-pointer"
+                >
+                  <button
+                    *ngIf="item.isUnrefinedImport && refiningItemId !== item._id"
+                    (click)="$event.stopPropagation(); startRefine(item)"
+                    class="absolute top-1 right-1 z-10 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    title="Needs precise rating - click to refine"
+                  >
+                    Refine
+                  </button>
+                  <div class="relative aspect-[2/3] w-full">
+                    <!-- Loader -->
+                    <div
+                      *ngIf="!isImageLoaded(i, 'cinemaReview')"
+                      class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-md"
+                    >
+                      <div
+                        class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                      ></div>
+                    </div>
+                    <img
+                      [src]="
+                        item.cover ||
+                        'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                      "
+                      (load)="markImageLoaded(i, 'cinemaReview')"
+                      (error)="markImageLoaded(i, 'cinemaReview')"
+                      [class.invisible]="!isImageLoaded(i, 'cinemaReview')"
+                      alt="{{ item.title }}"
+                      class="aspect-[2/3] w-full object-cover rounded-md border-2 border-gray-500"
+                    />
+                    <div
+                      class="absolute top-1 left-1 bg-gray-900/80 p-1.5 rounded-full"
+                    >
+                      <i
+                        class="fas text-sm"
+                        [ngClass]="{
+                          'fa-film text-green-400': item.mediaType === 'movie',
+                          'fa-tv text-purple-400': item.mediaType === 'tv'
+                        }"
+                      ></i>
+                    </div>
+                  </div>
+                  <span
+                    class="text-white font-semibold text-sm truncate overflow-hidden whitespace-nowrap block mt-2"
+                    [title]="item.title"
+                  >
+                    {{ item.title }}
+                  </span>
+                  <p class="text-yellow-400 text-sm font-bold">
+                    <i class="fas fa-star"></i> {{ item.decimalRating }} / 10
+                  </p>
+                  <p class="text-gray-400 text-xs">
+                    {{ item.createdAt | date : "MMM d, y" }}
+                  </p>
+
+                  <!-- Refine Rating inline form -->
+                  <div
+                    *ngIf="refiningItemId === item._id"
+                    (click)="$event.stopPropagation()"
+                    class="absolute inset-0 z-20 bg-gray-900/95 rounded-lg flex flex-col items-center justify-center gap-2 p-2"
+                  >
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      [(ngModel)]="refiningValue"
+                      class="w-16 text-center text-lg bg-gray-800 border border-gray-600 rounded text-yellow-400"
+                    />
+                    <div class="flex gap-2">
+                      <button
+                        (click)="submitRefine(item)"
+                        class="bg-[#0F5EE4] text-white text-xs font-semibold px-3 py-1 rounded-full"
+                      >
+                        Save
+                      </button>
+                      <button
+                        (click)="cancelRefine()"
+                        class="bg-gray-700 text-white text-xs font-semibold px-3 py-1 rounded-full"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
           </ng-container>
 
           <!-- Friends List Section -->

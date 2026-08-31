@@ -14,6 +14,9 @@ export interface Season {
 }
 
 export interface CinemaItem {
+  // Discriminant so `record.type` narrowing works consistently across the
+  // shared review-page template (mirrors Album/Song/Artist's `type` field).
+  type: 'Cinema';
   _id: string;
   user: string;
   mediaType: 'movie' | 'tv';
@@ -27,6 +30,9 @@ export interface CinemaItem {
   genres?: string[];
   streamingPlatforms?: string[];
   decimalRating?: number;
+  reviewText?: string;
+  likes?: number;
+  likedBy?: string[];
   isWatchlist: boolean;
   isUnrefinedImport: boolean;
   traktSynced: boolean;

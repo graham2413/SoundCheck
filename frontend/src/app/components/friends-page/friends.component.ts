@@ -146,6 +146,17 @@ export class FriendsComponent implements OnInit {
     return this.imageLoadState[`${i}-${context}`] === true;
   }
 
+  getTransformedImageUrl(fullUrl: string): string {
+    if (!fullUrl) {
+      return 'assets/user.png';
+    }
+
+    return fullUrl.replace(
+      '/upload/',
+      '/upload/w_1600,h_1600,c_fill,g_face,f_auto,q_auto,dpr_auto/'
+    );
+  }
+
   getSearchPlaceholder() {
     switch (this.activeTab) {
       case 'addFriends':

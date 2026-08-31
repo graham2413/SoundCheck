@@ -260,7 +260,7 @@
       </div>
 
       <!-- Album and Song Section  -->
-      <div *ngIf="record.type !== 'Artist'">
+      <div *ngIf="record.type !== 'Artist' && record.type !== 'Cinema'">
         <div class="relative flex justify-center items-center">
           <img
             [src]="
@@ -608,10 +608,15 @@
               </span>
               <span
                 class="text-gray-400 text-xl block uppercase"
-                *ngIf="!isSingleAlbum && (record.tracklist?.length ?? 0) > 1"
+                *ngIf="!isSingleAlbum && record.tracklist.length > 1"
               >
                 Album
               </span>
+            </ng-container>
+            <ng-container *ngIf="isCinemaRecord">
+              <span class="text-gray-400 text-xl block uppercase">{{
+                cinemaTypeLabel
+              }}</span>
             </ng-container>
             <div
               class="title-wrapper"
@@ -632,7 +637,10 @@
                 <span *ngIf="record.type === 'Artist'">{{ record.name }}</span>
               </div>
             </div>
-            <p class="text-gray-400 text-xl flex items-center justify-center">
+            <p
+              *ngIf="record.type !== 'Cinema'"
+              class="text-gray-400 text-xl flex items-center justify-center"
+            >
               <span
                 *ngIf="isExplicit"
                 class="bg-gray-600 text-white text-base w-[1.5em] h-[1.5em] flex items-center justify-center font-bold rounded leading-none mr-1"
@@ -645,11 +653,17 @@
                 {{ record.type !== "Artist" ? record.artist : "" }}
               </span>
             </p>
+            <p
+              *ngIf="isCinemaRecord && cinemaRecord?.releaseDate"
+              class="text-gray-400 text-xl flex items-center justify-center"
+            >
+              {{ cinemaRecord?.releaseDate | date : "yyyy" }}
+            </p>
           </div>
         </div>
         <app-audio-player
-          *ngIf="record"
-          [record]="record"
+          *ngIf="record && record.type !== 'Cinema'"
+          [record]="musicRecord"
           [hidden]="showSecondIpod"
           [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
           #audioPlayerMobile
@@ -659,7 +673,7 @@
           (playStatus)="updatePlayStatus($event)"
           (playStarted)="onAudioPlayStarted($event)"
           [currentIndex]="currentIndex"
-          [recordList]="recordList"
+          [recordList]="musicRecordList"
         ></app-audio-player>
       </div>
     </div>
@@ -703,7 +717,12 @@
 
   <!-- Loading state while fetching smart link -->
   <div
-    *ngIf="isLoadingSmartUrl && !showSecondIpod && record.type !== 'Artist'"
+    *ngIf="
+      isLoadingSmartUrl &&
+      !showSecondIpod &&
+      record.type !== 'Artist' &&
+      record.type !== 'Cinema'
+    "
     class="mt-[2rem] mb-[1rem] w-auto mx-auto text-white font-medium py-2 px-6 rounded-full flex items-center justify-center text-lg bg-gray-700 opacity-75 animate-pulse"
   >
     <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i>
@@ -1533,11 +1552,14 @@
                       </span>
                       <span
                         class="text-gray-400 text-xl block uppercase mb-2"
-                        *ngIf="
-                          !isSingleAlbum && (record.tracklist?.length ?? 0) > 1
-                        "
+                        *ngIf="!isSingleAlbum && record.tracklist.length > 1"
                       >
                         Album
+                      </span>
+                    </ng-container>
+                    <ng-container *ngIf="isCinemaRecord">
+                      <span class="text-gray-400 text-xl block uppercase mt-2">
+                        {{ cinemaTypeLabel }}
                       </span>
                     </ng-container>
                     <div
@@ -1562,6 +1584,7 @@
                       </div>
                     </div>
                     <p
+                      *ngIf="record.type !== 'Cinema'"
                       class="text-gray-400 flex items-center justify-center mt-2"
                     >
                       <span
@@ -1576,14 +1599,20 @@
                         {{ record.type !== "Artist" ? record.artist : "" }}
                       </span>
                     </p>
+                    <p
+                      *ngIf="isCinemaRecord && cinemaRecord?.releaseDate"
+                      class="text-gray-400 flex items-center justify-center mt-2"
+                    >
+                      {{ cinemaRecord?.releaseDate | date : "yyyy" }}
+                    </p>
                   </div>
                   <div
                     class="h-auto flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
                   >
                     <app-audio-player
                       class="pt-1"
-                      *ngIf="record"
-                      [record]="record"
+                      *ngIf="record && record.type !== 'Cinema'"
+                      [record]="musicRecord"
                       [hidden]="showSecondIpod"
                       [showForwardAndBackwardButtons]="
                         showForwardAndBackwardButtons
@@ -1595,7 +1624,7 @@
                       (playStatus)="updatePlayStatus($event)"
                       (playStarted)="onAudioPlayStarted($event)"
                       [currentIndex]="currentIndex"
-                      [recordList]="recordList"
+                      [recordList]="musicRecordList"
                     ></app-audio-player>
                   </div>
                   <!-- Add Artist Button -->
@@ -1639,7 +1668,8 @@
                     *ngIf="
                       isLoadingSmartUrl &&
                       !showSecondIpod &&
-                      record.type !== 'Artist'
+                      record.type !== 'Artist' &&
+                      record.type !== 'Cinema'
                     "
                     class="mt-[1rem] mb-[1rem] w-auto mx-auto text-white font-medium py-2 px-6 rounded-full flex items-center justify-center text-lg bg-gray-700 opacity-75 animate-pulse"
                   >
@@ -1901,7 +1931,7 @@
             </div>
 
             <!-- Album and Song Section  -->
-            <div *ngIf="record.type !== 'Artist'">
+            <div *ngIf="record.type !== 'Artist' && record.type !== 'Cinema'">
               <div class="relative flex justify-center items-center">
                 <img
                   [src]="

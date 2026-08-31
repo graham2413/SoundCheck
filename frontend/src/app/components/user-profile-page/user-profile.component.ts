@@ -47,6 +47,7 @@ export class ProfileComponent implements OnInit {
 
   isSaving: boolean = false;
   isDeleting: boolean = false;
+  cinemaWatchlistIsPublic: boolean = false;
 
   preferredApp: string | null = null;
 availablePlatforms: string[] = [
@@ -100,6 +101,7 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
     this.userService.userProfile$.subscribe((profile) => {
       if (profile) {
         this.userProfile = profile;
+        this.cinemaWatchlistIsPublic = profile.cinemaWatchlistIsPublic || false;
         this.updateProfilePictureUrl();
       }
     });
@@ -185,6 +187,7 @@ onProfilePictureChange(event: Event): void {
 
     const formData = new FormData();
     formData.append('username', this.userProfile.username);
+    formData.append('cinemaWatchlistIsPublic', String(this.cinemaWatchlistIsPublic));
 
     if (this.selectedFile) {
       formData.append('profilePicture', this.selectedFile);
@@ -213,6 +216,7 @@ onProfilePictureChange(event: Event): void {
           ...this.userProfile,
           email: response.email,
           profilePicture: response.profilePicture,
+          cinemaWatchlistIsPublic: response.cinemaWatchlistIsPublic,
         });
 
         this.isSaving = false;

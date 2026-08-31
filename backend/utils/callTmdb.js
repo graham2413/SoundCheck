@@ -79,7 +79,7 @@ async function getTmdbDetails(tmdbId, mediaType = "movie") {
   if (cached) return JSON.parse(cached);
 
   const response = await callTmdb(`/${mediaType}/${tmdbId}`, {
-    append_to_response: "watch/providers",
+    append_to_response: "watch/providers,credits",
   });
 
   if (response.data) {

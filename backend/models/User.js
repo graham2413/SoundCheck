@@ -26,6 +26,9 @@ const userSchema = new Schema({
     // Profile background selection
     gradient: { type: Schema.Types.Mixed, default: {} },
 
+    // Cinema watchlist visibility (private by default)
+    cinemaWatchlistIsPublic: { type: Boolean, default: false },
+
     // Profile created date
     createdAt: { type: Date, default: Date.now },
 

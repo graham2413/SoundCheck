@@ -35,6 +35,8 @@ import { SearchService } from 'src/app/services/search.service';
 import { Album } from 'src/app/models/responses/album-response';
 import { Artist } from 'src/app/models/responses/artist-response';
 import { Song } from 'src/app/models/responses/song-response';
+import { CinemaItem } from 'src/app/models/responses/cinema-response';
+import { CinemaService } from 'src/app/services/cinema.service';
 import { CreateReviewCommandModel } from 'src/app/models/command-models/create-review-commandmodel';
 import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
 import { UserService } from 'src/app/services/user.service';
@@ -259,8 +261,8 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   desktopCardWidth = 400;
   private desktopImageAreaResizeObserver?: ResizeObserver;
 
-  @Input() record!: Album | Artist | Song;
-  @Input() recordList: (Album | Artist | Song)[] = [];
+  @Input() record!: Album | Artist | Song | CinemaItem;
+  @Input() recordList: (Album | Artist | Song | CinemaItem)[] = [];
   @Input() currentIndex: number = 0;
   @Input() showForwardAndBackwardButtons: boolean = true;
   @Input() activeDiscoverTab!: string;
@@ -352,7 +354,8 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private colorThief: ColorThiefService,
     private router: Router,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private cinemaService: CinemaService
   ) {}
 
   ngOnInit(): void {
@@ -391,10 +394,11 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   }
 
   updateIsInList() {
-    this.isInList =
-      this.userProfile.artistList?.some(
-        (item) => item.id === this.record.id.toString()
-      ) ?? false;
+    this.isInList = this.isCinemaRecord
+      ? false
+      : this.userProfile.artistList?.some(
+          (item) => item.id === this.musicRecord.id.toString()
+        ) ?? false;
   }
 
   ngAfterViewInit() {
@@ -628,6 +632,24 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   }
 
   getReviews() {
+    // Cinema has no "reviews across all users for this item" endpoint yet -
+    // this record already carries its own rating/review directly.
+    if (this.isCinemaRecord) {
+      this.reviews = [];
+      this.existingUserReview = null;
+      this.ratingBarFill = 0;
+      this.circleDashOffset = 113.1;
+      this.isRatingLoaded = true;
+      this.isReviewsLoaded = true;
+      this.isImageLoaded = true;
+
+      setTimeout(() => {
+        this.ratingBarFill = this.getAverageRating() * 10;
+        this.circleDashOffset = 113.1 - (this.getAverageRating() / 10) * 113.1;
+      }, 50);
+      return;
+    }
+
     const inferredType =
       this.record.type === 'Album' && this.record.tracklist?.length === 1
         ? 'Song'
@@ -649,7 +671,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     }
 
     this.reviewService
-      .searchReviews(this.record.id, inferredType, title, artist)
+      .searchReviews(this.musicRecord.id, inferredType, title, artist)
       .subscribe({
         next: (data: Reviews) => {
           this.reviews = data.reviews;
@@ -848,6 +870,31 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
       : false;
   }
 
+  // Cinema records don't have a `type` field (music does) - they have `mediaType` instead.
+  get isCinemaRecord(): boolean {
+    return this.record?.type === 'Cinema';
+  }
+
+  get cinemaRecord(): CinemaItem | null {
+    return this.isCinemaRecord ? (this.record as CinemaItem) : null;
+  }
+
+  get cinemaTypeLabel(): string {
+    return this.cinemaRecord?.mediaType === 'tv' ? 'TV Show' : 'Movie';
+  }
+
+  // Safe cast for the audio-player, which is only ever rendered (via *ngIf)
+  // when the record is confirmed to be a music record, not cinema.
+  get musicRecord(): Album | Artist | Song {
+    return this.record as Album | Artist | Song;
+  }
+
+  get musicRecordList(): (Album | Artist | Song)[] {
+    return this.recordList.filter(
+      (r): r is Album | Artist | Song => r.type !== 'Cinema'
+    );
+  }
+
   openMusicAppClick(event: MouseEvent): void {
     const preferredApp = localStorage.getItem('preferredMusicApp');
 
@@ -874,7 +921,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     }
 
     // Fallback: refetch smart link only if we don't already have it
-    const id = this.record.id;
+    const id = this.musicRecord.id;
     const deezerUrl =
       this.record.type === 'Album'
         ? `https://www.deezer.com/album/${id}`
@@ -886,7 +933,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     this.smartLinkSub = this.searchService.getSmartLink(deezerUrl).subscribe({
       next: (res) => {
         // Make sure we’re still looking at the same record
-        if (this.record.id !== id) return;
+        if (this.musicRecord.id !== id) return;
 
         this.smartLinkData = res;
         const fallbackUrl =
@@ -900,7 +947,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
         }
       },
       error: () => {
-        if (this.record.id !== id) return;
+        if (this.musicRecord.id !== id) return;
         console.error(
           'Failed to fetch smart link after setting preferred app.'
         );
@@ -932,6 +979,13 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   public getExtraDetails(): Promise<void> {
     this.isLoadingExtraDetails = true;
 
+    // Cinema records already carry all the detail data they need (title,
+    // cover, genres, rating) - no extra music-API fetch to do here.
+    if (this.isCinemaRecord) {
+      this.isLoadingExtraDetails = false;
+      return Promise.resolve();
+    }
+
     const isActuallyAnAlbum =
       this.record.type === 'Song' &&
       (this.record as any)?.wasOriginallyAlbumButTreatedAsSingle;
@@ -958,7 +1012,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     this.smartLinkSub?.unsubscribe();
 
     this.trackDetailsSub = this.searchService
-      .getTrackDetails(this.record.id)
+      .getTrackDetails(this.musicRecord.id)
       .subscribe({
         next: (data: Song) => {
           const song = this.record as Song;
@@ -1019,7 +1073,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     this.smartLinkSub?.unsubscribe();
 
     this.albumDetailsSub = this.searchService
-      .getAlbumDetails(this.record.id)
+      .getAlbumDetails(this.musicRecord.id)
       .subscribe({
         next: (data: Album) => {
           const album = this.record as Album;
@@ -1101,9 +1155,9 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     this.releaseImageLoaded = {};
 
     forkJoin({
-      tracks: this.searchService.getArtistTracks(this.record.id),
+      tracks: this.searchService.getArtistTracks(this.musicRecord.id),
       releases: this.searchService.getArtistReleases(
-        this.record.id,
+        this.musicRecord.id,
         (this.record as Artist).name
       ),
     }).subscribe({
@@ -1178,14 +1232,13 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   }
 
   onAudioPlayStarted(previewUrl: string): void {
-    if (this.record?.type !== 'Song' && this.record?.tracklist) {
-      this.record.tracklist.forEach((track) => {
+    if (this.record?.type !== 'Song' && (this.record as Album | Artist)?.tracklist) {
+      const tracklist = (this.record as Album | Artist).tracklist;
+      tracklist.forEach((track) => {
         track.isPlaying = track.preview === previewUrl;
       });
 
-      const matched = this.record.tracklist.find(
-        (t) => t.preview === previewUrl
-      );
+      const matched = tracklist.find((t) => t.preview === previewUrl);
       if (matched) {
         this.currentSong = matched;
       }
@@ -1199,8 +1252,10 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     this.audioPlayerDesktop?.stop();
 
     // Reset all track isPlaying flags
-    if (this.record.type !== 'Song' && this.record?.tracklist) {
-      this.record.tracklist.forEach((track) => (track.isPlaying = false));
+    if (this.record.type !== 'Song' && (this.record as Album | Artist)?.tracklist) {
+      (this.record as Album | Artist).tracklist.forEach(
+        (track) => (track.isPlaying = false)
+      );
     }
 
     const rogueAudios = document.querySelectorAll('audio');
@@ -1218,7 +1273,9 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     this.stopAllAudioAndResetState();
 
     if (this.record.type !== 'Song') {
-      this.record?.tracklist?.forEach((track) => (track.isPlaying = false));
+      (this.record as Album | Artist)?.tracklist?.forEach(
+        (track) => (track.isPlaying = false)
+      );
     }
 
     if (this.currentIndex < this.recordList.length - 1) {
@@ -1270,7 +1327,9 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
       const wasPlaying = song.isPlaying;
 
       // Pause all tracks
-      this.record.tracklist?.forEach((s) => (s.isPlaying = false));
+      (this.record as Album | Artist).tracklist?.forEach(
+        (s) => (s.isPlaying = false)
+      );
 
       const targetPlayer = this.isMobileView
         ? this.audioPlayerMobile
@@ -1319,26 +1378,24 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
 
   submitReview() {
     this.isCreateLoading = true;
+    const record = this.musicRecord;
 
     // Build the command model
     const reviewCommand: CreateReviewCommandModel = {
       albumSongOrArtist: {
-        id: this.record.id,
-        type: this.record.type,
+        id: record.id,
+        type: record.type,
         wasOriginallyAlbumButTreatedAsSingle: false,
-        title: this.record.type !== 'Artist' ? this.record.title : undefined, // Only for Albums & Songs
-        name:
-          this.record.type === 'Artist' ? this.record.name : this.record.artist, // Artists use 'name', Albums/Songs use 'artist'
-        cover: this.record.type !== 'Artist' ? this.record.cover : undefined, // Only for Albums & Songs
-        picture:
-          this.record.type === 'Artist' ? this.record.picture : undefined, // Only for Artists
-        artist: this.record.type !== 'Artist' ? this.record.artist : undefined, //  Only for Albums & Songs
-        isExplicit:
-          this.record.type === 'Song' ? this.record.isExplicit : undefined, // Only for Songs
-        album: this.record.type === 'Song' ? this.record.album : undefined, // Only for Songs
+        title: record.type !== 'Artist' ? record.title : undefined, // Only for Albums & Songs
+        name: record.type === 'Artist' ? record.name : record.artist, // Artists use 'name', Albums/Songs use 'artist'
+        cover: record.type !== 'Artist' ? record.cover : undefined, // Only for Albums & Songs
+        picture: record.type === 'Artist' ? record.picture : undefined, // Only for Artists
+        artist: record.type !== 'Artist' ? record.artist : undefined, //  Only for Albums & Songs
+        isExplicit: record.type === 'Song' ? record.isExplicit : undefined, // Only for Songs
+        album: record.type === 'Song' ? record.album : undefined, // Only for Songs
         genre:
-          this.record.type === 'Song' || this.record.type === 'Album'
-            ? this.record.genre || 'Unknown'
+          record.type === 'Song' || record.type === 'Album'
+            ? record.genre || 'Unknown'
             : undefined, // Only attach genre if it's a Song or Album
       },
       rating: this.newRating,
@@ -1346,7 +1403,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     };
 
     // Artist activity feed and Marquee all return Albums, yet some are Albums with only one track (Single)
-    if (this.record.type === 'Album' && this.record.tracklist?.length === 1) {
+    if (record.type === 'Album' && record.tracklist?.length === 1) {
       reviewCommand.albumSongOrArtist.type = 'Song';
       reviewCommand.albumSongOrArtist.wasOriginallyAlbumButTreatedAsSingle =
         true;
@@ -1479,7 +1536,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     this.isPlaying = status;
 
     if (this.record.type !== 'Song') {
-      this.record.tracklist?.forEach((track) => {
+      (this.record as Album | Artist).tracklist?.forEach((track) => {
         track.isPlaying = this.currentSong?.id === track.id && status;
       });
     }
@@ -1538,6 +1595,12 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   }
 
   getAverageRating(): number {
+    // Cinema doesn't have a "community average across users" endpoint yet -
+    // just show this record's own rating directly.
+    if (this.isCinemaRecord) {
+      return this.cinemaRecord?.decimalRating ?? 0;
+    }
+
     if (!this.reviews || this.reviews.length === 0) {
       return 0;
     }

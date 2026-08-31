@@ -1,5 +1,6 @@
 import { Review } from "./review-responses";
 import { Song } from "./song-response";
+import { CinemaItem } from "./cinema-response";
 
 export interface User {
   _id: string;
@@ -16,6 +17,8 @@ export interface User {
   createdAt: string;
   artistList?: FollowedArtist[];
   gradient: string;
+  cinemaWatchlistIsPublic?: boolean;
+  cinemaReviews?: CinemaItem[];
 }
 
 export interface FriendInfo {

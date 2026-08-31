@@ -17,15 +17,16 @@ import { Song } from 'src/app/models/responses/song-response';
 import { Review } from 'src/app/models/responses/review-responses';
 import { FollowedArtist, User } from 'src/app/models/responses/user.response';
 import { ConfirmationModalComponent } from '../friends-page/confirmation-modal/confirmation-modal.component';
-import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 import { AppComponent } from 'src/app/app.component';
 import { BaseRecord } from 'src/app/models/responses/base-record';
 import { ReviewService } from 'src/app/services/review.service';
+import { CinemaService } from 'src/app/services/cinema.service';
+import { CinemaItem } from 'src/app/models/responses/cinema-response';
 
 type ModalRecord = Album | Song | Artist | BaseRecord;
 @Component({
   selector: 'app-view-profile-page',
-  imports: [CommonModule, FormsModule, TimeAgoPipe],
+  imports: [CommonModule, FormsModule],
   templateUrl: './other-profile-page.component.html',
   styleUrl: './other-profile-page.component.css',
   standalone: true,
@@ -55,7 +56,8 @@ export class ViewProfilePageComponent implements OnInit {
 
   isLoadingFriendAction: boolean = false;
   isImageModalOpen: boolean = false;
-  showPanel: 'reviews' | 'friends' | 'artists' | null = null;
+  showPanel: 'reviews' | 'friends' | 'artists' | 'watchlist' | null = null;
+  reviewMode: 'music' | 'cinema' = 'music';
   reviewsByType = { songs: 0, albums: 0, artists: 0 };
   averageRating = 0;
   mostReviewedGenre: string = 'Unknown';
@@ -89,6 +91,10 @@ export class ViewProfilePageComponent implements OnInit {
     },
   ];
   decliningFriendRequest: boolean = false;
+  isImportingTraktExport: boolean = false;
+  watchlistItems: CinemaItem[] = [];
+  isLoadingWatchlist: boolean = false;
+  isProfileReady: boolean = false;
   gradientPresets = [
     { name: 'Indigo to Purple', value: 'from-indigo-600 to-purple-500' },
     { name: 'Blue to Cyan', value: 'from-blue-500 to-cyan-500' },
@@ -116,7 +122,8 @@ export class ViewProfilePageComponent implements OnInit {
     private router: Router,
     private modal: NgbModal,
     private appComponent: AppComponent,
-    private reviewService: ReviewService
+    private reviewService: ReviewService,
+    private cinemaService: CinemaService
   ) {}
 
   ngOnInit(): void {
@@ -124,6 +131,7 @@ export class ViewProfilePageComponent implements OnInit {
       this.otherUserId = params['userId'];
       this.imageLoadState['profile--1'] = false;
       this.otherUser = null;
+      this.isProfileReady = false;
       window.scrollTo(0, 0);
 
       this.userService.userProfile$.subscribe((profile) => {
@@ -222,9 +230,12 @@ export class ViewProfilePageComponent implements OnInit {
         } else {
           this.reviewsByType = { songs: 0, albums: 0, artists: 0 };
         }
+
+        this.loadWatchlistIfVisible();
       },
       error: () => {
         this.toastr.error('Error retrieving User Profile', 'Error');
+        this.isProfileReady = true;
       },
     });
   }
@@ -684,10 +695,100 @@ export class ViewProfilePageComponent implements OnInit {
   // }
 
   openReviews() {
-    if (this.otherUser?.reviews && this.otherUser.reviews.length > 0) {
+    const hasMusicReviews = (this.otherUser?.reviews?.length ?? 0) > 0;
+    const hasCinemaReviews = (this.otherUser?.cinemaReviews?.length ?? 0) > 0;
+
+    if (hasMusicReviews || hasCinemaReviews) {
+      this.reviewMode = hasMusicReviews ? 'music' : 'cinema';
       this.showPanel = 'reviews';
       document.body.style.overflow = 'hidden';
     }
+  }
+
+  setReviewMode(mode: 'music' | 'cinema') {
+    this.reviewMode = mode;
+    // Switching modes always returns to a clean default state
+    this.reviewSort = 'newest';
+    this.musicTypeFilter = 'All';
+    this.cinemaTypeFilter = 'All';
+    this.cinemaGenreFilter = 'All';
+  }
+
+  reviewSort: 'newest' | 'oldest' | 'highest' | 'lowest' = 'newest';
+  musicTypeFilter: 'All' | 'Song' | 'Album' | 'Artist' = 'All';
+  cinemaTypeFilter: 'All' | 'movie' | 'tv' = 'All';
+  cinemaGenreFilter: string = 'All';
+
+  private sortByDate = <T extends { createdAt: string }>(a: T, b: T) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
+  get filteredMusicReviews(): Review[] {
+    const list = (this.otherUser?.reviews ?? []).filter(
+      (r) => this.musicTypeFilter === 'All' || r.albumSongOrArtist.type === this.musicTypeFilter
+    );
+    return this.applySort(list);
+  }
+
+  get filteredCinemaReviews(): CinemaItem[] {
+    const list = (this.otherUser?.cinemaReviews ?? []).filter(
+      (item) =>
+        (this.cinemaTypeFilter === 'All' || item.mediaType === this.cinemaTypeFilter) &&
+        (this.cinemaGenreFilter === 'All' || (item.genres ?? []).includes(this.cinemaGenreFilter))
+    );
+    return this.applySort(list);
+  }
+
+  get cinemaGenreOptions(): string[] {
+    const genres = new Set<string>();
+    (this.otherUser?.cinemaReviews ?? []).forEach((item) =>
+      (item.genres ?? []).forEach((g) => genres.add(g))
+    );
+    return Array.from(genres).sort();
+  }
+
+  private applySort<T extends { createdAt: string; rating?: number; decimalRating?: number }>(
+    list: T[]
+  ): T[] {
+    const sorted = [...list].sort(this.sortByDate); // newest first as the base order
+    switch (this.reviewSort) {
+      case 'oldest':
+        return sorted.reverse();
+      case 'highest':
+        return sorted.sort((a, b) => (b.rating ?? b.decimalRating ?? 0) - (a.rating ?? a.decimalRating ?? 0));
+      case 'lowest':
+        return sorted.sort((a, b) => (a.rating ?? a.decimalRating ?? 0) - (b.rating ?? b.decimalRating ?? 0));
+      default:
+        return sorted;
+    }
+  }
+
+  refiningItemId: string | null = null;
+  refiningValue: number = 0;
+
+  startRefine(item: CinemaItem) {
+    this.refiningItemId = item._id;
+    this.refiningValue = item.decimalRating ?? 0;
+  }
+
+  cancelRefine() {
+    this.refiningItemId = null;
+  }
+
+  submitRefine(item: CinemaItem) {
+    this.cinemaService.editCinemaItem(item._id, this.refiningValue).subscribe({
+      next: (response) => {
+        item.decimalRating = response.data.decimalRating;
+        item.isUnrefinedImport = false;
+        this.refiningItemId = null;
+        this.toastr.success('Rating refined.', 'Cinema');
+      },
+      error: (error) => {
+        this.toastr.error(
+          error.error?.message || 'Failed to refine rating.',
+          'Cinema'
+        );
+      },
+    });
   }
 
   openFriends() {
@@ -702,6 +803,43 @@ export class ViewProfilePageComponent implements OnInit {
       this.showPanel = 'artists';
       document.body.style.overflow = 'hidden';
     }
+  }
+
+  // Watchlist is visible to the owner, or to anyone if the owner made it public
+  get canViewWatchlist(): boolean {
+    return (
+      !!this.otherUser &&
+      (this.otherUser._id === this.loggedInUser?._id ||
+        !!this.otherUser.cinemaWatchlistIsPublic)
+    );
+  }
+
+  loadWatchlistIfVisible(): void {
+    if (!this.canViewWatchlist || !this.otherUser) {
+      this.watchlistItems = [];
+      this.isProfileReady = true;
+      return;
+    }
+
+    this.isLoadingWatchlist = true;
+    this.cinemaService.getWatchlist(this.otherUser._id).subscribe({
+      next: (response) => {
+        this.watchlistItems = response.data;
+        this.isLoadingWatchlist = false;
+        this.isProfileReady = true;
+      },
+      error: () => {
+        this.isLoadingWatchlist = false;
+        this.isProfileReady = true;
+      },
+    });
+  }
+
+  openWatchlist() {
+    if (!this.canViewWatchlist || this.watchlistItems.length === 0) return;
+
+    this.showPanel = 'watchlist';
+    document.body.style.overflow = 'hidden';
   }
 
   closePanel() {
@@ -771,6 +909,30 @@ export class ViewProfilePageComponent implements OnInit {
       tracklist: item.tracklist ?? [],
       preview: item.preview ?? '',
     };
+  }
+
+  openCinemaRecord(
+    item: CinemaItem,
+    list: CinemaItem[],
+    index: number
+  ): NgbModalRef {
+    const modalOptions: NgbModalOptions = {
+      backdrop: 'static',
+      keyboard: true,
+      centered: true,
+      scrollable: false,
+    };
+
+    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+
+    // Stamp `type` so the shared modal can discriminate cinema vs. music records.
+    const cinemaList = list.map((r) => ({ ...r, type: 'Cinema' as const }));
+
+    modalRef.componentInstance.recordList = cinemaList;
+    modalRef.componentInstance.currentIndex = index;
+    modalRef.componentInstance.record = cinemaList[index];
+
+    return modalRef;
   }
 
   openReview(
@@ -918,6 +1080,40 @@ export class ViewProfilePageComponent implements OnInit {
     } else {
       this.router.navigate(['/profile']);
     }
+  }
+
+  onTraktExportSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // allow re-selecting the same file later
+
+    if (!file) return;
+
+    this.isImportingTraktExport = true;
+    this.cinemaService.importTraktExport(file).subscribe({
+      next: (response) => {
+        const { imported, skipped, duplicates, total } = response.data;
+        const uniqueTotal = total - duplicates;
+        this.toastr.success(
+          `Imported ${imported}/${uniqueTotal} rows` +
+            (duplicates ? ` (${duplicates} duplicate${duplicates > 1 ? 's' : ''} removed)` : '') +
+            (skipped ? ` (${skipped} skipped)` : '') +
+            '.',
+          'Trakt Import',
+          { timeOut: 4500 }
+        );
+        this.isImportingTraktExport = false;
+        this.loadWatchlistIfVisible();
+      },
+      error: (error) => {
+        this.toastr.error(
+          error.error?.message || 'Failed to import Trakt export.',
+          'Trakt Import',
+          { timeOut: 4500 }
+        );
+        this.isImportingTraktExport = false;
+      },
+    });
   }
 
   get reviewList(): ModalRecord[] {
