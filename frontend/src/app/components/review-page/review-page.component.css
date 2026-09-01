@@ -7,12 +7,10 @@
 .circle-bg {
   fill: none;
   stroke: #2a2a2a;
-  stroke-width: 4;
 }
 
 .circle {
   fill: none;
-  stroke-width: 4;
   transition: stroke-dashoffset 0.6s ease-in-out, stroke-opacity 0.3s ease;
 }
 

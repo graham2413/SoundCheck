@@ -1548,7 +1548,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     if (r < 6.5) return { start: '#f97316', end: '#fb923c' };
     if (r < 7.5) return { start: '#eab308', end: '#a3e635' };
     if (r < 9) return { start: '#22c55e', end: '#2dd4bf' };
-    return { start: '#38bdf8', end: '#2563eb' };
+    return { start: '#4B7DF5', end: '#80D7F9' };
   }
 
   // Once the rating settles on exactly 10 (unchanged for 1s), plays a
@@ -1565,7 +1565,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
       if (this.isMaxRating(this.editedRating)) {
         this.spawnTenCelebrationConfetti();
       }
-    }, 1000);
+    }, 250);
   }
 
   // Plays the confetti burst once when the mobile Overall Rating ring first

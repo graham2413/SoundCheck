@@ -452,12 +452,12 @@
     >
       <div class="w-full flex flex-col flex-grow min-h-0">
         <div
-          class="flex justify-between items-center px-4 w-full min-h-[60px] pt-1 topBar"
+          class="flex justify-between items-center px-4 w-full min-h-[60px] topBar"
         >
           <!-- Info Button -->
           <button
             (click)="showSecondIpod = true"
-            class="w-[4rem] h-[3rem] sm:w-[5rem] sm:h-[4rem] rounded-full bg-transparent border border-gray-700 flex items-center justify-center shadow-md"
+            class="self-start mt-6 w-[4rem] h-[3rem] sm:w-[5rem] sm:h-[4rem] rounded-full bg-transparent border border-gray-700 flex items-center justify-center shadow-md"
           >
             <span
               class="text-white text-3xl sm:text-4xl"
@@ -467,7 +467,7 @@
           </button>
 
           <!-- Overall Rating -->
-          <div class="flex justify-center w-full my-4">
+          <div class="flex justify-center w-full my-4 mt-6">
             <div
               class="flex flex-col items-center justify-center text-center"
             >
@@ -495,12 +495,23 @@
                   *ngIf="getAverageRating() > 0; else noReviewsMessage"
                 >
                   <!-- Rating Ring -->
-                  <div class="relative w-32 h-32">
+                  <div class="relative w-[8rem] h-[8rem]">
                     <svg
                       viewBox="0 0 42 42"
                       class="circular-chart absolute w-full h-full"
                     >
                       <defs>
+                        <linearGradient
+                          id="overallRatingTrackGradientMobile"
+                          x1="0%"
+                          y1="0%"
+                          x2="100%"
+                          y2="100%"
+                        >
+                          <stop offset="0%" style="stop-color: #1b2a52; stop-opacity: 1" />
+                          <stop offset="100%" style="stop-color: #223a63; stop-opacity: 1" />
+                        </linearGradient>
+
                         <linearGradient
                           id="overallRatingGradientMobile"
                           x1="0%"
@@ -523,11 +534,20 @@
                         </linearGradient>
 
                         <filter id="overallRingHaloWhiteMobile" x="-100%" y="-100%" width="300%" height="300%">
+                          <feDropShadow dx="0" dy="0.6" stdDeviation="0.4" flood-color="#00030a" flood-opacity="0.65" />
+                          <feDropShadow dx="0" dy="-0.3" stdDeviation="0.3" flood-color="#ffffff" flood-opacity="0.4" />
                           <feDropShadow dx="0" dy="0" stdDeviation="1.8" flood-color="#ffffff" flood-opacity="0.85" />
                         </filter>
 
                         <filter id="overallRingHaloBlueMobile" x="-100%" y="-100%" width="300%" height="300%">
+                          <feDropShadow dx="0" dy="0.6" stdDeviation="0.4" flood-color="#00030a" flood-opacity="0.65" />
+                          <feDropShadow dx="0" dy="-0.3" stdDeviation="0.3" flood-color="#ffffff" flood-opacity="0.4" />
                           <feDropShadow dx="0" dy="0" stdDeviation="1.8" flood-color="#38bdf8" flood-opacity="0.75" />
+                        </filter>
+
+                        <filter id="overallRingDepthMobile" x="-100%" y="-100%" width="300%" height="300%">
+                          <feDropShadow dx="0" dy="0.6" stdDeviation="0.4" flood-color="#00030a" flood-opacity="0.65" />
+                          <feDropShadow dx="0" dy="-0.3" stdDeviation="0.3" flood-color="#ffffff" flood-opacity="0.4" />
                         </filter>
                       </defs>
 
@@ -537,6 +557,7 @@
                         cy="21"
                         r="18"
                         stroke-width="3"
+                        style="stroke: url(#overallRatingTrackGradientMobile)"
                       />
 
                       <circle
@@ -550,7 +571,7 @@
                             ? 'url(#overallRingHaloWhiteMobile)'
                             : getAverageRating() >= 9
                             ? 'url(#overallRingHaloBlueMobile)'
-                            : null
+                            : 'url(#overallRingDepthMobile)'
                         "
                         stroke-width="3"
                         stroke-dasharray="113.1"
@@ -615,7 +636,7 @@
           <!-- Close Button -->
           <button
             (click)="close()"
-            class="w-[4rem] h-[3rem] sm:w-[5rem] sm:h-[4rem] rounded-full bg-transparent border border-gray-700 flex items-center justify-center shadow-md"
+            class="self-start mt-6 w-[4rem] h-[3rem] sm:w-[5rem] sm:h-[4rem] rounded-full bg-transparent border border-gray-700 flex items-center justify-center shadow-md"
           >
             <i class="fas fa-times text-white text-2xl sm:text-3xl"></i>
           </button>

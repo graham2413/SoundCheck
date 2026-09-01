@@ -15,7 +15,7 @@
 .blur-overlay {
   position: absolute;
   inset: 0;
-  background-color: rgba(9, 16, 31, 0.6);
+  background-color: rgba(2, 8, 20, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 2;
