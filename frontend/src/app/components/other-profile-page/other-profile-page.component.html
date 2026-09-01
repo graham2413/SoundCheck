@@ -1,7 +1,7 @@
 <!-- Fullscreen Loading Indicator -->
 <div
   *ngIf="!isProfileReady"
-  class="fixed inset-0 z-10 flex items-center justify-center bg-[#09101F] text-white w-screen h-screen"
+  class="fixed inset-0 z-10 flex items-center justify-center bg-[#020814] text-white w-screen h-screen"
 >
   <div class="flex flex-col items-center gap-4">
     <!-- Consistent Spinner -->
@@ -14,7 +14,7 @@
 <!-- Outer Container -->
 <div
   *ngIf="isProfileReady && otherUser"
-  class="container mx-auto max-w-[1000px] pb-6 bg-[#09101F] text-white rounded-lg"
+  class="container mx-auto max-w-[1000px] pb-6 bg-[#020814] text-white rounded-lg"
 >
   <!-- Top Gradient Banner -->
   <div class="w-full h-24 md:mt-[5.8rem] relative" [class]="getGradientClass()">
@@ -23,7 +23,7 @@
       (click)="goBack()"
       class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md"
     >
-      <i class="fas fa-chevron-left text-[#09101F] text-lg"></i>
+      <i class="fas fa-chevron-left text-[#020814] text-lg"></i>
     </button>
 
     <!-- Change Background Button -->
@@ -32,7 +32,7 @@
       (click)="openGradientModal()"
       class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md"
     >
-      <i class="fas fa-paint-brush text-[#09101F] text-xl"></i>
+      <i class="fas fa-paint-brush text-[#020814] text-xl"></i>
     </button>
   </div>
 
@@ -89,7 +89,7 @@
         <!-- Loader -->
         <div
           *ngIf="!isImageLoaded(-1, 'profile')"
-          class="absolute inset-0 flex items-center justify-center bg-gray-800 border-4 border-[#09101F] rounded-full"
+          class="absolute inset-0 flex items-center justify-center bg-gray-800 border-4 border-[#020814] rounded-full"
           (click)="isImageModalOpen = true"
         >
           <div
@@ -104,7 +104,7 @@
           (error)="markImageLoaded(-1, 'profile')"
           [class.invisible]="!isImageLoaded(-1, 'profile')"
           alt="Profile Picture"
-          class="w-full h-full object-cover rounded-full border-4 border-[#09101F]"
+          class="w-full h-full object-cover rounded-full border-4 border-[#020814]"
           (click)="isImageModalOpen = true"
         />
       </div>
@@ -301,10 +301,10 @@
       [class.translate-y-0]="showPanel"
       [class.translate-y-8]="!showPanel"
       [class.pointer-events-none]="!showPanel"
-      class="fixed inset-0 bg-[#09101F] md:pt-[4.5rem] text-white z-20 overflow-y-auto transition-all duration-300 ease-in-out transform"
+      class="fixed inset-0 bg-[#020814] md:pt-[4.5rem] text-white z-20 overflow-y-auto transition-all duration-300 ease-in-out transform"
     >
       <div
-        class="p-4 flex justify-center items-center z-20 border-b border-gray-700 relative sticky top-0 bg-[#09101F] z-10"
+        class="p-4 flex justify-center items-center z-20 border-b border-gray-700 relative sticky top-0 bg-[#020814] z-10"
       >
         <h2 class="text-xl md:text-2xl font-semibold capitalize">
           {{ showPanel }}
@@ -819,7 +819,7 @@
                   <div
                     *ngFor="let friend of filteredFriends; let i = index"
                     (click)="goToUserProfile(friend._id)"
-                    class="flex items-center gap-4 p-3 last:border-none transition-all hover:bg-[#09101F] cursor-pointer group hover:rounded-md"
+                    class="flex items-center gap-4 p-3 last:border-none transition-all hover:bg-[#020814] cursor-pointer group hover:rounded-md"
                   >
                     <!-- Profile Picture (No Hover Effect) -->
                     <div

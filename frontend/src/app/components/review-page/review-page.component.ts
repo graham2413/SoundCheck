@@ -43,7 +43,6 @@ import { UserService } from 'src/app/services/user.service';
 import { FollowedArtist, User } from 'src/app/models/responses/user.response';
 import { Router } from '@angular/router';
 import { forkJoin, Subscription } from 'rxjs';
-import { ColorThiefService } from '@soarlin/angular-color-thief';
 
 @Component({
   selector: 'app-review-page',
@@ -193,6 +192,14 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   isEditLoading = false;
   isEditingReview = false;
   editedRating = 0;
+  previousEditedRating = 0;
+  editRatingDirection: 'up' | 'down' | null = null;
+  private editRatingDirectionTimeout: any;
+  tenCelebrationParticles: { cx: number; cy: number; px: number; py: number; key: number; color: string }[] = [];
+  private tenCelebrationTimeout: any;
+  private tenCelebrationClearTimeout: any;
+  private hasPlayedLoadTenCelebration = false;
+  private tenCelebrationParticleId = 0;
   editedReviewText: string = '';
   isDeleteLoading = false;
   isPlaying = false;
@@ -277,8 +284,6 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   releases: Album[] = [];
   pageIndex = 0;
   public isSingleAlbum: boolean = false;
-  backgroundGradient: string = 'linear-gradient(to bottom, #09101F, #000000)';
-  isDarkBackground: boolean = false;
   smartLinkUrl: string | null = null;
   isLoadingSmartUrl: boolean = true;
   showAppPickerModal: boolean = false;
@@ -352,7 +357,6 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     private searchService: SearchService,
     private modal: NgbModal,
     private userService: UserService,
-    private colorThief: ColorThiefService,
     private router: Router,
     private ngZone: NgZone,
     private cinemaService: CinemaService
@@ -457,78 +461,6 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     if (this.showSecondIpod && this.scrollContainer) {
       setTimeout(() => this.checkIfScrollable(), 0);
     }
-  }
-
-  preloadLowResImageForGradient(): void {
-    const url = this.getImageUrl(true);
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = (e) => this.onImageLoad(e as Event);
-    img.src = url;
-  }
-
-  getImageUrl(lowRes = false): string {
-    let rawUrl =
-      this.record.type === 'Artist'
-        ? this.record.picture ||
-          'https://res.cloudinary.com/drbccjuul/image/upload/v1750168658/t74iybj36xjrifpp7wzc.png'
-        : this.record.cover ||
-          'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801';
-
-    if (lowRes) {
-      rawUrl = this.getLowResImageUrl(rawUrl);
-    }
-
-    return this.reviewService.getProxiedImageUrl(rawUrl);
-  }
-
-  darkenColor(
-    r: number,
-    g: number,
-    b: number,
-    factor = 0.7
-  ): [number, number, number] {
-    return [r * factor, g * factor, b * factor];
-  }
-
-  async onImageLoad(event: Event): Promise<void> {
-    const img = event.target as HTMLImageElement;
-
-    try {
-      const [[r, g, b]] = await this.colorThief.getPalette(img, 3);
-      const [dr, dg, db] = this.darkenColor(r, g, b, 0.6); // 0.6 = 40% darker
-      const gradient = `linear-gradient(to bottom, rgb(${dr}, ${dg}, ${db}))`;
-
-      const luminance = (0.299 * dr + 0.587 * dg + 0.114 * db) / 255;
-      this.isDarkBackground = luminance < 0.5;
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          this.backgroundGradient = gradient;
-        });
-      });
-    } catch (err) {
-      console.error('Color extraction failed:', err);
-      this.isDarkBackground = true;
-      const fallback = 'linear-gradient(to bottom, #09101F, #000000)';
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          this.backgroundGradient = fallback;
-        });
-      });
-    }
-  }
-
-  getLowResImageUrl(url: string): string {
-    // Handle Deezer-style ?size=xl → ?size=small
-    const urlObj = new URL(url);
-    if (urlObj.hostname.includes('deezer.com')) {
-      urlObj.searchParams.set('size', 'small');
-      return urlObj.toString();
-    }
-
-    // Fallback for legacy Cloudinary-style /1000x1000- → /50x50-
-    return url.replace(/\/\d+x\d+-/, '/50x50-');
   }
 
   openRecord() {
@@ -735,6 +667,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
             this.ratingBarFill = this.getAverageRating() * 10;
             this.circleDashOffset =
               113.1 - (this.getAverageRating() / 10) * 113.1;
+            this.checkForLoadTenCelebration();
           }, 50);
         },
         error: (error) => {
@@ -767,6 +700,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
           this.ratingBarFill = this.getAverageRating() * 10;
           this.circleDashOffset =
             113.1 - (this.getAverageRating() / 10) * 113.1;
+          this.checkForLoadTenCelebration();
         }, 50);
       },
       error: () => {
@@ -1376,8 +1310,8 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     this.smartLinkUrl = '';
     this.trackImageLoaded = {};
     this.releaseImageLoaded = {};
+    this.hasPlayedLoadTenCelebration = false;
 
-    this.preloadLowResImageForGradient();
     this.resetScrollingState();
     this.scrollToTopOfIpod();
     this.openRecord();
@@ -1564,10 +1498,129 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     this.isEditingReview = true;
     this.editedRating = review.rating;
     this.editedReviewText = review.reviewText;
+    this.previousEditedRating = review.rating;
+    this.editRatingDirection = null;
+    this.tenCelebrationParticles = [];
   }
 
   cancelEditReview() {
     this.isEditingReview = false;
+    clearTimeout(this.tenCelebrationTimeout);
+    clearTimeout(this.tenCelebrationClearTimeout);
+    this.tenCelebrationParticles = [];
+  }
+
+  // Detects whether the Edit Review slider just moved up or down so the
+  // rating ring can flash green/red accordingly, then clears the flash.
+  onEditRatingSlide(event: Event): void {
+    this.onEditRatingChange(Number((event.target as HTMLInputElement).value));
+  }
+
+  // Shared by the slider and the direct number input.
+  onEditRatingChange(newValue: number): void {
+    if (newValue > this.previousEditedRating) {
+      this.editRatingDirection = 'up';
+    } else if (newValue < this.previousEditedRating) {
+      this.editRatingDirection = 'down';
+    }
+
+    this.previousEditedRating = newValue;
+
+    clearTimeout(this.editRatingDirectionTimeout);
+    this.editRatingDirectionTimeout = setTimeout(() => {
+      this.editRatingDirection = null;
+    }, 400);
+
+    this.checkForTenCelebration(newValue);
+  }
+
+  isMaxRating(rating: number): boolean {
+    return Math.round((rating || 0) * 10) / 10 >= 10;
+  }
+
+  // Solid phase color per range (still state) - up to 4.9 red, 5-6.4 orange,
+  // 6.5-7.4 yellow, 7.5-8.9 green, 9-10 blue. Each phase gets a subtle
+  // same-hue two-tone gradient rather than a single flat color.
+  getEditRingPhaseColors(rating: number): { start: string; end: string } {
+    const r = rating || 0;
+
+    if (r < 5) return { start: '#ef4444', end: '#f87171' };
+    if (r < 6.5) return { start: '#f97316', end: '#fb923c' };
+    if (r < 7.5) return { start: '#eab308', end: '#a3e635' };
+    if (r < 9) return { start: '#22c55e', end: '#2dd4bf' };
+    return { start: '#38bdf8', end: '#2563eb' };
+  }
+
+  // Once the rating settles on exactly 10 (unchanged for 1s), plays a
+  // one-off confetti burst; the white halo glow itself is driven separately
+  // by isMaxRating() so it persists after the confetti finishes.
+  private checkForTenCelebration(rating: number): void {
+    clearTimeout(this.tenCelebrationTimeout);
+
+    if (!this.isMaxRating(rating)) {
+      return;
+    }
+
+    this.tenCelebrationTimeout = setTimeout(() => {
+      if (this.isMaxRating(this.editedRating)) {
+        this.spawnTenCelebrationConfetti();
+      }
+    }, 1000);
+  }
+
+  // Plays the confetti burst once when the mobile Overall Rating ring first
+  // loads showing a perfect 10 (as opposed to reaching 10 while editing).
+  private checkForLoadTenCelebration(): void {
+    if (this.hasPlayedLoadTenCelebration) return;
+    if (!this.isMaxRating(this.getAverageRating())) return;
+
+    this.hasPlayedLoadTenCelebration = true;
+    this.spawnTenCelebrationConfetti();
+  }
+
+  private spawnTenCelebrationConfetti(): void {
+    const colors = [
+      '#f43f5e',
+      '#ef4444',
+      '#f97316',
+      '#f59e0b',
+      '#eab308',
+      '#84cc16',
+      '#22c55e',
+      '#14b8a6',
+      '#3b82f6',
+      '#6366f1',
+      '#a855f7',
+      '#ec4899',
+      '#ffffff',
+    ];
+
+    // Each particle starts on the ring and shoots outward along its own
+    // angle, past the ring's edge, for a "bursting away" look.
+    this.tenCelebrationParticles = Array.from({ length: 28 }, () => {
+      const angle = Math.random() * 2 * Math.PI;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const outwardDistance = 14 + Math.random() * 16;
+
+      return {
+        cx: 21 + 18 * cos,
+        cy: 21 + 18 * sin,
+        px: cos * outwardDistance,
+        py: sin * outwardDistance,
+        key: this.tenCelebrationParticleId++,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      };
+    });
+
+    clearTimeout(this.tenCelebrationClearTimeout);
+    this.tenCelebrationClearTimeout = setTimeout(() => {
+      this.tenCelebrationParticles = [];
+    }, 1500);
+  }
+
+  trackEditRatingParticle(index: number, particle: { key: number }): number {
+    return particle.key;
   }
 
   submitEditReview() {
@@ -1727,6 +1780,13 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     return 'linear-gradient(to right, #fde047, #facc15, #f59e0b, #b45309)';
   }
 
+  // Drives the blue progress ring in the Edit Review form - distinct from
+  // the yellow/orange "average rating" ring used elsewhere in this component.
+  getEditRingDashOffset(value: number): number {
+    const clamped = Math.min(Math.max(value || 0, 0), 10);
+    return 113.1 - (clamped / 10) * 113.1;
+  }
+
   getSliderBackground(value: number): string {
     const rawPercent = (value / 10) * 100;
 
@@ -1752,8 +1812,8 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     to right,
     #0ea5e9 0%,
     #2563eb ${adjustedPercent}%,
-    #858585 ${adjustedPercent}%,
-    #858585 100%
+    #3f3f46 ${adjustedPercent}%,
+    #3f3f46 100%
   )`;
   }
 

@@ -252,7 +252,7 @@
               [routerLink]="['/profile', friend._id]"
               [state]="{ section: 'myFriends' }"
               [ngClass]="[
-                'flex items-center bg-[#09101F] p-3 w-full',
+                'flex items-center bg-[#020814] p-3 w-full',
                 i !== 0 ? '' : 'sm:rounded-t-xl',
                 !last ? '' : 'sm:rounded-b-xl'
               ]"
@@ -340,7 +340,7 @@
 
     <!-- Friend Requests Section -->
     <div #friendRequestsSection *ngIf="activeTab === 'friendRequests'">
-      <div class="bg-[#09101F] mx-auto sm:rounded-lg sm:max-w-[800px]">
+      <div class="bg-[#020814] mx-auto sm:rounded-lg sm:max-w-[800px]">
         <h2
           *ngIf="!retrievingFriendInfo"
           class="hidden md:block text-4xl font-semibold mb-5 pt-14 items-center text-center"
@@ -389,7 +389,7 @@
               [routerLink]="['/profile', request._id]"
               [state]="{ section: 'friendRequests' }"
               [ngClass]="[
-                'flex items-center bg-[#09101F] p-3 w-full',
+                'flex items-center bg-[#020814] p-3 w-full',
                 i !== 0 ? '' : 'sm:rounded-t-xl',
                 !last ? '' : 'sm:rounded-b-xl'
               ]"
@@ -489,7 +489,7 @@
       <!-- Scrollable User List -->
       <div
         *ngIf="activeTab === 'addFriends'"
-        class="bg-[#09101F] w-full mx-auto overflow-y-auto min-h-screen rounded-lg sm:max-w-[800px]"
+        class="bg-[#020814] w-full mx-auto overflow-y-auto min-h-screen rounded-lg sm:max-w-[800px]"
       >
         <h2
           class="hidden md:block text-4xl font-semibold mb-4 pt-14 ml-2 text-center"
@@ -538,7 +538,7 @@
               [routerLink]="['/profile', user._id]"
               [state]="{ section: 'addFriends' }"
               [ngClass]="[
-                'flex items-center bg-[#09101F] p-3 w-full',
+                'flex items-center bg-[#020814] p-3 w-full',
                 i !== 0 ? '' : 'sm:rounded-t-xl',
                 !last ? '' : 'sm:rounded-b-xl'
               ]"

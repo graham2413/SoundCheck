@@ -8,7 +8,7 @@
 .background-underlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #0f172a, #1e293b);
+  background: #020814;
   z-index: 1;
 }
 

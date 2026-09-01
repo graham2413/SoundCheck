@@ -2,9 +2,8 @@
 <div
   *ngIf="isModalOpen"
   #modalScrollContainer
-  class="fixed inset-0 flex flex-col text-white overflow-y-auto md:hidden z-50 gradient-background"
+  class="fixed inset-0 flex flex-col text-white overflow-y-auto md:hidden z-50 bg-[#020814]"
   @slideUp
-  [ngStyle]="{ background: backgroundGradient }"
 >
   <!--iPod Container -->
   <div
@@ -22,7 +21,7 @@
         (click)="onBackClick()"
         class="absolute top-4 left-4 w-[3rem] h-[3rem] sm:w-14 sm:h-14 rounded-full bg-white flex items-center justify-center shadow-md z-50"
       >
-        <i class="fas fa-chevron-left text-[#09101F] text-2xl sm:text-3xl"></i>
+        <i class="fas fa-chevron-left text-[#020814] text-2xl sm:text-3xl"></i>
       </button>
 
       <!-- Close Button (top-right) -->
@@ -30,7 +29,7 @@
         (click)="close()"
         class="absolute top-4 right-4 w-[3rem] h-[3rem] sm:w-14 sm:h-14 rounded-full bg-white flex items-center justify-center shadow-md z-50"
       >
-        <i class="fas fa-times text-[#09101F] text-2xl sm:text-3xl"></i>
+        <i class="fas fa-times text-[#020814] text-2xl sm:text-3xl"></i>
       </button>
 
       <!-- Artist Section -->
@@ -436,7 +435,7 @@
               !isTracklistArray &&
               record.type === 'Album'
             "
-            class="w-full bg-[#09101F] p-6 rounded-lg text-center"
+            class="w-full bg-[#020814] p-6 rounded-lg text-center"
           >
             <p class="text-gray-400">No tracklist available.</p>
           </div>
@@ -458,10 +457,10 @@
           <!-- Info Button -->
           <button
             (click)="showSecondIpod = true"
-            class="w-[4rem] h-[3rem] sm:w-[5rem] sm:h-[4rem] rounded-full bg-white flex items-center justify-center shadow-md"
+            class="w-[4rem] h-[3rem] sm:w-[5rem] sm:h-[4rem] rounded-full bg-transparent border border-gray-700 flex items-center justify-center shadow-md"
           >
             <span
-              class="text-[#09101F] text-3xl sm:text-4xl"
+              class="text-white text-3xl sm:text-4xl"
               style="font-weight: 500; line-height: 0.9"
               >i</span
             >
@@ -470,65 +469,125 @@
           <!-- Overall Rating -->
           <div class="flex justify-center w-full my-4">
             <div
-              class="bg-gray-800 px-4 py-3 rounded-lg w-full mx-auto max-w-[85%] sm:max-w-[70%] min-w-[180px]"
+              class="flex flex-col items-center justify-center text-center"
             >
-              <div
-                class="flex flex-col items-center justify-center text-center"
+              <ng-container
+                *ngIf="
+                  !isRatingLoaded ||
+                    isDeleteLoading ||
+                    isEditLoading ||
+                    isCreateLoading;
+                  else ratingAvailable
+                "
               >
-                <ng-container
-                  *ngIf="
-                    !isRatingLoaded ||
-                      isDeleteLoading ||
-                      isEditLoading ||
-                      isCreateLoading;
-                    else ratingAvailable
-                  "
+                <!-- Loading Spinner -->
+                <div
+                  class="animate-pulse rounded w-24 h-24 flex items-center justify-center"
                 >
-                  <!-- Loading Spinner -->
-                  <div
-                    class="animate-pulse rounded w-full h-16 flex items-center justify-center"
-                  >
-                    <i
-                      class="fas fa-spinner fa-spin text-gray-400 text-3xl"
-                    ></i>
-                  </div>
-                </ng-container>
+                  <i
+                    class="fas fa-spinner fa-spin text-gray-400 text-3xl"
+                  ></i>
+                </div>
+              </ng-container>
 
-                <ng-template #ratingAvailable>
-                  <ng-container
-                    *ngIf="getAverageRating() > 0; else noReviewsMessage"
-                  >
-                    <!-- Rating Badge -->
+              <ng-template #ratingAvailable>
+                <ng-container
+                  *ngIf="getAverageRating() > 0; else noReviewsMessage"
+                >
+                  <!-- Rating Ring -->
+                  <div class="relative w-32 h-32">
+                    <svg
+                      viewBox="0 0 42 42"
+                      class="circular-chart absolute w-full h-full"
+                    >
+                      <defs>
+                        <linearGradient
+                          id="overallRatingGradientMobile"
+                          x1="0%"
+                          y1="0%"
+                          x2="100%"
+                          y2="0%"
+                        >
+                          <stop
+                            offset="0%"
+                            [attr.style]="
+                              'stop-color: ' + getEditRingPhaseColors(getAverageRating()).start + '; stop-opacity: 1'
+                            "
+                          />
+                          <stop
+                            offset="100%"
+                            [attr.style]="
+                              'stop-color: ' + getEditRingPhaseColors(getAverageRating()).end + '; stop-opacity: 1'
+                            "
+                          />
+                        </linearGradient>
+
+                        <filter id="overallRingHaloWhiteMobile" x="-100%" y="-100%" width="300%" height="300%">
+                          <feDropShadow dx="0" dy="0" stdDeviation="1.8" flood-color="#ffffff" flood-opacity="0.85" />
+                        </filter>
+
+                        <filter id="overallRingHaloBlueMobile" x="-100%" y="-100%" width="300%" height="300%">
+                          <feDropShadow dx="0" dy="0" stdDeviation="1.8" flood-color="#38bdf8" flood-opacity="0.75" />
+                        </filter>
+                      </defs>
+
+                      <circle
+                        class="circle-bg"
+                        cx="21"
+                        cy="21"
+                        r="18"
+                        stroke-width="3"
+                      />
+
+                      <circle
+                        class="circle"
+                        cx="21"
+                        cy="21"
+                        r="18"
+                        stroke="url(#overallRatingGradientMobile)"
+                        [attr.filter]="
+                          isMaxRating(getAverageRating())
+                            ? 'url(#overallRingHaloWhiteMobile)'
+                            : getAverageRating() >= 9
+                            ? 'url(#overallRingHaloBlueMobile)'
+                            : null
+                        "
+                        stroke-width="3"
+                        stroke-dasharray="113.1"
+                        stroke-linecap="round"
+                        [attr.stroke-dashoffset]="getEditRingDashOffset(getAverageRating())"
+                      />
+
+                      <circle
+                        *ngFor="let p of tenCelebrationParticles; trackBy: trackEditRatingParticle"
+                        [attr.cx]="p.cx"
+                        [attr.cy]="p.cy"
+                        r="1"
+                        [attr.fill]="p.color"
+                        [attr.style]="'--px:' + p.px + 'px; --py:' + p.py + 'px;'"
+                        class="ten-celebration-particle"
+                      ></circle>
+                    </svg>
+
                     <div
                       (click)="scrollToReviews()"
-                      class="rating-badge-bg px-3 py-1 rounded-full text-white text-3xl font-bold tracking-wide shadow mb-2 flex items-center justify-center"
+                      class="absolute inset-0 flex flex-col items-center justify-center text-white cursor-pointer"
                     >
-                      <ng-container
-                        *ngIf="getAverageRating() === 10; else formattedRating"
-                      >
-                        10
-                      </ng-container>
-                      <ng-template #formattedRating>
-                        {{ getAverageRating() | number : "1.1-1" }}
-                      </ng-template>
-                      <span class="text-lg font-medium text-gray-300 ml-1"
-                        >/ 10</span
-                      >
+                      <span class="font-semibold text-4xl text-white">
+                        <ng-container
+                          *ngIf="getAverageRating() === 10; else formattedRating"
+                        >
+                          10
+                        </ng-container>
+                        <ng-template #formattedRating>
+                          {{ getAverageRating() | number : "1.1-1" }}
+                        </ng-template>
+                      </span>
+                      <span class="text-gray-400 text-sm font-medium mt-1">/ 10</span>
                     </div>
-
-                    <!-- Progress Bar -->
-                    <div
-                      class="mt-1 w-full bg-gray-700 h-3 rounded-full overflow-hidden"
-                    >
-                      <div
-                        class="h-3  transition-all duration-700 ease-out"
-                        [style.width.%]="ratingBarFill"
-                        [style.background]="getRatingGradient()"
-                      ></div>
-                    </div>
-                  </ng-container>
-                </ng-template>
-              </div>
+                  </div>
+                </ng-container>
+              </ng-template>
             </div>
           </div>
 
@@ -556,15 +615,15 @@
           <!-- Close Button -->
           <button
             (click)="close()"
-            class="w-[4rem] h-[3rem] sm:w-[5rem] sm:h-[4rem] rounded-full bg-white flex items-center justify-center shadow-md"
+            class="w-[4rem] h-[3rem] sm:w-[5rem] sm:h-[4rem] rounded-full bg-transparent border border-gray-700 flex items-center justify-center shadow-md"
           >
-            <i class="fas fa-times text-[#09101F] text-2xl sm:text-3xl"></i>
+            <i class="fas fa-times text-white text-2xl sm:text-3xl"></i>
           </button>
         </div>
 
         <!-- Middle Section: Image + Info/Text -->
         <div
-          class="flex-1 min-h-0 flex flex-col items-center justify-center overflow-hidden px-2"
+          class="flex-[3] min-h-0 flex flex-col items-center justify-center overflow-hidden px-2"
         >
           <div
             class="relative max-w-[85%] w-full min-h-0 flex-shrink flex justify-center items-center"
@@ -578,23 +637,16 @@
                     'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
               "
               [alt]="record.type === 'Artist' ? record.name : record.title"
-              class="rounded-lg w-full max-w-[340px] max-h-[340px] object-contain imageHeight border border-gray-800"
-              (load)="isImageLoaded = true"
-            />
-
-            <!-- Hidden Loader Image to trigger background gradient logic -->
-            <img
-              [src]="getImageUrl(true)"
-              class="hidden"
-              (load)="onImageLoad($event)"
-              crossorigin="anonymous"
-              loading="eager"
+  class="rounded-xl w-full max-w-[340px] max-h-[340px] object-contain imageHeight`
+         border border-blue-400/40
+         shadow-[0_0_6px_2px_rgba(96,165,250,0.85),0_0_30px_7px_rgba(37,99,235,0.45)]"             
+          (load)="isImageLoaded = true"
             />
           </div>
 
           <!-- Title/Text -->
           <div
-            class="text-center text-[1.8rem] mt-6 text-gray-200 font-semibold bg-gray-800 rounded-xl p-2 flex-shrink-0"
+            class="text-center text-[1.8rem] mt-6 text-gray-200 font-semibold rounded-xl p-2 flex-shrink-0"
           >
             <ng-container *ngIf="record.type === 'Artist'">
               <span class="text-gray-400 text-xl block uppercase">Artist</span>
@@ -639,7 +691,7 @@
             </div>
             <p
               *ngIf="record.type !== 'Cinema'"
-              class="text-gray-400 text-xl flex items-center justify-center"
+              class="text-[#A0C0F0] text-xl flex items-center justify-center"
             >
               <span
                 *ngIf="isExplicit"
@@ -661,20 +713,23 @@
             </p>
           </div>
         </div>
-        <app-audio-player
-          *ngIf="record && record.type !== 'Cinema'"
-          [record]="musicRecord"
-          [hidden]="showSecondIpod"
-          [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
-          #audioPlayerMobile
-          [song]="currentSong"
-          (next)="nextSong()"
-          (previous)="prevSong()"
-          (playStatus)="updatePlayStatus($event)"
-          (playStarted)="onAudioPlayStarted($event)"
-          [currentIndex]="currentIndex"
-          [recordList]="musicRecordList"
-        ></app-audio-player>
+        <!-- Audio player centered between the info card above and the bottom of the screen -->
+        <div class="flex-1 min-h-0 flex items-center justify-center">
+          <app-audio-player
+            *ngIf="record && record.type !== 'Cinema'"
+            [record]="musicRecord"
+            [hidden]="showSecondIpod"
+            [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
+            #audioPlayerMobile
+            [song]="currentSong"
+            (next)="nextSong()"
+            (previous)="prevSong()"
+            (playStatus)="updatePlayStatus($event)"
+            (playStarted)="onAudioPlayStarted($event)"
+            [currentIndex]="currentIndex"
+            [recordList]="musicRecordList"
+          ></app-audio-player>
+        </div>
       </div>
     </div>
   </div>
@@ -968,11 +1023,11 @@
                 <div
                   *ngIf="isEditingReview"
                   @overlayAnimation
-                  class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center"
+                  class="fixed inset-0 bg-[#020814] z-50 flex flex-col items-center justify-center"
                   style="height: 100dvh"
                 >
                   <div
-                    class="bg-[#1c2127] shadow-lg flex flex-col items-center justify-between"
+                    class="bg-[#020814] shadow-lg flex flex-col items-center justify-between"
                     style="width: 100vw; height: 100dvh"
                   >
             <!-- Header with Back Button -->
@@ -983,7 +1038,7 @@
                     [disabled]="isEditLoading"
                     (click)="cancelEditReview()"
                     class="w-10 h-10 sm:w-14 sm:h-14 sm:mt-3 flex items-center justify-center absolute left-4 rounded-full"
-                    style="background: #2d323a"
+                    style="background: #23262b"
                     >
                     <i class="fas fa-times text-2xl sm:text-3xl text-white"></i>
                     </button>
@@ -997,49 +1052,110 @@
                       class="flex flex-col flex-grow w-full px-4 pt-4 overflow-hidden"
                     >
                       <div class="text-center w-full mx-auto">
-                        <!-- Star Rating Display -->
-                        <div class="flex justify-center mb-4 gap-1">
-                          <ng-container
-                            *ngFor="let star of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
-                          >
-                            <ng-container
-                              [ngSwitch]="getStarType(star, editedRating)"
+                        <!-- Rating Progress Ring -->
+                        <div class="flex justify-center mb-4">
+                          <div class="relative w-28 h-28">
+                            <svg
+                              viewBox="0 0 42 42"
+                              class="circular-chart absolute w-full h-full"
                             >
-                              <i
-                                *ngSwitchCase="'full'"
-                                class="fas fa-star text-2xl text-yellow-400 star-size"
-                              ></i>
-                              <i
-                                *ngSwitchCase="'half'"
-                                class="fas fa-star-half-alt text-2xl text-yellow-400 star-size"
-                              ></i>
-                              <i
-                                *ngSwitchCase="'empty'"
-                                class="far fa-star text-2xl text-gray-500 star-size"
-                              ></i>
-                            </ng-container>
-                          </ng-container>
-                        </div>
+                              <defs>
+                                <linearGradient
+                                  id="editRatingGradientMobile"
+                                  x1="0%"
+                                  y1="0%"
+                                  x2="100%"
+                                  y2="0%"
+                                >
+                                  <stop
+                                    offset="0%"
+                                    [attr.style]="
+                                      'stop-color: ' + getEditRingPhaseColors(editedRating).start + '; stop-opacity: 1'
+                                    "
+                                  />
+                                  <stop
+                                    offset="100%"
+                                    [attr.style]="
+                                      'stop-color: ' + getEditRingPhaseColors(editedRating).end + '; stop-opacity: 1'
+                                    "
+                                  />
+                                </linearGradient>
 
-                        <p
-                          class="text-white font-medium text-xl mb-2 text-center"
-                        >
-                          Rating:
-                          <input
-                            type="number"
-                            min="0"
-                            max="10"
-                            step="0.1"
-                            [(ngModel)]="editedRating"
-                            (keypress)="onKeyPressRating($event, 'edit')"
-                            (blur)="onBlurRating('edit')"
-                            class="w-[3.2rem] text-[1.5rem] leading-none text-yellow-400 bg-[#2d323a] border border-gray-600 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 px-0.5 rounded mr-2"
-                          />
-                          <span
-                            class="text-gray-300 text-[1.3rem] opacity-70 font-medium"
-                            >/ 10</span
-                          >
-                        </p>
+                                <filter id="editRingGlowUp" x="-100%" y="-100%" width="300%" height="300%">
+                                  <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="#22c55e" flood-opacity="0.9" />
+                                </filter>
+                                <filter id="editRingGlowDown" x="-100%" y="-100%" width="300%" height="300%">
+                                  <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="#ef4444" flood-opacity="0.9" />
+                                </filter>
+                                <filter id="editRingHaloWhite" x="-100%" y="-100%" width="300%" height="300%">
+                                  <feDropShadow dx="0" dy="0" stdDeviation="1.8" flood-color="#ffffff" flood-opacity="0.85" />
+                                </filter>
+                              </defs>
+
+                              <circle
+                                class="circle-bg"
+                                cx="21"
+                                cy="21"
+                                r="18"
+                                stroke-width="3"
+                              />
+
+                              <circle
+                                class="circle edit-rating-ring"
+                                cx="21"
+                                cy="21"
+                                r="18"
+                                [attr.stroke]="
+                                  editRatingDirection === 'up'
+                                    ? '#22c55e'
+                                    : editRatingDirection === 'down'
+                                    ? '#ef4444'
+                                    : 'url(#editRatingGradientMobile)'
+                                "
+                                [attr.filter]="
+                                  editRatingDirection === 'up'
+                                    ? 'url(#editRingGlowUp)'
+                                    : editRatingDirection === 'down'
+                                    ? 'url(#editRingGlowDown)'
+                                    : isMaxRating(editedRating)
+                                    ? 'url(#editRingHaloWhite)'
+                                    : null
+                                "
+                                stroke-width="3"
+                                stroke-dasharray="113.1"
+                                stroke-linecap="round"
+                                [attr.stroke-dashoffset]="getEditRingDashOffset(editedRating)"
+                              />
+
+                              <circle
+                                *ngFor="let p of tenCelebrationParticles; trackBy: trackEditRatingParticle"
+                                [attr.cx]="p.cx"
+                                [attr.cy]="p.cy"
+                                r="1"
+                                [attr.fill]="p.color"
+                                [attr.style]="'--px:' + p.px + 'px; --py:' + p.py + 'px;'"
+                                class="ten-celebration-particle"
+                              ></circle>
+                            </svg>
+
+                            <div
+                              class="absolute inset-0 flex flex-col items-center justify-center text-white"
+                            >
+                              <input
+                                type="number"
+                                min="0"
+                                max="10"
+                                step="0.1"
+                                [(ngModel)]="editedRating"
+                                (ngModelChange)="onEditRatingChange($event)"
+                                (keypress)="onKeyPressRating($event, 'edit')"
+                                (blur)="onBlurRating('edit')"
+                                class="w-16 bg-transparent border border-transparent rounded-lg text-center font-semibold text-3xl text-white focus:bg-[#1c2127] focus:border-gray-500 focus:outline-none"
+                              />
+                              <span class="text-gray-400 text-xs font-medium mt-1">/ 10</span>
+                            </div>
+                          </div>
+                        </div>
 
                         <!-- Slider -->
                         <input
@@ -1048,6 +1164,7 @@
                           max="10"
                           step="0.1"
                           [(ngModel)]="editedRating"
+                          (input)="onEditRatingSlide($event)"
                           [style.background]="getSliderBackground(editedRating)"
                           class="w-full h-3 rounded-full appearance-none cursor-pointer transition-all slider-modern my-3"
                         />
@@ -1057,7 +1174,7 @@
                       <textarea
                         [(ngModel)]="editedReviewText"
                         [disabled]="isEditLoading"
-                        class="w-full flex-grow mt-5 p-3 text-lg sm:text-2xl bg-[#14171a] rounded-lg text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
+                        class="w-full flex-[3] mt-5 p-3 text-lg sm:text-2xl bg-[#0d1119] rounded-2xl text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
                         placeholder="Leave your feedback..."
                         style="
                           min-height: 120px;
@@ -1066,11 +1183,11 @@
                       ></textarea>
 
                       <!-- Submit Button -->
-                      <div class="flex font-medium w-full mt-[2rem] pb-3">
+                      <div class="flex-1 min-h-0 flex items-center font-medium w-full">
                         <button
                           [disabled]="isEditLoading"
                           (click)="submitEditReview()"
-                          class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-2xl text-white w-full flex items-center justify-center gap-2"
+                          class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2"
                         >
                           <ng-container *ngIf="!isEditLoading">
                             <i class="fas fa-save mr-1"></i> Save
@@ -1481,7 +1598,7 @@
       <div class="flex flex-row flex-1 min-h-0 gap-4 mt-2 overflow-hidden">
         <!-- Wrapper for both iPods -->
           <div
-            class="relative flex-none overflow-hidden flex flex-col mx-auto"
+            class="relative flex-none overflow-hidden flex flex-col mx-auto max-h-[550px]"
             [style.width.px]="desktopCardWidth"
           >
           <!-- First iPod -->
@@ -1491,7 +1608,7 @@
             [ngClass]="{ 'invisible-view': showSecondIpod }"
           >
             <div
-              class="bg-[#09101F] rounded-lg p-3 md:p-4 w-full h-full overflow-hidden"
+              class="bg-[#020814] rounded-lg p-3 md:p-4 w-full h-full overflow-hidden"
             >
               <div class="flex flex-col h-full min-h-0">
                 <!-- Image Area -->
@@ -1696,7 +1813,7 @@
           <div
             [@slideAnimation]="showSecondIpod ? 'back' : 'hidden'"
             [ngClass]="{ 'invisible-view': !showSecondIpod }"
-            class="absolute inset-0 z-30 overflow-y-auto custom-scrollbar bg-[#09101F] rounded-lg max-h-[78vh]"
+            class="absolute inset-0 z-30 overflow-y-auto custom-scrollbar bg-[#020814] rounded-lg max-h-[78vh]"
           >
             <!-- Artist Section -->
             <div *ngIf="record.type === 'Artist'">
@@ -1847,7 +1964,7 @@
                   <!-- Loading state -->
                   <div
                     *ngIf="isLoadingExtraDetails"
-                    class="w-full bg-[#09101F] p-6 rounded-lg flex flex-col items-center justify-center mt-[2rem]"
+                    class="w-full bg-[#020814] p-6 rounded-lg flex flex-col items-center justify-center mt-[2rem]"
                   >
                     <p class="text-gray-400 text-center mb-4">
                       Loading tracklist...
@@ -2109,7 +2226,7 @@
                     !isTracklistArray &&
                     record.type === 'Album'
                   "
-                  class="w-full bg-[#09101F] p-6 rounded-lg text-center"
+                  class="w-full bg-[#020814] p-6 rounded-lg text-center"
                 >
                   <p class="text-gray-400">No tracklist available.</p>
                 </div>
@@ -2359,7 +2476,8 @@
                     <button
                     [disabled]="isEditLoading"
                     (click)="cancelEditReview()"
-                    class="w-14 h-14 flex items-center justify-center absolute left-4 rounded-full hover:bg-[#2d323a]"
+                    class="w-14 h-14 flex items-center justify-center absolute left-4 rounded-full"
+                    style="background: #23262b"
                     >
                     <i class="fas fa-times text-3xl text-white"></i>
                     </button>
@@ -2435,23 +2553,23 @@
                           </div>
 
               <!-- Textarea -->
-              <div class="w-full max-w-[800px] flex-grow flex flex-col min-h-0">
+              <div class="w-full max-w-[800px] flex-[3] flex flex-col min-h-0">
                 <textarea
                   [(ngModel)]="editedReviewText"
                   [disabled]="isEditLoading"
-                  class="w-full flex-grow min-h-0 p-4 text-xl bg-[#14171a] rounded-xl text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
+                  class="w-full flex-grow min-h-0 p-4 text-xl bg-[#0d1119] rounded-2xl text-gray-300 placeholder-gray-500 focus:outline-none resize-none border border-gray-600"
                   placeholder="Leave your feedback..."
                   style="height:100%;"
                 ></textarea>
               </div>
                   <!-- Submit Button -->
                   <div
-                    class="flex font-medium w-full mt-[2rem] pb-3 max-w-[640px]"
+                    class="flex-1 min-h-0 flex items-center justify-center font-medium w-full max-w-[640px]"
                   >
                             <button
                               [disabled]="isEditLoading"
                               (click)="submitEditReview()"
-                              class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-2xl text-white w-full flex items-center justify-center gap-2 hover:brightness-110"
+                              class="bg-gradient-to-r from-sky-500 to-blue-600 text-2xl px-4 py-4 rounded-full text-white w-full flex items-center justify-center gap-2 hover:brightness-110"
                             >
                               <ng-container *ngIf="!isEditLoading">
                                 <i class="fas fa-save mr-1"></i> Save
