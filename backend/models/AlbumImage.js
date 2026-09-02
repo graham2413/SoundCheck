@@ -8,6 +8,7 @@ const AlbumImageSchema = new mongoose.Schema({
   releaseDate: Date,
   type: { type: String, enum: ['Album'], default: 'Album' },
   isExplicit: Boolean,
+  releaseType: { type: String, enum: ['Song', 'EP', 'Album'], default: 'Album' },
   genre: String,
   order: Number,
 }, { timestamps: true });

@@ -15,6 +15,13 @@ const httpsAgent = isProd
     ca: fs.existsSync(path.resolve(__dirname, "../cacert.pem")) ? fs.readFileSync(path.resolve(__dirname, "../cacert.pem")) : undefined
     });
 
+// Classifies a release by track count: 1 = Song, 2-6 = EP, 7+ = Album
+function getReleaseType(trackCount) {
+  if (trackCount === 1) return "Song";
+  if (trackCount <= 6) return "EP";
+  return "Album";
+}
+
 // Fetch a user's Spotify playlists.
 const getUserPlaylists = async (req, res) => {
   try {
@@ -117,6 +124,7 @@ const setAlbumImages = async () => {
     // Exact-matched against the Deezer album genre name
     const DEEZER_GENRE_BLOCKLIST = [
       "films/games", "brazilian music", "unknown", "asian music", "latin music", "traditional mexicano", "electro", "banda/grupero", "classical",
+      "Indian Music"
     ];
 
     const currentYear = new Date().getFullYear();
@@ -334,6 +342,21 @@ const setAlbumImages = async () => {
             const genre = await getAlbumGenre(matchedAlbum.id);
             if (DEEZER_GENRE_BLOCKLIST.includes((genre || "").toLowerCase())) return;
 
+            let releaseType = "Album";
+            try {
+              const albumDetailRes = await fetchWithRetry(() =>
+                callDeezer(`https://api.deezer.com/album/${matchedAlbum.id}`)
+              );
+              const nbTracks = albumDetailRes.data?.nb_tracks;
+              // callDeezer silently returns an empty payload when rate-limited rather than throwing,
+              // so only trust a real numeric track count instead of treating missing data as 0 (EP)
+              if (typeof nbTracks === "number") {
+                releaseType = getReleaseType(nbTracks);
+              }
+            } catch (err) {
+              console.warn(`Failed to fetch track count for Deezer album ${matchedAlbum.id}:`, err.message);
+            }
+
             finalAlbumsMap.set(matchedAlbum.id, {
               id: matchedAlbum.id,
               title: matchedAlbum.title,
@@ -342,6 +365,7 @@ const setAlbumImages = async () => {
               releaseDate,
               type: "Album",
               isExplicit: matchedAlbum.explicit_lyrics || false,
+              releaseType,
               popularity: maxPopularity,
               genre,
             });
@@ -381,9 +405,14 @@ const setAlbumImages = async () => {
 
           // Chart summary objects don't include release_date - fetch full album detail
           let releaseDate = "0000-00-00";
+          let releaseType = "Album";
           try {
             const detailRes = await fetchWithRetry(() => callDeezer(`https://api.deezer.com/album/${album.id}`));
             releaseDate = detailRes.data?.release_date || releaseDate;
+            const nbTracks = detailRes.data?.nb_tracks;
+            if (typeof nbTracks === "number") {
+              releaseType = getReleaseType(nbTracks);
+            }
           } catch (err) {
             console.warn(`Failed to fetch release date for Deezer chart album ${album.id}:`, err.message);
           }
@@ -399,6 +428,7 @@ const setAlbumImages = async () => {
             releaseDate,
             type: "Album",
             isExplicit: album.explicit_lyrics || false,
+            releaseType,
             popularity: chartPopularity,
             genre,
           });
@@ -444,50 +474,11 @@ const setAlbumImages = async () => {
     // Final cap
     dedupedAlbums = dedupedAlbums.slice(0, TARGET_COUNT);
 
-    // Reorder by highest popularity across genres: each step, pick the highest-popularity
-    // album from any genre bucket that ISN'T the genre just picked (avoids back-to-back repeats
-    // while staying as close to descending popularity as possible)
-    const genreBuckets = new Map();
-    dedupedAlbums.forEach((album) => {
-      const key = album.genre || "Unknown";
-      if (!genreBuckets.has(key)) genreBuckets.set(key, []);
-      genreBuckets.get(key).push(album);
-    });
+    // Display order: most recently released first (already sorted this way above)
+    dedupedAlbums = dedupedAlbums.map((album, index) => ({ ...album, order: index }));
 
-    // Sort each bucket by popularity descending so the front of each bucket is always its best pick
-    genreBuckets.forEach((bucket) => bucket.sort((a, b) => (b.popularity || 0) - (a.popularity || 0)));
-
-    const diversifiedAlbums = [];
-    let lastGenre = null;
-
-    while (diversifiedAlbums.length < dedupedAlbums.length) {
-      let candidateKeys = Array.from(genreBuckets.keys()).filter(
-        (key) => genreBuckets.get(key).length > 0 && key !== lastGenre
-      );
-
-      // Only allow repeating the same genre if it's the sole bucket left with items
-      if (candidateKeys.length === 0) {
-        candidateKeys = Array.from(genreBuckets.keys()).filter((key) => genreBuckets.get(key).length > 0);
-      }
-
-      let bestKey = null;
-      let bestPopularity = -1;
-      for (const key of candidateKeys) {
-        const topAlbum = genreBuckets.get(key)[0];
-        if ((topAlbum.popularity || 0) > bestPopularity) {
-          bestPopularity = topAlbum.popularity || 0;
-          bestKey = key;
-        }
-      }
-
-      diversifiedAlbums.push(genreBuckets.get(bestKey).shift());
-      lastGenre = bestKey;
-    }
-
-    dedupedAlbums = diversifiedAlbums.map((album, index) => ({ ...album, order: index }));
-
-    console.log("Final diversified order (order: [genre] popularity - title):");
-    console.log(dedupedAlbums.map((a) => `${a.order}: [${a.genre}] pop=${a.popularity} - ${a.title}`).join("\n"));
+    console.log("Final order (order: releaseDate - title):");
+    console.log(dedupedAlbums.map((a) => `${a.order}: ${a.releaseDate} - ${a.title}`).join("\n"));
 
     // Clear out old records and store the final set
     await AlbumImage.deleteMany({});

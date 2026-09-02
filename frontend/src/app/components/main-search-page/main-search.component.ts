@@ -260,6 +260,7 @@ export class MainSearchComponent implements OnInit {
         title: `Static Album ${i + 1}`,
         artist: 'Unknown',
         cover: `assets/album${i + 1}.jpg`,
+        releaseType: 'Album',
       }));
     }
 

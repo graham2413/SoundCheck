@@ -123,45 +123,62 @@
         <!-- First copy -->
         <ng-container *ngFor="let album of albums; let i = index">
           <div
-            class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[13.5rem]"
+            class="album-card relative w-[12rem] md:w-[13.5rem] h-[12rem] md:h-[13.5rem] rounded-lg overflow-hidden border border-gray-800"
             (click)="openModal(album, albums, i)"
           >
+            <!-- Loader -->
             <div
-              class="relative w-full h-[11rem] md:h-[12rem] rounded overflow-hidden border border-gray-800"
+              *ngIf="!marqueeImageLoaded[i]"
+              class="absolute inset-0 flex items-center justify-center bg-gray-800"
             >
-              <!-- Loader -->
               <div
-                *ngIf="!marqueeImageLoaded[i]"
-                class="absolute inset-0 flex items-center justify-center bg-gray-800"
-              >
-                <div
-                  class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
-                ></div>
-              </div>
-
-              <!-- Image -->
-              <img
-                [src]="
-                  album.cover ||
-                  'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-                "
-                [alt]="album.title"
-                (load)="marqueeImageLoaded[i] = true"
-                (error)="marqueeImageLoaded[i] = true"
-                [class.invisible]="!marqueeImageLoaded[i]"
-                class="w-full h-full object-cover"
-              />
+                class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+              ></div>
             </div>
 
-            <div class="track-info w-full overflow-hidden">
+            <!-- Image -->
+            <img
+              [src]="
+                album.cover ||
+                'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+              "
+              [alt]="album.title"
+              (load)="marqueeImageLoaded[i] = true"
+              (error)="marqueeImageLoaded[i] = true"
+              [class.invisible]="!marqueeImageLoaded[i]"
+              class="w-full h-full object-cover"
+            />
+
+            <!-- Release date badge -->
+            <span
+              *ngIf="album?.releaseDate"
+              class="absolute top-2 left-2 bg-black/70 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded"
+            >
+              {{ album.releaseDate | timeAgo }}
+            </span>
+
+            <!-- Song/Album badge -->
+            <span
+              class="absolute top-2 right-2 bg-black/70 text-white text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded"
+            >
+              {{ album?.releaseType || 'Album' }}
+            </span>
+
+            <!-- Bottom gradient fade -->
+            <div
+              class="absolute bottom-0 left-0 right-0 h-2/3 bg-gradient-to-t from-black/90 to-transparent pointer-events-none"
+            ></div>
+
+            <!-- Title / artist overlay -->
+            <div class="absolute bottom-0 left-0 right-0 p-3 overflow-hidden">
               <p
-                class="title text-base md:text-lg truncate w-full text-left font-semibold"
+                class="title text-base md:text-lg truncate w-full text-left font-semibold text-white"
                 [title]="album.title"
               >
                 {{ album.title }}
               </p>
               <p
-                class="artist text-sm md:text-base text-gray-400 truncate w-full text-left"
+                class="artist text-sm md:text-base text-gray-300 truncate w-full text-left"
                 [title]="album.artist"
               >
                 <span
@@ -180,45 +197,62 @@
         <!-- Second copy (duplicate for infinite scroll) -->
         <ng-container *ngFor="let album of albums; let i = index">
           <div
-            class="album-card bg-[#1F2937] p-3 rounded-lg w-[12rem] md:w-[13.5rem]"
+            class="album-card relative w-[12rem] md:w-[13.5rem] h-[12rem] md:h-[13.5rem] rounded-lg overflow-hidden border border-gray-800"
             (click)="openModal(album, albums, i)"
           >
+            <!-- Loader -->
             <div
-              class="relative w-full h-[11rem] md:h-[12rem] rounded overflow-hidden border border-gray-800"
+              *ngIf="!marqueeImageLoaded[i + albums.length]"
+              class="absolute inset-0 flex items-center justify-center bg-gray-800"
             >
-              <!-- Loader -->
               <div
-                *ngIf="!marqueeImageLoaded[i + albums.length]"
-                class="absolute inset-0 flex items-center justify-center bg-gray-800"
-              >
-                <div
-                  class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
-                ></div>
-              </div>
-
-              <!-- Image -->
-              <img
-                [src]="
-                  album.cover ||
-                  'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-                "
-                [alt]="album.title"
-                (load)="marqueeImageLoaded[i + albums.length] = true"
-                (error)="marqueeImageLoaded[i + albums.length] = true"
-                [class.invisible]="!marqueeImageLoaded[i + albums.length]"
-                class="w-full h-full object-cover"
-              />
+                class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+              ></div>
             </div>
 
-            <div class="track-info w-full overflow-hidden">
+            <!-- Image -->
+            <img
+              [src]="
+                album.cover ||
+                'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+              "
+              [alt]="album.title"
+              (load)="marqueeImageLoaded[i + albums.length] = true"
+              (error)="marqueeImageLoaded[i + albums.length] = true"
+              [class.invisible]="!marqueeImageLoaded[i + albums.length]"
+              class="w-full h-full object-cover"
+            />
+
+            <!-- Release date badge -->
+            <span
+              *ngIf="album?.releaseDate"
+              class="absolute top-2 left-2 bg-black/70 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded"
+            >
+              {{ album.releaseDate | timeAgo }}
+            </span>
+
+            <!-- Song/Album badge -->
+            <span
+              class="absolute top-2 right-2 bg-black/70 text-white text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded"
+            >
+              {{ album?.releaseType || 'Album' }}
+            </span>
+
+            <!-- Bottom gradient fade -->
+            <div
+              class="absolute bottom-0 left-0 right-0 h-2/3 bg-gradient-to-t from-black/90 to-transparent pointer-events-none"
+            ></div>
+
+            <!-- Title / artist overlay -->
+            <div class="absolute bottom-0 left-0 right-0 p-3 overflow-hidden">
               <p
-                class="title text-base md:text-lg truncate w-full text-left"
+                class="title text-base md:text-lg truncate w-full text-left font-semibold text-white"
                 [title]="album.title"
               >
                 {{ album.title }}
               </p>
               <p
-                class="artist text-sm md:text-base text-gray-400 truncate w-full text-left"
+                class="artist text-sm md:text-base text-gray-300 truncate w-full text-left"
                 [title]="album.artist"
               >
                 <span
