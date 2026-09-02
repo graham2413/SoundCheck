@@ -1133,6 +1133,11 @@ export class ViewProfilePageComponent implements OnInit {
     );
   }
 
+  clearSearchQuery(): void {
+    this.searchQuery = '';
+    this.filterFriends();
+  }
+
   goToUserProfile(userId?: string): void {
     this.showPanel = null;
 

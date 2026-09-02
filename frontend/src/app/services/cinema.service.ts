@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
-import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse } from '../models/responses/cinema-response';
+import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry } from '../models/responses/cinema-response';
 
 @Injectable({
   providedIn: 'root'
@@ -34,6 +34,15 @@ export class CinemaService {
   getWatchlist(userId: string): Observable<{ success: boolean; data: CinemaItem[] }> {
     return this.http.get<{ success: boolean; data: CinemaItem[] }>(`${this.apiUrl}/watchlist/${userId}`, {
       headers: this.authHeaders(),
+    });
+  }
+
+  // Upcoming episodes/releases for the current user's tracked shows/movies.
+  // TMDb lookups are cached for 24h server-side; pass forceRefresh to bypass.
+  getCalendar(forceRefresh = false): Observable<{ success: boolean; data: CalendarEntry[] }> {
+    return this.http.get<{ success: boolean; data: CalendarEntry[] }>(`${this.apiUrl}/calendar`, {
+      headers: this.authHeaders(),
+      params: forceRefresh ? { refresh: 'true' } : {},
     });
   }
 

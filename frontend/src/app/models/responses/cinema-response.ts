@@ -48,6 +48,8 @@ export interface CinemaSearchResult {
   title: string;
   cover: string | null;
   releaseDate: string | null;
+  releaseYearRange?: string;
+  genres?: string[];
 }
 
 // A CinemaItem as returned by getCinemaReviews, with `user` populated
@@ -69,6 +71,19 @@ export interface ImdbStats {
   imdbId: string;
   imdbRating: string | null;
   voteCount: string | null;
+}
+
+// One row from GET /api/cinema/calendar - a TV show's next episode to air,
+// or a watchlisted movie's upcoming release date.
+export interface CalendarEntry {
+  tmdbId: string;
+  mediaType: 'movie' | 'tv';
+  title: string;
+  cover: string | null;
+  airDate: string;
+  seasonNumber?: number;
+  episodeNumber?: number;
+  episodeName?: string;
 }
 
 export interface ImdbStatsResponse {

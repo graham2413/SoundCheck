@@ -13,6 +13,8 @@ const QUEUE_DELAY_MS = 200;
 
 const DETAILS_CACHE_TTL = 604800; // 7 days
 const SEARCH_CACHE_TTL = 7200; // 2 hours
+const GENRE_CACHE_TTL = 2592000; // 30 days
+const CALENDAR_DETAILS_CACHE_TTL = 259200; // 3 days - now a backstop behind the per-user full-response cache, so it can afford to live longer
 
 // Caps simultaneous connections to stay under TMDb's ~20 concurrent connections/IP limit
 const tmdbAgent = new https.Agent({ maxSockets: 20, keepAlive: true });
@@ -98,6 +100,28 @@ async function getTmdbDetails(tmdbId, mediaType = "movie") {
   return response.data;
 }
 
+// Cache-aware wrapper for the calendar: same /movie|tv/:id details call as
+// getTmdbDetails, but with a much shorter TTL since next_episode_to_air and
+// release_date can change well within the 7-day details cache window.
+// `forceRefresh` bypasses the cache read (used by the calendar's refresh
+// button) but still writes the fresh result back to cache.
+async function getTmdbDetailsForCalendar(tmdbId, mediaType, forceRefresh = false) {
+  const cacheKey = `tmdb:calendar-details:${mediaType}:${tmdbId}`;
+
+  if (!forceRefresh) {
+    const cached = await redis.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+  }
+
+  const response = await callTmdb(`/${mediaType}/${tmdbId}`);
+
+  if (response.data) {
+    await redis.set(cacheKey, JSON.stringify(response.data), "EX", CALENDAR_DETAILS_CACHE_TTL);
+  }
+
+  return response.data;
+}
+
 // Cache-aware wrapper: GET /search/multi?query=...
 async function searchTmdb(query) {
   const cacheKey = `tmdb:search:${query}`;
@@ -113,4 +137,21 @@ async function searchTmdb(query) {
   return response.data;
 }
 
-module.exports = { callTmdb, getTmdbDetails, searchTmdb };
+// Cache-aware wrapper: GET /genre/movie|tv/list -> { [id]: name }. Fetched live
+// (instead of hardcoded) so newly-added TMDb genres show up automatically.
+async function getGenreMap(mediaType) {
+  const cacheKey = `tmdb:genres:${mediaType}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const response = await callTmdb(`/genre/${mediaType}/list`);
+  const map = {};
+  (response.data?.genres || []).forEach((g) => {
+    map[g.id] = g.name;
+  });
+
+  await redis.set(cacheKey, JSON.stringify(map), "EX", GENRE_CACHE_TTL);
+  return map;
+}
+
+module.exports = { callTmdb, getTmdbDetails, getTmdbDetailsForCalendar, searchTmdb, getGenreMap };

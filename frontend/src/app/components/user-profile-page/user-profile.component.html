@@ -14,11 +14,28 @@
             (change)="onProfilePictureChange($event)"
             class="hidden"
           />
-          <img
-            [src]="getTransformedImageUrl(profilePictureUrl)"
-            alt="Profile Picture"
-            class="w-[8rem] h-[8rem] imageFix sm:w-40 sm:h-40 rounded-full border-2 border-gray-600 object-cover shadow-md hover:opacity-80 transition"
-          />
+          <div
+            class="relative w-[8rem] h-[8rem] sm:w-40 sm:h-40 imageFix rounded-full"
+          >
+            <!-- Loader -->
+            <div
+              *ngIf="!isProfilePictureLoaded"
+              class="absolute inset-0 flex items-center justify-center rounded-full border-2 border-gray-600 bg-gray-800"
+            >
+              <div
+                class="w-6 h-6 border-t-2 border-white rounded-full animate-spin"
+              ></div>
+            </div>
+
+            <img
+              [src]="getTransformedImageUrl(profilePictureUrl)"
+              (load)="isProfilePictureLoaded = true"
+              (error)="isProfilePictureLoaded = true"
+              [class.invisible]="!isProfilePictureLoaded"
+              alt="Profile Picture"
+              class="w-full h-full rounded-full border-2 border-gray-600 object-cover shadow-md hover:opacity-80 transition"
+            />
+          </div>
           <div
             class="absolute bottom-2 right-[2rem] iconPlacementFix transform translate-x-1/2 translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-full shadow-md hover:bg-gray-600 transition flex items-center justify-center"
           >

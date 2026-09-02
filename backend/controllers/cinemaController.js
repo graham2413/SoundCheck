@@ -1,7 +1,7 @@
 const axios = require("axios");
 const redis = require("../utils/redisClient");
 const { fetchWithRetry } = require("../utils/fetchWithRetry");
-const { getTmdbDetails, searchTmdb } = require("../utils/callTmdb");
+const { getTmdbDetails, getTmdbDetailsForCalendar, searchTmdb, getGenreMap } = require("../utils/callTmdb");
 const { parseTraktExport } = require("../utils/parseTraktExport");
 const { backfillCinemaCovers } = require("../scripts/backfillCinemaCovers");
 const { getMediaCanonicalId } = require("../utils/canonical-id");
@@ -9,6 +9,7 @@ const CinemaItem = require("../models/CinemaItem");
 const User = require("../models/User");
 
 const IMDB_STATS_CACHE_TTL = 86400; // 24h
+const CALENDAR_RESPONSE_CACHE_TTL = 86400; // 24h - per-user, avoids the Mongo query + reassembly on repeat visits within the day
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/original"; // matches backfillCinemaCovers.js
 
 // GET /api/cinema/search?query=... (Protected)
@@ -22,18 +23,128 @@ exports.searchCinema = async (req, res) => {
       return res.status(400).json({ success: false, message: "query is required" });
     }
 
-    const data = await searchTmdb(query.trim());
+    const [data, movieGenres, tvGenres] = await Promise.all([
+      searchTmdb(query.trim()),
+      getGenreMap("movie"),
+      getGenreMap("tv"),
+    ]);
+
     const results = (data?.results || [])
       .filter((r) => r.media_type === "movie" || r.media_type === "tv")
-      .map((r) => ({
-        tmdbId: r.id.toString(),
-        mediaType: r.media_type,
-        title: r.title || r.name,
-        cover: r.poster_path ? `${TMDB_IMAGE_BASE}${r.poster_path}` : null,
-        releaseDate: r.release_date || r.first_air_date || null,
-      }));
+      .map((r) => {
+        const genreMap = r.media_type === "movie" ? movieGenres : tvGenres;
+        return {
+          tmdbId: r.id.toString(),
+          mediaType: r.media_type,
+          title: r.title || r.name,
+          cover: r.poster_path ? `${TMDB_IMAGE_BASE}${r.poster_path}` : null,
+          releaseDate: r.release_date || r.first_air_date || null,
+          genres: (r.genre_ids || []).map((id) => genreMap[id]).filter(Boolean),
+        };
+      });
+
+    // TV shows only get a start year from /search/multi (no last_air_date there) -
+    // fetch full details (cached 7 days via getTmdbDetails) just for the TV
+    // results so we can show a real "2008-2013"/"2008-Present" year range.
+    const tvResults = results.filter((r) => r.mediaType === "tv");
+    if (tvResults.length > 0) {
+      const tvDetails = await Promise.all(
+        tvResults.map((r) => getTmdbDetails(r.tmdbId, "tv").catch(() => null))
+      );
+
+      tvResults.forEach((r, i) => {
+        const details = tvDetails[i];
+        if (!details) return;
+
+        const startYear = r.releaseDate ? new Date(r.releaseDate).getFullYear() : null;
+        const endYear = details.last_air_date ? new Date(details.last_air_date).getFullYear() : null;
+        if (!startYear) return;
+
+        const hasEnded = details.status === "Ended" || details.status === "Canceled";
+        if (hasEnded) {
+          r.releaseYearRange = endYear && endYear !== startYear ? `${startYear}-${endYear}` : `${startYear}`;
+        } else if (endYear && endYear !== startYear) {
+          r.releaseYearRange = `${startYear}-Present`;
+        }
+      });
+    }
 
     res.status(200).json({ success: true, data: results });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// GET /api/cinema/calendar (Protected)
+// Upcoming: next episode to air for tracked TV shows (watchlisted OR already
+// reviewed, so a show doesn't disappear once you've reviewed an earlier
+// season), plus watchlisted movies with a future release date. Sorted
+// soonest-first.
+exports.getCalendar = async (req, res) => {
+  try {
+    const forceRefresh = req.query.refresh === "true";
+    const cacheKey = `calendar:${req.user._id}`;
+
+    if (!forceRefresh) {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return res.status(200).json({ success: true, data: JSON.parse(cached) });
+      }
+    }
+
+    const items = await CinemaItem.find({
+      user: req.user._id,
+      tmdbId: { $exists: true, $ne: null },
+      $or: [{ isWatchlist: true }, { decimalRating: { $ne: null } }],
+    });
+
+    const tvItems = items.filter((i) => i.mediaType === "tv");
+    const movieItems = items.filter((i) => i.mediaType === "movie" && i.isWatchlist);
+    const now = new Date();
+
+    const [tvDetails, movieDetails] = await Promise.all([
+      Promise.all(tvItems.map((i) => getTmdbDetailsForCalendar(i.tmdbId, "tv", forceRefresh).catch(() => null))),
+      Promise.all(movieItems.map((i) => getTmdbDetailsForCalendar(i.tmdbId, "movie", forceRefresh).catch(() => null))),
+    ]);
+
+    const tvEntries = tvItems
+      .map((item, i) => {
+        const next = tvDetails[i]?.next_episode_to_air;
+        if (!next?.air_date || new Date(next.air_date) < now) return null;
+        return {
+          tmdbId: item.tmdbId,
+          mediaType: "tv",
+          title: item.title,
+          cover: item.cover,
+          airDate: next.air_date,
+          seasonNumber: next.season_number,
+          episodeNumber: next.episode_number,
+          episodeName: next.name,
+        };
+      })
+      .filter(Boolean);
+
+    const movieEntries = movieItems
+      .map((item, i) => {
+        const releaseDate = movieDetails[i]?.release_date;
+        if (!releaseDate || new Date(releaseDate) < now) return null;
+        return {
+          tmdbId: item.tmdbId,
+          mediaType: "movie",
+          title: item.title,
+          cover: item.cover,
+          airDate: releaseDate,
+        };
+      })
+      .filter(Boolean);
+
+    const calendar = [...tvEntries, ...movieEntries].sort(
+      (a, b) => new Date(a.airDate) - new Date(b.airDate)
+    );
+
+    await redis.set(cacheKey, JSON.stringify(calendar), "EX", CALENDAR_RESPONSE_CACHE_TTL);
+
+    res.status(200).json({ success: true, data: calendar });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }
@@ -232,6 +343,7 @@ exports.editCinemaItem = async (req, res) => {
 
     item.decimalRating = decimalRating;
     item.isUnrefinedImport = false;
+    item.isWatchlist = false; // rating it means it's watched, not still "to watch"
     if (reviewText !== undefined) item.reviewText = reviewText;
     if (!isRefinement) item.createdAt = new Date();
     await item.save();

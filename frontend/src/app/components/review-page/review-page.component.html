@@ -261,14 +261,29 @@
       <!-- Album and Song Section  -->
       <div *ngIf="record.type !== 'Artist' && record.type !== 'Cinema'">
         <div class="relative flex justify-center items-center">
-          <img
-            [src]="
-              record.cover ||
-              'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-            "
-            class="w-[55%] h-auto rounded-md mt-[2rem] border-2 border-gray-500"
-            alt="Record Image"
-          />
+          <div class="relative w-[55%] mt-[2rem] aspect-square">
+            <!-- Loader -->
+            <div
+              *ngIf="!isRecordCoverLoaded"
+              class="absolute inset-0 flex items-center justify-center rounded-md border-2 border-gray-500 bg-gray-800"
+            >
+              <div
+                class="w-6 h-6 border-t-2 border-white rounded-full animate-spin"
+              ></div>
+            </div>
+
+            <img
+              [src]="
+                record.cover ||
+                'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+              "
+              (load)="isRecordCoverLoaded = true"
+              (error)="isRecordCoverLoaded = true"
+              [class.invisible]="!isRecordCoverLoaded"
+              class="w-full h-full object-contain rounded-md border-2 border-gray-500"
+              alt="Record Image"
+            />
+          </div>
         </div>
         <div class="px-2">
           <div
@@ -519,18 +534,8 @@
                           x2="100%"
                           y2="0%"
                         >
-                          <stop
-                            offset="0%"
-                            [attr.style]="
-                              'stop-color: ' + getEditRingPhaseColors(getAverageRating()).start + '; stop-opacity: 1'
-                            "
-                          />
-                          <stop
-                            offset="100%"
-                            [attr.style]="
-                              'stop-color: ' + getEditRingPhaseColors(getAverageRating()).end + '; stop-opacity: 1'
-                            "
-                          />
+                          <stop offset="0%" style="stop-color: #798dea; stop-opacity: 1" />
+                          <stop offset="100%" style="stop-color: #798dea; stop-opacity: 1" />
                         </linearGradient>
 
                         <filter id="overallRingHaloWhiteMobile" x="-100%" y="-100%" width="300%" height="300%">
@@ -604,7 +609,6 @@
                           {{ getAverageRating() | number : "1.1-1" }}
                         </ng-template>
                       </span>
-                      <span class="text-gray-400 text-sm font-medium mt-1">/ 10</span>
                     </div>
                   </div>
                 </ng-container>
@@ -1253,16 +1257,33 @@
 
                   <div class="flex items-start mt-[1rem]">
                     <!-- Profile Picture -->
-                    <img
-                      [src]="
-                        review.user.profilePicture
-                          ? transformCloudinaryUrl(review.user.profilePicture)
-                          : 'assets/user.png'
-                      "
-                      alt="Profile Picture"
-                      class="w-[4rem] h-[4rem] rounded-full object-cover"
-                      (click)="goToProfile(review.user._id)"
-                    />
+                    <div
+                      class="relative w-[4rem] h-[4rem] rounded-full overflow-hidden shrink-0"
+                    >
+                      <!-- Loader -->
+                      <div
+                        *ngIf="!isReviewerImageLoaded(review._id)"
+                        class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
+                      >
+                        <div
+                          class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"
+                        ></div>
+                      </div>
+
+                      <img
+                        [src]="
+                          review.user.profilePicture
+                            ? transformCloudinaryUrl(review.user.profilePicture)
+                            : 'assets/user.png'
+                        "
+                        alt="Profile Picture"
+                        (load)="markReviewerImageLoaded(review._id)"
+                        (error)="markReviewerImageLoaded(review._id)"
+                        [class.invisible]="!isReviewerImageLoaded(review._id)"
+                        class="w-full h-full rounded-full object-cover"
+                        (click)="goToProfile(review.user._id)"
+                      />
+                    </div>
                     <!-- Username and Review Info -->
                     <div class="ml-3 flex-1">
                       <p class="text-white text-lg font-semibold pr-[.8rem]">
@@ -2067,14 +2088,29 @@
             <!-- Album and Song Section  -->
             <div *ngIf="record.type !== 'Artist' && record.type !== 'Cinema'">
               <div class="relative flex justify-center items-center">
-                <img
-                  [src]="
-                    record.cover ||
-                    'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-                  "
-                  class="w-[55%] h-auto rounded-md mt-[1rem] border-2 border-gray-500"
-                  alt="Record Image"
-                />
+                <div class="relative w-[55%] mt-[1rem] aspect-square">
+                  <!-- Loader -->
+                  <div
+                    *ngIf="!isRecordCoverLoaded"
+                    class="absolute inset-0 flex items-center justify-center rounded-md border-2 border-gray-500 bg-gray-800"
+                  >
+                    <div
+                      class="w-6 h-6 border-t-2 border-white rounded-full animate-spin"
+                    ></div>
+                  </div>
+
+                  <img
+                    [src]="
+                      record.cover ||
+                      'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                    "
+                    (load)="isRecordCoverLoaded = true"
+                    (error)="isRecordCoverLoaded = true"
+                    [class.invisible]="!isRecordCoverLoaded"
+                    class="w-full h-full object-contain rounded-md border-2 border-gray-500"
+                    alt="Record Image"
+                  />
+                </div>
               </div>
               <div class="px-2">
                 <div
@@ -2636,18 +2672,35 @@
 
                       <div class="flex items-start mt-[1rem] pl-2">
                         <!-- Profile Picture -->
-                        <img
-                          [src]="
-                            review.user.profilePicture
-                              ? transformCloudinaryUrl(
-                                  review.user.profilePicture
-                                )
-                              : 'assets/user.png'
-                          "
-                          alt="Profile Picture"
-                          (click)="goToProfile(review.user._id)"
-                          class="w-[4rem] h-[4rem] rounded-full object-cover"
-                        />
+                        <div
+                          class="relative w-[4rem] h-[4rem] rounded-full overflow-hidden shrink-0"
+                        >
+                          <!-- Loader -->
+                          <div
+                            *ngIf="!isReviewerImageLoaded(review._id)"
+                            class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
+                          >
+                            <div
+                              class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"
+                            ></div>
+                          </div>
+
+                          <img
+                            [src]="
+                              review.user.profilePicture
+                                ? transformCloudinaryUrl(
+                                    review.user.profilePicture
+                                  )
+                                : 'assets/user.png'
+                            "
+                            alt="Profile Picture"
+                            (load)="markReviewerImageLoaded(review._id)"
+                            (error)="markReviewerImageLoaded(review._id)"
+                            [class.invisible]="!isReviewerImageLoaded(review._id)"
+                            (click)="goToProfile(review.user._id)"
+                            class="w-full h-full rounded-full object-cover"
+                          />
+                        </div>
 
                         <!-- Username and Review Info -->
                         <div class="ml-3 flex-1">

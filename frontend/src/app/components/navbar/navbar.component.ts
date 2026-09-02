@@ -70,6 +70,34 @@ export class NavbarComponent implements OnInit {
   isProfileLoading: boolean = false;
   activeTab: string = 'home';
 
+  isMobileNavShrunk: boolean = false;
+  private lastScrollY: number = 0;
+
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    const currentY = window.scrollY;
+    const delta = currentY - this.lastScrollY;
+
+    if (currentY < 50) {
+      this.isMobileNavShrunk = false;
+    } else if (delta > 5) {
+      this.isMobileNavShrunk = true;
+    } else if (delta < -5) {
+      this.isMobileNavShrunk = false;
+    }
+
+    this.lastScrollY = currentY;
+  }
+
+  expandMobileNav(): void {
+    this.isMobileNavShrunk = false;
+  }
+
+  getActiveMobileNavIndex(): number {
+    const order = ['home', 'calendar', 'friends', 'profile'];
+    return Math.max(order.indexOf(this.activeTab), 0);
+  }
+
   constructor(
     private authService: AuthService,
     private toastr: ToastrService,
@@ -112,6 +140,7 @@ export class NavbarComponent implements OnInit {
   private setTabFromPath(path: string) {
     if (path.startsWith('/profile')) this.activeTab = 'profile';
     else if (path.startsWith('/friends')) this.activeTab = 'friends';
+    else if (path.startsWith('/calendar')) this.activeTab = 'calendar';
     else this.activeTab = 'home';
   }
 

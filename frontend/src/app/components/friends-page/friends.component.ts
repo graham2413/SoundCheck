@@ -47,6 +47,7 @@ import { animate, animateChild, query, stagger, style, transition, trigger } fro
 export class FriendsComponent implements OnInit {
   activeTab: string = 'myFriends';
   searchQuery: string = '';
+  lastSearchedQuery: string = '';
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
   @ViewChild('friendsSection') friendsSection!: ElementRef;
@@ -106,6 +107,7 @@ export class FriendsComponent implements OnInit {
   setActiveTab(tab: string) {
     this.activeTab = tab;
     this.searchQuery = '';
+    this.lastSearchedQuery = '';
     this.imageLoadState = {};
     this.addFriendsSearchInitiated = false;
     this.usersToAdd = [];
@@ -168,6 +170,11 @@ export class FriendsComponent implements OnInit {
       default:
         return 'Search...';
     }
+  }
+
+  clearSearchQuery(): void {
+    this.searchQuery = '';
+    this.lastSearchedQuery = '';
   }
 
   filteredFriends() {
@@ -264,6 +271,7 @@ export class FriendsComponent implements OnInit {
   searchUsers() {
     if (!this.searchQuery.trim() || this.activeTab === 'myFriends') return;
 
+    this.lastSearchedQuery = this.searchQuery.trim();
     this.addFriendsSearchLoading = true;
     this.addFriendsSearchInitiated = true;
 

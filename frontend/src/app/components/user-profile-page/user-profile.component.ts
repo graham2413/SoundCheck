@@ -43,6 +43,7 @@ export class ProfileComponent implements OnInit {
   passwordError: string = '';
   confirmEmail: string = '';
   profilePictureUrl: string = '';
+  isProfilePictureLoaded: boolean = false;
   isTooltipOpen: boolean = false;
 
   isSaving: boolean = false;
@@ -113,6 +114,7 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
   }
 
   updateProfilePictureUrl() {
+    this.isProfilePictureLoaded = false;
     if (this.userProfile.profilePicture) {
       this.profilePictureUrl =
         this.userProfile.profilePicture + '?t=' + Date.now();
@@ -164,6 +166,7 @@ onProfilePictureChange(event: Event): void {
     const base64 = e.target?.result as string;
     this.userProfile.profilePicture = base64;
     this.profilePictureUrl = base64;
+    this.isProfilePictureLoaded = false;
   };
   reader.readAsDataURL(file);
 }

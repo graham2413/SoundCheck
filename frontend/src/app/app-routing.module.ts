@@ -9,11 +9,13 @@ import { ViewProfilePageComponent } from './components/other-profile-page/other-
 import { ResetPasswordComponent } from './auth/reset-password/reset-password.component';
 import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password.component';
 import { NotFoundComponent } from './components/not-found.component/not-found-page.component';
+import { CalendarPageComponent } from './components/calendar-page/calendar-page.component';
 
 export const appRoutes: Routes = [
     { path: '', component: MainSearchComponent, canActivate: [AuthGuard], data: { animation: 'homePage' } },
     { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard], data: { animation: 'profilePage' } },
     { path: 'friends', component: FriendsComponent, canActivate: [AuthGuard], data: { animation: 'friendsPage' } },
+    { path: 'calendar', component: CalendarPageComponent, canActivate: [AuthGuard], data: { animation: 'calendarPage' } },
     { path: 'profile/:userId', component: ViewProfilePageComponent, canActivate: [AuthGuard], data: { animation: 'viewProfilePage' } },
   
     // Auth-related

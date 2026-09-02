@@ -185,6 +185,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   isRatingLoaded = false;
   isReviewsLoaded = false;
   isImageLoaded = false;
+  isRecordCoverLoaded = false;
   isAddingReview = false;
   isCreateLoading = false;
   newReview: string = '';
@@ -454,6 +455,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnChanges() {
+    this.isRecordCoverLoaded = false;
     setTimeout(() => this.checkOverflow(), 0);
   }
 
@@ -1223,6 +1225,16 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
 
   isReleaseImageLoaded(i: number): boolean {
     return this.releaseImageLoaded[i] === true;
+  }
+
+  reviewerImageLoaded: { [id: string]: boolean } = {};
+
+  markReviewerImageLoaded(id: string): void {
+    this.reviewerImageLoaded[id] = true;
+  }
+
+  isReviewerImageLoaded(id: string): boolean {
+    return this.reviewerImageLoaded[id] === true;
   }
 
   getHighQualityImage(imageUrl: string): string {

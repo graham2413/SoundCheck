@@ -73,6 +73,7 @@ export class MainSearchComponent implements OnInit {
   @ViewChild('filterButton') filterButton!: ElementRef;
 
   query: string = '';
+  lastSearchedQuery: string = '';
   isLoading: boolean = false;
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
   // What the search-bar type button will search as next - independent of
@@ -163,6 +164,7 @@ export class MainSearchComponent implements OnInit {
     songs: {} as { [index: number]: boolean },
     albums: {} as { [index: number]: boolean },
     artists: {} as { [index: number]: boolean },
+    cinema: {} as { [index: number]: boolean },
   };
 
   popularImageLoaded = {
@@ -325,6 +327,8 @@ export class MainSearchComponent implements OnInit {
     const query = this.query.trim();
     if (!query) return;
 
+    this.lastSearchedQuery = query;
+
     if (this.searchType === 'cinema') {
       this.searchCinemaResults();
       return;
@@ -363,6 +367,7 @@ export class MainSearchComponent implements OnInit {
       songs: {},
       albums: {},
       artists: {},
+      cinema: this.imageLoaded.cinema,
     };
 
     const fallbackOrder: ('songs' | 'albums' | 'artists')[] = [
@@ -465,7 +470,12 @@ export class MainSearchComponent implements OnInit {
           };
 
           this.filteredResults = { ...this.results };
-          this.imageLoaded = { songs: {}, albums: {}, artists: {} };
+          this.imageLoaded = {
+            songs: {},
+            albums: {},
+            artists: {},
+            cinema: this.imageLoaded.cinema,
+          };
 
           if (currentType !== 'artists') {
             this.extractGenres();
@@ -512,6 +522,7 @@ export class MainSearchComponent implements OnInit {
     }
 
     this.cinemaResults = [];
+    this.imageLoaded.cinema = {};
 
     this.cinemaService.searchCinema(query).subscribe({
       next: ({ data }) => {
@@ -621,10 +632,17 @@ export class MainSearchComponent implements OnInit {
 
     // Reset search state so stale results from the other mode don't show
     this.query = '';
+    this.lastSearchedQuery = '';
     this.searchAttempted = false;
     this.cinemaResults = [];
+    this.imageLoaded.cinema = {};
     this.results = { songs: [], albums: [], artists: [] };
     this.filteredResults = { songs: [], albums: [], artists: [] };
+  }
+
+  clearSearchQuery(): void {
+    this.query = '';
+    this.lastSearchedQuery = '';
   }
 
   setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {

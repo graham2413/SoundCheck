@@ -289,13 +289,14 @@
       style="direction: ltr; text-align: left"
     />
     <button
+      *ngIf="!(query.trim() && query.trim() === lastSearchedQuery)"
       [disabled]="isLoading"
       (click)="searchType === 'music' ? onSearch(selectedSearchTab, false) : onSearch('songs')"
       class="absolute inset-y-0 right-10 flex items-center"
     >
       <svg
-        class="h-6 w-6 text-[#0F5EE4] md:hover:text-white transition"
-        fill="currentColor"
+        class="h-6 w-6 text-gray-400 md:hover:text-white transition"
+        fill="none"
         viewBox="0 0 24 24"
       >
         <path
@@ -306,6 +307,14 @@
           stroke-linejoin="round"
         />
       </svg>
+    </button>
+    <button
+      *ngIf="query.trim() && query.trim() === lastSearchedQuery"
+      type="button"
+      (click)="clearSearchQuery()"
+      class="absolute inset-y-0 right-10 flex items-center"
+    >
+      <i class="fas fa-times text-gray-400 hover:text-white transition text-xl"></i>
     </button>
   </div>
 
@@ -702,54 +711,79 @@
   <!-- Cinema Skeleton Loader -->
   <div
     *ngIf="searchType === 'cinema' && isLoading"
-    class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-[1000px] mx-auto px-2"
+    class="mt-6 flex flex-col gap-3 max-w-3xl mx-auto px-2"
   >
     <div
-      *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8]"
-      class="animate-pulse aspect-[2/3] bg-gray-700 rounded-lg"
-    ></div>
+      *ngFor="let i of [1, 2, 3, 4, 5]"
+      class="animate-pulse flex flex-row items-center gap-4 rounded-lg overflow-hidden"
+      style="background-color: #101621"
+    >
+      <div class="aspect-[2/3] h-32 md:h-40 bg-gray-700 flex-shrink-0"></div>
+      <div class="flex flex-col justify-center flex-1 gap-2 py-3 pr-3">
+        <div class="h-4 bg-gray-700 rounded w-1/2"></div>
+        <div class="h-3 bg-gray-700 rounded w-1/4"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Cinema Search Results -->
   <div
     *ngIf="searchType === 'cinema' && !isLoading && cinemaResults.length > 0"
-    class="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-[1000px] mx-auto px-2 pb-[5rem]"
+    class="mt-6 max-w-3xl mx-auto px-2 pb-[5rem]"
   >
+    <p class="text-gray-400 text-sm mb-3">
+      {{ cinemaResults.length }} result{{ cinemaResults.length === 1 ? '' : 's' }} found for "<span class="text-white">{{ lastSearchedQuery }}</span>"
+    </p>
+    <div class="flex flex-col gap-3">
     <div
-      *ngFor="let item of cinemaResults"
+      *ngFor="let item of cinemaResults; let i = index"
       (click)="openCinemaSearchResult(item)"
-      class="text-center bg-gray-800 p-3 rounded-lg cursor-pointer"
+      class="flex flex-row items-center gap-4 rounded-lg cursor-pointer overflow-hidden border"
+      style="background-color: #101621; border-color: #212530"
     >
-      <div class="relative aspect-[2/3] w-full">
+      <div class="relative aspect-[2/3] h-32 md:h-40 flex-shrink-0">
+        <!-- Loader -->
+        <div
+          *ngIf="!imageLoaded.cinema[i]"
+          class="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900"
+        >
+          <div
+            class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+          ></div>
+        </div>
+
         <img
           [src]="
             item.cover ||
             'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
           "
+          (load)="imageLoaded.cinema[i] = true"
+          (error)="imageLoaded.cinema[i] = true"
+          [class.invisible]="!imageLoaded.cinema[i]"
           alt="{{ item.title }}"
-          class="aspect-[2/3] w-full object-cover rounded-md border-2 border-gray-500"
+          class="h-full w-full object-cover rounded-lg"
         />
-        <div
-          class="absolute top-1 left-1 bg-gray-900/80 p-1.5 rounded-full"
-        >
-          <i
-            class="fas text-sm"
-            [ngClass]="{
-              'fa-film text-green-400': item.mediaType === 'movie',
-              'fa-tv text-purple-400': item.mediaType === 'tv'
-            }"
-          ></i>
-        </div>
       </div>
-      <span
-        class="text-white font-semibold text-sm truncate overflow-hidden whitespace-nowrap block mt-2"
-        [title]="item.title"
-      >
-        {{ item.title }}
-      </span>
-      <p class="text-gray-400 text-xs">
-        {{ item.releaseDate | date : "yyyy" }}
-      </p>
+      <div class="flex flex-col justify-center flex-1 min-w-0 py-3 pr-3">
+        <span
+          class="text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
+          [title]="item.title"
+        >
+          {{ item.title }}
+        </span>
+        <p class="text-gray-400 text-sm mt-1">
+          {{ item.mediaType === 'tv' && item.releaseYearRange ? item.releaseYearRange : (item.releaseDate | date : "yyyy") }}
+          <span *ngIf="item.mediaType === 'tv'" class="text-gray-400">&nbsp;&middot; TV Series</span>
+        </p>
+        <p
+          *ngIf="item.genres?.length"
+          class="text-[#0F5EE4] text-sm mt-1 truncate overflow-hidden whitespace-nowrap"
+        >
+          {{ item.genres?.join(', ') }}
+        </p>
+      </div>
+      <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
+    </div>
     </div>
   </div>
 

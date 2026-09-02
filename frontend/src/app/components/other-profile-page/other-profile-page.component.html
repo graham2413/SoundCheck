@@ -782,7 +782,13 @@
             <div class="flex justify-center px-2 mb-3">
               <div class="relative w-full max-w-[500px] md:max-w-[760px]">
                 <i
+                  *ngIf="!searchQuery.trim()"
                   class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                ></i>
+                <i
+                  *ngIf="searchQuery.trim()"
+                  (click)="clearSearchQuery()"
+                  class="fas fa-times absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition cursor-pointer"
                 ></i>
                 <input
                   type="text"

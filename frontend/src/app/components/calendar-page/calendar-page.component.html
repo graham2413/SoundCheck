@@ -1,0 +1,104 @@
+<div class="bg-[#020814] text-white min-h-screen pt-[5.5rem] md:pt-[6.5rem] pb-[6rem] px-2">
+  <div class="max-w-3xl mx-auto">
+    <div class="relative flex items-center justify-center mb-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-center">
+        Calendar
+      </h1>
+      <button
+        (click)="refresh()"
+        [disabled]="isLoading || isRefreshing"
+        title="Refresh"
+        class="absolute right-0 flex items-center justify-center h-9 w-9 rounded-full text-gray-400 hover:text-white transition disabled:opacity-50"
+      >
+        <i class="fas fa-sync-alt" [class.fa-spin]="isRefreshing"></i>
+      </button>
+    </div>
+    <p class="text-center text-gray-400 text-base md:text-xl mb-6">
+      Upcoming episodes and releases for what you're tracking.
+    </p>
+
+    <!-- Skeleton Loader -->
+    <div *ngIf="isLoading" class="flex flex-col gap-3">
+      <div
+        *ngFor="let i of [1, 2, 3, 4, 5]"
+        class="animate-pulse flex flex-row items-center gap-4 rounded-lg overflow-hidden"
+        style="background-color: #101621"
+      >
+        <div class="aspect-[2/3] h-32 md:h-40 bg-gray-700 flex-shrink-0"></div>
+        <div class="flex flex-col justify-center flex-1 gap-2 py-3 pr-3">
+          <div class="h-4 bg-gray-700 rounded w-1/2"></div>
+          <div class="h-3 bg-gray-700 rounded w-1/4"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entries -->
+    <div *ngIf="!isLoading && entries.length > 0" class="flex flex-col gap-3">
+      <div
+        *ngFor="let entry of entries; let i = index"
+        (click)="openEntry(entry)"
+        class="flex flex-row items-center gap-4 rounded-lg cursor-pointer overflow-hidden border"
+        style="background-color: #101621; border-color: #212530"
+      >
+        <div class="relative aspect-[2/3] h-32 md:h-40 flex-shrink-0">
+          <!-- Loader -->
+          <div
+            *ngIf="!imageLoaded[i]"
+            class="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900"
+          >
+            <div
+              class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+            ></div>
+          </div>
+
+          <img
+            [src]="
+              entry.cover ||
+              'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+            "
+            (load)="imageLoaded[i] = true"
+            (error)="imageLoaded[i] = true"
+            [class.invisible]="!imageLoaded[i]"
+            alt="{{ entry.title }}"
+            class="h-full w-full object-cover rounded-lg"
+          />
+        </div>
+
+        <div class="flex flex-col justify-center flex-1 min-w-0 py-3 pr-3">
+          <span
+            class="text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
+            [title]="entry.title"
+          >
+            {{ entry.title }}
+          </span>
+
+          <p
+            *ngIf="entry.mediaType === 'tv'"
+            class="text-gray-400 text-sm mt-1 truncate overflow-hidden whitespace-nowrap"
+          >
+            S{{ entry.seasonNumber }}E{{ entry.episodeNumber }}
+            <span *ngIf="entry.episodeName">&nbsp;&middot; {{ entry.episodeName }}</span>
+          </p>
+          <p *ngIf="entry.mediaType === 'movie'" class="text-gray-400 text-sm mt-1">
+            New release
+          </p>
+
+          <p class="text-[#0F5EE4] text-sm mt-1 font-semibold">
+            {{ getCountdownLabel(entry.airDate) }}
+          </p>
+        </div>
+
+        <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div
+      *ngIf="!isLoading && entries.length === 0"
+      class="mt-12 mx-4 text-center text-gray-400 text-lg bg-gray-800 p-4 rounded-lg"
+    >
+      <i class="fas fa-calendar-alt text-4xl mb-2"></i>
+      <p>Nothing upcoming yet. Add shows/movies to your watchlist to see them here.</p>
+    </div>
+  </div>
+</div>
