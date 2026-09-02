@@ -56,6 +56,57 @@ export class UserService {
       this.userProfileSubject.next(profile);
     }
 
+    addRecentSearch(searchType: 'music' | 'cinema', term: string): Observable<{ recentSearches: string[] }> {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        console.error("No authentication token found");
+        return new Observable();
+      }
+
+      const headers = { Authorization: `Bearer ${token}` };
+
+      return this.http.post<{ recentSearches: string[] }>(
+        `${this.apiUrl}/recent-searches`,
+        { searchType, term },
+        { headers }
+      );
+    }
+
+    removeRecentSearch(searchType: 'music' | 'cinema', term: string): Observable<{ recentSearches: string[] }> {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        console.error("No authentication token found");
+        return new Observable();
+      }
+
+      const headers = { Authorization: `Bearer ${token}` };
+
+      return this.http.post<{ recentSearches: string[] }>(
+        `${this.apiUrl}/recent-searches/remove`,
+        { searchType, term },
+        { headers }
+      );
+    }
+
+    clearRecentSearches(searchType: 'music' | 'cinema'): Observable<{ recentSearches: string[] }> {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        console.error("No authentication token found");
+        return new Observable();
+      }
+
+      const headers = { Authorization: `Bearer ${token}` };
+
+      return this.http.post<{ recentSearches: string[] }>(
+        `${this.apiUrl}/recent-searches/clear`,
+        { searchType },
+        { headers }
+      );
+    }
+
     searchUsers(query: string): Observable<User[]> {
       const token = localStorage.getItem('token');
     

@@ -21,6 +21,11 @@ router.post('/list', authenticateUser, userController.addToList);
 
 router.post('/list/remove', authenticateUser, userController.removeFromArtistList);
 
+// Recent search terms (persisted per-user, replaces localStorage)
+router.post('/recent-searches', authenticateUser, userController.addRecentSearch);
+router.post('/recent-searches/remove', authenticateUser, userController.removeRecentSearch);
+router.post('/recent-searches/clear', authenticateUser, userController.clearRecentSearches);
+
 
 /*
 FRIENDSHIP ROUTES

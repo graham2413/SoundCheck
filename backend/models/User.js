@@ -29,6 +29,12 @@ const userSchema = new Schema({
     // Cinema watchlist visibility (private by default)
     cinemaWatchlistIsPublic: { type: Boolean, default: false },
 
+    // Recent search terms, capped at 8 per search type, most recent first
+    recentSearches: {
+      music: { type: [String], default: [] },
+      cinema: { type: [String], default: [] },
+    },
+
     // Profile created date
     createdAt: { type: Date, default: Date.now },
 

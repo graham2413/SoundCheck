@@ -215,15 +215,17 @@
 <!-- Bottom Navigation for Mobile -->
 <div
   (click)="expandMobileNav()"
-  [ngClass]="isMobileNavShrunk ? 'h-[3.4rem] left-10 right-10' : 'h-[4rem] left-5 right-5'"
+  [ngClass]="isMobileNavShrunk ? 'h-[3.4rem] left-14 right-14' : 'h-[4rem] left-5 right-5'"
   class="bg-[#020814] shadow-lg flex md:hidden fixed bottom-4 z-20 justify-around items-center rounded-full border border-gray-800 transition-all duration-300 ease-in-out"
 >
   <!-- Sliding highlight capsule -->
   <div
-    class="absolute inset-y-0 z-0 flex items-center justify-center pointer-events-none transition-all duration-300 ease-in-out"
+    class="absolute inset-y-0 z-0 pointer-events-none transition-all duration-300 ease-in-out"
     [ngStyle]="{ left: getActiveMobileNavIndex() * 25 + '%', width: '25%' }"
   >
-    <div class="h-[3.3rem] w-[5rem] rounded-full bg-[#1F2937]"></div>
+    <div
+      class="absolute inset-1 rounded-full bg-[#1F2937] transition-all duration-300 ease-in-out"
+    ></div>
   </div>
 
   <button
@@ -232,12 +234,13 @@
     class="relative z-10 flex items-center justify-center h-full flex-1"
   >
     <span
-      class="text-[2rem] transition-all duration-200 ease-out"
-      [ngClass]="
+      class="transition-all duration-200 ease-out"
+      [ngClass]="[
+        isMobileNavShrunk ? 'text-[1.75rem]' : 'text-[2rem]',
         activeTab === 'home'
           ? 'material-icons text-white'
           : 'material-icons-outlined text-gray-100 opacity-50'
-      "
+      ]"
       >home</span
     >
   </button>
@@ -248,12 +251,13 @@
     class="relative z-10 flex items-center justify-center h-full flex-1"
   >
     <span
-      class="text-[1.75rem] transition-all duration-200 ease-out"
-      [ngClass]="
+      class="transition-all duration-200 ease-out"
+      [ngClass]="[
+        isMobileNavShrunk ? 'text-[1.5rem]' : 'text-[1.75rem]',
         activeTab === 'calendar'
           ? 'material-icons text-white'
           : 'material-icons-outlined text-gray-100 opacity-50'
-      "
+      ]"
       >calendar_today</span
     >
   </button>
@@ -265,12 +269,13 @@
   >
     <span class="relative flex items-center justify-center">
       <span
-        class="text-[2.1rem] transition-all duration-200 ease-out"
-        [ngClass]="
+        class="transition-all duration-200 ease-out"
+        [ngClass]="[
+          isMobileNavShrunk ? 'text-[1.85rem]' : 'text-[2.1rem]',
           activeTab === 'friends'
             ? 'material-icons text-white'
             : 'material-icons-outlined text-gray-100 opacity-50'
-        "
+        ]"
         >people</span
       >
 
@@ -289,12 +294,13 @@
     class="relative z-10 flex items-center justify-center h-full flex-1"
   >
     <span
-      class="text-[2.2rem] transition-all duration-200 ease-out"
-      [ngClass]="
+      class="transition-all duration-200 ease-out"
+      [ngClass]="[
+        isMobileNavShrunk ? 'text-[1.95rem]' : 'text-[2.2rem]',
         activeTab === 'profile'
           ? 'material-icons text-white'
           : 'material-icons-outlined text-gray-100 opacity-50'
-      "
+      ]"
       >account_circle</span
     >
   </button>

@@ -198,8 +198,6 @@ export class MainSearchComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.loadRecentSearches();
-
     const stored = localStorage.getItem('albumImages');
     let shouldRefetch = true;
 
@@ -279,6 +277,30 @@ export class MainSearchComponent implements OnInit {
     return lastFriday.getTime();
   }
 
+  // Compact relative time for the marquee badge, e.g. "1w ago" instead of "1 week ago"
+  getShortTimeAgo(value: string | Date): string {
+    const date = new Date(value);
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
+    const intervals: { label: string; seconds: number }[] = [
+      { label: 'y', seconds: 31536000 },
+      { label: 'mo', seconds: 2592000 },
+      { label: 'w', seconds: 604800 },
+      { label: 'd', seconds: 86400 },
+      { label: 'h', seconds: 3600 },
+      { label: 'm', seconds: 60 },
+    ];
+
+    for (const { label, seconds: unitSeconds } of intervals) {
+      const interval = Math.floor(seconds / unitSeconds);
+      if (interval >= 1) {
+        return `${interval}${label} ago`;
+      }
+    }
+
+    return 'just now';
+  }
+
   fetchAndStoreAlbums(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.spotifyService.getAlbumImages().subscribe({
@@ -305,6 +327,7 @@ export class MainSearchComponent implements OnInit {
     this.userService.userProfile$.subscribe((profile) => {
       if (profile) {
         this.userProfile = profile;
+        this.loadRecentSearches();
       }
     });
 
@@ -656,19 +679,11 @@ export class MainSearchComponent implements OnInit {
     this.filteredResults = { songs: [], albums: [], artists: [] };
   }
 
-  // Recent Searches - stored client-side (localStorage), separate lists per
-  // searchType since "Nirvana" as a band search vs a movie search don't overlap.
-  private getRecentSearchesKey(): string {
-    return `recentSearches_${this.searchType}`;
-  }
-
-  private saveRecentSearches(): void {
-    localStorage.setItem(this.getRecentSearchesKey(), JSON.stringify(this.recentSearches));
-  }
-
+  // Recent Searches - persisted per-user on the backend (rides along on the
+  // already-fetched profile, so switching searchType is instant/no extra request),
+  // separate lists per searchType since "Nirvana" as a band search vs a movie search don't overlap.
   loadRecentSearches(): void {
-    const stored = localStorage.getItem(this.getRecentSearchesKey());
-    this.recentSearches = stored ? JSON.parse(stored) : [];
+    this.recentSearches = this.userProfile?.recentSearches?.[this.searchType] || [];
   }
 
   addRecentSearch(term: string): void {
@@ -676,17 +691,26 @@ export class MainSearchComponent implements OnInit {
       (s) => s.toLowerCase() !== term.toLowerCase()
     );
     this.recentSearches = [term, ...existing].slice(0, this.RECENT_SEARCHES_LIMIT);
-    this.saveRecentSearches();
+
+    this.userService.addRecentSearch(this.searchType, term).subscribe({
+      error: (err) => console.error('Failed to save recent search:', err),
+    });
   }
 
   removeRecentSearch(term: string): void {
     this.recentSearches = this.recentSearches.filter((s) => s !== term);
-    this.saveRecentSearches();
+
+    this.userService.removeRecentSearch(this.searchType, term).subscribe({
+      error: (err) => console.error('Failed to remove recent search:', err),
+    });
   }
 
   clearRecentSearches(): void {
     this.recentSearches = [];
-    this.saveRecentSearches();
+
+    this.userService.clearRecentSearches(this.searchType).subscribe({
+      error: (err) => console.error('Failed to clear recent searches:', err),
+    });
   }
 
   selectRecentSearch(term: string): void {

@@ -149,19 +149,14 @@
               class="w-full h-full object-cover"
             />
 
-            <!-- Release date badge -->
+            <!-- Song/Album/EP + release date badge -->
             <span
-              *ngIf="album?.releaseDate"
-              class="absolute top-2 left-2 bg-black/70 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded"
+              class="absolute top-2 right-2 bg-black/70 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded"
             >
-              {{ album.releaseDate | timeAgo }}
-            </span>
-
-            <!-- Song/Album badge -->
-            <span
-              class="absolute top-2 right-2 bg-black/70 text-white text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded"
-            >
-              {{ album?.releaseType || 'Album' }}
+              <span class="uppercase">{{ album?.releaseType || 'Album' }}</span
+              ><ng-container *ngIf="album?.releaseDate">
+                &nbsp;&middot; {{ getShortTimeAgo(album.releaseDate) }}
+              </ng-container>
             </span>
 
             <!-- Bottom gradient fade -->
@@ -223,19 +218,14 @@
               class="w-full h-full object-cover"
             />
 
-            <!-- Release date badge -->
+            <!-- Song/Album/EP + release date badge -->
             <span
-              *ngIf="album?.releaseDate"
-              class="absolute top-2 left-2 bg-black/70 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded"
+              class="absolute top-2 right-2 bg-black/70 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded"
             >
-              {{ album.releaseDate | timeAgo }}
-            </span>
-
-            <!-- Song/Album badge -->
-            <span
-              class="absolute top-2 right-2 bg-black/70 text-white text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded"
-            >
-              {{ album?.releaseType || 'Album' }}
+              <span class="uppercase">{{ album?.releaseType || 'Album' }}</span
+              ><ng-container *ngIf="album?.releaseDate">
+                &nbsp;&middot; {{ getShortTimeAgo(album.releaseDate) }}
+              </ng-container>
             </span>
 
             <!-- Bottom gradient fade -->

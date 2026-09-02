@@ -39,8 +39,23 @@ jobs:
     - name: Upload to S3
       run: aws s3 sync ./frontend/dist/sound-check/browser s3://${{ secrets.S3_BUCKET_NAME }} --delete
 
+    - name: Force-refresh PWA files that must never be stale
+      run: |
+        aws s3 cp ./frontend/dist/sound-check/browser/ngsw.json s3://${{ secrets.S3_BUCKET_NAME }}/ngsw.json \
+          --content-type "application/json" \
+          --cache-control "no-cache, no-store, must-revalidate" \
+          --metadata-directive REPLACE
+        aws s3 cp ./frontend/dist/sound-check/browser/ngsw-worker.js s3://${{ secrets.S3_BUCKET_NAME }}/ngsw-worker.js \
+          --content-type "application/javascript" \
+          --cache-control "no-cache, no-store, must-revalidate" \
+          --metadata-directive REPLACE
+        aws s3 cp ./frontend/dist/sound-check/browser/manifest.webmanifest s3://${{ secrets.S3_BUCKET_NAME }}/manifest.webmanifest \
+          --content-type "application/manifest+json" \
+          --cache-control "no-cache, no-store, must-revalidate" \
+          --metadata-directive REPLACE
+
     - name: Invalidate CloudFront cache
       run: |
         aws cloudfront create-invalidation \
           --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-          --paths "/index.html"
+          --paths "/index.html" "/ngsw.json" "/ngsw-worker.js" "/manifest.webmanifest"

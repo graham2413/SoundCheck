@@ -11,6 +11,27 @@ Phase 1 is paused (a larger review-page UI revamp is planned first). Next up:
 2. Phase 2 (Calendar Engine & Dual Web/Nuvio Addon Integration)
 3. Resume Phase 1
 
+## PWA Migration (app-wide, next up)
+
+Goal: install SoundCheck to iOS/Android home screens as a standalone app (no App Store, no Mac/Xcode/Apple Developer fee needed) by turning the existing Angular app into a PWA. Frontend already deploys via GitHub Actions to S3/CloudFront, so this is just code + a couple of CloudFront header tweaks.
+
+- [x] `ng add @angular/pwa` (generates manifest.webmanifest, ngsw-worker service worker, icon placeholders)
+- [x] Set `manifest.webmanifest` `display: standalone`, app name/short_name, theme/background color, real icon set
+- [x] Add iOS-specific meta tags to `index.html` (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title`, `apple-touch-icon`)
+- [x] Disable iOS pull-to-refresh look (`overscroll-behavior-y: none` in global CSS)
+- [x] CloudFront/S3: serve `manifest.webmanifest` with `Content-Type: application/manifest+json`
+- [x] CloudFront/S3: set `Cache-Control: no-cache, no-store, must-revalidate` on `ngsw.json`, `ngsw-worker.js` and `manifest.webmanifest` so UI updates actually reach already-installed home-screen apps
+- [x] Verify existing GitHub Actions pipeline picks up the new PWA build assets - **found & fixed a real bug**: `angular.json`'s `assets` config only referenced `src/assets` (pre-dates Angular's newer `public/` folder convention), so the schematic's `public/manifest.webmanifest` + `public/icons/*` were silently never being copied into `dist/` at all. Fixed by adding a `{ glob: "**/*", input: "public", output: "/" }` entry to both build and test asset lists.
+- [ ] On-device test: Safari → Share → Add to Home Screen → confirm standalone (no browser chrome), custom icon, splash screen
+- [ ] Web push opt-in flow: `SwPush` + VAPID keys, store subscription against the user in the backend
+
+## Backlog: PWA Feature Ideas (post-migration, later phase)
+
+- Push notifications: new comment/like on a review, release-calendar reminders (bookmark a movie/album drop date and get notified), actionable notification buttons (e.g. "View Review" / "Add to Watchlist")
+- Offline mode: cache watchlist + past reviews for offline browsing; optimistic offline ratings queued via background sync until reconnected
+- Native Share Sheet (`navigator.share()`) for sharing reviews instead of manual copy-paste links
+- Home screen long-press app shortcuts (e.g. "Write a Review", "Search", "Trending Reviews") via manifest `shortcuts`
+
 ## Phase 1: Core Cinema Data, Detail Pages & Live IMDb Stats (paused)
 
 - [ ] Build real TMDb search endpoint (replace debug route) + frontend search UI

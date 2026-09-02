@@ -19,6 +19,7 @@ export interface User {
   gradient: string;
   cinemaWatchlistIsPublic?: boolean;
   cinemaReviews?: CinemaItem[];
+  recentSearches?: { music: string[]; cinema: string[] };
 }
 
 export interface FriendInfo {

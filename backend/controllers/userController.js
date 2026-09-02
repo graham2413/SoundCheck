@@ -87,6 +87,7 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
       createdAt: user.createdAt,
       cinemaWatchlistIsPublic: user.cinemaWatchlistIsPublic || false,
       cinemaReviews: cinemaReviews,
+      recentSearches: user.recentSearches || { music: [], cinema: [] },
       friendInfo: {
         friends: user.friends.map((friend) => ({
           _id: friend._id,
@@ -560,6 +561,92 @@ exports.removeFromArtistList = async (req, res) => {
     return res.status(200).json({ message: "Artist removed from list successfully." });
   } catch (error) {
     console.error("Error removing artist from list:", error);
+    return res.status(500).json({ message: "Server Error" });
+  }
+};
+
+const RECENT_SEARCHES_LIMIT = 8;
+
+exports.addRecentSearch = async (req, res) => {
+  try {
+    const { searchType, term } = req.body;
+
+    if (searchType !== "music" && searchType !== "cinema") {
+      return res.status(400).json({ message: "Invalid searchType." });
+    }
+    if (!term || !term.trim()) {
+      return res.status(400).json({ message: "Missing search term." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (!user.recentSearches) user.recentSearches = { music: [], cinema: [] };
+    const trimmedTerm = term.trim();
+    const existing = (user.recentSearches[searchType] || []).filter(
+      (s) => s.toLowerCase() !== trimmedTerm.toLowerCase()
+    );
+    user.recentSearches[searchType] = [trimmedTerm, ...existing].slice(0, RECENT_SEARCHES_LIMIT);
+    user.markModified("recentSearches");
+    await user.save();
+
+    return res.status(200).json({ recentSearches: user.recentSearches[searchType] });
+  } catch (error) {
+    console.error("Error adding recent search:", error);
+    return res.status(500).json({ message: "Server Error" });
+  }
+};
+
+exports.removeRecentSearch = async (req, res) => {
+  try {
+    const { searchType, term } = req.body;
+
+    if (searchType !== "music" && searchType !== "cinema") {
+      return res.status(400).json({ message: "Invalid searchType." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (!user.recentSearches) user.recentSearches = { music: [], cinema: [] };
+    user.recentSearches[searchType] = (user.recentSearches[searchType] || []).filter(
+      (s) => s !== term
+    );
+    user.markModified("recentSearches");
+    await user.save();
+
+    return res.status(200).json({ recentSearches: user.recentSearches[searchType] });
+  } catch (error) {
+    console.error("Error removing recent search:", error);
+    return res.status(500).json({ message: "Server Error" });
+  }
+};
+
+exports.clearRecentSearches = async (req, res) => {
+  try {
+    const { searchType } = req.body;
+
+    if (searchType !== "music" && searchType !== "cinema") {
+      return res.status(400).json({ message: "Invalid searchType." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (!user.recentSearches) user.recentSearches = { music: [], cinema: [] };
+    user.recentSearches[searchType] = [];
+    user.markModified("recentSearches");
+    await user.save();
+
+    return res.status(200).json({ recentSearches: [] });
+  } catch (error) {
+    console.error("Error clearing recent searches:", error);
     return res.status(500).json({ message: "Server Error" });
   }
 };
