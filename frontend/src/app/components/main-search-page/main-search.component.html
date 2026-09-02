@@ -92,7 +92,7 @@
   </div>
 </div>
 
-<div [hidden]="activeDiscoverTab !== 'mainSearch'">
+<div *ngIf="activeDiscoverTab === 'mainSearch'">
   <!-- Heading -->
   <div class="text-center max-w-5xl mx-auto px-3">
     <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mt-5">
@@ -143,6 +143,8 @@
                 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
               "
               [alt]="album.title"
+              loading="lazy"
+              decoding="async"
               (load)="marqueeImageLoaded[i] = true"
               (error)="marqueeImageLoaded[i] = true"
               [class.invisible]="!marqueeImageLoaded[i]"
@@ -212,6 +214,8 @@
                 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
               "
               [alt]="album.title"
+              loading="lazy"
+              decoding="async"
               (load)="marqueeImageLoaded[i + albums.length] = true"
               (error)="marqueeImageLoaded[i + albums.length] = true"
               [class.invisible]="!marqueeImageLoaded[i + albums.length]"
@@ -862,7 +866,7 @@
 </div>
 
 <!-- Popular Section -->
-<div [hidden]="activeDiscoverTab !== 'popular'">
+<div *ngIf="activeDiscoverTab === 'popular'">
   <div class="bg-[#020814] text-white min-h-screen pt-[1rem] pb-[6rem] px-1">
     <div class="md:max-w-[1000px] md:mx-auto">
       <!-- Loaded Content -->
@@ -1086,7 +1090,7 @@
 </div>
 
 <!-- Activity Section -->
-<div [hidden]="activeDiscoverTab !== 'recentActivity'">
+<div *ngIf="activeDiscoverTab === 'recentActivity'">
   <div class="bg-[#020814] text-white min-h-screen pt-4 pb-24 px-2">
     <div class="md:max-w-[1000px] md:mx-auto">
       <div

@@ -85,7 +85,7 @@ import { forkJoin, of, timer } from 'rxjs';
   ],
 })
 export class AppComponent implements OnInit {
-  title = 'Sound & Screen';
+  title = 'Cinewave';
   currentUrl: string = '';
   navigationDirection: 'forward' | 'back' = 'forward';
   profileLoaded = false;
