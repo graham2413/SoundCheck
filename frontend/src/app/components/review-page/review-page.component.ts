@@ -188,6 +188,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   isRecordCoverLoaded = false;
   isAddingReview = false;
   isCreateLoading = false;
+  isTogglingWatchlist = false;
   newReview: string = '';
   newRating: number = 5.0;
   isEditLoading = false;
@@ -1462,6 +1463,41 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
         this.isCreateLoading = false;
       },
     });
+  }
+
+  // Adds/removes the current cinema record from the watchlist. Also works for
+  // an untracked search result (no CinemaItem yet) - the backend creates one,
+  // so we store the real _id/isWatchlist back onto the record afterward,
+  // which is also what unlocks submitting a rating (see canAddReview above).
+  toggleWatchlist(): void {
+    const cinemaItem = this.cinemaRecord;
+    if (!cinemaItem || this.isTogglingWatchlist) return;
+
+    this.isTogglingWatchlist = true;
+
+    this.cinemaService
+      .toggleWatchlist({
+        tmdbId: cinemaItem.tmdbId!,
+        mediaType: cinemaItem.mediaType,
+        title: cinemaItem.title,
+        cover: cinemaItem.cover,
+        releaseDate: cinemaItem.releaseDate,
+      })
+      .subscribe({
+        next: ({ data }) => {
+          cinemaItem.isWatchlist = data.isWatchlist;
+          cinemaItem._id = data.item?._id ?? '';
+          this.isTogglingWatchlist = false;
+          this.toastr.success(
+            data.isWatchlist ? 'Added to watchlist.' : 'Removed from watchlist.',
+            'Success'
+          );
+        },
+        error: () => {
+          this.toastr.error('Error occurred while updating your watchlist.', 'Error');
+          this.isTogglingWatchlist = false;
+        },
+      });
   }
 
   // The "Add" flow for cinema - the CinemaItem already exists (from

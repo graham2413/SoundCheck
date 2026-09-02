@@ -37,6 +37,21 @@ export class CinemaService {
     });
   }
 
+  // Add/remove a movie or show from the current user's watchlist
+  toggleWatchlist(payload: {
+    tmdbId: string;
+    mediaType: 'movie' | 'tv';
+    title: string;
+    cover?: string;
+    releaseDate?: string;
+  }): Observable<{ success: boolean; data: { isWatchlist: boolean; item: CinemaItem | null } }> {
+    return this.http.post<{ success: boolean; data: { isWatchlist: boolean; item: CinemaItem | null } }>(
+      `${this.apiUrl}/watchlist/toggle`,
+      payload,
+      { headers: this.authHeaders() }
+    );
+  }
+
   // Upcoming episodes/releases for the current user's tracked shows/movies.
   // TMDb lookups are cached for 24h server-side; pass forceRefresh to bypass.
   getCalendar(forceRefresh = false): Observable<{ success: boolean; data: CalendarEntry[] }> {

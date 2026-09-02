@@ -677,13 +677,7 @@
             <ng-container *ngIf="record.type === 'Album'">
               <span
                 class="text-gray-400 text-xl block uppercase"
-                *ngIf="isSingleAlbum"
-              >
-                Single
-              </span>
-              <span
-                class="text-gray-400 text-xl block uppercase"
-                *ngIf="!isSingleAlbum && (record.tracklist?.length ?? 0) > 1"
+                *ngIf="(record.tracklist?.length ?? 0) > 1"
               >
                 Album
               </span>
@@ -734,6 +728,23 @@
             >
               {{ cinemaRecord?.releaseDate | date : "yyyy" }}
             </p>
+            <button
+              *ngIf="isCinemaRecord"
+              (click)="toggleWatchlist()"
+              [disabled]="isTogglingWatchlist"
+              class="mt-3 mx-auto flex items-center gap-2 px-4 py-2 rounded-full text-base font-semibold transition disabled:opacity-50"
+              [ngClass]="
+                cinemaRecord?.isWatchlist
+                  ? 'bg-gray-700 text-white'
+                  : 'bg-[#0F5EE4] text-white'
+              "
+            >
+              <i
+                class="fas"
+                [ngClass]="cinemaRecord?.isWatchlist ? 'fa-check' : 'fa-plus'"
+              ></i>
+              {{ cinemaRecord?.isWatchlist ? 'On Watchlist' : 'Add to Watchlist' }}
+            </button>
           </div>
         </div>
         <!-- Audio player centered between the info card above and the bottom of the screen -->
@@ -1699,13 +1710,7 @@
                     <ng-container *ngIf="record.type === 'Album'">
                       <span
                         class="text-gray-400 text-xl block uppercase mb-2"
-                        *ngIf="isSingleAlbum"
-                      >
-                        Single
-                      </span>
-                      <span
-                        class="text-gray-400 text-xl block uppercase mb-2"
-                        *ngIf="!isSingleAlbum && (record.tracklist?.length ?? 0) > 1"
+                        *ngIf="(record.tracklist?.length ?? 0) > 1"
                       >
                         Album
                       </span>
@@ -1758,6 +1763,23 @@
                     >
                       {{ cinemaRecord?.releaseDate | date : "yyyy" }}
                     </p>
+                    <button
+                      *ngIf="isCinemaRecord"
+                      (click)="toggleWatchlist()"
+                      [disabled]="isTogglingWatchlist"
+                      class="mt-3 mx-auto flex items-center gap-2 px-4 py-2 rounded-full text-base font-semibold transition disabled:opacity-50"
+                      [ngClass]="
+                        cinemaRecord?.isWatchlist
+                          ? 'bg-gray-700 text-white'
+                          : 'bg-[#0F5EE4] text-white'
+                      "
+                    >
+                      <i
+                        class="fas"
+                        [ngClass]="cinemaRecord?.isWatchlist ? 'fa-check' : 'fa-plus'"
+                      ></i>
+                      {{ cinemaRecord?.isWatchlist ? 'On Watchlist' : 'Add to Watchlist' }}
+                    </button>
                   </div>
                   <div
                     class="h-auto flex items-end justify-center pb-[env(safe-area-inset-bottom)]"

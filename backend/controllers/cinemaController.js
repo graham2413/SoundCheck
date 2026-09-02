@@ -354,6 +354,53 @@ exports.editCinemaItem = async (req, res) => {
   }
 };
 
+// POST /api/cinema/watchlist/toggle (Protected)
+// Toggles watchlist status for a movie/show, creating the CinemaItem if it
+// doesn't exist yet (e.g. adding straight from search, before any review).
+// Removing from the watchlist deletes the item outright if it has never been
+// rated - otherwise (already reviewed) it just clears the isWatchlist flag,
+// since the user may still want the review tracked (e.g. planning a rewatch).
+exports.toggleWatchlist = async (req, res) => {
+  try {
+    const { tmdbId, mediaType, title, cover, releaseDate } = req.body;
+
+    if (!tmdbId || !mediaType || !title) {
+      return res.status(400).json({ success: false, message: "tmdbId, mediaType, and title are required" });
+    }
+
+    let item = await CinemaItem.findOne({ user: req.user._id, tmdbId, mediaType });
+
+    if (item && item.isWatchlist) {
+      if (item.decimalRating == null) {
+        await item.deleteOne();
+        return res.status(200).json({ success: true, data: { isWatchlist: false, item: null } });
+      }
+      item.isWatchlist = false;
+      await item.save();
+      return res.status(200).json({ success: true, data: { isWatchlist: false, item } });
+    }
+
+    if (item) {
+      item.isWatchlist = true;
+      await item.save();
+    } else {
+      item = await CinemaItem.create({
+        user: req.user._id,
+        tmdbId,
+        mediaType,
+        title,
+        cover,
+        ...(releaseDate ? { releaseDate } : {}),
+        isWatchlist: true,
+      });
+    }
+
+    res.status(200).json({ success: true, data: { isWatchlist: true, item } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
 // GET /api/cinema/watchlist/:userId (Protected)
 // Owners can always view their own watchlist; viewing someone else's requires
 // that user to have set cinemaWatchlistIsPublic (private by default).

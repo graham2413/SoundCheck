@@ -1,8 +1,8 @@
 # Cinema Feature Roadmap
 
-Working roadmap for the cinema (movies/TV) feature. Status reflects what's
-actually built vs. planned, revised from an earlier draft to account for
-decisions already made (see "Already Done" and inline notes).
+Working roadmap for the cinema (movies/TV) feature. Only remaining/planned
+work is listed - completed items are removed rather than checked off, to
+keep this clean.
 
 ## Current Priority
 
@@ -16,18 +16,12 @@ Phase 1 is paused (a larger review-page UI revamp is planned first). Next up:
 - [ ] Build real TMDb search endpoint (replace debug route) + frontend search UI
 - [ ] Build real TMDb detail endpoint (replace debug route)
 - [ ] Map `watch/providers` response into `streamingPlatforms` when saving a record
-- [x] Build a cinema detail page (movie/show view) — reused `review-page.component` (the existing music modal) instead of a new page; front panel (poster, type label, rating circle, genre-less for now) and full reviews section (list, filter, add/edit/delete, like) now work for cinema records the same as music
 - [ ] Wire detail page to call `getImdbStats` for live IMDb rating/votes
-- [x] Display `reviewText`/`likes` on the detail page — done via the shared reviews-list UI (`getCinemaReviews` endpoint + `mapCinemaReviewToReview` normalization)
 - [ ] Display full cast list (name, character played, photo) on the detail page — **data already available**: `getTmdbDetails` now requests `credits` via `append_to_response`, just needs mapping to UI (profile photos need the same `image.tmdb.org` prefix used for posters)
 - [ ] Pending decision: Nested TV Hierarchy (seasons/episodes, per-episode watched flags, progress bar) — schema already exists (`CinemaItem.seasons`), nothing populates or displays it yet. Build later in development, or drop? (see Open Questions)
 
 ## Phase 2: Calendar Engine & Dual Web/Nuvio Addon Integration
 
-- [x] Per-Episode Calendar Engine — `GET /api/cinema/calendar` built (`cinemaController.getCalendar`). Pulls next-episode-to-air for tracked TV shows (watchlisted OR reviewed, via TMDb's native `next_episode_to_air` field - no extra call type needed) plus watchlisted movies with a future `release_date`. Sorted soonest-first.
-- [x] Rating an item now auto-clears `isWatchlist` (`editCinemaItem`) so "watched, not yet reviewed" doesn't linger as "still to watch".
-- [ ] Countdown Engine — convert ISO timestamps into relative daily countdowns ("Airs Today", "In 3 days") - do this client-side, not in the API response.
-- [ ] Web App UI — new **Calendar nav item + page** (own bottom-nav/desktop-dropdown destination, not folded into Watchlist/profile - see "Nav Items" note below).
 - [ ] Nuvio / Stremio Addon Engine — expose `GET /manifest.json` and `GET /catalog/series/upcoming.json`. Reads directly from **SoundCheck's own database** (the user's `CinemaItem` watchlist) — no Trakt dependency; add-to-watchlist in the app shows up in the addon directly.
 - [ ] **Nuvio "watched" auto-detect → needs-review queue** (design only, not built): when the Nuvio addon detects a title was completed, it calls a new endpoint (e.g. `POST /api/cinema/mark-watched`) with the tmdbId, matching/creating the `CinemaItem`. **Important:** do NOT simply clear `isWatchlist` here without anything else set - if nothing else is true, the item silently disappears from the calendar too. Instead add a new `needsReview: Boolean` flag on `CinemaItem`, set independently of `isWatchlist` (`isWatchlist` can still flip to false since it's no longer "to watch", but `needsReview: true` keeps it visible to both the calendar query and a new "Reviews · needs review" filter/badge on the profile page's existing Reviews tile). Update the calendar's `$or` query to include `{ needsReview: true }` alongside `{ isWatchlist: true }` / `{ decimalRating: { $ne: null } }`.
 

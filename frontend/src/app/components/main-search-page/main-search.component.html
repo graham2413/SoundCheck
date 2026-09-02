@@ -109,8 +109,8 @@
     <p class="mt-1 text-base md:text-xl text-gray-300">
       {{
         searchType === 'music'
-          ? 'Find your next favorite track.'
-          : 'Find your next favorite movie or show.'
+          ? 'Find your next favorite track'
+          : 'Find your next favorite movie or show'
       }}
     </p>
   </div>
@@ -316,6 +316,37 @@
     >
       <i class="fas fa-times text-gray-400 hover:text-white transition text-xl"></i>
     </button>
+  </div>
+
+  <!-- Recent Searches -->
+  <div
+    *ngIf="recentSearches.length > 0"
+    class="w-full max-w-[450px] sm:max-w-[550px] md:max-w-[700px] mx-auto px-4 mt-3"
+  >
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-gray-400 text-sm md:text-base">Recent searches</span>
+      <button
+        (click)="clearRecentSearches()"
+        class="text-[#0F5EE4] text-sm md:text-base font-medium hover:text-[#3b82f6] transition"
+      >
+        Clear
+      </button>
+    </div>
+    <div class="flex gap-2 overflow-x-auto pb-1">
+      <div
+        *ngFor="let term of recentSearches"
+        (click)="selectRecentSearch(term)"
+        class="flex items-center gap-2 flex-shrink-0 bg-gray-800 border border-gray-700 rounded-full pl-4 pr-2 py-2 cursor-pointer whitespace-nowrap"
+      >
+        <span class="text-white text-sm md:text-base">{{ term }}</span>
+        <button
+          (click)="removeRecentSearch(term); $event.stopPropagation()"
+          class="text-gray-400 hover:text-white transition flex items-center justify-center w-5 h-5"
+        >
+          <i class="fas fa-times text-xs"></i>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Search Tabs with Sliding Highlight -->

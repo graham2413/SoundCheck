@@ -74,6 +74,8 @@ export class MainSearchComponent implements OnInit {
 
   query: string = '';
   lastSearchedQuery: string = '';
+  recentSearches: string[] = [];
+  private readonly RECENT_SEARCHES_LIMIT = 8;
   isLoading: boolean = false;
   activeTab: 'songs' | 'albums' | 'artists' = 'songs';
   // What the search-bar type button will search as next - independent of
@@ -196,6 +198,8 @@ export class MainSearchComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
+    this.loadRecentSearches();
+
     const stored = localStorage.getItem('albumImages');
     let shouldRefetch = true;
 
@@ -328,6 +332,7 @@ export class MainSearchComponent implements OnInit {
     if (!query) return;
 
     this.lastSearchedQuery = query;
+    this.addRecentSearch(query);
 
     if (this.searchType === 'cinema') {
       this.searchCinemaResults();
@@ -638,11 +643,56 @@ export class MainSearchComponent implements OnInit {
     this.imageLoaded.cinema = {};
     this.results = { songs: [], albums: [], artists: [] };
     this.filteredResults = { songs: [], albums: [], artists: [] };
+    this.loadRecentSearches();
   }
 
   clearSearchQuery(): void {
     this.query = '';
     this.lastSearchedQuery = '';
+    this.searchAttempted = false;
+    this.cinemaResults = [];
+    this.results = { songs: [], albums: [], artists: [] };
+    this.filteredResults = { songs: [], albums: [], artists: [] };
+  }
+
+  // Recent Searches - stored client-side (localStorage), separate lists per
+  // searchType since "Nirvana" as a band search vs a movie search don't overlap.
+  private getRecentSearchesKey(): string {
+    return `recentSearches_${this.searchType}`;
+  }
+
+  private saveRecentSearches(): void {
+    localStorage.setItem(this.getRecentSearchesKey(), JSON.stringify(this.recentSearches));
+  }
+
+  loadRecentSearches(): void {
+    const stored = localStorage.getItem(this.getRecentSearchesKey());
+    this.recentSearches = stored ? JSON.parse(stored) : [];
+  }
+
+  addRecentSearch(term: string): void {
+    const existing = this.recentSearches.filter(
+      (s) => s.toLowerCase() !== term.toLowerCase()
+    );
+    this.recentSearches = [term, ...existing].slice(0, this.RECENT_SEARCHES_LIMIT);
+    this.saveRecentSearches();
+  }
+
+  removeRecentSearch(term: string): void {
+    this.recentSearches = this.recentSearches.filter((s) => s !== term);
+    this.saveRecentSearches();
+  }
+
+  clearRecentSearches(): void {
+    this.recentSearches = [];
+    this.saveRecentSearches();
+  }
+
+  selectRecentSearch(term: string): void {
+    this.query = term;
+    this.searchType === 'music'
+      ? this.onSearch(this.selectedSearchTab, false)
+      : this.onSearch('songs');
   }
 
   setActiveDiscoverTab(tab: 'mainSearch' | 'popular' | 'recentActivity') {
