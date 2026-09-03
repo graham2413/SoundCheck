@@ -119,7 +119,11 @@
   >
     <!-- Marquee Container -->
     <div #marqueeContainer class="marquee-container">
-      <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading">
+      <div
+        #marqueeTrack
+        class="marquee-track"
+        *ngIf="!isMarqueeLoading; else loading"
+      >
         <!-- First copy -->
         <ng-container *ngFor="let album of albums; let i = index">
           <div

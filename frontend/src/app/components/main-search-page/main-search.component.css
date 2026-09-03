@@ -26,17 +26,9 @@
 
 .marquee-track {
   display: flex;
-  animation: scroll 350s linear infinite;
   width: max-content;
   padding-left: 3rem;
-}
-
-.animate-marquee {
-  animation: scroll-marquee 30s linear infinite;
-}
-
-.static-marquee {
-  animation: none;
+  will-change: transform;
 }
 
 .album-card {

@@ -2,6 +2,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  OnDestroy,
   OnInit,
   ViewChild,
 } from '@angular/core';
@@ -66,7 +67,7 @@ type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
     ])
   ]
 })
-export class MainSearchComponent implements OnInit {
+export class MainSearchComponent implements OnInit, OnDestroy {
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
   @ViewChild('dropdownContainer') dropdownContainer!: ElementRef;
@@ -162,6 +163,11 @@ export class MainSearchComponent implements OnInit {
   albums: any[] = [];
   skeletonArray = Array(10);
   @ViewChild('marqueeContainer') marqueeContainer!: ElementRef;
+  @ViewChild('marqueeTrack') marqueeTrack?: ElementRef<HTMLDivElement>;
+  private marqueeAnimationFrameId: number | null = null;
+  private marqueeLastFrameTime: number | null = null;
+  private marqueeOffsetPx = 0;
+  private readonly MARQUEE_SPEED_PX_PER_SEC = 40;
   imageLoaded = {
     songs: {} as { [index: number]: boolean },
     albums: {} as { [index: number]: boolean },
@@ -262,9 +268,76 @@ export class MainSearchComponent implements OnInit {
       }));
     }
 
-    this.albums = baseAlbums;
+    this.revealMarqueeInChunks(baseAlbums);
+  }
+
+  // Reveal the marquee progressively in small chunks instead of mounting all ~110
+  // album cards synchronously - keeps the route transition into Home fast, since
+  // Angular only has to render/change-detect a small batch up front. The scroll is
+  // JS-driven (startMarqueeScroll) at a fixed px/sec rate rather than a CSS %-based
+  // keyframe, so a growing track width mid-scroll never causes a visible jump.
+  private revealMarqueeInChunks(fullAlbumList: any[]): void {
+    const CHUNK_SIZE = 20;
+    const CHUNK_DELAY_MS = 600;
+
+    this.albums = fullAlbumList.slice(0, CHUNK_SIZE);
     this.marqueeImageLoaded = new Array(this.albums.length).fill(false);
     this.isMarqueeLoading = false;
+    setTimeout(() => this.startMarqueeScroll(), 0);
+
+    let nextCount = CHUNK_SIZE;
+    const revealNextChunk = () => {
+      if (nextCount >= fullAlbumList.length) return;
+      nextCount += CHUNK_SIZE;
+      this.albums = fullAlbumList.slice(0, nextCount);
+      if (nextCount < fullAlbumList.length) {
+        setTimeout(revealNextChunk, CHUNK_DELAY_MS);
+      }
+    };
+    setTimeout(revealNextChunk, CHUNK_DELAY_MS);
+  }
+
+  private startMarqueeScroll(): void {
+    if (this.marqueeAnimationFrameId !== null) return; // already running
+    this.marqueeLastFrameTime = null;
+
+    const step = (timestamp: number) => {
+      const track = this.marqueeTrack?.nativeElement;
+      if (!track) {
+        this.marqueeAnimationFrameId = requestAnimationFrame(step);
+        return;
+      }
+
+      if (this.marqueeLastFrameTime !== null) {
+        const deltaSeconds = (timestamp - this.marqueeLastFrameTime) / 1000;
+        this.marqueeOffsetPx += deltaSeconds * this.MARQUEE_SPEED_PX_PER_SEC;
+
+        // Re-measured every frame so appending more chunks never shifts the
+        // current position - only where the *next* wrap-around lands.
+        const halfWidth = track.scrollWidth / 2;
+        if (halfWidth > 0 && this.marqueeOffsetPx >= halfWidth) {
+          this.marqueeOffsetPx -= halfWidth;
+        }
+
+        track.style.transform = `translateX(-${this.marqueeOffsetPx}px)`;
+      }
+
+      this.marqueeLastFrameTime = timestamp;
+      this.marqueeAnimationFrameId = requestAnimationFrame(step);
+    };
+
+    this.marqueeAnimationFrameId = requestAnimationFrame(step);
+  }
+
+  private stopMarqueeScroll(): void {
+    if (this.marqueeAnimationFrameId !== null) {
+      cancelAnimationFrame(this.marqueeAnimationFrameId);
+      this.marqueeAnimationFrameId = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stopMarqueeScroll();
   }
 
   getLastFridayNoon(): number {
