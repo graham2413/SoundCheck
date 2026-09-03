@@ -40,10 +40,16 @@ export class MarqueeComponent implements OnInit, OnDestroy {
   isMarqueeLoading = true;
   marqueeImageLoaded: boolean[] = [];
 
+  private fullAlbumList: any[] = [];
+  private windowStartIndex = 0;
+  private readonly WINDOW_SIZE = 20;
   private marqueeAnimationFrameId: number | null = null;
   private marqueeLastFrameTime: number | null = null;
   private marqueeOffsetPx = 0;
   private readonly MARQUEE_SPEED_PX_PER_SEC = 40;
+  private firstBatchLoadedCount = 0;
+  private scrollStarted = false;
+  private readonly FIRST_BATCH_LOAD_TIMEOUT_MS = 3000;
 
   constructor(
     private spotifyService: SpotifyService,
@@ -84,6 +90,13 @@ export class MarqueeComponent implements OnInit, OnDestroy {
     this.cardClick.emit({ album, list: this.albums, index });
   }
 
+  // Angular reuses the DOM element at each position instead of destroying/
+  // recreating it when the array is reassigned - the key that makes window
+  // rotation cheap (data-only rebind) instead of another mount/unmount cycle.
+  trackByIndex(index: number): number {
+    return index;
+  }
+
   setMarquee() {
     this.isMarqueeLoading = true;
     const storedAlbums = localStorage.getItem('albumImages');
@@ -113,38 +126,61 @@ export class MarqueeComponent implements OnInit, OnDestroy {
       }));
     }
 
-    this.revealMarqueeInChunks(baseAlbums);
+    this.setMarqueeWindow(baseAlbums);
   }
 
-  // Reveal the marquee progressively in small chunks instead of mounting all ~110
-  // album cards synchronously - keeps the route transition into Home fast, since
-  // Angular only has to render/change-detect a small batch up front. The scroll is
-  // JS-driven (startMarqueeScroll) at a fixed px/sec rate rather than a CSS %-based
-  // keyframe, so a growing track width mid-scroll never causes a visible jump.
-  private revealMarqueeInChunks(fullAlbumList: any[]): void {
-    const CHUNK_SIZE = 20;
-    const CHUNK_DELAY_MS = 600;
-
-    this.albums = fullAlbumList.slice(0, CHUNK_SIZE);
+  // Mounts a small fixed pool of DOM cards (WINDOW_SIZE unique albums, doubled
+  // for the loop) exactly once - never grows. All albums beyond the initial
+  // window get cycled into those same elements later via rotateWindow(), so
+  // there's no per-chunk mount cost after the very first render.
+  private setMarqueeWindow(fullAlbumList: any[]): void {
+    this.fullAlbumList = fullAlbumList;
+    this.windowStartIndex = 0;
+    this.albums = fullAlbumList.slice(0, this.WINDOW_SIZE);
     this.marqueeImageLoaded = new Array(this.albums.length).fill(false);
     this.isMarqueeLoading = false;
+    this.firstBatchLoadedCount = 0;
+    this.scrollStarted = false;
     this.cdr.detectChanges();
 
     this.ngZone.runOutsideAngular(() => {
-      setTimeout(() => this.startMarqueeScroll(), 0);
-
-      let nextCount = CHUNK_SIZE;
-      const revealNextChunk = () => {
-        if (nextCount >= fullAlbumList.length) return;
-        nextCount += CHUNK_SIZE;
-        this.albums = fullAlbumList.slice(0, nextCount);
-        this.cdr.detectChanges();
-        if (nextCount < fullAlbumList.length) {
-          setTimeout(revealNextChunk, CHUNK_DELAY_MS);
-        }
-      };
-      setTimeout(revealNextChunk, CHUNK_DELAY_MS);
+      // Safety net: start anyway if an image hangs/fails to fire, so the
+      // marquee can never get stuck permanently paused.
+      setTimeout(() => this.startMarqueeScrollOnce(), this.FIRST_BATCH_LOAD_TIMEOUT_MS);
     });
+  }
+
+  // Bound to (load)/(error) on the first copy's images only - once every
+  // initially-visible image has settled, start the scroll. Starting before
+  // they've loaded is what caused the stutter, since decode work was
+  // competing with the already-running scroll animation for the main thread.
+  onFirstBatchImageEvent(): void {
+    this.firstBatchLoadedCount++;
+    if (this.firstBatchLoadedCount >= this.WINDOW_SIZE) {
+      this.startMarqueeScrollOnce();
+    }
+  }
+
+  private startMarqueeScrollOnce(): void {
+    if (this.scrollStarted) return;
+    this.scrollStarted = true;
+    this.ngZone.runOutsideAngular(() => this.startMarqueeScroll());
+  }
+
+  // Called when the scroll completes one full loop - swaps in the next
+  // WINDOW_SIZE albums' data on the *existing* DOM elements (via trackBy),
+  // instead of creating new ones. Wraps back to the start of the full list.
+  private rotateWindow(): void {
+    if (this.fullAlbumList.length <= this.WINDOW_SIZE) return; // nothing to rotate
+
+    this.windowStartIndex =
+      (this.windowStartIndex + this.WINDOW_SIZE) % this.fullAlbumList.length;
+
+    this.albums = Array.from({ length: this.WINDOW_SIZE }, (_, i) =>
+      this.fullAlbumList[(this.windowStartIndex + i) % this.fullAlbumList.length]
+    );
+    this.marqueeImageLoaded = new Array(this.albums.length).fill(false);
+    this.cdr.detectChanges();
   }
 
   private startMarqueeScroll(): void {
@@ -162,11 +198,12 @@ export class MarqueeComponent implements OnInit, OnDestroy {
         const deltaSeconds = (timestamp - this.marqueeLastFrameTime) / 1000;
         this.marqueeOffsetPx += deltaSeconds * this.MARQUEE_SPEED_PX_PER_SEC;
 
-        // Re-measured every frame so appending more chunks never shifts the
-        // current position - only where the *next* wrap-around lands.
+        // Fixed pool size means scrollWidth is constant - once we cross it,
+        // rotate in the next window of albums before wrapping the position.
         const halfWidth = track.scrollWidth / 2;
         if (halfWidth > 0 && this.marqueeOffsetPx >= halfWidth) {
           this.marqueeOffsetPx -= halfWidth;
+          this.rotateWindow();
         }
 
         track.style.transform = `translateX(-${this.marqueeOffsetPx}px)`;

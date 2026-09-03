@@ -7,7 +7,7 @@
       *ngIf="!isMarqueeLoading; else loading"
     >
       <!-- First copy -->
-      <ng-container *ngFor="let album of albums; let i = index">
+      <ng-container *ngFor="let album of albums; let i = index; trackBy: trackByIndex">
         <div
           class="album-card relative w-[12rem] md:w-[13.5rem] h-[12rem] md:h-[13.5rem] rounded-lg overflow-hidden border border-gray-800"
           (click)="onCardClick(album, i)"
@@ -30,8 +30,8 @@
             "
             [alt]="album.title"
             decoding="async"
-            (load)="marqueeImageLoaded[i] = true"
-            (error)="marqueeImageLoaded[i] = true"
+            (load)="marqueeImageLoaded[i] = true; onFirstBatchImageEvent()"
+            (error)="marqueeImageLoaded[i] = true; onFirstBatchImageEvent()"
             [class.invisible]="!marqueeImageLoaded[i]"
             class="w-full h-full object-cover"
           />
@@ -77,7 +77,7 @@
       </ng-container>
 
       <!-- Second copy (duplicate for infinite scroll) -->
-      <ng-container *ngFor="let album of albums; let i = index">
+      <ng-container *ngFor="let album of albums; let i = index; trackBy: trackByIndex">
         <div
           class="album-card relative w-[12rem] md:w-[13.5rem] h-[12rem] md:h-[13.5rem] rounded-lg overflow-hidden border border-gray-800"
           (click)="onCardClick(album, i)"
