@@ -22,6 +22,7 @@ import { AuthService } from './services/auth.service';
 import { DecodedToken } from './models/responses/decoded-token-response';
 import { UserService } from './services/user.service';
 import { forkJoin, of, timer } from 'rxjs';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -96,7 +97,8 @@ export class AppComponent implements OnInit {
     private toastr: ToastrService,
     private authService: AuthService,
     private userService: UserService,
-    private cdRef: ChangeDetectorRef
+    private cdRef: ChangeDetectorRef,
+    private swUpdate: SwUpdate
   ) {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -106,6 +108,8 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.initServiceWorkerUpdates();
+
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => {
@@ -134,6 +138,30 @@ export class AppComponent implements OnInit {
         this.logout(); // or route to login
       }
     }
+  }
+
+  // Checks for a new deployed version and prompts the user to reload rather than
+  // silently force-reloading, since that could interrupt someone mid-review.
+  // Also polls periodically since the SW only auto-checks once per app launch by
+  // default - important for a PWA that can stay open/backgrounded for a long time.
+  private initServiceWorkerUpdates(): void {
+    if (!this.swUpdate.isEnabled) return;
+
+    this.swUpdate.versionUpdates
+      .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
+      .subscribe(() => {
+        const toast = this.toastr.info(
+          'Tap to reload and get the latest version.',
+          'Update available',
+          { disableTimeOut: true, closeButton: true, tapToDismiss: true }
+        );
+        toast.onTap.subscribe(() => {
+          this.swUpdate.activateUpdate().then(() => document.location.reload());
+        });
+      });
+
+    const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+    setInterval(() => this.swUpdate.checkForUpdate(), SIX_HOURS_MS);
   }
 
   private handleToken(token: string) {
