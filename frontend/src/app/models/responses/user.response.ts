@@ -19,6 +19,8 @@ export interface User {
   gradient: string;
   cinemaWatchlistIsPublic?: boolean;
   cinemaReviews?: CinemaItem[];
+  // Only present in the response when the requester is the gated admin account
+  lastLoggedIn?: string | null;
   recentSearches?: { music: string[]; cinema: string[] };
 }
 

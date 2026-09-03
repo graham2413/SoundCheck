@@ -54,6 +54,8 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 // Callback Route After Successful Login
 router.get('/google/callback', passport.authenticate('google', { session: false }), async (req, res) => {
     try {
+        await User.updateOne({ _id: req.user._id }, { lastLoggedIn: new Date() });
+
         const user = await User.findById(req.user._id)
             .populate("friendRequestsSent", "username profilePicture")
             .populate("friendRequestsReceived", "username profilePicture")

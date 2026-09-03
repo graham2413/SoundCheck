@@ -14,6 +14,7 @@ import { User } from 'src/app/models/responses/user.response';
 import { UserService } from 'src/app/services/user.service';
 import { ConfirmationModalComponent } from './confirmation-modal/confirmation-modal.component';
 import { Friend } from 'src/app/models/responses/friend-response';
+import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 
 @Component({
@@ -21,7 +22,7 @@ import { animate, animateChild, query, stagger, style, transition, trigger } fro
   templateUrl: './friends.component.html',
   styleUrls: ['./friends.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, TimeAgoPipe],
     animations: [
       trigger('fadeSlideIn', [
         // Animate the container

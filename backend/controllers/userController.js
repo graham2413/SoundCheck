@@ -62,12 +62,17 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
       .select("-password")
       .populate("friendRequestsSent", "username profilePicture")
       .populate("friendRequestsReceived", "username profilePicture")
-      .populate("friends", "username profilePicture")
+      .populate("friends", "username profilePicture lastLoggedIn")
       .lean();
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // Only this specific account can see friends' lastLoggedIn - gated
+    // server-side (not just hidden in the UI) so it can't be read via the
+    // network tab by anyone else.
+    const isAdminViewer = process.env.ADMIN_USER_ID && req.user._id.toString() === process.env.ADMIN_USER_ID;
 
     // Cinema reviews are public just like music reviews, no visibility gate
     const cinemaReviews = await CinemaItem.find({
@@ -93,6 +98,7 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
           _id: friend._id,
           username: friend.username,
           profilePicture: friend.profilePicture,
+          ...(isAdminViewer ? { lastLoggedIn: friend.lastLoggedIn || null } : {}),
         })),
         friendRequestsSent: user.friendRequestsSent.map((request) => ({
           _id: request._id,

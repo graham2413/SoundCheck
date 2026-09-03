@@ -38,6 +38,9 @@ const userSchema = new Schema({
     // Profile created date
     createdAt: { type: Date, default: Date.now },
 
+    // Timestamp of most recent successful login (any auth method)
+    lastLoggedIn: { type: Date, default: null },
+
     // List of songs, albums, artists
     artistList: {
       type: [

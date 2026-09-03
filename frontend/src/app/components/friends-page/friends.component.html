@@ -288,6 +288,12 @@
                 >
                   {{ friend.username }}
                 </h2>
+                <p
+                  *ngIf="friend.lastLoggedIn"
+                  class="text-xs md:text-sm text-gray-500 mt-1"
+                >
+                  Last seen {{ friend.lastLoggedIn | timeAgo }}
+                </p>
               </div>
 
               <!-- Buttons on the far right, stacked -->
