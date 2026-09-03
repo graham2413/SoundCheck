@@ -85,6 +85,7 @@ export interface CalendarEntry {
   seasonNumber?: number;
   episodeNumber?: number;
   episodeName?: string;
+  isRerelease?: boolean;
   isWatchlist: boolean;
   decimalRating?: number;
   reviewText?: string;

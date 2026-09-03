@@ -80,7 +80,7 @@
             <span *ngIf="entry.episodeName">&nbsp;&middot; {{ entry.episodeName }}</span>
           </p>
           <p *ngIf="entry.mediaType === 'movie'" class="text-gray-400 text-sm mt-1">
-            New release
+            {{ entry.isRerelease ? 'Returning to Theaters' : 'New release' }}
           </p>
 
           <p class="text-[#0F5EE4] text-sm mt-1 font-semibold">

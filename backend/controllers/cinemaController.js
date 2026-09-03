@@ -16,14 +16,19 @@ const CALENDAR_CACHE_TIMEZONE = "America/Chicago"; // matches server.js cron tim
 // TMDb's top-level release_date is often an earliest-worldwide/festival date,
 // not the US theatrical date shown on IMDb - prefer the US theatrical entry
 // (type 3) from release_dates when available.
-const getUsTheatricalReleaseDate = (movieDetails) => {
+const RERELEASE_NOTE_PATTERN = /re-release|rerelease|restoration|anniversary/i;
+
+const getUsTheatricalRelease = (movieDetails) => {
   const usDates = movieDetails?.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates;
-  const theatrical = usDates?.find((d) => d.type === 3)?.release_date;
+  const theatrical = usDates?.find((d) => d.type === 3);
   // release_dates entries are full ISO datetimes ("...T00:00:00.000Z"), unlike
   // the plain "YYYY-MM-DD" from the generic release_date field - normalize to
   // date-only so both shapes match what the frontend countdown parser expects.
-  return (theatrical || movieDetails?.release_date)?.slice(0, 10);
+  const releaseDate = (theatrical?.release_date || movieDetails?.release_date)?.slice(0, 10);
+  const isRerelease = RERELEASE_NOTE_PATTERN.test(theatrical?.note || "");
+  return { releaseDate, isRerelease };
 };
+
 
 
 // Today's date (YYYY-MM-DD) in a fixed local timezone, so "a new day" lines up
@@ -162,7 +167,7 @@ exports.getCalendar = async (req, res) => {
 
     const movieEntries = movieItems
       .map((item, i) => {
-        const releaseDate = getUsTheatricalReleaseDate(movieDetails[i]);
+        const { releaseDate, isRerelease } = getUsTheatricalRelease(movieDetails[i]);
         if (!releaseDate || new Date(releaseDate) < now) return null;
         return {
           _id: item._id,
@@ -171,6 +176,7 @@ exports.getCalendar = async (req, res) => {
           title: item.title,
           cover: item.cover,
           airDate: releaseDate,
+          isRerelease,
           isWatchlist: item.isWatchlist,
           decimalRating: item.decimalRating,
           reviewText: item.reviewText,
