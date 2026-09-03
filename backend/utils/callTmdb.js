@@ -14,7 +14,7 @@ const QUEUE_DELAY_MS = 200;
 const DETAILS_CACHE_TTL = 604800; // 7 days
 const SEARCH_CACHE_TTL = 7200; // 2 hours
 const GENRE_CACHE_TTL = 2592000; // 30 days
-const CALENDAR_DETAILS_CACHE_TTL = 259200; // 3 days - now a backstop behind the per-user full-response cache, so it can afford to live longer
+const CALENDAR_DETAILS_CACHE_TTL = 43200; // 12 hours - short enough to always refresh at least once per calendar day
 
 // Caps simultaneous connections to stay under TMDb's ~20 concurrent connections/IP limit
 const tmdbAgent = new https.Agent({ maxSockets: 20, keepAlive: true });
@@ -102,7 +102,8 @@ async function getTmdbDetails(tmdbId, mediaType = "movie") {
 
 // Cache-aware wrapper for the calendar: same /movie|tv/:id details call as
 // getTmdbDetails, but with a much shorter TTL since next_episode_to_air and
-// release_date can change well within the 7-day details cache window.
+// release_date can change within days - short TTL keeps this fresh at least
+// once per calendar day without needing day-boundary-aware invalidation.
 // `forceRefresh` bypasses the cache read (used by the calendar's refresh
 // button) but still writes the fresh result back to cache.
 async function getTmdbDetailsForCalendar(tmdbId, mediaType, forceRefresh = false) {
@@ -113,7 +114,12 @@ async function getTmdbDetailsForCalendar(tmdbId, mediaType, forceRefresh = false
     if (cached) return JSON.parse(cached);
   }
 
-  const response = await callTmdb(`/${mediaType}/${tmdbId}`);
+  // Movies need release_dates too: TMDb's top-level release_date is often an
+  // earliest-worldwide/festival date, not the US theatrical date IMDb shows.
+  const response = await callTmdb(
+    `/${mediaType}/${tmdbId}`,
+    mediaType === "movie" ? { append_to_response: "release_dates" } : undefined
+  );
 
   if (response.data) {
     await redis.set(cacheKey, JSON.stringify(response.data), "EX", CALENDAR_DETAILS_CACHE_TTL);

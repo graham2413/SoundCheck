@@ -13,6 +13,19 @@ const CALENDAR_RESPONSE_CACHE_TTL = 86400; // 24h safety-net TTL - actual invali
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/original"; // matches backfillCinemaCovers.js
 const CALENDAR_CACHE_TIMEZONE = "America/Chicago"; // matches server.js cron timezone
 
+// TMDb's top-level release_date is often an earliest-worldwide/festival date,
+// not the US theatrical date shown on IMDb - prefer the US theatrical entry
+// (type 3) from release_dates when available.
+const getUsTheatricalReleaseDate = (movieDetails) => {
+  const usDates = movieDetails?.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates;
+  const theatrical = usDates?.find((d) => d.type === 3)?.release_date;
+  // release_dates entries are full ISO datetimes ("...T00:00:00.000Z"), unlike
+  // the plain "YYYY-MM-DD" from the generic release_date field - normalize to
+  // date-only so both shapes match what the frontend countdown parser expects.
+  return (theatrical || movieDetails?.release_date)?.slice(0, 10);
+};
+
+
 // Today's date (YYYY-MM-DD) in a fixed local timezone, so "a new day" lines up
 // with the user's expected midnight instead of the server's UTC midnight
 const getLocalDateString = (timeZone) =>
@@ -114,9 +127,15 @@ exports.getCalendar = async (req, res) => {
     const movieItems = items.filter((i) => i.mediaType === "movie" && i.isWatchlist);
     const now = new Date();
 
+    // forceRefresh only bypasses the outer per-user calendar cache above (so
+    // newly added/removed watchlist items show up immediately) - it does NOT
+    // force every individual item to hit TMDb live. Each item's own TMDb
+    // details already refresh themselves every 3 days on their own, and with
+    // a large watchlist, forcing hundreds of live calls at once (rate-limited
+    // to 40/sec, each with retry/backoff) is what was making refresh take ~20s.
     const [tvDetails, movieDetails] = await Promise.all([
-      Promise.all(tvItems.map((i) => getTmdbDetailsForCalendar(i.tmdbId, "tv", forceRefresh).catch(() => null))),
-      Promise.all(movieItems.map((i) => getTmdbDetailsForCalendar(i.tmdbId, "movie", forceRefresh).catch(() => null))),
+      Promise.all(tvItems.map((i) => getTmdbDetailsForCalendar(i.tmdbId, "tv").catch(() => null))),
+      Promise.all(movieItems.map((i) => getTmdbDetailsForCalendar(i.tmdbId, "movie").catch(() => null))),
     ]);
 
     const tvEntries = tvItems
@@ -124,6 +143,7 @@ exports.getCalendar = async (req, res) => {
         const next = tvDetails[i]?.next_episode_to_air;
         if (!next?.air_date || new Date(next.air_date) < now) return null;
         return {
+          _id: item._id,
           tmdbId: item.tmdbId,
           mediaType: "tv",
           title: item.title,
@@ -132,20 +152,29 @@ exports.getCalendar = async (req, res) => {
           seasonNumber: next.season_number,
           episodeNumber: next.episode_number,
           episodeName: next.name,
+          isWatchlist: item.isWatchlist,
+          decimalRating: item.decimalRating,
+          reviewText: item.reviewText,
+          isUnrefinedImport: item.isUnrefinedImport,
         };
       })
       .filter(Boolean);
 
     const movieEntries = movieItems
       .map((item, i) => {
-        const releaseDate = movieDetails[i]?.release_date;
+        const releaseDate = getUsTheatricalReleaseDate(movieDetails[i]);
         if (!releaseDate || new Date(releaseDate) < now) return null;
         return {
+          _id: item._id,
           tmdbId: item.tmdbId,
           mediaType: "movie",
           title: item.title,
           cover: item.cover,
           airDate: releaseDate,
+          isWatchlist: item.isWatchlist,
+          decimalRating: item.decimalRating,
+          reviewText: item.reviewText,
+          isUnrefinedImport: item.isUnrefinedImport,
         };
       })
       .filter(Boolean);
@@ -419,6 +448,7 @@ exports.toggleWatchlist = async (req, res) => {
 exports.getWatchlist = async (req, res) => {
   try {
     const { userId } = req.params;
+    const { cursorDate, cursorId, limit = 30 } = req.query;
     const isOwner = userId === req.user._id.toString();
 
     if (!isOwner) {
@@ -431,12 +461,31 @@ exports.getWatchlist = async (req, res) => {
       }
     }
 
-    const items = await CinemaItem.find({
-      user: userId,
-      isWatchlist: true,
-    }).sort({ createdAt: -1 });
+    const baseQuery = { user: userId, isWatchlist: true };
+    const query = { ...baseQuery };
 
-    res.status(200).json({ success: true, data: items });
+    // Apply cursor logic if present - same pattern as getActivityFeed
+    if (cursorDate && cursorId) {
+      query.$or = [
+        { createdAt: { $lt: new Date(cursorDate) } },
+        { createdAt: new Date(cursorDate), _id: { $lt: cursorId } },
+      ];
+    }
+
+    // totalCount reflects the full watchlist (ignores the cursor), so the
+    // profile stat badge/panel header can show the real total, not just
+    // however many items happen to be loaded on the current page
+    const [items, totalCount] = await Promise.all([
+      CinemaItem.find(query).sort({ createdAt: -1, _id: -1 }).limit(Number(limit)),
+      CinemaItem.countDocuments(baseQuery),
+    ]);
+
+    const last = items[items.length - 1];
+    const nextCursor = last
+      ? { cursorDate: last.createdAt.toISOString(), cursorId: last._id }
+      : null;
+
+    res.status(200).json({ success: true, data: items, nextCursor, totalCount });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }

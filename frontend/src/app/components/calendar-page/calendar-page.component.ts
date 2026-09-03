@@ -63,7 +63,12 @@ export class CalendarPageComponent implements OnInit {
   // "Airs Today" / "In 3 days" / "Aug 12" style relative countdown
   getCountdownLabel(airDate: string): string {
     const now = new Date();
-    const target = new Date(airDate);
+    // airDate is a date-only string (e.g. "2026-09-04") - parsing it directly
+    // with `new Date()` treats it as UTC midnight, which shifts a day back in
+    // timezones behind UTC once read back via local getters. Parse the parts
+    // manually so it's built as a local calendar date instead.
+    const [year, month, day] = airDate.slice(0, 10).split('-').map(Number);
+    const target = new Date(year, month - 1, day);
 
     const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
@@ -90,14 +95,16 @@ export class CalendarPageComponent implements OnInit {
 
     const record = {
       type: 'Cinema' as const,
-      _id: '',
+      _id: entry._id,
       user: '',
       mediaType: entry.mediaType,
       tmdbId: entry.tmdbId,
       title: entry.title,
       cover: entry.cover ?? undefined,
-      isWatchlist: false,
-      isUnrefinedImport: false,
+      isWatchlist: entry.isWatchlist,
+      decimalRating: entry.decimalRating,
+      reviewText: entry.reviewText,
+      isUnrefinedImport: entry.isUnrefinedImport,
       traktSynced: false,
       createdAt: new Date().toISOString(),
     };

@@ -281,6 +281,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   @Output() reviewDeleted = new EventEmitter<Review>();
   @Output() userNavigated = new EventEmitter<void>();
   @Output() openNewReview = new EventEmitter<{ id: number; type: string }>();
+  @Output() watchlistToggled = new EventEmitter<CinemaItem>();
   isLoadingExtraDetails: boolean = false;
   activeTab: 'Top Tracks' | 'All Releases' = 'Top Tracks';
   releases: Album[] = [];
@@ -1492,6 +1493,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
             data.isWatchlist ? 'Added to watchlist.' : 'Removed from watchlist.',
             'Success'
           );
+          this.watchlistToggled.emit(cinemaItem);
         },
         error: () => {
           this.toastr.error('Error occurred while updating your watchlist.', 'Error');
@@ -1519,6 +1521,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
           cinemaItem.decimalRating = data.decimalRating;
           cinemaItem.reviewText = data.reviewText;
           cinemaItem.isUnrefinedImport = data.isUnrefinedImport;
+          cinemaItem.isWatchlist = data.isWatchlist; // rating marks it watched server-side
 
           const newReview = this.mapCinemaItemToOwnReview(data);
           this.existingUserReview = newReview;

@@ -288,7 +288,7 @@
         (click)="openWatchlist()"
       >
         <span class="block text-center text-lg">{{
-          watchlistItems.length
+          watchlistTotalCount
         }}</span>
         <span class="block text-center text-gray-400">Watchlist</span>
       </div>
@@ -296,6 +296,7 @@
 
     <!-- Fullscreen Overlay Panel -->
     <div
+      #watchlistScrollContainer
       [class.opacity-100]="showPanel"
       [class.opacity-0]="!showPanel"
       [class.translate-y-0]="showPanel"
@@ -323,7 +324,7 @@
               ({{ otherUser.artistList?.length || 0 }})
             </span>
             <span *ngIf="showPanel === 'watchlist'">
-              ({{ watchlistItems.length }})
+              ({{ watchlistTotalCount }})
             </span>
           </span>
         </h2>
@@ -352,6 +353,12 @@
             <div
               *ngIf="!isLoadingWatchlist && watchlistItems.length > 0"
               class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-[1000px] mx-auto"
+              infiniteScroll
+              [infiniteScrollDistance]="2"
+              [infiniteScrollThrottle]="150"
+              [scrollWindow]="false"
+              [infiniteScrollContainer]="watchlistScrollContainer"
+              (scrolled)="loadMoreWatchlist()"
             >
               <div
                 *ngFor="let item of watchlistItems; let i = index"
@@ -369,10 +376,8 @@
                     ></div>
                   </div>
                   <img
-                    [src]="
-                      item.cover ||
-                      'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-                    "
+                    [src]="getWatchlistThumbUrl(item.cover)"
+                    loading="lazy"
                     (load)="markImageLoaded(i, 'watchlist')"
                     (error)="markImageLoaded(i, 'watchlist')"
                     [class.invisible]="!isImageLoaded(i, 'watchlist')"
@@ -401,6 +406,10 @@
                   {{ item.releaseDate | date : "yyyy" }}
                 </p>
               </div>
+            </div>
+
+            <div *ngIf="isFetchingMoreWatchlist" class="flex justify-center py-4">
+              <i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i>
             </div>
           </ng-container>
 

@@ -30,11 +30,21 @@ export class CinemaService {
     });
   }
 
-  // A user's watchlist - owner always allowed, others only if public
-  getWatchlist(userId: string): Observable<{ success: boolean; data: CinemaItem[] }> {
-    return this.http.get<{ success: boolean; data: CinemaItem[] }>(`${this.apiUrl}/watchlist/${userId}`, {
-      headers: this.authHeaders(),
-    });
+  // A user's watchlist - owner always allowed, others only if public.
+  // Cursor-paginated (same pattern as the activity/artist feeds) so a large
+  // watchlist doesn't have to load/render all at once.
+  getWatchlist(
+    userId: string,
+    cursor?: { cursorDate: string; cursorId: string } | null
+  ): Observable<{ success: boolean; data: CinemaItem[]; nextCursor: { cursorDate: string; cursorId: string } | null; totalCount: number }> {
+    let params: Record<string, string> = { limit: '30' };
+    if (cursor) {
+      params = { ...params, cursorDate: cursor.cursorDate, cursorId: cursor.cursorId };
+    }
+    return this.http.get<{ success: boolean; data: CinemaItem[]; nextCursor: { cursorDate: string; cursorId: string } | null; totalCount: number }>(
+      `${this.apiUrl}/watchlist/${userId}`,
+      { headers: this.authHeaders(), params }
+    );
   }
 
   // Add/remove a movie or show from the current user's watchlist

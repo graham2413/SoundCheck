@@ -22,11 +22,12 @@ import { BaseRecord } from 'src/app/models/responses/base-record';
 import { ReviewService } from 'src/app/services/review.service';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
+import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 
 type ModalRecord = Album | Song | Artist | BaseRecord;
 @Component({
   selector: 'app-view-profile-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, InfiniteScrollDirective],
   templateUrl: './other-profile-page.component.html',
   styleUrl: './other-profile-page.component.css',
   standalone: true,
@@ -93,7 +94,11 @@ export class ViewProfilePageComponent implements OnInit {
   decliningFriendRequest: boolean = false;
   isImportingTraktExport: boolean = false;
   watchlistItems: CinemaItem[] = [];
+  watchlistTotalCount: number = 0;
   isLoadingWatchlist: boolean = false;
+  isFetchingMoreWatchlist: boolean = false;
+  hasMoreWatchlist: boolean = true;
+  private watchlistCursor: { cursorDate: string; cursorId: string } | null = null;
   isProfileReady: boolean = false;
   gradientPresets = [
     { name: 'Indigo to Purple', value: 'from-indigo-600 to-purple-500' },
@@ -834,21 +839,55 @@ export class ViewProfilePageComponent implements OnInit {
     }
 
     this.isLoadingWatchlist = true;
+    this.watchlistCursor = null;
+    this.hasMoreWatchlist = true;
     this.cinemaService.getWatchlist(this.otherUserId).subscribe({
       next: (response) => {
         this.watchlistItems = response.data;
+        this.watchlistTotalCount = response.totalCount;
+        this.watchlistCursor = response.nextCursor;
+        this.hasMoreWatchlist = !!response.nextCursor;
         this.isLoadingWatchlist = false;
       },
       error: () => {
         // Includes the expected 403 when the target's watchlist is private
         this.watchlistItems = [];
+        this.hasMoreWatchlist = false;
         this.isLoadingWatchlist = false;
       },
     });
   }
 
+  // Infinite scroll - only fetches the next page once the user actually
+  // scrolls near the bottom, instead of loading the entire watchlist upfront
+  loadMoreWatchlist(): void {
+    if (this.isFetchingMoreWatchlist || !this.hasMoreWatchlist || !this.watchlistCursor || !this.otherUserId) return;
+
+    this.isFetchingMoreWatchlist = true;
+    this.cinemaService.getWatchlist(this.otherUserId, this.watchlistCursor).subscribe({
+      next: (response) => {
+        this.watchlistItems = [...this.watchlistItems, ...response.data];
+        this.watchlistCursor = response.nextCursor;
+        this.hasMoreWatchlist = !!response.nextCursor;
+        this.isFetchingMoreWatchlist = false;
+      },
+      error: () => {
+        this.isFetchingMoreWatchlist = false;
+      },
+    });
+  }
+
+  // Small poster-sized thumbnail instead of the full-res cover, for the watchlist grid
+  getWatchlistThumbUrl(cover: string | undefined | null): string {
+    const fallback = 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801';
+    if (!cover) return fallback;
+    return cover.includes('/upload/')
+      ? cover.replace('/upload/', '/upload/w_300,h_450,c_fill,f_auto,q_auto/')
+      : cover;
+  }
+
   openWatchlist() {
-    if (!this.canViewWatchlist || this.watchlistItems.length === 0) return;
+    if (!this.canViewWatchlist || this.watchlistTotalCount === 0) return;
 
     this.showPanel = 'watchlist';
     document.body.style.overflow = 'hidden';
@@ -968,6 +1007,16 @@ export class ViewProfilePageComponent implements OnInit {
 
     modalRef.componentInstance.reviewCreated?.subscribe(
       (newReview: Review) => {
+        // Rating an item marks it "watched" server-side (isWatchlist -> false),
+        // so it needs to disappear from the watchlist grid/count immediately -
+        // checked by id since this modal can open from either the watchlist
+        // grid or the reviews panel, not just the watchlist
+        const watchlistIndex = this.watchlistItems.findIndex((w) => w._id === newReview._id);
+        if (watchlistIndex !== -1) {
+          this.watchlistItems.splice(watchlistIndex, 1);
+          this.watchlistTotalCount = Math.max(0, this.watchlistTotalCount - 1);
+        }
+
         if (!this.otherUser?.cinemaReviews) return;
         const i = this.otherUser.cinemaReviews.findIndex(
           (item) => item._id === newReview._id
@@ -1007,6 +1056,20 @@ export class ViewProfilePageComponent implements OnInit {
         }
       }
     );
+
+    // Toggling watchlist from inside the modal doesn't touch reviews, but
+    // the profile's watchlist grid/count still needs to stay in sync
+    modalRef.componentInstance.watchlistToggled?.subscribe((updatedItem: CinemaItem) => {
+      const existingIndex = this.watchlistItems.findIndex((w) => w._id === updatedItem._id);
+
+      if (updatedItem.isWatchlist && existingIndex === -1) {
+        this.watchlistItems.unshift(updatedItem);
+        this.watchlistTotalCount += 1;
+      } else if (!updatedItem.isWatchlist && existingIndex !== -1) {
+        this.watchlistItems.splice(existingIndex, 1);
+        this.watchlistTotalCount = Math.max(0, this.watchlistTotalCount - 1);
+      }
+    });
 
     return modalRef;
   }

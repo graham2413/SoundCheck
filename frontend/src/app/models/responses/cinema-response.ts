@@ -76,6 +76,7 @@ export interface ImdbStats {
 // One row from GET /api/cinema/calendar - a TV show's next episode to air,
 // or a watchlisted movie's upcoming release date.
 export interface CalendarEntry {
+  _id: string;
   tmdbId: string;
   mediaType: 'movie' | 'tv';
   title: string;
@@ -84,6 +85,10 @@ export interface CalendarEntry {
   seasonNumber?: number;
   episodeNumber?: number;
   episodeName?: string;
+  isWatchlist: boolean;
+  decimalRating?: number;
+  reviewText?: string;
+  isUnrefinedImport: boolean;
 }
 
 export interface ImdbStatsResponse {
