@@ -24,6 +24,18 @@ export class RegisterComponent {
   showPassword: boolean = false;
   showConfirmPassword: boolean = false;
 
+  // Decaying-wave envelope so the soundwave bars read as an intentional
+  // waveform (tapering + rippling outward) rather than random noise - the
+  // ramp-up keeps the first few bars near-flat so they look like a
+  // continuation of the thin line inside the logo, not a sudden jump
+  waveformBars: { height: number; opacity: number }[] = Array.from({ length: 36 }, (_, i) => {
+    const d = i / 36;
+    const rampUp = Math.min(1, d / 0.12);
+    const decay = Math.pow(1 - d, 0.6);
+    const wave = 0.35 + 0.65 * Math.abs(Math.sin(d * Math.PI * 3.2));
+    return { height: Math.max(2, rampUp * wave * decay * 56), opacity: Math.max(0.08, decay) };
+  });
+
   constructor(private authService: AuthService, private router: Router, private toastr: ToastrService) {}
 
   validateInputs(): boolean {

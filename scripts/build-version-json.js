@@ -1,17 +1,20 @@
 // Builds frontend/public/version.json, including categorized release notes
-// derived from recent commit subject lines. Read by the frontend's forced
-// PWA update overlay (see frontend/src/app/app.component.ts).
+// derived from recent commits. Read by the frontend's forced PWA update
+// overlay (see frontend/src/app/app.component.ts).
 //
-// Commit convention this depends on - keep in sync with any commit message
-// generation (see /memories/repo/commit-convention.md for the agent-side copy):
-//   feat:                                  -> "New features"
-//   fix:, perf:, refactor:                 -> "Performance & stability"
-//   security: (or subject mentions         -> "Security updates"
-//     security/auth/vuln)
-//   chore:, docs:, style:, test:, ci:,
-//   build:                                 -> excluded from the overlay
+// A single commit often bundles multiple kinds of changes (e.g. a feat: commit
+// whose body also has a fix/security bullet), so each body bullet ("- ...")
+// is classified independently by keyword rather than trusting one prefix for
+// the whole commit. Commits with no bullets fall back to classifying the
+// subject line itself via its conventional-commit prefix.
 //
-// Only the commit subject line is used (no commit body bullets).
+// Keep in sync with any commit message generation (see
+// /memories/repo/commit-convention.md for the agent-side copy):
+//   feat: / "Add"/"Introduce"/"Implement"/"New"/"Support" bullets -> "New features"
+//   fix:, perf:, refactor: / "Fix"/"Correct"/"Optimize"/"Cache" bullets -> "Performance & stability"
+//   security: / bullets mentioning security/auth/vuln/token/credential -> "Security updates"
+//   chore:, docs:, style:, test:, ci:, build: subjects -> excluded entirely
+//   "Minor:" bullets -> excluded (cosmetic, not worth surfacing)
 
 const { execSync } = require("child_process");
 
@@ -24,38 +27,76 @@ const CATEGORY_LABELS = {
   security: "Security updates",
 };
 
-const EXCLUDED_PREFIXES = ["chore", "docs", "style", "test", "ci", "build"];
+const EXCLUDED_SUBJECT_PREFIXES = ["chore", "docs", "style", "test", "ci", "build"];
 
-function categorizeSubject(subject) {
+const SECURITY_PATTERN = /\b(security|auth|vuln|token|credential|csrf|xss|injection|sanitiz\w*|harden\w*|unauthorized|private\w*|permission)\b/i;
+const STABILITY_PATTERN = /\b(fix\w*|correct\w*|resolv\w*|bug|patch\w*|prevent\w*|stale|hang\w*|leak\w*|race|refactor\w*|optimi[sz]\w*|cache\w*|perf\w*|faster|speed\w*|stutter\w*|hesitat\w*|parallel\w*|regression)\b/i;
+const FEATURE_PATTERN = /^(add\w*|introduc\w*|implement\w*|creat\w*|new|support\w*|enable\w*|allow\w*|display\w*|show\w*|renam\w*|switch\w*)\b/i;
+
+function capitalize(text) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+// Returns a category for one bullet/subject's text, or null if unclassified
+function categorizeText(text) {
+  if (SECURITY_PATTERN.test(text)) return "security";
+  if (STABILITY_PATTERN.test(text)) return "stability";
+  if (FEATURE_PATTERN.test(text)) return "features";
+  return null;
+}
+
+function categorizeSubjectFallback(subject) {
   const match = subject.match(/^(\w+)(\([^)]*\))?:\s*(.+)$/);
   if (!match) return null;
 
   const [, prefix, , rest] = match;
   const type = prefix.toLowerCase();
-  const text = rest.charAt(0).toUpperCase() + rest.slice(1);
+  const text = capitalize(rest);
 
-  if (EXCLUDED_PREFIXES.includes(type)) return null;
-  if (type === "security" || /security|auth|vuln/i.test(text)) return { category: "security", text };
+  if (EXCLUDED_SUBJECT_PREFIXES.includes(type)) return null;
+  if (type === "security") return { category: "security", text };
   if (type === "feat") return { category: "features", text };
   if (["fix", "perf", "refactor"].includes(type)) return { category: "stability", text };
-  return null;
+  return categorizeText(text) && { category: categorizeText(text), text };
 }
 
 function getReleaseNotes() {
-  let subjects = [];
+  let commits = [];
   try {
-    const log = execSync(`git log -${MAX_COMMITS_SCANNED} --pretty=%s`, { encoding: "utf8" });
-    subjects = log.split("\n").filter(Boolean);
+    // %x1f separates subject/body within a commit, %x1e separates commits
+    const log = execSync(`git log -${MAX_COMMITS_SCANNED} --pretty=format:%s%x1f%b%x1e`, { encoding: "utf8" });
+    commits = log
+      .split("\x1e")
+      .filter((chunk) => chunk.trim())
+      .map((chunk) => {
+        const [subject = "", body = ""] = chunk.split("\x1f");
+        return { subject: subject.trim(), body };
+      });
   } catch {
     return {}; // no git history available (e.g. shallow clone) - overlay just hides all sections
   }
 
   const notes = { features: [], stability: [], security: [] };
-  for (const subject of subjects) {
-    const result = categorizeSubject(subject);
-    if (!result) continue;
-    if (notes[result.category].length < MAX_ITEMS_PER_SECTION) {
-      notes[result.category].push(result.text);
+  const addNote = (category, text) => {
+    if (category && notes[category].length < MAX_ITEMS_PER_SECTION) notes[category].push(text);
+  };
+
+  for (const { subject, body } of commits) {
+    const subjectType = (subject.match(/^(\w+)(\([^)]*\))?:/) || [])[1]?.toLowerCase();
+    if (subjectType && EXCLUDED_SUBJECT_PREFIXES.includes(subjectType)) continue;
+
+    const bullets = [...body.matchAll(/^-\s+(.+)$/gm)]
+      .map((m) => m[1].trim())
+      .filter((line) => !/^minor:/i.test(line));
+
+    if (bullets.length === 0) {
+      const fallback = categorizeSubjectFallback(subject);
+      if (fallback) addNote(fallback.category, fallback.text);
+      continue;
+    }
+
+    for (const bullet of bullets) {
+      addNote(categorizeText(bullet), capitalize(bullet));
     }
   }
 

@@ -3,64 +3,122 @@
 <!-- Blocking forced-update overlay - no dismiss, only way through is Update Now -->
 <div
   *ngIf="updateAvailable"
-  class="fixed inset-0 z-[9999] bg-[#020814] text-white flex flex-col items-center px-6 pt-16 pb-10 overflow-y-auto"
+  class="fade-in-soft fixed inset-0 z-[9999] bg-[#020814] text-white flex flex-col items-center px-6 py-6 overflow-y-auto"
 >
-  <div class="w-full max-w-sm mx-auto flex flex-col items-center">
-    <div class="relative h-40 w-40 flex items-center justify-center mb-8">
-      <div class="absolute h-28 w-28 rounded-full bg-blue-300/40 blur-sm"></div>
-      <div class="relative h-28 w-28 rounded-full bg-[#020814] border border-blue-500/70 shadow-[0_0_6px_1px_rgba(59,130,246,0.5)] flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-14 h-14 text-blue-500">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-        </svg>
-      </div>
-    </div>
+  <div class="w-full max-w-sm mx-auto flex-1 min-h-0 flex flex-col items-center">
+    <!-- Gap 1: top of screen -> icon -->
+    <div class="flex-1 max-h-12 min-h-3"></div>
 
-    <h1 class="text-3xl font-extrabold text-center mb-3">
-      Update <span class="text-blue-500">Required</span>
-    </h1>
-    <p class="text-gray-400 text-center mb-6">
-      A new version of <span class="text-blue-500">{{ title }}</span> is available. Update now to keep enjoying the best experience.
-    </p>
-
-    <div *ngIf="updateBuildNumber" class="flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-600/10 mb-8">
-      <i class="fas fa-tag text-blue-500 text-sm"></i>
-      <span class="font-semibold text-sm">Version {{ updateBuildNumber }}</span>
-      <span class="text-blue-400 text-sm">(Latest)</span>
-    </div>
-
-    <div class="w-full flex flex-col divide-y divide-gray-800 mb-8">
-      <div
-        *ngFor="let section of updateNotes | keyvalue"
-        class="flex items-start gap-4 py-4"
+    <div class="relative h-36 w-36 flex items-center justify-center flex-shrink-0">
+      <div class="absolute h-28 w-28 rounded-full bg-blue-500/20 blur-md"></div>
+      <svg
+        viewBox="0 0 100 100"
+        class="relative h-28 w-28"
+        style="filter: drop-shadow(0 0 2px rgba(59,130,246,0.9)) drop-shadow(0 0 8px rgba(59,130,246,0.5))"
       >
-        <div class="h-10 w-10 rounded-xl bg-blue-600/10 flex items-center justify-center flex-shrink-0" [ngSwitch]="updateNoteIcons[section.key]">
-          <svg *ngSwitchCase="'star'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-500">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
-          </svg>
-          <svg *ngSwitchCase="'shield'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-500">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M12 3c-2.598 1.943-5.812 3.03-9 3.09v6.093c0 3.917 2.617 7.39 6.293 8.535a1.34 1.34 0 0 0 .707.09 1.34 1.34 0 0 0 .707-.09C15.383 19.573 18 16.099 18 12.183V6.09c-3.188-.06-6.402-1.147-9-3.09Z" />
-          </svg>
-          <svg *ngSwitchCase="'lock'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-500">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-          </svg>
-          <i *ngSwitchDefault class="far fa-circle-check text-blue-500"></i>
-        </div>
-        <div>
-          <p class="font-semibold">{{ section.key }}</p>
-          <p *ngFor="let item of section.value" class="text-gray-400 text-sm">{{ item }}</p>
+        <circle cx="50" cy="50" r="46" fill="#020814" stroke="#3b82f6" stroke-width="4" />
+      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="absolute w-14 h-14 text-blue-500">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+    </div>
+
+    <!-- Gap 2: icon -> center content -->
+    <div class="flex-1 max-h-12 min-h-3"></div>
+
+    <div class="w-full flex flex-col items-center flex-shrink-0">
+      <h1 class="text-3xl font-extrabold text-center mb-2">
+        Update <span class="text-blue-500">Required</span>
+      </h1>
+      <p class="text-gray-400 text-center mb-4">
+        A new version of <span class="text-blue-500">{{ title }}</span> is available. Update now to keep enjoying the best experience.
+      </p>
+
+      <div *ngIf="updateBuildNumber" class="flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-600/10 mb-4">
+        <i class="fas fa-tag text-blue-500 text-sm"></i>
+        <span class="font-semibold text-sm">Version {{ updateBuildNumber }}</span>
+        <span class="text-blue-400 text-sm">(Latest)</span>
+      </div>
+
+      <div class="w-full flex flex-col divide-y divide-gray-800">
+        <div
+          *ngFor="let section of updateNotes | keyvalue"
+          class="flex items-start gap-4 py-[clamp(0.35rem,2vh,0.75rem)]"
+        >
+          <div class="h-10 w-10 rounded-xl bg-blue-600/10 flex items-center justify-center flex-shrink-0" [ngSwitch]="updateNoteIcons[section.key]">
+            <svg *ngSwitchCase="'star'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-500">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+            </svg>
+            <svg *ngSwitchCase="'shield'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-500">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M12 3c-2.598 1.943-5.812 3.03-9 3.09v6.093c0 3.917 2.617 7.39 6.293 8.535a1.34 1.34 0 0 0 .707.09 1.34 1.34 0 0 0 .707-.09C15.383 19.573 18 16.099 18 12.183V6.09c-3.188-.06-6.402-1.147-9-3.09Z" />
+            </svg>
+            <svg *ngSwitchCase="'lock'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-500">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+            <i *ngSwitchDefault class="far fa-circle-check text-blue-500"></i>
+          </div>
+          <div>
+            <p class="font-semibold">{{ section.key }}</p>
+            <p *ngFor="let item of section.value" class="text-gray-400 text-sm">{{ item }}</p>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- Gap 3: center content -> button -->
+    <div class="flex-1 max-h-12 min-h-3"></div>
 
     <button
       (click)="applyUpdate()"
       [disabled]="isApplyingUpdate"
-      class="w-full py-4 rounded-full bg-blue-600 hover:bg-blue-500 transition font-semibold text-lg flex items-center justify-center gap-2 disabled:opacity-60"
+      class="w-full flex-shrink-0 py-[clamp(0.6rem,3vh,0.85rem)] rounded-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 active:scale-95 transition-all duration-150 font-semibold text-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:active:scale-100"
     >
       <i class="fas fa-download"></i>
-      {{ isApplyingUpdate ? 'Updating...' : 'Update Now' }}
+      Update Now
     </button>
   </div>
+</div>
+
+<!-- Full-screen loader while the update is being applied - a clean circular
+     progress ring instead of the bouncing equalizer, since a partial ring
+     still reads as "in progress" when the reload's hard cutoff freezes it.
+     Progress % is simulated (time-based) - activateUpdate() has no real
+     byte-level progress to report. Fades out just before reload fires. -->
+<div
+  *ngIf="isApplyingUpdate"
+  [class.opacity-0]="isReloadingForUpdate"
+  class="fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-[#020814] text-white transition-opacity duration-200 px-6"
+>
+  <div class="relative h-[clamp(9rem,32vh,16rem)] w-[clamp(9rem,32vh,16rem)] flex items-center justify-center mb-[clamp(1rem,4vh,2rem)]">
+    <div class="absolute h-[clamp(9rem,32vh,16rem)] w-[clamp(9rem,32vh,16rem)] rounded-full bg-blue-500/20 blur-md"></div>
+    <svg
+      viewBox="0 0 100 100"
+      class="relative h-[clamp(9rem,32vh,16rem)] w-[clamp(9rem,32vh,16rem)] -rotate-90"
+      style="filter: drop-shadow(0 0 2px rgba(59,130,246,0.9)) drop-shadow(0 0 8px rgba(59,130,246,0.5))"
+    >
+      <circle cx="50" cy="50" r="42" fill="#020814" stroke="#1e3a8a" stroke-width="4" />
+      <circle
+        cx="50"
+        cy="50"
+        r="42"
+        fill="none"
+        stroke="#3b82f6"
+        stroke-width="4"
+        stroke-linecap="round"
+        stroke-dasharray="263.9"
+        [style.stroke-dashoffset]="263.9 - (263.9 * updateProgressPercent / 100)"
+      />
+    </svg>
+    <div class="absolute inset-0 flex flex-col items-center justify-center">
+      <span class="text-5xl font-extrabold">{{ updateProgressPercent }}%</span>
+      <span class="text-blue-500 font-medium mt-1">Updating...</span>
+    </div>
+  </div>
+
+  <h1 class="text-2xl font-extrabold text-center mb-[clamp(0.5rem,2vh,0.75rem)]">Applying Update</h1>
+  <p class="text-gray-400 text-center">
+    Please don't close the app<br />or turn off your device.
+  </p>
 </div>
 
 <!-- Animation wrapper -->
@@ -84,6 +142,8 @@
 
   <!-- Routed content -->
   <ng-container *ngIf="profileLoaded">
-    <router-outlet #outlet="outlet" (activate)="setActiveOutlet(outlet)"></router-outlet>
+    <div class="fade-in-soft">
+      <router-outlet #outlet="outlet" (activate)="setActiveOutlet(outlet)"></router-outlet>
+    </div>
   </ng-container>
 </main>

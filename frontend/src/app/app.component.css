@@ -5,6 +5,16 @@
   overflow: hidden;
 }
 
+/* Softens the otherwise-abrupt pop-in of *ngIf-mounted screens (loader ->
+   update overlay -> app content), since each swap is a fresh DOM mount */
+@keyframes fadeInSoft {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade-in-soft {
+  animation: fadeInSoft 300ms ease-out;
+}
+
 .background-underlay {
   position: absolute;
   inset: 0;

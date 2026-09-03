@@ -50,7 +50,7 @@ textarea:-webkit-autofill {
 }
 
 
-@media (max-height: 710px) {
+@media (max-height: 820px) {
  .logoQuery{
   width: 10rem;
   height: 7.5rem

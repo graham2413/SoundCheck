@@ -114,6 +114,7 @@ export class NavbarComponent implements OnInit {
       if (profile) {
         this.userProfile = profile;
         this.isProfileLoading = false;
+        this.setTabFromPath(this.router.url); // re-evaluate now that we know our own id
       }
     });
 
@@ -138,7 +139,10 @@ export class NavbarComponent implements OnInit {
 
   // Helper function to avoid duplication
   private setTabFromPath(path: string) {
-    if (path === '/profile') this.activeTab = 'profile';
+    // Own profile can be reached via either /profile or /profile/:ownUserId
+    // (some links pass our own id explicitly) - only treat /profile/:id as
+    // "someone else's profile" when the id isn't our own
+    if (path === '/profile' || path === `/profile/${this.userProfile._id}`) this.activeTab = 'profile';
     else if (path.startsWith('/profile/')) this.activeTab = 'friends'; // viewing someone else's profile
     else if (path.startsWith('/friends')) this.activeTab = 'friends';
     else if (path.startsWith('/calendar')) this.activeTab = 'calendar';

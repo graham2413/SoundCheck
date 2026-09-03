@@ -95,6 +95,8 @@ export class AppComponent implements OnInit {
   updateAvailable = false;
   updateNotes: Record<string, string[]> = {};
   updateBuildNumber = '';
+  isReloadingForUpdate = false; // triggers the loader's fade-out just before the hard reload fires
+  updateProgressPercent = 0; // simulated (time-based) - activateUpdate() has no real byte-level progress
   updateNoteIcons: Record<string, string> = {
     'New features': 'star',
     'Performance & stability': 'shield',
@@ -182,11 +184,45 @@ export class AppComponent implements OnInit {
   applyUpdate(): void {
     if (this.isApplyingUpdate) return;
     this.isApplyingUpdate = true;
+    this.updateProgressPercent = 0;
+
+    const FADE_MS = 200;
+    const SNAP_HOLD_MS = 300; // brief pause at 100% before fading, so it doesn't feel instant
+    const RAMP_CAP_MS = 1200; // ramp eases toward 97% over up to this long - if activateUpdate()
+                              // takes longer, it just parks near-full and waits, which reads fine
+    const rampStart = performance.now();
+    let settled = false;
+
+    const tickRamp = (now: number) => {
+      if (settled) return;
+      const t = Math.min((now - rampStart) / RAMP_CAP_MS, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out, feels like it's settling in rather than linear
+      this.updateProgressPercent = Math.min(97, Math.round(eased * 97));
+      if (t < 1) requestAnimationFrame(tickRamp);
+    };
+    requestAnimationFrame(tickRamp);
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      this.updateProgressPercent = 100;
+      setTimeout(() => {
+        this.isReloadingForUpdate = true;
+        setTimeout(() => document.location.reload(), FADE_MS);
+      }, SNAP_HOLD_MS);
+    };
+
     if (!this.swUpdate.isEnabled) {
-      document.location.reload(); // dev preview mode - no real SW update to activate
+      // No real update to activate (dev preview) - give the ramp a moment to
+      // play out first so it doesn't just flash straight to 100%
+      setTimeout(finish, 1100);
       return;
     }
-    this.swUpdate.activateUpdate().then(() => document.location.reload());
+
+    // Guarantees the button always resolves to a reload, even if
+    // activateUpdate() rejects or (worse) never settles at all
+    this.swUpdate.activateUpdate().catch(() => {}).then(finish);
+    setTimeout(finish, 5000);
   }
 
   // Dev-only visual preview: ?previewUpdate=true shows the overlay with sample

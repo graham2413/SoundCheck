@@ -168,6 +168,11 @@ export class ViewProfilePageComponent implements OnInit {
   }
 
   public fetchUserDetails() {
+    // Kicked off in parallel with the profile fetch below - it's a separate
+    // collection/endpoint and the backend already enforces privacy itself
+    // (403 if private), so there's no need to wait on the profile response first
+    this.loadWatchlistIfVisible();
+
     this.userService.getOtherUserProfileInfo(this.otherUserId).subscribe({
       next: (response) => {
         // Check if the logged-in user is already friends with the viewed user
@@ -231,7 +236,10 @@ export class ViewProfilePageComponent implements OnInit {
           this.reviewsByType = { songs: 0, albums: 0, artists: 0 };
         }
 
-        this.loadWatchlistIfVisible();
+        // Ready as soon as the profile itself is in - the watchlist fetches
+        // separately (own collection/endpoint) and has its own loading spinner,
+        // so it shouldn't hold up the rest of the page behind an extra round trip
+        this.isProfileReady = true;
       },
       error: () => {
         this.toastr.error('Error retrieving User Profile', 'Error');
@@ -820,22 +828,21 @@ export class ViewProfilePageComponent implements OnInit {
   }
 
   loadWatchlistIfVisible(): void {
-    if (!this.canViewWatchlist || !this.otherUser) {
+    if (!this.otherUserId) {
       this.watchlistItems = [];
-      this.isProfileReady = true;
       return;
     }
 
     this.isLoadingWatchlist = true;
-    this.cinemaService.getWatchlist(this.otherUser._id).subscribe({
+    this.cinemaService.getWatchlist(this.otherUserId).subscribe({
       next: (response) => {
         this.watchlistItems = response.data;
         this.isLoadingWatchlist = false;
-        this.isProfileReady = true;
       },
       error: () => {
+        // Includes the expected 403 when the target's watchlist is private
+        this.watchlistItems = [];
         this.isLoadingWatchlist = false;
-        this.isProfileReady = true;
       },
     });
   }
