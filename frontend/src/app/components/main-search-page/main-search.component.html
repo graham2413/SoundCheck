@@ -143,7 +143,6 @@
                 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
               "
               [alt]="album.title"
-              loading="lazy"
               decoding="async"
               (load)="marqueeImageLoaded[i] = true"
               (error)="marqueeImageLoaded[i] = true"
@@ -214,7 +213,6 @@
                 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
               "
               [alt]="album.title"
-              loading="lazy"
               decoding="async"
               (load)="marqueeImageLoaded[i + albums.length] = true"
               (error)="marqueeImageLoaded[i + albums.length] = true"
