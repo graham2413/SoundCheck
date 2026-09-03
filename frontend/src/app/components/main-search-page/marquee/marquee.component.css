@@ -19,6 +19,47 @@
   flex-shrink: 0;
   cursor: pointer;
   flex: 0 0 auto;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Metallic ring: conic-gradient of silver/white/gray stops at uneven angles
+   gives varying highlight points around the edge instead of a flat glow.
+   Mask-composite cuts out the interior so only the thin ring shows, and it
+   respects the card's border-radius (unlike border-image). */
+.album-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from 250deg,
+    #4b5563 0deg,
+    #374151 40deg,
+    #6b7280 65deg,
+    #d1d5db 85deg,
+    #d1d5db 100deg,
+    #6b7280 120deg,
+    #374151 160deg,
+    #1f2937 200deg,
+    #374151 220deg,
+    #cbd5e1 240deg,
+    #d1d5db 250deg,
+    #b6c0cc 262deg,
+    #374151 285deg,
+    #4b5563 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.album-card:hover {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
 }
 
 .album-card img {

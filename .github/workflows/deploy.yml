@@ -22,6 +22,11 @@ jobs:
       run: npm ci --legacy-peer-deps
       working-directory: ./frontend
 
+    - name: Generate version info
+      run: |
+        mkdir -p ./frontend/public
+        echo "{\"version\": \"${GITHUB_SHA::7}\", \"buildNumber\": \"${{ github.run_number }}\", \"builtAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > ./frontend/public/version.json
+
     - name: Build Angular app
       run: npm run build -- --configuration production
       working-directory: ./frontend
@@ -53,9 +58,13 @@ jobs:
           --content-type "application/manifest+json" \
           --cache-control "no-cache, no-store, must-revalidate" \
           --metadata-directive REPLACE
+        aws s3 cp ./frontend/dist/sound-check/browser/version.json s3://${{ secrets.S3_BUCKET_NAME }}/version.json \
+          --content-type "application/json" \
+          --cache-control "no-cache, no-store, must-revalidate" \
+          --metadata-directive REPLACE
 
     - name: Invalidate CloudFront cache
       run: |
         aws cloudfront create-invalidation \
           --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-          --paths "/index.html" "/ngsw.json" "/ngsw-worker.js" "/manifest.webmanifest"
+          --paths "/index.html" "/ngsw.json" "/ngsw-worker.js" "/manifest.webmanifest" "/version.json"

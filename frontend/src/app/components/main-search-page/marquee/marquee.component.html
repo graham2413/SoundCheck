@@ -1,4 +1,4 @@
-<div class="bg-[#020814] text-white pb-[0.5rem] md:pb-8 pt-[0.5rem] md:pt-[0.5rem]">
+<div class="bg-[#020814] text-white pb-[0.5rem] md:pb-8 md:pt-[0.5rem]">
   <!-- Marquee Container -->
   <div #marqueeContainer class="marquee-container">
     <div
@@ -9,7 +9,7 @@
       <!-- First copy -->
       <ng-container *ngFor="let album of albums; let i = index; trackBy: trackByIndex">
         <div
-          class="album-card relative w-[12rem] md:w-[13.5rem] h-[12rem] md:h-[13.5rem] rounded-lg overflow-hidden border border-gray-800"
+          class="album-card relative w-[11rem] md:w-[13.5rem] h-[11rem] md:h-[13.5rem] rounded-lg overflow-hidden"
           (click)="onCardClick(album, i)"
         >
           <!-- Loader -->
@@ -48,7 +48,7 @@
 
           <!-- Bottom gradient fade -->
           <div
-            class="absolute bottom-0 left-0 right-0 h-2/3 bg-gradient-to-t from-black/90 to-transparent pointer-events-none"
+            class="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/70 to-transparent pointer-events-none"
           ></div>
 
           <!-- Title / artist overlay -->
@@ -79,7 +79,7 @@
       <!-- Second copy (duplicate for infinite scroll) -->
       <ng-container *ngFor="let album of albums; let i = index; trackBy: trackByIndex">
         <div
-          class="album-card relative w-[12rem] md:w-[13.5rem] h-[12rem] md:h-[13.5rem] rounded-lg overflow-hidden border border-gray-800"
+          class="album-card relative w-[9.5rem] md:w-[13.5rem] h-[9.5rem] md:h-[13.5rem] rounded-lg overflow-hidden"
           (click)="onCardClick(album, i)"
         >
           <!-- Loader -->
@@ -118,7 +118,7 @@
 
           <!-- Bottom gradient fade -->
           <div
-            class="absolute bottom-0 left-0 right-0 h-2/3 bg-gradient-to-t from-black/90 to-transparent pointer-events-none"
+            class="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/70 to-transparent pointer-events-none"
           ></div>
 
           <!-- Title / artist overlay -->
@@ -151,7 +151,7 @@
       <div class="marquee-track">
         <div
           *ngFor="let _ of skeletonArray"
-          class="skeleton-card bg-[#1F2937] p-3 rounded-lg h-[15.2rem] md:h-[17.2rem] w-[12rem] md:w-[13.5rem] mx-[0.5rem] shrink-0"
+          class="skeleton-card bg-[#1F2937] p-3 rounded-lg h-[12.7rem] md:h-[17.2rem] w-[9.5rem] md:w-[13.5rem] mx-[0.5rem] shrink-0"
         >
           <div class="skeleton-img"></div>
           <div class="skeleton-text-group w-full flex flex-col items-start">

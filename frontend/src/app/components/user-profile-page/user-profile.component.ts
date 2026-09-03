@@ -51,6 +51,7 @@ export class ProfileComponent implements OnInit {
   cinemaWatchlistIsPublic: boolean = false;
 
   preferredApp: string | null = null;
+  appVersion: string = '';
 availablePlatforms: string[] = [
   'spotify',
   'appleMusic',
@@ -95,6 +96,13 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
 
   ngOnInit(): void {
     this.preferredApp = localStorage.getItem('preferredMusicApp');
+
+    fetch('/version.json', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        this.appVersion = data.buildNumber ? `v${data.buildNumber} (${data.version})` : '';
+      })
+      .catch(() => {});
 
     window.scrollTo({ top: 0, behavior: 'auto' });
 
