@@ -41,17 +41,21 @@ export class CalendarPageComponent implements OnInit {
   refresh(): void {
     if (this.isRefreshing) return;
     this.isRefreshing = true;
+    this.isLoading = true;
+    this.entries = [];
     this.imageLoaded = {};
 
     this.cinemaService.getCalendar(true).subscribe({
       next: ({ data }) => {
         this.entries = data;
         this.isRefreshing = false;
+        this.isLoading = false;
         this.toastr.success('Calendar refreshed.', 'Success');
       },
       error: () => {
         this.toastr.error('Error occurred while refreshing your calendar.', 'Error');
         this.isRefreshing = false;
+        this.isLoading = false;
       },
     });
   }

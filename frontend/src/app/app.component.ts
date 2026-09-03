@@ -92,6 +92,16 @@ export class AppComponent implements OnInit {
   profileLoaded = false;
   activeOutlet: RouterOutlet | null = null;
 
+  updateAvailable = false;
+  updateNotes: Record<string, string[]> = {};
+  updateBuildNumber = '';
+  updateNoteIcons: Record<string, string> = {
+    'New features': 'star',
+    'Performance & stability': 'shield',
+    'Security updates': 'lock',
+  };
+  isApplyingUpdate = false;
+
   constructor(
     private router: Router,
     private toastr: ToastrService,
@@ -109,6 +119,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.initServiceWorkerUpdates();
+    this.previewUpdateOverlayIfRequested();
 
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -140,8 +151,9 @@ export class AppComponent implements OnInit {
     }
   }
 
-  // Checks for a new deployed version and prompts the user to reload rather than
-  // silently force-reloading, since that could interrupt someone mid-review.
+  // Checks for a new deployed version and blocks the app behind a full-screen
+  // overlay until the user updates, rather than silently force-reloading (which
+  // could interrupt someone mid-review) or letting them dismiss it indefinitely.
   // Also polls periodically since the SW only auto-checks once per app launch by
   // default - important for a PWA that can stay open/backgrounded for a long time.
   private initServiceWorkerUpdates(): void {
@@ -150,18 +162,44 @@ export class AppComponent implements OnInit {
     this.swUpdate.versionUpdates
       .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
       .subscribe(() => {
-        const toast = this.toastr.info(
-          'Tap to reload and get the latest version.',
-          'Update available',
-          { disableTimeOut: true, closeButton: true, tapToDismiss: true }
-        );
-        toast.onTap.subscribe(() => {
-          this.swUpdate.activateUpdate().then(() => document.location.reload());
-        });
+        this.updateAvailable = true;
+        this.cdRef.markForCheck();
+
+        fetch('/version.json', { cache: 'no-store' })
+          .then((res) => res.json())
+          .then((data) => {
+            this.updateNotes = data?.notes || {};
+            this.updateBuildNumber = data?.buildNumber || '';
+            this.cdRef.markForCheck();
+          })
+          .catch(() => {});
       });
 
     const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
     setInterval(() => this.swUpdate.checkForUpdate(), SIX_HOURS_MS);
+  }
+
+  applyUpdate(): void {
+    if (this.isApplyingUpdate) return;
+    this.isApplyingUpdate = true;
+    if (!this.swUpdate.isEnabled) {
+      document.location.reload(); // dev preview mode - no real SW update to activate
+      return;
+    }
+    this.swUpdate.activateUpdate().then(() => document.location.reload());
+  }
+
+  // Dev-only visual preview: ?previewUpdate=true shows the overlay with sample
+  // data so the UI can be checked locally without a real deploy/SW update cycle.
+  private previewUpdateOverlayIfRequested(): void {
+    if (new URLSearchParams(window.location.search).get('previewUpdate') !== 'true') return;
+    this.updateAvailable = true;
+    this.updateBuildNumber = '42';
+    this.updateNotes = {
+      'New features': ['Track user lastLoggedIn timestamp, visible to admin on friends list'],
+      'Performance & stability': ['Correct redis TTL handling on calendar cache'],
+      'Security updates': ['Harden auth token validation on login'],
+    };
   }
 
   private handleToken(token: string) {

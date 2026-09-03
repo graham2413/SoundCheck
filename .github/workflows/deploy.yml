@@ -12,6 +12,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 30 # need real commit history (not just the merge commit) to build release notes below
 
     - name: Set up Node.js
       uses: actions/setup-node@v3
@@ -25,7 +27,10 @@ jobs:
     - name: Generate version info
       run: |
         mkdir -p ./frontend/public
-        echo "{\"version\": \"${GITHUB_SHA::7}\", \"buildNumber\": \"${{ github.run_number }}\", \"builtAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > ./frontend/public/version.json
+        node ./scripts/build-version-json.js > ./frontend/public/version.json
+      env:
+        BUILD_VERSION: ${{ github.sha }}
+        BUILD_NUMBER: ${{ github.run_number }}
 
     - name: Build Angular app
       run: npm run build -- --configuration production

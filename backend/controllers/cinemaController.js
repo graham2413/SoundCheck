@@ -9,8 +9,14 @@ const CinemaItem = require("../models/CinemaItem");
 const User = require("../models/User");
 
 const IMDB_STATS_CACHE_TTL = 86400; // 24h
-const CALENDAR_RESPONSE_CACHE_TTL = 86400; // 24h - per-user, avoids the Mongo query + reassembly on repeat visits within the day
+const CALENDAR_RESPONSE_CACHE_TTL = 86400; // 24h safety-net TTL - actual invalidation is calendar-day based, see getLocalDateString
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/original"; // matches backfillCinemaCovers.js
+const CALENDAR_CACHE_TIMEZONE = "America/Chicago"; // matches server.js cron timezone
+
+// Today's date (YYYY-MM-DD) in a fixed local timezone, so "a new day" lines up
+// with the user's expected midnight instead of the server's UTC midnight
+const getLocalDateString = (timeZone) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone }).format(new Date());
 
 // GET /api/cinema/search?query=... (Protected)
 // Searches movies/shows via TMDb's /search/multi, filtered down to just
@@ -84,11 +90,17 @@ exports.getCalendar = async (req, res) => {
   try {
     const forceRefresh = req.query.refresh === "true";
     const cacheKey = `calendar:${req.user._id}`;
+    const todayStr = getLocalDateString(CALENDAR_CACHE_TIMEZONE);
 
     if (!forceRefresh) {
       const cached = await redis.get(cacheKey);
       if (cached) {
-        return res.status(200).json({ success: true, data: JSON.parse(cached) });
+        const parsed = JSON.parse(cached);
+        // One fresh call per calendar day, not a rolling 24h window - stale
+        // as soon as the date rolls over, even if it's only been a minute
+        if (parsed.cachedDate === todayStr) {
+          return res.status(200).json({ success: true, data: parsed.data });
+        }
       }
     }
 
@@ -142,7 +154,7 @@ exports.getCalendar = async (req, res) => {
       (a, b) => new Date(a.airDate) - new Date(b.airDate)
     );
 
-    await redis.set(cacheKey, JSON.stringify(calendar), "EX", CALENDAR_RESPONSE_CACHE_TTL);
+    await redis.set(cacheKey, JSON.stringify({ cachedDate: todayStr, data: calendar }), "EX", CALENDAR_RESPONSE_CACHE_TTL);
 
     res.status(200).json({ success: true, data: calendar });
   } catch (error) {

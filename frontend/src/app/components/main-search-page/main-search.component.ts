@@ -134,6 +134,14 @@ export class MainSearchComponent implements OnInit {
     'Artists',
   ];
   isDiscoverContentLoading: boolean = false;
+
+  // Display-only rename ("Friends" -> "Feed", "Artists" -> "Release Tracker") -
+  // keeps the internal 'Friends' | 'Artists' type/logic untouched to avoid a wider refactor
+  getFeedTypeLabel(feedType: 'Friends' | 'Artists'): string {
+    if (feedType === 'Artists') return 'Release Tracker';
+    if (feedType === 'Friends') return 'Feed';
+    return feedType;
+  }
   isFetchingArtistFeed: boolean = false;
   activityFeed: Review[] = [];
   section: string | null = null;

@@ -949,13 +949,13 @@
         <ng-container *ngFor="let feedType of activityFeedTypes">
           <button
             (click)="setFeedType(feedType)"
-            class="relative z-10 w-28 py-2 text-lg md:text-xl rounded-full transition"
+            class="relative z-10 w-[10.5rem] py-2 text-lg md:text-xl rounded-full transition text-center"
             [ngClass]="{
               'text-white font-semibold': activeFeedType === feedType,
               'text-gray-300': activeFeedType !== feedType
             }"
           >
-            {{ feedType }}
+            {{ getFeedTypeLabel(feedType) }}
           </button>
         </ng-container>
       </div>

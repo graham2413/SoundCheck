@@ -33,7 +33,9 @@ bootstrapApplication(AppComponent, {
     AuthService,
     SearchService, provideServiceWorker('ngsw-worker.js', {
             enabled: !isDevMode(),
-            registrationStrategy: 'registerWhenStable:30000'
+            // Register right away instead of waiting on app-stability, so the
+            // update check runs in parallel with initial load instead of after it
+            registrationStrategy: 'registerImmediately'
           })
   ]
 }).catch(err => console.error(err));

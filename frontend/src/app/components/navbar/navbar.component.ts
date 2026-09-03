@@ -138,7 +138,8 @@ export class NavbarComponent implements OnInit {
 
   // Helper function to avoid duplication
   private setTabFromPath(path: string) {
-    if (path.startsWith('/profile')) this.activeTab = 'profile';
+    if (path === '/profile') this.activeTab = 'profile';
+    else if (path.startsWith('/profile/')) this.activeTab = 'friends'; // viewing someone else's profile
     else if (path.startsWith('/friends')) this.activeTab = 'friends';
     else if (path.startsWith('/calendar')) this.activeTab = 'calendar';
     else this.activeTab = 'home';

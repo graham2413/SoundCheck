@@ -1,4 +1,4 @@
-<div class="bg-[#020814] text-white min-h-screen pt-[5.5rem] md:pt-[6.5rem] pb-[6rem] px-2">
+<div class="bg-[#020814] text-white min-h-screen pt-[1rem] md:pt-[6rem] pb-[6rem] px-2">
   <div class="max-w-3xl mx-auto">
     <div class="relative flex items-center justify-center mb-1">
       <h1 class="text-3xl font-extrabold tracking-tight text-center">
@@ -8,9 +8,9 @@
         (click)="refresh()"
         [disabled]="isLoading || isRefreshing"
         title="Refresh"
-        class="absolute right-0 flex items-center justify-center h-9 w-9 rounded-full text-gray-400 hover:text-white transition disabled:opacity-50"
+        class="absolute right-0 flex items-center justify-center h-12 w-12 rounded-full text-gray-400 hover:text-white transition disabled:opacity-50"
       >
-        <i class="fas fa-sync-alt" [class.fa-spin]="isRefreshing"></i>
+        <i class="fas fa-sync-alt text-xl" [class.fa-spin]="isRefreshing"></i>
       </button>
     </div>
     <p class="text-center text-gray-400 text-base md:text-xl mb-6">
