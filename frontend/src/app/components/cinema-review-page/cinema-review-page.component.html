@@ -1,0 +1,218 @@
+<div class="cinema-review-page">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-4 pt-4">
+    <button type="button" class="icon-circle-btn" aria-label="Back" (click)="back.emit()">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <button type="button" class="icon-circle-btn" aria-label="More options" (click)="moreOptions.emit()">
+      <i class="fas fa-ellipsis-h"></i>
+    </button>
+  </div>
+
+  <!-- Poster + Title block -->
+  <div class="flex items-start gap-4 px-4 pt-5">
+    <div class="poster-frame">
+      <img *ngIf="cover" [src]="cover" [alt]="title" class="poster-img" />
+    </div>
+
+    <div class="flex flex-col min-w-0 pt-1">
+      <h1 class="text-white font-bold text-2xl leading-snug break-words">{{ title }}</h1>
+
+      <p class="text-gray-400 text-sm mt-1" *ngIf="!isUpcoming">
+        <span *ngIf="year">{{ year }}</span>
+        <span *ngIf="year && runtimeLabel">&nbsp;&middot;&nbsp;</span>
+        <span *ngIf="runtimeLabel">{{ runtimeLabel }}</span>
+      </p>
+      <p class="text-gray-400 text-sm mt-1" *ngIf="isUpcoming && formattedReleaseDate">
+        Releases {{ formattedReleaseDate }}
+      </p>
+
+      <p class="text-[#3B82F6] text-sm mt-2" *ngIf="genres.length">
+        {{ genres.join(', ') }}
+      </p>
+
+      <div class="flex items-center gap-2 mt-3">
+        <span class="cert-pill" *ngIf="certification">{{ certification }}</span>
+        <span class="status-pill status-pill-blue" *ngIf="isUpcoming">Coming Soon</span>
+        <span class="status-pill status-pill-green" *ngIf="isRecentRelease">New Release</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ratings -->
+  <div class="ratings-card mx-4 mt-4" *ngIf="appRating != null || imdbRating != null">
+    <div class="flex items-center justify-around">
+      <div class="flex items-center gap-3" *ngIf="appRating != null">
+        <img src="assets/scLogo.png" alt="Cinewave" class="rating-logo" />
+
+        <div class="flex flex-col items-center">
+          <div class="rating-ring">
+            <svg viewBox="0 0 100 100">
+              <circle class="ring-track" cx="50" cy="50" r="45"></circle>
+              <circle
+                class="ring-progress ring-progress-blue"
+                cx="50"
+                cy="50"
+                r="45"
+                [style.strokeDasharray]="ringCircumference"
+                [style.strokeDashoffset]="appRingDashoffset"
+              ></circle>
+            </svg>
+            <span class="rating-ring-value">{{ formattedAppRating }}</span>
+          </div>
+          <span class="rating-caption" *ngIf="formattedAppReviewCount">
+            {{ formattedAppReviewCount }} reviews
+          </span>
+        </div>
+      </div>
+
+      <div class="ratings-divider" *ngIf="appRating != null && imdbRating != null"></div>
+
+      <div class="flex items-center gap-3" *ngIf="imdbRating != null">
+        <img src="assets/imdb-logo.svg" alt="IMDb" class="imdb-logo" />
+
+        <div class="flex flex-col items-center">
+          <div class="rating-ring">
+            <svg viewBox="0 0 100 100">
+              <circle class="ring-track" cx="50" cy="50" r="45"></circle>
+              <circle
+                class="ring-progress ring-progress-yellow"
+                cx="50"
+                cy="50"
+                r="45"
+                [style.strokeDasharray]="ringCircumference"
+                [style.strokeDashoffset]="imdbRingDashoffset"
+              ></circle>
+            </svg>
+            <span class="rating-ring-value">{{ formattedImdbRating }}</span>
+          </div>
+          <span class="rating-caption" *ngIf="formattedImdbVoteCount">
+            {{ formattedImdbVoteCount }} ratings
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex items-center gap-3 px-4 mt-4">
+    <button type="button" class="action-btn action-btn-primary" (click)="addToWatchlist.emit()">
+      <i class="fas" [class.fa-plus]="!isWatchlist" [class.fa-check]="isWatchlist"></i>
+      {{ isWatchlist ? 'On Watchlist' : 'Add to Watchlist' }}
+    </button>
+    <button type="button" class="action-btn action-btn-outline" (click)="rate.emit()">
+      <i class="far fa-star"></i>
+      Rate
+    </button>
+  </div>
+
+  <!-- Description -->
+  <div class="px-4 mt-4" *ngIf="description">
+    <p
+      class="text-gray-300 text-sm leading-relaxed"
+      [class.description-clamped]="!isDescriptionExpanded"
+    >
+      {{ description }}
+    </p>
+    <button
+      type="button"
+      class="read-more-btn"
+      (click)="isDescriptionExpanded = !isDescriptionExpanded"
+    >
+      {{ isDescriptionExpanded ? 'Read less' : 'Read more' }}
+      <i class="fas" [class.fa-chevron-down]="!isDescriptionExpanded" [class.fa-chevron-up]="isDescriptionExpanded"></i>
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-row px-4 mt-4">
+    <button
+      type="button"
+      class="tab-btn"
+      *ngFor="let tab of tabs"
+      [class.tab-btn-active]="activeTab === tab"
+      (click)="activeTab = tab"
+    >
+      {{ tab }}
+    </button>
+  </div>
+
+  <!-- Overview: detail rows -->
+  <div class="detail-rows mx-4 mt-4" *ngIf="activeTab === 'Overview'">
+    <div class="detail-row" *ngIf="formattedReleaseDate || year">
+      <div class="detail-row-label">
+        <i class="far fa-calendar"></i>
+        Release Date
+      </div>
+      <span class="detail-row-value">{{ formattedReleaseDate || year }}</span>
+    </div>
+
+    <div class="detail-row" *ngIf="director">
+      <div class="detail-row-label">
+        <i class="far fa-id-badge"></i>
+        Director
+      </div>
+      <span class="detail-row-value">{{ director }}</span>
+    </div>
+
+    <div class="detail-row detail-row-link" (click)="viewCast.emit()">
+      <div class="detail-row-label">
+        <i class="far fa-user"></i>
+        Cast
+      </div>
+      <span class="detail-row-value">
+        View full cast
+        <i class="fas fa-chevron-right"></i>
+      </span>
+    </div>
+
+    <div class="detail-row detail-row-link" *ngIf="awardsSummary" (click)="viewAwards.emit()">
+      <div class="detail-row-label">
+        <i class="far fa-star"></i>
+        Awards
+      </div>
+      <span class="detail-row-value">
+        {{ awardsSummary }}
+        <i class="fas fa-chevron-right"></i>
+      </span>
+    </div>
+
+    <div class="detail-row" *ngIf="boxOffice">
+      <div class="detail-row-label">
+        <i class="far fa-credit-card"></i>
+        Box Office
+      </div>
+      <span class="detail-row-value">{{ boxOffice }}</span>
+    </div>
+  </div>
+
+  <!-- Where to Watch -->
+  <div class="px-4 mt-5" *ngIf="watchProviders.length">
+    <div class="flex items-center justify-between">
+      <h2 class="text-white font-bold text-base">Where to Watch</h2>
+      <button
+        type="button"
+        class="see-all-btn"
+        *ngIf="remainingWatchProviderCount"
+        (click)="seeAllProviders.emit()"
+      >
+        See all
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="watch-providers-row mt-3">
+      <div class="watch-provider-tile" *ngFor="let provider of visibleWatchProviders">
+        <img [src]="provider.logoUrl" [alt]="provider.name" />
+      </div>
+      <button
+        type="button"
+        class="watch-provider-tile watch-provider-more"
+        *ngIf="remainingWatchProviderCount"
+        (click)="seeAllProviders.emit()"
+      >
+        +{{ remainingWatchProviderCount }} more
+      </button>
+    </div>
+  </div>
+</div>

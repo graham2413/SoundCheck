@@ -10,6 +10,7 @@ import { ResetPasswordComponent } from './auth/reset-password/reset-password.com
 import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password.component';
 import { NotFoundComponent } from './components/not-found.component/not-found-page.component';
 import { CalendarPageComponent } from './components/calendar-page/calendar-page.component';
+import { CinemaReviewPageDevPreviewComponent } from './components/cinema-review-page/cinema-review-page-dev-preview.component';
 
 export const appRoutes: Routes = [
     { path: '', component: MainSearchComponent, canActivate: [AuthGuard], data: { animation: 'homePage' } },
@@ -17,6 +18,10 @@ export const appRoutes: Routes = [
     { path: 'friends', component: FriendsComponent, canActivate: [AuthGuard], data: { animation: 'friendsPage' } },
     { path: 'calendar', component: CalendarPageComponent, canActivate: [AuthGuard], data: { animation: 'calendarPage' } },
     { path: 'profile/:userId', component: ViewProfilePageComponent, canActivate: [AuthGuard], data: { animation: 'viewProfilePage' } },
+
+    // Dev-only preview of the in-progress cinema review page redesign, no auth guard
+    // so it's quick to iterate on - remove once the real page replaces the modal.
+    { path: 'dev-cinema-review', component: CinemaReviewPageDevPreviewComponent },
   
     // Auth-related
     { path: 'login', component: LoginComponent, data: { animation: 'loginPage' } },

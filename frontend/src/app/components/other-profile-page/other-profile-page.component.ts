@@ -22,6 +22,7 @@ import { BaseRecord } from 'src/app/models/responses/base-record';
 import { ReviewService } from 'src/app/services/review.service';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
+import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 
 type ModalRecord = Album | Song | Artist | BaseRecord;
@@ -962,6 +963,9 @@ export class ViewProfilePageComponent implements OnInit {
     };
   }
 
+  // New cinema review detail page - replaces the old ReviewPageComponent
+  // modal for viewing movies/shows. "Rate" still delegates to the legacy
+  // modal until this page grows its own rating UI.
   openCinemaRecord(
     item: CinemaItem,
     list: CinemaItem[],
@@ -974,10 +978,46 @@ export class ViewProfilePageComponent implements OnInit {
       scrollable: false,
     };
 
-    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
-
-    // Stamp `type` so the shared modal can discriminate cinema vs. music records.
     const cinemaList = list.map((r) => ({ ...r, type: 'Cinema' as const }));
+
+    const modalRef = this.modal.open(CinemaReviewModalComponent, modalOptions);
+    modalRef.componentInstance.record = cinemaList[index];
+    modalRef.componentInstance.recordList = cinemaList;
+    modalRef.componentInstance.currentIndex = index;
+
+    modalRef.componentInstance.watchlistToggled?.subscribe((updatedItem: CinemaItem) => {
+      const existingIndex = this.watchlistItems.findIndex((w) => w._id === updatedItem._id);
+
+      if (updatedItem.isWatchlist && existingIndex === -1) {
+        this.watchlistItems.unshift(updatedItem);
+        this.watchlistTotalCount += 1;
+      } else if (!updatedItem.isWatchlist && existingIndex !== -1) {
+        this.watchlistItems.splice(existingIndex, 1);
+        this.watchlistTotalCount = Math.max(0, this.watchlistTotalCount - 1);
+      }
+    });
+
+    modalRef.componentInstance.rate.subscribe(() => {
+      modalRef.close();
+      this.openCinemaRatingModal(item, cinemaList, index);
+    });
+
+    return modalRef;
+  }
+
+  private openCinemaRatingModal(
+    item: CinemaItem,
+    cinemaList: CinemaItem[],
+    index: number
+  ): NgbModalRef {
+    const modalOptions: NgbModalOptions = {
+      backdrop: 'static',
+      keyboard: true,
+      centered: true,
+      scrollable: false,
+    };
+
+    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
 
     modalRef.componentInstance.recordList = cinemaList;
     modalRef.componentInstance.currentIndex = index;

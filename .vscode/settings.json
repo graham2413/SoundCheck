@@ -7,6 +7,12 @@
       "**/dist": true,
       "**/.angular": true,
       "**/build": true
+    },
+    "chat.tools.terminal.autoApprove": {
+      "/^cd C:\\\\Users\\\\chris\\\\Documents\\\\repos\\\\SoundCheck\\\\frontend; npm run start$/": {
+        "approve": true,
+        "matchCommandLine": true
+      }
     }
   }
   

@@ -89,8 +89,13 @@ async function getTmdbDetails(tmdbId, mediaType = "movie") {
   const cached = await redis.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
+  // release_dates is movie-only (TV uses content_ratings instead) - needed
+  // for certification + accurate US theatrical release date/re-release detection.
+  const appendToResponse =
+    mediaType === "movie" ? "watch/providers,credits,release_dates" : "watch/providers,credits";
+
   const response = await callTmdb(`/${mediaType}/${tmdbId}`, {
-    append_to_response: "watch/providers,credits",
+    append_to_response: appendToResponse,
   });
 
   if (response.data) {

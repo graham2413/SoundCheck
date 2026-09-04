@@ -207,43 +207,223 @@ exports.getImdbStats = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid imdbId" });
     }
 
-    const cacheKey = `imdb:stats:${imdbId}`;
-    const cached = await redis.get(cacheKey);
+    const data = await fetchOmdbData(imdbId);
 
-    if (cached) {
-      return res.status(200).json({ success: true, data: JSON.parse(cached) });
+    if (!data) {
+      return res.status(404).json({ success: false, message: "Title not found" });
     }
-
-    if (!process.env.OMDB_API_KEY) {
-      return res.status(500).json({ success: false, message: "OMDb API key not configured" });
-    }
-
-    const response = await fetchWithRetry(() =>
-      axios.get("https://www.omdbapi.com/", {
-        params: { i: imdbId, apikey: process.env.OMDB_API_KEY },
-        timeout: 7000,
-      })
-    );
-
-    const omdbData = response.data;
-
-    if (!omdbData || omdbData.Response === "False") {
-      return res.status(404).json({ success: false, message: omdbData?.Error || "Title not found" });
-    }
-
-    const data = {
-      imdbId,
-      imdbRating: omdbData.imdbRating ?? null,
-      voteCount: omdbData.imdbVotes ?? null,
-    };
-
-    await redis.set(cacheKey, JSON.stringify(data), "EX", IMDB_STATS_CACHE_TTL);
 
     res.status(200).json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }
 };
+
+// Shared OMDb fetch (cached) used by both getImdbStats and getCinemaDetail -
+// avoids double-hitting OMDb for the same imdbId across endpoints.
+const fetchOmdbData = async (imdbId) => {
+  const cacheKey = `imdb:stats:${imdbId}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  if (!process.env.OMDB_API_KEY) {
+    throw new Error("OMDb API key not configured");
+  }
+
+  const response = await fetchWithRetry(() =>
+    axios.get("https://www.omdbapi.com/", {
+      params: { i: imdbId, apikey: process.env.OMDB_API_KEY },
+      timeout: 7000,
+    })
+  );
+
+  const omdbData = response.data;
+  if (!omdbData || omdbData.Response === "False") return null;
+
+  const data = {
+    imdbId,
+    imdbRating: omdbData.imdbRating ?? null,
+    voteCount: omdbData.imdbVotes ?? null,
+    awardsRaw: omdbData.Awards && omdbData.Awards !== "N/A" ? omdbData.Awards : null,
+    boxOfficeUs: omdbData.BoxOffice && omdbData.BoxOffice !== "N/A" ? omdbData.BoxOffice : null,
+  };
+
+  await redis.set(cacheKey, JSON.stringify(data), "EX", IMDB_STATS_CACHE_TTL);
+  return data;
+};
+
+// Parses OMDb's free-text Awards sentence (e.g. "Won 2 Oscars. 163 wins & 165
+// nominations total") down to a short pill-friendly summary like "2 Oscars ·
+// 163 wins". No structured/category-level award data exists in any of our
+// sources (OMDb/TMDb) - the raw sentence is kept alongside for a "show more" expand.
+const parseAwardsSummary = (awardsRaw) => {
+  if (!awardsRaw) return null;
+
+  const oscarMatch = awardsRaw.match(/(Won|Nominated for)\s+(\d+)\s+Oscars?/i);
+  const winsMatch = awardsRaw.match(/(\d+)\s+wins?/i);
+
+  const parts = [];
+  if (oscarMatch) {
+    const count = oscarMatch[2];
+    const verb = oscarMatch[1].toLowerCase() === "won" ? "Oscar" : "Oscar nom";
+    parts.push(`${count} ${verb}${count === "1" ? "" : "s"}`);
+  }
+  if (winsMatch) {
+    const count = winsMatch[1];
+    parts.push(`${count} win${count === "1" ? "" : "s"}`);
+  }
+
+  return parts.length ? parts.join(" · ") : awardsRaw;
+};
+
+// Abbreviates a raw dollar amount (number or "$1,234,567" string) to e.g. "$1.0B"/"$535M"
+const abbreviateMoney = (value) => {
+  const amount = typeof value === "string" ? Number(value.replace(/[^0-9.]/g, "")) : value;
+  if (!amount || Number.isNaN(amount)) return null;
+
+  if (amount >= 1e9) return `$${(amount / 1e9).toFixed(1)}B`;
+  if (amount >= 1e6) return `$${(amount / 1e6).toFixed(0)}M`;
+  if (amount >= 1e3) return `$${(amount / 1e3).toFixed(0)}K`;
+  return `$${amount}`;
+};
+
+// Combines OMDb's US box office with TMDb's worldwide revenue into one label
+const formatBoxOffice = (usBoxOffice, worldwideRevenue) => {
+  const parts = [];
+  const us = abbreviateMoney(usBoxOffice);
+  const worldwide = abbreviateMoney(worldwideRevenue);
+  if (us) parts.push(`${us} US`);
+  if (worldwide) parts.push(`${worldwide} worldwide`);
+  return parts.length ? parts.join(" · ") : null;
+};
+
+// Curated allow-list of major streaming providers - TMDb/JustWatch's raw list
+// includes noisy add-on/channel entries (e.g. "HBO Max Amazon Channel", "TNT",
+// "tru TV") that don't match the clean short list users expect to see.
+const MAJOR_WATCH_PROVIDERS = new Set([
+  "Netflix",
+  "Max",
+  "HBO Max",
+  "Disney Plus",
+  "Hulu",
+  "Amazon Prime Video",
+  "Prime Video",
+  "Apple TV",
+  "Apple TV Plus",
+  "Paramount Plus",
+  "Peacock",
+  "YouTube",
+  "Google Play Movies",
+  "Vudu",
+  "fuboTV",
+  "Starz",
+  "Showtime",
+  "AMC+",
+  "Crunchyroll",
+  "ESPN Plus",
+]);
+
+// Strips "... Amazon Channel" / "... Roku Premium Channel" style suffixes TMDb
+// uses for bundled add-on listings, so e.g. "HBO Max Amazon Channel" dedupes
+// against a plain "HBO Max" entry instead of showing as a separate tile.
+const normalizeProviderName = (name) =>
+  name.replace(/\s+(Amazon Channel|Roku Premium Channel|Apple TV Channel|Channel)$/i, "").trim();
+
+const TMDB_PROVIDER_LOGO_BASE = "https://image.tmdb.org/t/p/w92";
+
+const buildWatchProviders = (flatrateProviders) => {
+  if (!Array.isArray(flatrateProviders)) return [];
+
+  const seen = new Map();
+  for (const provider of flatrateProviders) {
+    const normalizedName = normalizeProviderName(provider.provider_name || "");
+    if (!MAJOR_WATCH_PROVIDERS.has(normalizedName) || seen.has(normalizedName)) continue;
+
+    seen.set(normalizedName, {
+      name: normalizedName,
+      logoUrl: provider.logo_path ? `${TMDB_PROVIDER_LOGO_BASE}${provider.logo_path}` : null,
+    });
+  }
+
+  return Array.from(seen.values());
+};
+
+// GET /api/cinema/detail/:mediaType/:tmdbId (Protected)
+// Consolidated payload for the cinema review detail page: TMDb metadata +
+// credits + watch providers, plus OMDb-derived IMDb rating/awards/box office.
+exports.getCinemaDetail = async (req, res) => {
+  try {
+    const { mediaType, tmdbId } = req.params;
+    if (mediaType !== "movie" && mediaType !== "tv") {
+      return res.status(400).json({ success: false, message: "mediaType must be 'movie' or 'tv'" });
+    }
+
+    const details = await getTmdbDetails(tmdbId, mediaType);
+    if (!details) {
+      return res.status(404).json({ success: false, message: "Title not found" });
+    }
+
+    const director = details.credits?.crew?.find((c) => c.job === "Director")?.name || null;
+    const cast = (details.credits?.cast || []).slice(0, 10).map((c) => ({
+      name: c.name,
+      character: c.character,
+      profilePath: c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : null,
+    }));
+
+    const { releaseDate, isRerelease } =
+      mediaType === "movie"
+        ? getUsTheatricalRelease(details)
+        : { releaseDate: details.first_air_date || null, isRerelease: false };
+
+    const certification =
+      mediaType === "movie"
+        ? details.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates?.find(
+            (d) => d.type === 3
+          )?.certification || null
+        : null;
+
+    let omdbData = null;
+    if (details.imdb_id) {
+      omdbData = await fetchOmdbData(details.imdb_id).catch(() => null);
+    }
+
+    const watchProviders = buildWatchProviders(
+      details["watch/providers"]?.results?.US?.flatrate
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        tmdbId,
+        mediaType,
+        imdbId: details.imdb_id || null,
+        title: details.title || details.name,
+        cover: details.poster_path ? `${TMDB_IMAGE_BASE}${details.poster_path}` : null,
+        year: releaseDate ? Number(releaseDate.slice(0, 4)) : null,
+        releaseDate,
+        isRerelease,
+        runtimeMinutes: details.runtime || details.episode_run_time?.[0] || null,
+        certification,
+        genres: (details.genres || []).map((g) => g.name),
+        description: details.overview || null,
+        director,
+        cast,
+        awardsRaw: omdbData?.awardsRaw || null,
+        awardsSummary: parseAwardsSummary(omdbData?.awardsRaw),
+        boxOffice: formatBoxOffice(omdbData?.boxOfficeUs, details.revenue),
+        imdbRating: omdbData?.imdbRating ? Number(omdbData.imdbRating) : null,
+        imdbVoteCount: omdbData?.voteCount
+          ? Number(omdbData.voteCount.replace(/,/g, ""))
+          : null,
+        watchProviders,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+
 
 // TEMP DEBUG ONLY - remove once real Phase 2 TMDb routes exist
 // GET /api/cinema/debug/tmdb-details/:tmdbId?mediaType=movie

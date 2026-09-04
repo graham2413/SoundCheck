@@ -96,3 +96,44 @@ export interface ImdbStatsResponse {
   success: boolean;
   data: ImdbStats;
 }
+
+export interface CinemaCastMember {
+  name: string;
+  character: string;
+  profilePath: string | null;
+}
+
+export interface CinemaWatchProvider {
+  name: string;
+  logoUrl: string | null;
+}
+
+// Consolidated payload from GET /api/cinema/detail/:mediaType/:tmdbId - powers
+// the cinema-review-page component (TMDb metadata/credits/providers + OMDb ratings/awards).
+export interface CinemaDetail {
+  tmdbId: string;
+  mediaType: 'movie' | 'tv';
+  imdbId: string | null;
+  title: string;
+  cover: string | null;
+  year: number | null;
+  releaseDate: string | null;
+  isRerelease: boolean;
+  runtimeMinutes: number | null;
+  certification: string | null;
+  genres: string[];
+  description: string | null;
+  director: string | null;
+  cast: CinemaCastMember[];
+  awardsRaw: string | null;
+  awardsSummary: string | null;
+  boxOffice: string | null;
+  imdbRating: number | null;
+  imdbVoteCount: number | null;
+  watchProviders: CinemaWatchProvider[];
+}
+
+export interface CinemaDetailResponse {
+  success: boolean;
+  data: CinemaDetail;
+}

@@ -146,6 +146,10 @@ export class AppComponent implements OnInit {
       const tokenFromStorage = localStorage.getItem('token');
       if (tokenFromStorage) {
         this.handleToken(tokenFromStorage);
+      } else if (window.location.pathname === '/dev-cinema-review') {
+        // Dev-only preview route, intentionally unauthenticated - skip the
+        // forced logout/redirect so it's viewable without logging in.
+        this.profileLoaded = true;
       } else {
         console.warn('No token found in localStorage');
         this.logout(); // or route to login

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
-import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry } from '../models/responses/cinema-response';
+import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CinemaDetailResponse } from '../models/responses/cinema-response';
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +20,13 @@ export class CinemaService {
   // Live IMDb community rating/vote count (Redis-cached on backend, no auth required)
   getImdbStats(imdbId: string): Observable<ImdbStatsResponse> {
     return this.http.get<ImdbStatsResponse>(`${this.apiUrl}/imdb-stats/${imdbId}`);
+  }
+
+  // Consolidated detail payload for the cinema review page (TMDb metadata/credits/providers + OMDb ratings/awards)
+  getCinemaDetail(mediaType: 'movie' | 'tv', tmdbId: string): Observable<CinemaDetailResponse> {
+    return this.http.get<CinemaDetailResponse>(`${this.apiUrl}/detail/${mediaType}/${tmdbId}`, {
+      headers: this.authHeaders(),
+    });
   }
 
   // Search movies/shows via TMDb

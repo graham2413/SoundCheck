@@ -32,7 +32,8 @@ import {
 } from 'src/app/models/responses/release-response';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CinemaService } from 'src/app/services/cinema.service';
-import { CinemaSearchResult } from 'src/app/models/responses/cinema-response';
+import { CinemaItem, CinemaSearchResult } from 'src/app/models/responses/cinema-response';
+import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { MarqueeComponent } from './marquee/marquee.component';
 
@@ -871,19 +872,10 @@ export class MainSearchComponent implements OnInit {
   }
 
   openCinemaSearchResult(item: CinemaSearchResult): NgbModalRef {
-    const modalOptions: NgbModalOptions = {
-      backdrop: 'static',
-      keyboard: true,
-      centered: true,
-      scrollable: false,
-    };
-
-    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
-
     // Untracked stub - no CinemaItem exists yet for this search result, so
     // there's no real _id/user/rating until the user imports/tracks it.
-    const record = {
-      type: 'Cinema' as const,
+    const record: CinemaItem = {
+      type: 'Cinema',
       _id: '',
       user: '',
       mediaType: item.mediaType,
@@ -897,8 +889,55 @@ export class MainSearchComponent implements OnInit {
       createdAt: new Date().toISOString(),
     };
 
-    modalRef.componentInstance.recordList = [record];
-    modalRef.componentInstance.currentIndex = 0;
+    return this.openCinemaDetailModal(record);
+  }
+
+  // New cinema review detail page - replaces the old ReviewPageComponent
+  // modal for viewing movies/shows. "Rate" still delegates to the legacy
+  // modal until this page grows its own rating UI.
+  private openCinemaDetailModal(
+    record: CinemaItem,
+    recordList: CinemaItem[] = [record],
+    index = 0
+  ): NgbModalRef {
+    const modalOptions: NgbModalOptions = {
+      backdrop: 'static',
+      keyboard: true,
+      centered: true,
+      scrollable: false,
+    };
+
+    const modalRef = this.modal.open(CinemaReviewModalComponent, modalOptions);
+    modalRef.componentInstance.record = record;
+    modalRef.componentInstance.recordList = recordList;
+    modalRef.componentInstance.currentIndex = index;
+
+    modalRef.componentInstance.rate.subscribe(() => {
+      modalRef.close();
+      this.openCinemaRatingModal(record, recordList, index);
+    });
+
+    return modalRef;
+  }
+
+  // Legacy full editing modal - still used for the "Rate" action until the
+  // new cinema-review-page grows its own rating UI.
+  private openCinemaRatingModal(
+    record: CinemaItem,
+    recordList: CinemaItem[],
+    index: number
+  ): NgbModalRef {
+    const modalOptions: NgbModalOptions = {
+      backdrop: 'static',
+      keyboard: true,
+      centered: true,
+      scrollable: false,
+    };
+
+    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+
+    modalRef.componentInstance.recordList = recordList;
+    modalRef.componentInstance.currentIndex = index;
     modalRef.componentInstance.record = record;
 
     return modalRef;

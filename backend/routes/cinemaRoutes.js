@@ -4,6 +4,7 @@ const multer = require("multer");
 const authenticateUser = require("../middleware/authMiddleware");
 const {
   getImdbStats,
+  getCinemaDetail,
   debugTmdbDetails,
   debugTmdbSearch,
   importTraktExport,
@@ -20,6 +21,9 @@ const traktUpload = multer({ storage: multer.memoryStorage() });
 
 // Live IMDb community stats (cached in Redis, not persisted in Mongo)
 router.get("/imdb-stats/:imdbId", getImdbStats);
+
+// Consolidated payload for the cinema review detail page (Protected)
+router.get("/detail/:mediaType/:tmdbId", authenticateUser, getCinemaDetail);
 
 // Search movies/shows via TMDb (Protected)
 router.get("/search", authenticateUser, searchCinema);

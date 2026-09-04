@@ -20,6 +20,74 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   animation: none !important;
 }
 
+/* This project doesn't load Bootstrap's CSS, so ng-bootstrap's <ngb-modal-window>/
+   <ngb-modal-backdrop> host elements have no position set at all - they sit in
+   normal document flow as the last elements in <body>. Since NgbModal focuses
+   the modal-window element for accessibility on open, the browser's default
+   focus() scrolls it into view - i.e. scrolls the whole page straight to the
+   bottom (wherever that untouched flow position happens to land), which then
+   looks like a scroll "jump" once the modal (which visually covers everything
+   via its own content's `fixed inset-0` wrapper) is closed. Taking these two
+   out of normal flow entirely fixes it at the source.
+*/
+ngb-modal-window,
+.modal-backdrop {
+  position: fixed !important;
+  inset: 0;
+}
+
+.modal-backdrop {
+  z-index: 1040;
+}
+
+/* !important needed - ng-bootstrap sets an inline z-index (e.g. 1055) on the
+   backdrop element itself for multi-modal stacking support, which otherwise
+   beats this class rule and would let the backdrop paint above (and swallow
+   clicks intended for) the actual modal content. */
+ngb-modal-window {
+  z-index: 1060 !important;
+}
+
+/* NgbModal adds this class to <body> but this project doesn't load Bootstrap's
+   CSS, so without this rule the background page stays scrollable underneath
+   a fixed-position modal overlay - scroll-wheel input silently scrolls the
+   page behind it, which then "jumps" once the modal is dismissed. */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* Shared full-screen loading state for the cinema review page/modal (both
+   scoped-per-component due to view encapsulation, so kept global here). */
+.cinema-loader-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  height: 100vh;
+}
+
+.cinema-loader-ring {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  border: 3px solid rgba(148, 163, 184, 0.2);
+  border-top-color: #0f5ee4;
+  animation: cinemaSpin 0.8s linear infinite;
+}
+
+@keyframes cinemaSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cinema-loader-text {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
 /* Custom Dark Mode Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
