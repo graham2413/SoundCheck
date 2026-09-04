@@ -39,14 +39,19 @@ export class CinemaService {
 
   // A user's watchlist - owner always allowed, others only if public.
   // Cursor-paginated (same pattern as the activity/artist feeds) so a large
-  // watchlist doesn't have to load/render all at once.
+  // watchlist doesn't have to load/render all at once. `mediaType` optionally
+  // filters to just movies or just TV shows (omit/'all' for everything).
   getWatchlist(
     userId: string,
-    cursor?: { cursorDate: string; cursorId: string } | null
+    cursor?: { cursorDate: string; cursorId: string } | null,
+    mediaType?: 'movie' | 'tv'
   ): Observable<{ success: boolean; data: CinemaItem[]; nextCursor: { cursorDate: string; cursorId: string } | null; totalCount: number }> {
     let params: Record<string, string> = { limit: '30' };
     if (cursor) {
       params = { ...params, cursorDate: cursor.cursorDate, cursorId: cursor.cursorId };
+    }
+    if (mediaType) {
+      params = { ...params, mediaType };
     }
     return this.http.get<{ success: boolean; data: CinemaItem[]; nextCursor: { cursorDate: string; cursorId: string } | null; totalCount: number }>(
       `${this.apiUrl}/watchlist/${userId}`,
@@ -69,12 +74,16 @@ export class CinemaService {
     );
   }
 
-  // Upcoming episodes/releases for the current user's tracked shows/movies.
-  // TMDb lookups are cached for 24h server-side; pass forceRefresh to bypass.
-  getCalendar(forceRefresh = false): Observable<{ success: boolean; data: CalendarEntry[] }> {
+  // Upcoming (default) or past episodes/releases for the current user's
+  // tracked shows/movies. TMDb lookups are cached for 24h server-side; pass
+  // forceRefresh to bypass.
+  getCalendar(forceRefresh = false, range: 'upcoming' | 'past' = 'upcoming'): Observable<{ success: boolean; data: CalendarEntry[] }> {
+    let params: Record<string, string> = { range };
+    if (forceRefresh) params = { ...params, refresh: 'true' };
+
     return this.http.get<{ success: boolean; data: CalendarEntry[] }>(`${this.apiUrl}/calendar`, {
       headers: this.authHeaders(),
-      params: forceRefresh ? { refresh: 'true' } : {},
+      params,
     });
   }
 

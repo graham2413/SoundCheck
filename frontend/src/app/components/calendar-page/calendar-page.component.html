@@ -17,6 +17,26 @@
       Upcoming episodes and releases for what you're tracking.
     </p>
 
+    <!-- Upcoming / Past toggle -->
+    <div class="flex justify-center gap-2 mb-6">
+      <button
+        type="button"
+        (click)="setRange('upcoming')"
+        class="px-4 py-1.5 rounded-full text-sm font-semibold transition"
+        [ngClass]="range === 'upcoming' ? 'bg-[#0F5EE4] text-white' : 'text-gray-400'"
+      >
+        Upcoming
+      </button>
+      <button
+        type="button"
+        (click)="setRange('past')"
+        class="px-4 py-1.5 rounded-full text-sm font-semibold transition"
+        [ngClass]="range === 'past' ? 'bg-[#0F5EE4] text-white' : 'text-gray-400'"
+      >
+        Past
+      </button>
+    </div>
+
     <!-- Skeleton Loader -->
     <div *ngIf="isLoading" class="flex flex-col gap-3">
       <div
@@ -98,7 +118,8 @@
       class="mt-12 mx-4 text-center text-gray-400 text-lg bg-gray-800 p-4 rounded-lg"
     >
       <i class="fas fa-calendar-alt text-4xl mb-2"></i>
-      <p>Nothing upcoming yet. Add shows/movies to your watchlist to see them here.</p>
+      <p *ngIf="range === 'upcoming'">Nothing upcoming yet. Add shows/movies to your watchlist to see them here.</p>
+      <p *ngIf="range === 'past'">Nothing here yet. Recently released/aired items from your watchlist will show up here.</p>
     </div>
   </div>
 </div>

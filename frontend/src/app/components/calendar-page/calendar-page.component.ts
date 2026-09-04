@@ -18,6 +18,7 @@ export class CalendarPageComponent implements OnInit {
   isLoading = true;
   isRefreshing = false;
   imageLoaded: { [index: number]: boolean } = {};
+  range: 'upcoming' | 'past' = 'upcoming';
 
   constructor(
     private cinemaService: CinemaService,
@@ -26,7 +27,15 @@ export class CalendarPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.cinemaService.getCalendar().subscribe({
+    this.loadCalendar();
+  }
+
+  private loadCalendar(): void {
+    this.isLoading = true;
+    this.entries = [];
+    this.imageLoaded = {};
+
+    this.cinemaService.getCalendar(false, this.range).subscribe({
       next: ({ data }) => {
         this.entries = data;
         this.isLoading = false;
@@ -38,6 +47,12 @@ export class CalendarPageComponent implements OnInit {
     });
   }
 
+  setRange(range: 'upcoming' | 'past'): void {
+    if (this.range === range || this.isLoading) return;
+    this.range = range;
+    this.loadCalendar();
+  }
+
   refresh(): void {
     if (this.isRefreshing) return;
     this.isRefreshing = true;
@@ -45,7 +60,7 @@ export class CalendarPageComponent implements OnInit {
     this.entries = [];
     this.imageLoaded = {};
 
-    this.cinemaService.getCalendar(true).subscribe({
+    this.cinemaService.getCalendar(true, this.range).subscribe({
       next: ({ data }) => {
         this.entries = data;
         this.isRefreshing = false;
@@ -60,7 +75,7 @@ export class CalendarPageComponent implements OnInit {
     });
   }
 
-  // "Airs Today" / "In 3 days" / "Aug 12" style relative countdown
+  // "Airs Today" / "In 3 days" / "3 days ago" / "Aug 12" style relative label
   getCountdownLabel(airDate: string): string {
     const now = new Date();
     // airDate is a date-only string (e.g. "2026-09-04") - parsing it directly
@@ -78,7 +93,9 @@ export class CalendarPageComponent implements OnInit {
 
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Tomorrow';
+    if (diffDays === -1) return 'Yesterday';
     if (diffDays > 1 && diffDays <= 7) return `In ${diffDays} days`;
+    if (diffDays < -1 && diffDays >= -7) return `${Math.abs(diffDays)} days ago`;
 
     return target.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }

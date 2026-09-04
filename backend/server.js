@@ -117,10 +117,12 @@ app.use("/api/cinema", cinemaRoutes);
 
 // CRON JOBS
 
-// Get new spotify releases every Friday at 12:00pm
-cron.schedule("0 12 * * 5", async () => {
+// Get new spotify releases every Friday at 6:00am Central
+cron.schedule("0 6 * * 5", async () => {
 
   await spotifyController.setAlbumImages();
+}, {
+  timezone: 'America/Chicago'
 });
 
 // Sync all artists albums in DB daily at 3 AM

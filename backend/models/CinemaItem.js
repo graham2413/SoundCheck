@@ -29,6 +29,7 @@ const cinemaItemSchema = new mongoose.Schema({
   cover: String,
   duration: Number, // runtime in seconds (movie only)
   releaseDate: Date,
+  releaseYearRange: String, // TV only, e.g. "2017-2025" or "2016-Present" (mirrors search's display format)
   genres: [String],
   streamingPlatforms: [String],
   decimalRating: { type: Number, min: 0, max: 10 }, // e.g. 8.4

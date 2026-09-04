@@ -23,12 +23,12 @@ import { ReviewService } from 'src/app/services/review.service';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
-import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
+import { CinemaWatchlistComponent } from '../cinema-watchlist/cinema-watchlist.component';
 
 type ModalRecord = Album | Song | Artist | BaseRecord;
 @Component({
   selector: 'app-view-profile-page',
-  imports: [CommonModule, FormsModule, InfiniteScrollDirective],
+  imports: [CommonModule, FormsModule, CinemaWatchlistComponent],
   templateUrl: './other-profile-page.component.html',
   styleUrl: './other-profile-page.component.css',
   standalone: true,
@@ -96,6 +96,11 @@ export class ViewProfilePageComponent implements OnInit {
   isImportingTraktExport: boolean = false;
   watchlistItems: CinemaItem[] = [];
   watchlistTotalCount: number = 0;
+  // Count of items matching the current media-type filter (panel header uses
+  // this; the outer profile stat badge always uses watchlistTotalCount, which
+  // only ever reflects the true unfiltered total).
+  filteredWatchlistCount: number = 0;
+  watchlistMediaTypeFilter: 'all' | 'movie' | 'tv' = 'all';
   isLoadingWatchlist: boolean = false;
   isFetchingMoreWatchlist: boolean = false;
   hasMoreWatchlist: boolean = true;
@@ -842,10 +847,14 @@ export class ViewProfilePageComponent implements OnInit {
     this.isLoadingWatchlist = true;
     this.watchlistCursor = null;
     this.hasMoreWatchlist = true;
-    this.cinemaService.getWatchlist(this.otherUserId).subscribe({
+    const mediaType = this.watchlistMediaTypeFilter === 'all' ? undefined : this.watchlistMediaTypeFilter;
+    this.cinemaService.getWatchlist(this.otherUserId, null, mediaType).subscribe({
       next: (response) => {
         this.watchlistItems = response.data;
-        this.watchlistTotalCount = response.totalCount;
+        this.filteredWatchlistCount = response.totalCount;
+        if (this.watchlistMediaTypeFilter === 'all') {
+          this.watchlistTotalCount = response.totalCount;
+        }
         this.watchlistCursor = response.nextCursor;
         this.hasMoreWatchlist = !!response.nextCursor;
         this.isLoadingWatchlist = false;
@@ -859,13 +868,33 @@ export class ViewProfilePageComponent implements OnInit {
     });
   }
 
+  // Switches the watchlist panel's media-type filter and reloads from page 1
+  setWatchlistMediaTypeFilter(mediaType: 'all' | 'movie' | 'tv'): void {
+    if (this.watchlistMediaTypeFilter === mediaType) return;
+    this.watchlistMediaTypeFilter = mediaType;
+    this.loadWatchlistIfVisible();
+  }
+
+  // Keeps the outer profile stat (always unfiltered) and the panel header's
+  // filtered count in sync when an item is added/removed from elsewhere
+  // (e.g. the modal's own Add to Watchlist button, or rating an item).
+  private adjustWatchlistCounts(delta: number, item: CinemaItem): void {
+    this.watchlistTotalCount = Math.max(0, this.watchlistTotalCount + delta);
+    const matchesFilter =
+      this.watchlistMediaTypeFilter === 'all' || item.mediaType === this.watchlistMediaTypeFilter;
+    if (matchesFilter) {
+      this.filteredWatchlistCount = Math.max(0, this.filteredWatchlistCount + delta);
+    }
+  }
+
   // Infinite scroll - only fetches the next page once the user actually
   // scrolls near the bottom, instead of loading the entire watchlist upfront
   loadMoreWatchlist(): void {
     if (this.isFetchingMoreWatchlist || !this.hasMoreWatchlist || !this.watchlistCursor || !this.otherUserId) return;
 
     this.isFetchingMoreWatchlist = true;
-    this.cinemaService.getWatchlist(this.otherUserId, this.watchlistCursor).subscribe({
+    const mediaType = this.watchlistMediaTypeFilter === 'all' ? undefined : this.watchlistMediaTypeFilter;
+    this.cinemaService.getWatchlist(this.otherUserId, this.watchlistCursor, mediaType).subscribe({
       next: (response) => {
         this.watchlistItems = [...this.watchlistItems, ...response.data];
         this.watchlistCursor = response.nextCursor;
@@ -876,15 +905,6 @@ export class ViewProfilePageComponent implements OnInit {
         this.isFetchingMoreWatchlist = false;
       },
     });
-  }
-
-  // Small poster-sized thumbnail instead of the full-res cover, for the watchlist grid
-  getWatchlistThumbUrl(cover: string | undefined | null): string {
-    const fallback = 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801';
-    if (!cover) return fallback;
-    return cover.includes('/upload/')
-      ? cover.replace('/upload/', '/upload/w_300,h_450,c_fill,f_auto,q_auto/')
-      : cover;
   }
 
   openWatchlist() {
@@ -990,10 +1010,10 @@ export class ViewProfilePageComponent implements OnInit {
 
       if (updatedItem.isWatchlist && existingIndex === -1) {
         this.watchlistItems.unshift(updatedItem);
-        this.watchlistTotalCount += 1;
+        this.adjustWatchlistCounts(1, updatedItem);
       } else if (!updatedItem.isWatchlist && existingIndex !== -1) {
         this.watchlistItems.splice(existingIndex, 1);
-        this.watchlistTotalCount = Math.max(0, this.watchlistTotalCount - 1);
+        this.adjustWatchlistCounts(-1, updatedItem);
       }
     });
 
@@ -1053,8 +1073,8 @@ export class ViewProfilePageComponent implements OnInit {
         // grid or the reviews panel, not just the watchlist
         const watchlistIndex = this.watchlistItems.findIndex((w) => w._id === newReview._id);
         if (watchlistIndex !== -1) {
+          this.adjustWatchlistCounts(-1, this.watchlistItems[watchlistIndex]);
           this.watchlistItems.splice(watchlistIndex, 1);
-          this.watchlistTotalCount = Math.max(0, this.watchlistTotalCount - 1);
         }
 
         if (!this.otherUser?.cinemaReviews) return;
@@ -1104,10 +1124,10 @@ export class ViewProfilePageComponent implements OnInit {
 
       if (updatedItem.isWatchlist && existingIndex === -1) {
         this.watchlistItems.unshift(updatedItem);
-        this.watchlistTotalCount += 1;
+        this.adjustWatchlistCounts(1, updatedItem);
       } else if (!updatedItem.isWatchlist && existingIndex !== -1) {
         this.watchlistItems.splice(existingIndex, 1);
-        this.watchlistTotalCount = Math.max(0, this.watchlistTotalCount - 1);
+        this.adjustWatchlistCounts(-1, updatedItem);
       }
     });
 

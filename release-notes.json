@@ -1,0 +1,14 @@
+{
+  "New features": [
+    "The calendar now has separate Upcoming and Past tabs, so you can look back at what's already released or aired, not just what's coming next",
+    "Your watchlist can now be filtered to just Movies or just TV Shows, and shows richer info at a glance - genres, release year (or full year range for ongoing shows), and posters",
+    "The forced update screen now shows friendlier, easier-to-read notes about what's new"
+  ],
+  "Performance & stability": [
+    "Fixed a bug where the calendar's \"today\" releases could be dropped or shown a day off due to timezone handling",
+    "Fixed a bug where opening a movie/show detail screen could unexpectedly scroll the page behind it to the bottom",
+    "Watchlist items now keep their genre, runtime, and streaming info up to date automatically when added"
+  ]
+}
+
+

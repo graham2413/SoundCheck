@@ -27,6 +27,7 @@ export interface CinemaItem {
   cover?: string;
   duration?: number; // seconds (movie only)
   releaseDate?: string;
+  releaseYearRange?: string; // TV only, e.g. "2017-2025" or "2016-Present"
   genres?: string[];
   streamingPlatforms?: string[];
   decimalRating?: number;

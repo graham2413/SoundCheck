@@ -324,7 +324,7 @@
               ({{ otherUser.artistList?.length || 0 }})
             </span>
             <span *ngIf="showPanel === 'watchlist'">
-              ({{ watchlistTotalCount }})
+              ({{ filteredWatchlistCount }})
             </span>
           </span>
         </h2>
@@ -339,79 +339,43 @@
       <div class="p-4">
         <ng-container [ngSwitch]="showPanel">
           <ng-container *ngSwitchCase="'watchlist'">
-            <div *ngIf="isLoadingWatchlist" class="flex justify-center py-8">
-              <i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i>
-            </div>
-
-            <p
-              *ngIf="!isLoadingWatchlist && watchlistItems.length === 0"
-              class="text-gray-400 text-center mt-8"
-            >
-              Your watchlist is empty.
-            </p>
-
-            <div
-              *ngIf="!isLoadingWatchlist && watchlistItems.length > 0"
-              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-[1000px] mx-auto"
-              infiniteScroll
-              [infiniteScrollDistance]="2"
-              [infiniteScrollThrottle]="150"
-              [scrollWindow]="false"
-              [infiniteScrollContainer]="watchlistScrollContainer"
-              (scrolled)="loadMoreWatchlist()"
-            >
-              <div
-                *ngFor="let item of watchlistItems; let i = index"
-                (click)="openCinemaRecord(item, watchlistItems, i)"
-                class="text-center bg-gray-800 p-3 rounded-lg cursor-pointer"
+            <div class="flex justify-center gap-2 mb-4 max-w-3xl mx-auto">
+              <button
+                type="button"
+                (click)="setWatchlistMediaTypeFilter('all')"
+                class="px-4 py-1.5 rounded-full text-sm font-semibold transition"
+                [ngClass]="watchlistMediaTypeFilter === 'all' ? 'bg-[#0F5EE4] text-white' : 'text-gray-400'"
               >
-                <div class="relative aspect-[2/3] w-full">
-                  <!-- Loader -->
-                  <div
-                    *ngIf="!isImageLoaded(i, 'watchlist')"
-                    class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-md"
-                  >
-                    <div
-                      class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
-                    ></div>
-                  </div>
-                  <img
-                    [src]="getWatchlistThumbUrl(item.cover)"
-                    loading="lazy"
-                    (load)="markImageLoaded(i, 'watchlist')"
-                    (error)="markImageLoaded(i, 'watchlist')"
-                    [class.invisible]="!isImageLoaded(i, 'watchlist')"
-                    alt="{{ item.title }}"
-                    class="aspect-[2/3] w-full object-cover rounded-md border-2 border-gray-500"
-                  />
-                  <div
-                    class="absolute top-1 left-1 bg-gray-900/80 p-1.5 rounded-full"
-                  >
-                    <i
-                      class="fas text-sm"
-                      [ngClass]="{
-                        'fa-film text-green-400': item.mediaType === 'movie',
-                        'fa-tv text-purple-400': item.mediaType === 'tv'
-                      }"
-                    ></i>
-                  </div>
-                </div>
-                <span
-                  class="text-white font-semibold text-sm truncate overflow-hidden whitespace-nowrap block mt-2"
-                  [title]="item.title"
-                >
-                  {{ item.title }}
-                </span>
-                <p class="text-gray-400 text-xs">
-                  {{ item.releaseDate | date : "yyyy" }}
-                </p>
-              </div>
+                All
+              </button>
+              <button
+                type="button"
+                (click)="setWatchlistMediaTypeFilter('movie')"
+                class="px-4 py-1.5 rounded-full text-sm font-semibold transition"
+                [ngClass]="watchlistMediaTypeFilter === 'movie' ? 'bg-[#0F5EE4] text-white' : 'text-gray-400'"
+              >
+                Movies
+              </button>
+              <button
+                type="button"
+                (click)="setWatchlistMediaTypeFilter('tv')"
+                class="px-4 py-1.5 rounded-full text-sm font-semibold transition"
+                [ngClass]="watchlistMediaTypeFilter === 'tv' ? 'bg-[#0F5EE4] text-white' : 'text-gray-400'"
+              >
+                TV Shows
+              </button>
             </div>
 
-            <div *ngIf="isFetchingMoreWatchlist" class="flex justify-center py-4">
-              <i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i>
-            </div>
+            <app-cinema-watchlist
+              [items]="watchlistItems"
+              [isLoading]="isLoadingWatchlist"
+              [isFetchingMore]="isFetchingMoreWatchlist"
+              [scrollContainer]="watchlistScrollContainer"
+              (itemClicked)="openCinemaRecord($event.item, $event.list, $event.index)"
+              (loadMore)="loadMoreWatchlist()"
+            ></app-cinema-watchlist>
           </ng-container>
+
 
           <ng-container *ngSwitchCase="'reviews'">
             <!-- Music/Cinema Toggle -->

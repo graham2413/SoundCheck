@@ -1,22 +1,16 @@
-// Builds frontend/public/version.json, including categorized release notes
-// derived from recent commits. Read by the frontend's forced PWA update
-// overlay (see frontend/src/app/app.component.ts).
+// Builds frontend/public/version.json, including release notes shown in the
+// forced PWA update overlay (see frontend/src/app/app.component.ts).
 //
-// A single commit often bundles multiple kinds of changes (e.g. a feat: commit
-// whose body also has a fix/security bullet), so each body bullet ("- ...")
-// is classified independently by keyword rather than trusting one prefix for
-// the whole commit. Commits with no bullets fall back to classifying the
-// subject line itself via its conventional-commit prefix.
-//
-// Keep in sync with any commit message generation (see
-// /memories/repo/commit-convention.md for the agent-side copy):
-//   feat: / "Add"/"Introduce"/"Implement"/"New"/"Support" bullets -> "New features"
-//   fix:, perf:, refactor: / "Fix"/"Correct"/"Optimize"/"Cache" bullets -> "Performance & stability"
-//   security: / bullets mentioning security/auth/vuln/token/credential -> "Security updates"
-//   chore:, docs:, style:, test:, ci:, build: subjects -> excluded entirely
-//   "Minor:" bullets -> excluded (cosmetic, not worth surfacing)
+// Release notes come from ./release-notes.json (repo root) - a short,
+// user-friendly, hand-written summary kept up to date alongside each commit
+// (see /memories/git-workflow.md for the authoring convention). This is
+// intentionally NOT auto-derived from raw commit messages, which read as
+// too technical for end users. Falls back to auto-deriving from recent git
+// commits only if that file is missing/empty, as a safety net.
 
 const { execSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
 const MAX_COMMITS_SCANNED = 15;
 const MAX_ITEMS_PER_SECTION = 3;
@@ -108,6 +102,18 @@ function getReleaseNotes() {
   return output;
 }
 
+// Reads the hand-written, user-friendly release notes file if present and
+// non-empty; returns null otherwise so the caller can fall back.
+function getHandWrittenReleaseNotes() {
+  try {
+    const filePath = path.resolve(__dirname, "../release-notes.json");
+    const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    return Object.keys(parsed).length ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 const version = (process.env.BUILD_VERSION || "").slice(0, 7);
 const buildNumber = process.env.BUILD_NUMBER || "";
 const builtAt = new Date().toISOString();
@@ -117,6 +123,6 @@ process.stdout.write(
     version,
     buildNumber,
     builtAt,
-    notes: getReleaseNotes(),
+    notes: getHandWrittenReleaseNotes() || getReleaseNotes(),
   })
 );

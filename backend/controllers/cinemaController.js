@@ -28,6 +28,7 @@ const getUsTheatricalRelease = (movieDetails) => {
   const isRerelease = RERELEASE_NOTE_PATTERN.test(theatrical?.note || "");
   return { releaseDate, isRerelease };
 };
+exports.getUsTheatricalRelease = getUsTheatricalRelease;
 
 
 
@@ -99,15 +100,24 @@ exports.searchCinema = async (req, res) => {
   }
 };
 
-// GET /api/cinema/calendar (Protected)
-// Upcoming: next episode to air for tracked TV shows (watchlisted OR already
-// reviewed, so a show doesn't disappear once you've reviewed an earlier
-// season), plus watchlisted movies with a future release date. Sorted
-// soonest-first.
+// GET /api/cinema/calendar?range=upcoming|past (Protected)
+// Upcoming (default): next episode to air for tracked TV shows (watchlisted
+// OR already reviewed, so a show doesn't disappear once you've reviewed an
+// earlier season), plus watchlisted movies with a release date today or
+// later. Sorted soonest-first.
+// Past: the most recently aired episode for tracked TV shows, plus
+// watchlisted movies already released. Sorted most-recent-first.
+//
+// Dates are compared as plain "YYYY-MM-DD" strings (not `new Date(...) < now`)
+// on purpose - `new Date("2026-09-04")` parses as UTC midnight, which for any
+// timezone behind UTC (e.g. America/Chicago) is already several hours in the
+// past by the time it's actually today in that timezone, so a naive
+// timestamp comparison incorrectly drops/moves items releasing "today".
 exports.getCalendar = async (req, res) => {
   try {
     const forceRefresh = req.query.refresh === "true";
-    const cacheKey = `calendar:${req.user._id}`;
+    const range = req.query.range === "past" ? "past" : "upcoming";
+    const cacheKey = `calendar:${req.user._id}:${range}`;
     const todayStr = getLocalDateString(CALENDAR_CACHE_TIMEZONE);
 
     if (!forceRefresh) {
@@ -130,7 +140,6 @@ exports.getCalendar = async (req, res) => {
 
     const tvItems = items.filter((i) => i.mediaType === "tv");
     const movieItems = items.filter((i) => i.mediaType === "movie" && i.isWatchlist);
-    const now = new Date();
 
     // forceRefresh only bypasses the outer per-user calendar cache above (so
     // newly added/removed watchlist items show up immediately) - it does NOT
@@ -145,18 +154,22 @@ exports.getCalendar = async (req, res) => {
 
     const tvEntries = tvItems
       .map((item, i) => {
-        const next = tvDetails[i]?.next_episode_to_air;
-        if (!next?.air_date || new Date(next.air_date) < now) return null;
+        const episode =
+          range === "past" ? tvDetails[i]?.last_episode_to_air : tvDetails[i]?.next_episode_to_air;
+        const airDate = episode?.air_date?.slice(0, 10);
+        if (!airDate) return null;
+        if (range === "upcoming" && airDate < todayStr) return null;
+        if (range === "past" && airDate >= todayStr) return null;
         return {
           _id: item._id,
           tmdbId: item.tmdbId,
           mediaType: "tv",
           title: item.title,
           cover: item.cover,
-          airDate: next.air_date,
-          seasonNumber: next.season_number,
-          episodeNumber: next.episode_number,
-          episodeName: next.name,
+          airDate,
+          seasonNumber: episode.season_number,
+          episodeNumber: episode.episode_number,
+          episodeName: episode.name,
           isWatchlist: item.isWatchlist,
           decimalRating: item.decimalRating,
           reviewText: item.reviewText,
@@ -168,7 +181,9 @@ exports.getCalendar = async (req, res) => {
     const movieEntries = movieItems
       .map((item, i) => {
         const { releaseDate, isRerelease } = getUsTheatricalRelease(movieDetails[i]);
-        if (!releaseDate || new Date(releaseDate) < now) return null;
+        if (!releaseDate) return null;
+        if (range === "upcoming" && releaseDate < todayStr) return null;
+        if (range === "past" && releaseDate >= todayStr) return null;
         return {
           _id: item._id,
           tmdbId: item.tmdbId,
@@ -185,8 +200,8 @@ exports.getCalendar = async (req, res) => {
       })
       .filter(Boolean);
 
-    const calendar = [...tvEntries, ...movieEntries].sort(
-      (a, b) => new Date(a.airDate) - new Date(b.airDate)
+    const calendar = [...tvEntries, ...movieEntries].sort((a, b) =>
+      range === "past" ? b.airDate.localeCompare(a.airDate) : a.airDate.localeCompare(b.airDate)
     );
 
     await redis.set(cacheKey, JSON.stringify({ cachedDate: todayStr, data: calendar }), "EX", CALENDAR_RESPONSE_CACHE_TTL);
@@ -347,6 +362,7 @@ const buildWatchProviders = (flatrateProviders) => {
 
   return Array.from(seen.values());
 };
+exports.buildWatchProviders = buildWatchProviders;
 
 // GET /api/cinema/detail/:mediaType/:tmdbId (Protected)
 // Consolidated payload for the cinema review detail page: TMDb metadata +
@@ -587,6 +603,57 @@ exports.editCinemaItem = async (req, res) => {
 // Removing from the watchlist deletes the item outright if it has never been
 // rated - otherwise (already reviewed) it just clears the isWatchlist flag,
 // since the user may still want the review tracked (e.g. planning a rewatch).
+
+// Fetches genres/duration/streamingPlatforms/releaseDate/releaseYearRange/imdbId
+// for a single tmdbId (one cached getTmdbDetails call) - mirrors
+// backfillCinemaMetadata.js's logic so newly-added watchlist items aren't
+// immediately stale while waiting on that script to run again.
+const fetchCinemaMetadata = async (tmdbId, mediaType) => {
+  const details = await getTmdbDetails(tmdbId, mediaType).catch(() => null);
+  if (!details) return {};
+
+  const metadata = {};
+
+  if (details.genres?.length) {
+    metadata.genres = details.genres.map((g) => g.name);
+  }
+
+  if (mediaType === "movie" && details.runtime) {
+    metadata.duration = details.runtime * 60;
+  } else if (mediaType === "tv" && details.episode_run_time?.[0]) {
+    metadata.duration = details.episode_run_time[0] * 60;
+  }
+
+  const releaseDate =
+    mediaType === "movie" ? getUsTheatricalRelease(details).releaseDate : details.first_air_date;
+  if (releaseDate) {
+    metadata.releaseDate = releaseDate;
+  }
+
+  if (mediaType === "tv") {
+    const startYear = releaseDate ? new Date(releaseDate).getFullYear() : null;
+    const endYear = details.last_air_date ? new Date(details.last_air_date).getFullYear() : null;
+    const hasEnded = details.status === "Ended" || details.status === "Canceled";
+
+    if (startYear && hasEnded) {
+      metadata.releaseYearRange = endYear && endYear !== startYear ? `${startYear}-${endYear}` : `${startYear}`;
+    } else if (startYear) {
+      metadata.releaseYearRange = endYear && endYear !== startYear ? `${startYear}-Present` : `${startYear}`;
+    }
+  }
+
+  const providers = buildWatchProviders(details["watch/providers"]?.results?.US?.flatrate);
+  if (providers.length) {
+    metadata.streamingPlatforms = providers.map((p) => p.name);
+  }
+
+  if (details.imdb_id) {
+    metadata.imdbId = details.imdb_id;
+  }
+
+  return metadata;
+};
+
 exports.toggleWatchlist = async (req, res) => {
   try {
     const { tmdbId, mediaType, title, cover, releaseDate } = req.body;
@@ -609,16 +676,24 @@ exports.toggleWatchlist = async (req, res) => {
 
     if (item) {
       item.isWatchlist = true;
+      // Backfill metadata on re-add too, in case it was created before this capture existed
+      if (!item.genres?.length) {
+        Object.assign(item, await fetchCinemaMetadata(tmdbId, mediaType));
+      }
       await item.save();
     } else {
+      const metadata = await fetchCinemaMetadata(tmdbId, mediaType);
       item = await CinemaItem.create({
         user: req.user._id,
         tmdbId,
         mediaType,
         title,
         cover,
-        ...(releaseDate ? { releaseDate } : {}),
         isWatchlist: true,
+        ...metadata,
+        // Frontend-supplied releaseDate is a reasonable fallback if the TMDb
+        // lookup above failed/returned nothing
+        ...(!metadata.releaseDate && releaseDate ? { releaseDate } : {}),
       });
     }
 
@@ -634,7 +709,7 @@ exports.toggleWatchlist = async (req, res) => {
 exports.getWatchlist = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { cursorDate, cursorId, limit = 30 } = req.query;
+    const { cursorDate, cursorId, limit = 30, mediaType } = req.query;
     const isOwner = userId === req.user._id.toString();
 
     if (!isOwner) {
@@ -648,6 +723,9 @@ exports.getWatchlist = async (req, res) => {
     }
 
     const baseQuery = { user: userId, isWatchlist: true };
+    if (mediaType === "movie" || mediaType === "tv") {
+      baseQuery.mediaType = mediaType;
+    }
     const query = { ...baseQuery };
 
     // Apply cursor logic if present - same pattern as getActivityFeed

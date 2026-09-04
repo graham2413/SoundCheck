@@ -1,0 +1,83 @@
+<div *ngIf="isLoading" class="flex justify-center py-8">
+  <i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i>
+</div>
+
+<p *ngIf="!isLoading && items.length === 0" class="text-gray-400 text-center mt-8">
+  Your watchlist is empty.
+</p>
+
+<div
+  *ngIf="!isLoading && items.length > 0"
+  class="flex flex-col gap-3 max-w-3xl mx-auto"
+  infiniteScroll
+  [infiniteScrollDistance]="2"
+  [infiniteScrollThrottle]="150"
+  [scrollWindow]="false"
+  [infiniteScrollContainer]="scrollContainer"
+  (scrolled)="loadMore.emit()"
+>
+  <div
+    *ngFor="let item of items; let i = index"
+    (click)="onItemClick(item, i)"
+    class="flex flex-row items-center gap-4 rounded-lg cursor-pointer overflow-hidden border"
+    style="background-color: #101621; border-color: #212530"
+  >
+    <div class="relative aspect-[2/3] h-32 md:h-40 flex-shrink-0">
+      <!-- No cover on file (e.g. TMDb had no poster yet) - cinema-specific
+           placeholder instead of the shared music-themed fallback image -->
+      <div
+        *ngIf="!getThumbUrl(item.cover)"
+        class="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900"
+      >
+        <i
+          class="fas text-3xl text-gray-600"
+          [ngClass]="item.mediaType === 'movie' ? 'fa-film' : 'fa-tv'"
+        ></i>
+      </div>
+
+      <ng-container *ngIf="getThumbUrl(item.cover) as thumbUrl">
+        <!-- Loader -->
+        <div
+          *ngIf="!isImageLoaded(i)"
+          class="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900"
+        >
+          <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+        </div>
+        <img
+          [src]="thumbUrl"
+          loading="lazy"
+          (load)="markImageLoaded(i)"
+          (error)="markImageLoaded(i)"
+          [class.invisible]="!isImageLoaded(i)"
+          alt="{{ item.title }}"
+          class="h-full w-full object-cover rounded-lg"
+        />
+      </ng-container>
+    </div>
+
+    <div class="flex flex-col justify-center flex-1 min-w-0 py-3 pr-3">
+      <span
+        class="text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
+        [title]="item.title"
+      >
+        {{ item.title }}
+      </span>
+      <p class="text-gray-400 text-sm mt-1 truncate overflow-hidden whitespace-nowrap">
+        {{ item.mediaType === 'tv' && item.releaseYearRange ? item.releaseYearRange : ((item.releaseDate | date : "yyyy") || 'TBA') }}
+        &nbsp;&middot;&nbsp;{{ item.mediaType === 'movie' ? 'Movie' : 'TV Series' }}
+      </p>
+      <p
+        *ngIf="item.genres?.length"
+        class="text-[#3B82F6] text-sm mt-1 truncate overflow-hidden whitespace-nowrap"
+      >
+        {{ item.genres?.join(', ') }}
+      </p>
+    </div>
+
+    <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
+  </div>
+</div>
+
+<div *ngIf="isFetchingMore" class="flex justify-center py-4">
+  <i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i>
+</div>
