@@ -83,14 +83,19 @@ async function callTmdb(path, params = {}) {
   return { data: null };
 }
 
-// Cache-aware wrapper: GET /movie/:id or /tv/:id details
-async function getTmdbDetails(tmdbId, mediaType = "movie") {
+// Cache-aware wrapper: GET /movie/:id or /tv/:id details. `forceRefresh`
+// bypasses the cache read (used by the daily cinema-metadata refresh cron so
+// it actually sees changes, instead of just re-reading the same 7-day-stale
+// cached blob) but still writes the fresh result back to cache either way.
+async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = false } = {}) {
   // v2: bumped so older cached blobs (from before release_dates was added to
   // append_to_response) get treated as a miss and re-fetched, instead of
   // silently missing release_dates for up to the full 7-day TTL.
   const cacheKey = `tmdb:details:v2:${tmdbId}`;
-  const cached = await redis.get(cacheKey);
-  if (cached) return JSON.parse(cached);
+  if (!forceRefresh) {
+    const cached = await redis.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+  }
 
   // release_dates is movie-only (TV uses content_ratings instead) - needed
   // for certification + accurate US theatrical release date/re-release detection.

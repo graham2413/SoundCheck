@@ -645,9 +645,10 @@ exports.editCinemaItem = async (req, res) => {
 // Fetches genres/duration/streamingPlatforms/releaseDate/releaseYearRange/imdbId
 // for a single tmdbId (one cached getTmdbDetails call) - mirrors
 // backfillCinemaMetadata.js's logic so newly-added watchlist items aren't
-// immediately stale while waiting on that script to run again.
-const fetchCinemaMetadata = async (tmdbId, mediaType) => {
-  const details = await getTmdbDetails(tmdbId, mediaType).catch(() => null);
+// immediately stale while waiting on that script to run again. `forceRefresh`
+// bypasses the TMDb cache (used by the daily cinema-metadata refresh cron).
+const fetchCinemaMetadata = async (tmdbId, mediaType, { forceRefresh = false } = {}) => {
+  const details = await getTmdbDetails(tmdbId, mediaType, { forceRefresh }).catch(() => null);
   if (!details) return {};
 
   const metadata = {};
@@ -696,6 +697,98 @@ const fetchCinemaMetadata = async (tmdbId, mediaType) => {
 
   return metadata;
 };
+
+// Local day-of-week in a fixed timezone (matches CALENDAR_CACHE_TIMEZONE/cron
+// timezone) - used to decide "is today the weekly full-recheck day".
+const getLocalDayOfWeek = (timeZone) =>
+  new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" }).format(new Date());
+exports.getLocalDayOfWeek = getLocalDayOfWeek;
+
+// Distinct (tmdbId, mediaType) pairs across ALL users' tracked items (still
+// on a watchlist OR already watched) - fetched/refreshed once per unique
+// title, not once per user, since many users can track the same movie/show.
+// `fullRecheck` false (the daily default) narrows to "unsettled" titles only:
+// movies with no streaming platform yet (or an unconfirmed/future digital
+// release date), and TV shows still ongoing (no releaseYearRange yet, or one
+// ending in "-Present") - settled titles (already streaming, ended shows)
+// are skipped since they're unlikely to have changed.
+const getTitlesToRefresh = async (fullRecheck) => {
+  const match = {
+    tmdbId: { $exists: true, $ne: null },
+    $or: [{ isWatchlist: true }, { isWatched: true }],
+  };
+
+  if (!fullRecheck) {
+    const today = new Date();
+    match.$and = [
+      {
+        $or: [
+          { mediaType: "movie", streamingPlatforms: { $exists: false } },
+          { mediaType: "movie", streamingPlatforms: { $size: 0 } },
+          { mediaType: "movie", digitalReleaseDate: { $exists: false } },
+          { mediaType: "movie", digitalReleaseDate: null },
+          { mediaType: "movie", digitalReleaseDate: { $gt: today } },
+          { mediaType: "tv", releaseYearRange: { $exists: false } },
+          { mediaType: "tv", releaseYearRange: { $regex: "Present$" } },
+        ],
+      },
+    ];
+  }
+
+  const groups = await CinemaItem.aggregate([
+    { $match: match },
+    { $group: { _id: { tmdbId: "$tmdbId", mediaType: "$mediaType" } } },
+  ]);
+
+  return groups.map((g) => g._id);
+};
+
+// Daily cron entry point (see server.js) - refreshes genres/duration/
+// streamingPlatforms/releaseDate/hadTheatricalRelease/digitalReleaseDate/
+// releaseYearRange/imdbId for every user's tracked CinemaItems, deduped by
+// title so a blockbuster tracked by many users only costs one TMDb call.
+// `fullRecheck` true (weekly, e.g. Sundays) re-checks every tracked title
+// instead of just the "unsettled" subset - a safety net against rare TMDb
+// data corrections that a settled/ended title might otherwise never pick up.
+async function cronRefreshCinemaMetadata({ fullRecheck = false, batchSize = 10, delayMs = 1000 } = {}) {
+  const titles = await getTitlesToRefresh(fullRecheck);
+  let updated = 0;
+  let failed = 0;
+
+  for (let i = 0; i < titles.length; i += batchSize) {
+    const batch = titles.slice(i, i + batchSize);
+
+    const results = await Promise.allSettled(
+      batch.map(async ({ tmdbId, mediaType }) => {
+        const metadata = await fetchCinemaMetadata(tmdbId, mediaType, { forceRefresh: true });
+        if (!Object.keys(metadata).length) return { status: "skipped" };
+        await CinemaItem.updateMany({ tmdbId, mediaType }, { $set: metadata });
+        return { status: "updated" };
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value.status === "updated") {
+        updated++;
+      } else if (result.status === "rejected") {
+        failed++;
+        console.error("Cinema metadata refresh failed for a title:", result.reason);
+      }
+    }
+
+    console.log(
+      `Cinema metadata refresh: batch ${i / batchSize + 1} of ${Math.ceil(titles.length / batchSize)}`
+    );
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  console.log(
+    `Cinema metadata refresh complete (${fullRecheck ? "full" : "unsettled-only"}). Titles checked: ${titles.length}, updated: ${updated}, failed: ${failed}`
+  );
+
+  return { titlesChecked: titles.length, updated, failed };
+}
+exports.cronRefreshCinemaMetadata = cronRefreshCinemaMetadata;
 
 exports.toggleWatchlist = async (req, res) => {
   try {

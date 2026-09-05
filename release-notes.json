@@ -1,15 +1,12 @@
 {
   "New features": [
-    "Added a full Sort & Filter panel to your watchlist - filter by watched status, release status (Available Now/In Theaters/Coming Soon), genre, streaming platform, and sort order",
-    "Added Unwatched/Watched status tracking so your watchlist and calendar both reflect what you've actually seen",
-    "The main search page now opens to Movies & TV Shows by default"
+    "Movie and show info (genres, streaming availability, release status) now stays up to date automatically with a daily background refresh, instead of only updating when you first add something"
   ],
   "Performance & stability": [
-    "Fixed loading spinners appearing off-center or too far down the page on the profile, friends, and calendar screens",
-    "Fixed some movies incorrectly showing as still in theaters after they were already available to stream",
-    "Fixed search history and search mode not being remembered correctly when navigating away and back"
+    "Improved how often movie/show streaming availability gets rechecked, so \"In Theaters\"/\"Available Now\" status stays accurate over time"
   ]
 }
+
 
 
 

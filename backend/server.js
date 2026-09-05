@@ -30,6 +30,7 @@ const googleAuthRoutes = require("./auth/google");
 const cron = require("node-cron");
 const spotifyController = require("./controllers/spotifyController");
 const { cronSyncAllArtists } = require('./controllers/mainSearchController');
+const { cronRefreshCinemaMetadata, getLocalDayOfWeek } = require('./controllers/cinemaController');
 
 const userRoutes = require("./routes/userRoutes");
 const mainSearchRoutes = require("./routes/mainSearchRoutes");
@@ -129,6 +130,19 @@ cron.schedule("0 6 * * 5", async () => {
 cron.schedule('0 3 * * *', async () => {
   console.log('🔥 Starting daily artist album sync at 3 AM (local)');
   await cronSyncAllArtists();
+}, {
+  timezone: 'America/Chicago'
+});
+
+// Refresh genres/streaming/release info on tracked cinema items daily at 4 AM
+// (after the artist sync) - only "unsettled" titles (not yet streaming,
+// still-airing shows) get re-checked, except on Sundays where every tracked
+// title gets a full recheck as a safety net. See cronRefreshCinemaMetadata
+// for the settled/unsettled distinction and per-title dedup across users.
+cron.schedule('0 4 * * *', async () => {
+  const fullRecheck = getLocalDayOfWeek('America/Chicago') === 'Sun';
+  console.log(`🎬 Starting cinema metadata refresh at 4 AM (local) - ${fullRecheck ? 'full recheck' : 'unsettled titles only'}`);
+  await cronRefreshCinemaMetadata({ fullRecheck });
 }, {
   timezone: 'America/Chicago'
 });
