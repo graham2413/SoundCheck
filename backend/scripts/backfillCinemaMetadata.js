@@ -20,7 +20,7 @@ if (require.main === module) {
 const mongoose = require("mongoose");
 const CinemaItem = require("../models/CinemaItem");
 const { getTmdbDetails } = require("../utils/callTmdb");
-const { getUsOriginalTheatricalRelease, getUsRerelease, hasTheatricalRelease, getUsDigitalRelease, buildWatchProviders } = require("../controllers/cinemaController");
+const { getUsOriginalTheatricalRelease, getUsRerelease, hasTheatricalRelease, getUsDigitalRelease, buildWatchProviders, TMDB_IMAGE_BASE } = require("../controllers/cinemaController");
 
 // filter lets callers scope this to one user's items instead of the whole DB.
 // force re-backfills items that already have this data (e.g. one-time quality upgrades).
@@ -61,6 +61,11 @@ async function backfillCinemaMetadata(filter = {}, { force = false } = {}) {
 
       if (details.genres?.length) {
         item.genres = details.genres.map((g) => g.name);
+      }
+
+      // Keeps the persisted poster in sync with TMDb's current default.
+      if (details.poster_path) {
+        item.cover = `${TMDB_IMAGE_BASE}${details.poster_path}`;
       }
 
       if (item.mediaType === "movie" && details.runtime) {

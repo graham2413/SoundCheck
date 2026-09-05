@@ -12,33 +12,21 @@ const User = require("../models/User");
 const IMDB_STATS_CACHE_TTL = 86400; // 24h
 const CALENDAR_RESPONSE_CACHE_TTL = 86400; // 24h safety-net TTL - actual invalidation is calendar-day based, see getLocalDateString
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/original"; // matches backfillCinemaCovers.js
+exports.TMDB_IMAGE_BASE = TMDB_IMAGE_BASE;
 const CALENDAR_CACHE_TIMEZONE = "America/Chicago"; // matches server.js cron timezone
 
 // TMDb's top-level release_date is often an earliest-worldwide/festival date,
-// not the US theatrical date shown on IMDb - prefer the US theatrical entry
-// (type 3) from release_dates when available.
-const RERELEASE_NOTE_PATTERN = /re-release|rerelease|restoration|anniversary/i;
-
-const getUsTheatricalRelease = (movieDetails) => {
-  const usDates = movieDetails?.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates;
-  const theatrical = usDates?.find((d) => d.type === 3);
-  // release_dates entries are full ISO datetimes ("...T00:00:00.000Z"), unlike
-  // the plain "YYYY-MM-DD" from the generic release_date field - normalize to
-  // date-only so both shapes match what the frontend countdown parser expects.
-  const releaseDate = (theatrical?.release_date || movieDetails?.release_date)?.slice(0, 10);
-  const isRerelease = RERELEASE_NOTE_PATTERN.test(theatrical?.note || "");
-  return { releaseDate, isRerelease };
-};
-exports.getUsTheatricalRelease = getUsTheatricalRelease;
+// not the US theatrical date shown on IMDb - prefer the actual US entry from
+// release_dates when available (see getUsOriginalTheatricalRelease below).
 
 // The movie's actual original theatrical release date, ignoring any later
 // re-release/reissue (e.g. a 25th-anniversary theatrical re-release) - the
 // earliest US "Theatrical limited"/"Theatrical" (type 2/3) entry on record,
 // since a reissue can only ever come after the original by definition. Used
-// anywhere the title's canonical release year is shown (search, watchlist,
-// detail page, sorting) - unlike getUsTheatricalRelease above, which is only
-// for the calendar's "next theatrical event" (which legitimately wants to
-// surface an upcoming re-release as its own event).
+// everywhere the title's canonical release date is shown (search, watchlist,
+// detail page, calendar, sorting) - a movie whose only US entry is type 2
+// with no type 3 at all previously fell back to TMDb's often-inaccurate
+// generic top-level release_date instead.
 const getUsOriginalTheatricalRelease = (movieDetails) => {
   const usDates = movieDetails?.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates || [];
   const earliestTheatrical = usDates
@@ -272,10 +260,31 @@ exports.getCalendar = async (req, res) => {
 
     const movieEntries = movieItems
       .map((item, i) => {
-        const { releaseDate, isRerelease } = getUsTheatricalRelease(movieDetails[i]);
+        const details = movieDetails[i];
+        if (!details) return null;
+
+        // Mirrors getUsOriginalTheatricalRelease/getUsRerelease used
+        // everywhere else (search/watchlist/detail) instead of the old
+        // "first type-3 entry, else generic top-level release_date"
+        // fallback, which could disagree with the canonical US date (e.g.
+        // a movie whose only US entry is type 2 "Theatrical limited" with
+        // no type 3 at all would fall back to TMDb's often-earlier generic
+        // worldwide release_date instead of the actual US date).
+        const originalReleaseDate = getUsOriginalTheatricalRelease(details);
+        if (!originalReleaseDate) return null;
+        const rereleaseDate = getUsRerelease(details, originalReleaseDate);
+
+        // Pick whichever theatrical event (original or a later reissue) is
+        // actually the relevant one for the requested range.
+        const candidates = [originalReleaseDate, rereleaseDate].filter(Boolean);
+        const releaseDate =
+          range === "upcoming"
+            ? candidates.filter((d) => d >= todayStr).sort()[0]
+            : candidates.filter((d) => d < todayStr).sort().reverse()[0];
         if (!releaseDate) return null;
-        if (range === "upcoming" && releaseDate < todayStr) return null;
-        if (range === "past" && releaseDate >= todayStr) return null;
+
+        const isRerelease = releaseDate === rereleaseDate && rereleaseDate !== originalReleaseDate;
+
         return {
           _id: item._id,
           tmdbId: item.tmdbId,
@@ -922,6 +931,14 @@ const fetchCinemaMetadata = async (tmdbId, mediaType, { forceRefresh = false } =
   if (!details) return {};
 
   const metadata = {};
+
+  // Keeps the persisted poster in sync with TMDb's current default (it can
+  // change after add-time, e.g. a placeholder/teaser poster swapped for the
+  // final theatrical one) - otherwise search/detail (always live) drift out
+  // of sync with the watchlist/calendar's one-time-captured cover.
+  if (details.poster_path) {
+    metadata.cover = `${TMDB_IMAGE_BASE}${details.poster_path}`;
+  }
 
   if (details.genres?.length) {
     metadata.genres = details.genres.map((g) => g.name);

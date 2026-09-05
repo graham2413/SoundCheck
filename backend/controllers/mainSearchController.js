@@ -600,7 +600,7 @@ async function cronSyncAllArtists(batchSize = 10, delayMs = 1000) {
 
         try {
           await syncArtistAlbums(id, name);
-          await redis.set(redisKey, "1");
+          await redis.set(redisKey, "1", "EX", 60 * 60 * 24 * 2); // outlives the date-scoped key by a day as a safety margin
           return { id, name, status: "synced" };
         } catch (err) {
           console.error(

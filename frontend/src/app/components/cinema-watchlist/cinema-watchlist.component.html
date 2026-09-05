@@ -8,7 +8,7 @@
 
 <div
   *ngIf="!isLoading && items.length > 0 && !groupByReleaseStatus"
-  class="flex flex-col gap-3 max-w-3xl mx-auto -mx-2"
+  class="flex flex-col gap-3 max-w-3xl mx-auto"
   infiniteScroll
   [infiniteScrollDistance]="2"
   [infiniteScrollThrottle]="150"
@@ -23,7 +23,7 @@
 
 <div
   *ngIf="!isLoading && items.length > 0 && groupByReleaseStatus"
-  class="flex flex-col gap-5 max-w-3xl mx-auto -mx-2"
+  class="flex flex-col gap-5 max-w-3xl mx-auto"
   infiniteScroll
   [infiniteScrollDistance]="2"
   [infiniteScrollThrottle]="150"
@@ -56,7 +56,7 @@
 <ng-template #row let-item="item" let-i="i">
   <div
     (click)="onItemClick(item, i)"
-    class="flex flex-row items-center gap-4 rounded-lg cursor-pointer overflow-hidden border"
+    class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
     style="background-color: #101621; border-color: #212530"
   >
     <div class="relative aspect-[2/3] h-36 md:h-40 flex-shrink-0">
@@ -64,7 +64,7 @@
            detail page's placeholder so it's consistent across the app. -->
       <div
         *ngIf="!getThumbUrl(item.cover)"
-        class="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-lg bg-gray-900 px-2 text-center"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-l-lg bg-gray-900 px-2 text-center"
       >
         <i class="fas fa-clapperboard text-lg text-gray-500"></i>
         <span class="text-[10px] font-bold uppercase leading-tight text-gray-200">{{ item.status || 'Unavailable' }}</span>
@@ -76,7 +76,7 @@
         <!-- Loader -->
         <div
           *ngIf="!isImageLoaded(i)"
-          class="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900"
+          class="absolute inset-0 flex items-center justify-center rounded-l-lg bg-gray-900"
         >
           <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
         </div>
@@ -87,15 +87,15 @@
           (error)="markImageLoaded(i)"
           [class.invisible]="!isImageLoaded(i)"
           alt="{{ item.title }}"
-          class="h-full w-full object-cover rounded-lg"
+          class="h-full w-full object-cover rounded-l-lg"
         />
       </ng-container>
     </div>
 
-    <div class="flex flex-col justify-between flex-1 min-w-0 h-36 md:h-40 py-3 pr-3">
+    <div class="flex flex-col justify-between flex-1 min-w-0 h-36 md:h-40 py-3">
       <div class="min-w-0">
         <span
-          class="text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
+          class="block text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
           [title]="item.title"
         >
           {{ item.title }}

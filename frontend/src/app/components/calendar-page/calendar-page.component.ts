@@ -38,6 +38,10 @@ export class CalendarPageComponent implements OnInit {
   imageLoaded: { [index: number]: boolean } = {};
   range: 'upcoming' | 'past' = 'upcoming';
 
+  get rangeTabIndex(): number {
+    return this.range === 'upcoming' ? 0 : 1;
+  }
+
   constructor(
     private cinemaService: CinemaService,
     private toastr: ToastrService,

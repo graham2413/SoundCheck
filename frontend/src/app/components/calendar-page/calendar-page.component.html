@@ -18,20 +18,25 @@
     </p>
 
     <!-- Upcoming / Past toggle -->
-    <div class="flex justify-center gap-2 mb-6">
+    <div class="relative flex items-center max-w-xs mx-auto mb-6 p-1 rounded-full border border-gray-700 bg-gray-900/50">
+      <div
+        class="absolute top-1 bottom-1 left-1 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
+        style="width: calc((100% - 0.5rem) / 2)"
+        [ngStyle]="{ transform: 'translateX(' + rangeTabIndex * 100 + '%)' }"
+      ></div>
       <button
         type="button"
         (click)="setRange('upcoming')"
-        class="px-4 py-1.5 rounded-full text-sm font-semibold transition"
-        [ngClass]="range === 'upcoming' ? 'bg-[#0F5EE4] text-white' : 'text-gray-400'"
+        [ngClass]="range === 'upcoming' ? 'text-white' : 'text-gray-300'"
+        class="relative z-10 flex-1 whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-colors"
       >
         Upcoming
       </button>
       <button
         type="button"
         (click)="setRange('past')"
-        class="px-4 py-1.5 rounded-full text-sm font-semibold transition"
-        [ngClass]="range === 'past' ? 'bg-[#0F5EE4] text-white' : 'text-gray-400'"
+        [ngClass]="range === 'past' ? 'text-white' : 'text-gray-300'"
+        class="relative z-10 flex-1 whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-colors"
       >
         Past
       </button>
@@ -49,14 +54,14 @@
         @entryAnim
         *ngFor="let entry of entries; let i = index"
         (click)="openEntry(entry)"
-        class="flex flex-row items-center gap-4 rounded-lg cursor-pointer overflow-hidden border"
+        class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
         style="background-color: #101621; border-color: #212530"
       >
         <div class="relative aspect-[2/3] h-32 md:h-40 flex-shrink-0">
           <!-- Loader -->
           <div
             *ngIf="!imageLoaded[i]"
-            class="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900"
+            class="absolute inset-0 flex items-center justify-center rounded-l-lg bg-gray-900"
           >
             <div
               class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
@@ -72,13 +77,13 @@
             (error)="imageLoaded[i] = true"
             [class.invisible]="!imageLoaded[i]"
             alt="{{ entry.title }}"
-            class="h-full w-full object-cover rounded-lg"
+            class="h-full w-full object-cover rounded-l-lg"
           />
         </div>
 
         <div class="flex flex-col justify-center flex-1 min-w-0 py-3 pr-3">
           <span
-            class="text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
+            class="block text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
             [title]="entry.title"
           >
             {{ entry.title }}
