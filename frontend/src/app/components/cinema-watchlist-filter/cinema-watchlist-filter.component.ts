@@ -16,7 +16,7 @@ export interface CinemaWatchlistFilterState {
 }
 
 export const DEFAULT_WATCHLIST_FILTERS: CinemaWatchlistFilterState = {
-  status: 'all',
+  status: 'unwatched',
   mediaType: 'all',
   releaseStatus: 'all',
   genre: '',
