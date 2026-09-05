@@ -9,6 +9,7 @@ const {
   debugTmdbSearch,
   importTraktExport,
   getWatchlist,
+  getWatchlistFilterOptions,
   editCinemaItem,
   getCinemaReviews,
   searchCinema,
@@ -27,6 +28,9 @@ router.get("/detail/:mediaType/:tmdbId", authenticateUser, getCinemaDetail);
 
 // Search movies/shows via TMDb (Protected)
 router.get("/search", authenticateUser, searchCinema);
+
+// Distinct genres/providers available to filter this user's watchlist by (Protected)
+router.get("/watchlist/:userId/filters", authenticateUser, getWatchlistFilterOptions);
 
 // A user's watchlist - owner always allowed, others only if public (Protected)
 router.get("/watchlist/:userId", authenticateUser, getWatchlist);

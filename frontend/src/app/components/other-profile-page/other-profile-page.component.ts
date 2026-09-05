@@ -21,14 +21,20 @@ import { AppComponent } from 'src/app/app.component';
 import { BaseRecord } from 'src/app/models/responses/base-record';
 import { ReviewService } from 'src/app/services/review.service';
 import { CinemaService } from 'src/app/services/cinema.service';
+import { WatchlistFilters } from 'src/app/services/cinema.service';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
 import { CinemaWatchlistComponent } from '../cinema-watchlist/cinema-watchlist.component';
+import {
+  CinemaWatchlistFilterComponent,
+  CinemaWatchlistFilterState,
+  DEFAULT_WATCHLIST_FILTERS,
+} from '../cinema-watchlist-filter/cinema-watchlist-filter.component';
 
 type ModalRecord = Album | Song | Artist | BaseRecord;
 @Component({
   selector: 'app-view-profile-page',
-  imports: [CommonModule, FormsModule, CinemaWatchlistComponent],
+  imports: [CommonModule, FormsModule, CinemaWatchlistComponent, CinemaWatchlistFilterComponent],
   templateUrl: './other-profile-page.component.html',
   styleUrl: './other-profile-page.component.css',
   standalone: true,
@@ -96,15 +102,20 @@ export class ViewProfilePageComponent implements OnInit {
   isImportingTraktExport: boolean = false;
   watchlistItems: CinemaItem[] = [];
   watchlistTotalCount: number = 0;
-  // Count of items matching the current media-type filter (panel header uses
-  // this; the outer profile stat badge always uses watchlistTotalCount, which
-  // only ever reflects the true unfiltered total).
+  // Count of items matching the current filters (panel header uses this;
+  // the outer profile stat badge always uses watchlistTotalCount, which the
+  // backend now returns as its own dedicated always-true-total field so
+  // broadening the panel's default listing below doesn't affect it).
   filteredWatchlistCount: number = 0;
-  watchlistMediaTypeFilter: 'all' | 'movie' | 'tv' = 'all';
+  watchlistFilters: CinemaWatchlistFilterState = { ...DEFAULT_WATCHLIST_FILTERS };
+  watchlistFilterOptions: { genres: string[]; providers: string[] } = { genres: [], providers: [] };
+  showWatchlistFilterOverlay = false;
+  watchlistSearchQuery: string = '';
+  private watchlistSearchDebounce: ReturnType<typeof setTimeout> | null = null;
   isLoadingWatchlist: boolean = false;
   isFetchingMoreWatchlist: boolean = false;
   hasMoreWatchlist: boolean = true;
-  private watchlistCursor: { cursorDate: string; cursorId: string } | null = null;
+  private watchlistCursor: { cursorValue: string; cursorId: string } | null = null;
   isProfileReady: boolean = false;
   gradientPresets = [
     { name: 'Indigo to Purple', value: 'from-indigo-600 to-purple-500' },
@@ -183,6 +194,7 @@ export class ViewProfilePageComponent implements OnInit {
     // collection/endpoint and the backend already enforces privacy itself
     // (403 if private), so there's no need to wait on the profile response first
     this.loadWatchlistIfVisible();
+    this.loadWatchlistFilterOptions();
 
     this.userService.getOtherUserProfileInfo(this.otherUserId).subscribe({
       next: (response) => {
@@ -847,14 +859,11 @@ export class ViewProfilePageComponent implements OnInit {
     this.isLoadingWatchlist = true;
     this.watchlistCursor = null;
     this.hasMoreWatchlist = true;
-    const mediaType = this.watchlistMediaTypeFilter === 'all' ? undefined : this.watchlistMediaTypeFilter;
-    this.cinemaService.getWatchlist(this.otherUserId, null, mediaType).subscribe({
+    this.cinemaService.getWatchlist(this.otherUserId, null, this.buildWatchlistApiFilters()).subscribe({
       next: (response) => {
         this.watchlistItems = response.data;
         this.filteredWatchlistCount = response.totalCount;
-        if (this.watchlistMediaTypeFilter === 'all') {
-          this.watchlistTotalCount = response.totalCount;
-        }
+        this.watchlistTotalCount = response.watchlistCount;
         this.watchlistCursor = response.nextCursor;
         this.hasMoreWatchlist = !!response.nextCursor;
         this.isLoadingWatchlist = false;
@@ -868,21 +877,71 @@ export class ViewProfilePageComponent implements OnInit {
     });
   }
 
-  // Switches the watchlist panel's media-type filter and reloads from page 1
-  setWatchlistMediaTypeFilter(mediaType: 'all' | 'movie' | 'tv'): void {
-    if (this.watchlistMediaTypeFilter === mediaType) return;
-    this.watchlistMediaTypeFilter = mediaType;
+  // Maps the panel's UI filter state onto the service's API filter shape
+  // ('all' selections mean "omit this param" to the backend).
+  private buildWatchlistApiFilters(): WatchlistFilters {
+    const f = this.watchlistFilters;
+    return {
+      mediaType: f.mediaType === 'all' ? undefined : f.mediaType,
+      status: f.status === 'all' ? undefined : f.status,
+      releaseStatus: f.releaseStatus === 'all' ? undefined : f.releaseStatus,
+      genre: f.genre || undefined,
+      provider: f.provider || undefined,
+      hasReleaseDate: f.hasReleaseDateOnly || undefined,
+      hasRating: f.hasRatingOnly || undefined,
+      sortBy: f.sortBy,
+      sortOrder: f.sortOrder,
+      search: this.watchlistSearchQuery,
+    };
+  }
+
+  loadWatchlistFilterOptions(): void {
+    if (!this.otherUserId) return;
+    this.cinemaService.getWatchlistFilterOptions(this.otherUserId).subscribe({
+      next: (response) => {
+        this.watchlistFilterOptions = { genres: response.genres, providers: response.providers };
+      },
+      error: () => {
+        this.watchlistFilterOptions = { genres: [], providers: [] };
+      },
+    });
+  }
+
+  openWatchlistFilterOverlay(): void {
+    this.showWatchlistFilterOverlay = true;
+  }
+
+  closeWatchlistFilterOverlay(): void {
+    this.showWatchlistFilterOverlay = false;
+  }
+
+  applyWatchlistFilters(filters: CinemaWatchlistFilterState): void {
+    this.watchlistFilters = filters;
+    this.showWatchlistFilterOverlay = false;
     this.loadWatchlistIfVisible();
   }
 
-  // Keeps the outer profile stat (always unfiltered) and the panel header's
-  // filtered count in sync when an item is added/removed from elsewhere
-  // (e.g. the modal's own Add to Watchlist button, or rating an item).
+  // Debounced so we don't fire a request on every keystroke - backend-side
+  // search (not a client-side filter) since only ~30 items are loaded at a
+  // time out of a watchlist that can have hundreds of entries.
+  onWatchlistSearchInput(): void {
+    if (this.watchlistSearchDebounce) clearTimeout(this.watchlistSearchDebounce);
+    this.watchlistSearchDebounce = setTimeout(() => this.loadWatchlistIfVisible(), 350);
+  }
+
+  // Keeps the outer profile stat (always the true "still on watchlist" total)
+  // and the panel header's filtered count in sync when an item is
+  // added/removed from elsewhere (e.g. the modal's own Add to Watchlist
+  // button, or rating an item).
   private adjustWatchlistCounts(delta: number, item: CinemaItem): void {
     this.watchlistTotalCount = Math.max(0, this.watchlistTotalCount + delta);
-    const matchesFilter =
-      this.watchlistMediaTypeFilter === 'all' || item.mediaType === this.watchlistMediaTypeFilter;
-    if (matchesFilter) {
+    const f = this.watchlistFilters;
+    const matchesMediaType = f.mediaType === 'all' || item.mediaType === f.mediaType;
+    const matchesStatus =
+      f.status === 'all' ||
+      (f.status === 'watched' && item.isWatched) ||
+      (f.status === 'unwatched' && item.isWatchlist && !item.isWatched);
+    if (matchesMediaType && matchesStatus) {
       this.filteredWatchlistCount = Math.max(0, this.filteredWatchlistCount + delta);
     }
   }
@@ -893,18 +952,19 @@ export class ViewProfilePageComponent implements OnInit {
     if (this.isFetchingMoreWatchlist || !this.hasMoreWatchlist || !this.watchlistCursor || !this.otherUserId) return;
 
     this.isFetchingMoreWatchlist = true;
-    const mediaType = this.watchlistMediaTypeFilter === 'all' ? undefined : this.watchlistMediaTypeFilter;
-    this.cinemaService.getWatchlist(this.otherUserId, this.watchlistCursor, mediaType).subscribe({
-      next: (response) => {
-        this.watchlistItems = [...this.watchlistItems, ...response.data];
-        this.watchlistCursor = response.nextCursor;
-        this.hasMoreWatchlist = !!response.nextCursor;
-        this.isFetchingMoreWatchlist = false;
-      },
-      error: () => {
-        this.isFetchingMoreWatchlist = false;
-      },
-    });
+    this.cinemaService
+      .getWatchlist(this.otherUserId, this.watchlistCursor, this.buildWatchlistApiFilters())
+      .subscribe({
+        next: (response) => {
+          this.watchlistItems = [...this.watchlistItems, ...response.data];
+          this.watchlistCursor = response.nextCursor;
+          this.hasMoreWatchlist = !!response.nextCursor;
+          this.isFetchingMoreWatchlist = false;
+        },
+        error: () => {
+          this.isFetchingMoreWatchlist = false;
+        },
+      });
   }
 
   openWatchlist() {

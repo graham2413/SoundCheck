@@ -678,6 +678,13 @@
         >
           {{ item.genres?.join(', ') }}
         </p>
+        <span
+          *ngIf="isComingSoon(item.releaseDate)"
+          class="inline-block w-fit mt-1 px-2 py-0.5 rounded-md text-xs font-semibold"
+          style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.5); color: #93c5fd"
+        >
+          Coming Soon
+        </span>
       </div>
       <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
     </div>

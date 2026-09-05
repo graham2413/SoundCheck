@@ -7,7 +7,7 @@
 </p>
 
 <div
-  *ngIf="!isLoading && items.length > 0"
+  *ngIf="!isLoading && items.length > 0 && !groupByReleaseStatus"
   class="flex flex-col gap-3 max-w-3xl mx-auto"
   infiniteScroll
   [infiniteScrollDistance]="2"
@@ -16,8 +16,45 @@
   [infiniteScrollContainer]="scrollContainer"
   (scrolled)="loadMore.emit()"
 >
+  <ng-container *ngFor="let item of items; let i = index">
+    <ng-container *ngTemplateOutlet="row; context: { item: item, i: i }"></ng-container>
+  </ng-container>
+</div>
+
+<div
+  *ngIf="!isLoading && items.length > 0 && groupByReleaseStatus"
+  class="flex flex-col gap-5 max-w-3xl mx-auto"
+  infiniteScroll
+  [infiniteScrollDistance]="2"
+  [infiniteScrollThrottle]="150"
+  [scrollWindow]="false"
+  [infiniteScrollContainer]="scrollContainer"
+  (scrolled)="loadMore.emit()"
+>
+  <div *ngIf="availableNowItems.length" class="flex flex-col gap-3">
+    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wide px-1">Available Now</h3>
+    <ng-container *ngFor="let item of availableNowItems">
+      <ng-container *ngTemplateOutlet="row; context: { item: item, i: indexOfItem(item) }"></ng-container>
+    </ng-container>
+  </div>
+
+  <div *ngIf="inTheatersItems.length" class="flex flex-col gap-3">
+    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wide px-1">In Theaters</h3>
+    <ng-container *ngFor="let item of inTheatersItems">
+      <ng-container *ngTemplateOutlet="row; context: { item: item, i: indexOfItem(item) }"></ng-container>
+    </ng-container>
+  </div>
+
+  <div *ngIf="comingSoonItems.length" class="flex flex-col gap-3">
+    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wide px-1">Coming Soon</h3>
+    <ng-container *ngFor="let item of comingSoonItems">
+      <ng-container *ngTemplateOutlet="row; context: { item: item, i: indexOfItem(item) }"></ng-container>
+    </ng-container>
+  </div>
+</div>
+
+<ng-template #row let-item="item" let-i="i">
   <div
-    *ngFor="let item of items; let i = index"
     (click)="onItemClick(item, i)"
     class="flex flex-row items-center gap-4 rounded-lg cursor-pointer overflow-hidden border"
     style="background-color: #101621; border-color: #212530"
@@ -72,12 +109,20 @@
       >
         {{ item.genres?.join(', ') }}
       </p>
+      <span
+        *ngIf="isComingSoon(item.releaseDate)"
+        class="inline-block w-fit mt-1 px-2 py-0.5 rounded-md text-xs font-semibold"
+        style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.5); color: #93c5fd"
+      >
+        Coming Soon
+      </span>
     </div>
 
     <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
   </div>
-</div>
+</ng-template>
 
 <div *ngIf="isFetchingMore" class="flex justify-center py-4">
   <i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i>
 </div>
+

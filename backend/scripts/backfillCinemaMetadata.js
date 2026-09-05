@@ -20,7 +20,7 @@ if (require.main === module) {
 const mongoose = require("mongoose");
 const CinemaItem = require("../models/CinemaItem");
 const { getTmdbDetails } = require("../utils/callTmdb");
-const { getUsTheatricalRelease, buildWatchProviders } = require("../controllers/cinemaController");
+const { getUsTheatricalRelease, hasTheatricalRelease, getUsDigitalRelease, buildWatchProviders } = require("../controllers/cinemaController");
 
 // filter lets callers scope this to one user's items instead of the whole DB.
 // force re-backfills items that already have this data (e.g. one-time quality upgrades).
@@ -41,6 +41,8 @@ async function backfillCinemaMetadata(filter = {}, { force = false } = {}) {
             { releaseDate: { $exists: false } },
             { releaseDate: null },
             { mediaType: "tv", releaseYearRange: { $exists: false } },
+            { mediaType: "movie", hadTheatricalRelease: { $exists: false } },
+            { mediaType: "movie", digitalReleaseDate: { $exists: false } },
           ],
         }),
   });
@@ -73,6 +75,12 @@ async function backfillCinemaMetadata(filter = {}, { force = false } = {}) {
           : details.first_air_date;
       if (releaseDate) {
         item.releaseDate = new Date(releaseDate);
+      }
+
+      if (item.mediaType === "movie") {
+        item.hadTheatricalRelease = hasTheatricalRelease(details);
+        const digitalReleaseDate = getUsDigitalRelease(details);
+        item.digitalReleaseDate = digitalReleaseDate ? new Date(digitalReleaseDate) : null;
       }
 
       // TV only - mirrors searchCinema's "2017-2025"/"2016-Present" display format

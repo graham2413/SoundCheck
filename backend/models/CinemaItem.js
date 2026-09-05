@@ -1,20 +1,15 @@
 const mongoose = require("mongoose");
 
-// Episode subdocument (used only when mediaType === "tv")
-const episodeSchema = new mongoose.Schema({
+// Sparse - only one entry per episode the user has actually watched/rated/
+// reviewed, not pre-populated from TMDb. No entry for an episode means "not
+// watched". Used for TV shows only.
+const episodeReviewSchema = new mongoose.Schema({
   seasonNumber: { type: Number, required: true },
   episodeNumber: { type: Number, required: true },
-  title: String,
-  duration: Number, // runtime in seconds
-  airDate: Date,
-  isWatched: { type: Boolean, default: false },
-}, { _id: false });
-
-// Season subdocument (used only when mediaType === "tv")
-const seasonSchema = new mongoose.Schema({
-  seasonNumber: { type: Number, required: true },
-  title: String,
-  episodes: [episodeSchema],
+  isWatched: { type: Boolean, default: true },
+  decimalRating: { type: Number, min: 0, max: 10 },
+  reviewText: String,
+  reviewedAt: Date,
 }, { _id: false });
 
 const cinemaItemSchema = new mongoose.Schema({
@@ -30,6 +25,8 @@ const cinemaItemSchema = new mongoose.Schema({
   duration: Number, // runtime in seconds (movie only)
   releaseDate: Date,
   releaseYearRange: String, // TV only, e.g. "2017-2025" or "2016-Present" (mirrors search's display format)
+  hadTheatricalRelease: Boolean, // movie only - did it actually get a US theatrical run at all (see hasTheatricalRelease())
+  digitalReleaseDate: Date, // movie only - earliest known US digital release date, see getUsDigitalRelease()
   genres: [String],
   streamingPlatforms: [String],
   decimalRating: { type: Number, min: 0, max: 10 }, // e.g. 8.4
@@ -38,10 +35,11 @@ const cinemaItemSchema = new mongoose.Schema({
   likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
   isWatchlist: { type: Boolean, default: false },
+  isWatched: { type: Boolean, default: false }, // coarse "watched at least once" flag, used for filtering
   isUnrefinedImport: { type: Boolean, default: false }, // true if imported without full metadata (e.g. Trakt/Nuvio)
   traktSynced: { type: Boolean, default: false },
 
-  seasons: [seasonSchema], // only populated when mediaType === "tv"
+  episodeReviews: [episodeReviewSchema], // TV only, see schema comment above
 
   createdAt: { type: Date, default: Date.now },
 });
@@ -55,27 +53,6 @@ cinemaItemSchema.index(
   { user: 1, imdbId: 1 },
   { unique: true, partialFilterExpression: { imdbId: { $exists: true } } }
 );
-
-// Completion % across all seasons/episodes (TV only)
-cinemaItemSchema.methods.getCompletionPercentage = function () {
-  if (!this.seasons || this.seasons.length === 0) return 0;
-
-  let totalEpisodes = 0;
-  let watchedEpisodes = 0;
-
-  this.seasons.forEach((season) => {
-    season.episodes.forEach((episode) => {
-      totalEpisodes += 1;
-      if (episode.isWatched) watchedEpisodes += 1;
-    });
-  });
-
-  return totalEpisodes === 0 ? 0 : Math.round((watchedEpisodes / totalEpisodes) * 100);
-};
-
-cinemaItemSchema.virtual("completionPercentage").get(function () {
-  return this.getCompletionPercentage();
-});
 
 cinemaItemSchema.set("toJSON", { virtuals: true });
 

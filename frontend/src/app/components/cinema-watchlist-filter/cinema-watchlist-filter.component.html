@@ -1,0 +1,254 @@
+<div class="fixed inset-0 z-30 flex justify-end bg-black/60" (click)="close()">
+  <div
+    class="w-full max-w-sm h-full overflow-y-auto p-5"
+    style="background-color: #0b1120"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-semibold text-white">Sort &amp; Filter</h2>
+      <button type="button" (click)="close()" class="text-gray-400 hover:text-white text-2xl leading-none">
+        &times;
+      </button>
+    </div>
+
+    <!-- Sort By -->
+    <div class="mb-5">
+      <h3 class="text-sm font-semibold text-gray-300 mb-2">Sort By</h3>
+      <select
+        [(ngModel)]="draft.sortBy"
+        class="w-full px-3 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-[#0F5EE4] mb-2"
+      >
+        <option value="dateAdded">Date Added</option>
+        <option value="releaseDate">Release Date</option>
+        <option value="title">Title</option>
+      </select>
+
+      <div class="flex gap-2">
+        <button
+          type="button"
+          (click)="setSortOrder('desc')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
+          [ngClass]="draft.sortOrder === 'desc' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          {{ sortOrderLabels.desc }}
+        </button>
+        <button
+          type="button"
+          (click)="setSortOrder('asc')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
+          [ngClass]="draft.sortOrder === 'asc' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          {{ sortOrderLabels.asc }}
+        </button>
+      </div>
+    </div>
+
+    <hr class="border-gray-700 mb-5" />
+    <h2 class="text-lg font-semibold text-white mb-4">Filter</h2>
+
+    <!-- Watch Status -->
+    <div class="mb-5">
+      <h3 class="text-sm font-semibold text-gray-300 mb-2">Watch Status</h3>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          (click)="setStatus('unwatched')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
+          [ngClass]="draft.status === 'unwatched' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          Unwatched
+        </button>
+        <button
+          type="button"
+          (click)="setStatus('watched')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
+          [ngClass]="draft.status === 'watched' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          Watched
+        </button>
+        <button
+          type="button"
+          (click)="setStatus('all')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
+          [ngClass]="draft.status === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          All
+        </button>
+      </div>
+    </div>
+
+    <!-- Release Status -->
+    <div class="mb-5">
+      <h3 class="text-sm font-semibold text-gray-300 mb-2">Release Status</h3>
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          (click)="setReleaseStatus('all')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
+          [ngClass]="draft.releaseStatus === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          All
+        </button>
+        <button
+          type="button"
+          (click)="setReleaseStatus('available')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
+          [ngClass]="draft.releaseStatus === 'available' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          Available Now
+        </button>
+        <button
+          type="button"
+          (click)="setReleaseStatus('in_theaters')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
+          [ngClass]="draft.releaseStatus === 'in_theaters' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          In Theaters
+        </button>
+        <button
+          type="button"
+          (click)="setReleaseStatus('coming_soon')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
+          [ngClass]="draft.releaseStatus === 'coming_soon' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          Coming Soon
+        </button>
+      </div>
+    </div>
+
+    <!-- Content Type -->
+    <div class="mb-5">
+      <h3 class="text-sm font-semibold text-gray-300 mb-2">Content Type</h3>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          (click)="setMediaType('all')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
+          [ngClass]="draft.mediaType === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          All
+        </button>
+        <button
+          type="button"
+          (click)="setMediaType('movie')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
+          [ngClass]="draft.mediaType === 'movie' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          Movies
+        </button>
+        <button
+          type="button"
+          (click)="setMediaType('tv')"
+          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
+          [ngClass]="draft.mediaType === 'tv' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        >
+          TV Shows
+        </button>
+      </div>
+    </div>
+
+    <!-- Genres -->
+    <div class="mb-5">
+      <h3 class="text-sm font-semibold text-gray-300 mb-2">Genres</h3>
+      <select
+        [(ngModel)]="draft.genre"
+        class="w-full px-3 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-[#0F5EE4]"
+      >
+        <option value="">All Genres</option>
+        <option *ngFor="let g of genres" [value]="g">{{ g }}</option>
+      </select>
+    </div>
+
+    <!-- Availability -->
+    <div class="mb-5">
+      <h3 class="text-sm font-semibold text-gray-300 mb-2">Availability</h3>
+      <select
+        [(ngModel)]="draft.provider"
+        class="w-full px-3 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-[#0F5EE4]"
+      >
+        <option value="">All Providers</option>
+        <option *ngFor="let p of providers" [value]="p">{{ p }}</option>
+      </select>
+    </div>
+
+    <!-- Toggles -->
+    <div class="mb-6 flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-white text-sm font-medium">Show Only My Rated Items</p>
+          <p class="text-gray-500 text-xs">Items you've already rated or reviewed</p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          [attr.aria-checked]="draft.hasRatingOnly"
+          (click)="draft.hasRatingOnly = !draft.hasRatingOnly"
+          class="w-11 h-6 rounded-full transition flex-shrink-0 relative"
+          [ngClass]="draft.hasRatingOnly ? 'bg-[#0F5EE4]' : 'bg-gray-700'"
+        >
+          <span
+            class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform"
+            [ngClass]="draft.hasRatingOnly ? 'translate-x-5' : ''"
+          ></span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-white text-sm font-medium">Show Only Items with a Release Date</p>
+          <p class="text-gray-500 text-xs">Hide items without a confirmed date</p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          [attr.aria-checked]="draft.hasReleaseDateOnly"
+          (click)="draft.hasReleaseDateOnly = !draft.hasReleaseDateOnly"
+          class="w-11 h-6 rounded-full transition flex-shrink-0 relative"
+          [ngClass]="draft.hasReleaseDateOnly ? 'bg-[#0F5EE4]' : 'bg-gray-700'"
+        >
+          <span
+            class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform"
+            [ngClass]="draft.hasReleaseDateOnly ? 'translate-x-5' : ''"
+          ></span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-white text-sm font-medium">Group by Release Status</p>
+          <p class="text-gray-500 text-xs">Organize into Available Now / In Theaters / Coming Soon</p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          [attr.aria-checked]="draft.groupByReleaseStatus"
+          (click)="draft.groupByReleaseStatus = !draft.groupByReleaseStatus"
+          class="w-11 h-6 rounded-full transition flex-shrink-0 relative"
+          [ngClass]="draft.groupByReleaseStatus ? 'bg-[#0F5EE4]' : 'bg-gray-700'"
+        >
+          <span
+            class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform"
+            [ngClass]="draft.groupByReleaseStatus ? 'translate-x-5' : ''"
+          ></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button
+        type="button"
+        (click)="reset()"
+        class="flex-1 px-4 py-2 rounded-lg border border-gray-700 text-gray-300 font-semibold hover:bg-gray-800 transition"
+      >
+        Reset
+      </button>
+      <button
+        type="button"
+        (click)="applyFilters()"
+        class="flex-1 px-4 py-2 rounded-lg bg-[#0F5EE4] text-white font-semibold hover:bg-blue-600 transition"
+      >
+        Apply Filters
+      </button>
+    </div>
+  </div>
+</div>

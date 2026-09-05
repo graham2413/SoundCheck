@@ -1,0 +1,17 @@
+feat: cinema watchlist Sort & Filter overlay, isWatched tracking, release-status refinements
+
+- Add isWatched field end-to-end: schema, editCinemaItem rating flow, backfill script, Unwatched/Watched/All watchlist filter
+- Add full Sort & Filter overlay for the watchlist (Watch Status, Release Status, Content Type, Genres, Sort By, Availability, and toggles), replacing the old inline filter button rows
+- Add In Theaters/Available Now/Coming Soon release-status filtering, driven by TMDb's own theatrical/digital release records (hadTheatricalRelease/digitalReleaseDate) instead of a fixed day-count guess
+- Add Group by Release Status option to the watchlist list
+- Fix stale hadTheatricalRelease/digitalReleaseDate data caused by a pre-fix TMDb response cache; bumped cache key and re-ran backfill
+- Fix a query bug in getWatchlist where two $or conditions silently overwrote each other via object spread
+- Fix Where-to-Watch provider logos showing a low-res/composited badge instead of the clean brand logo; now pulls max resolution and prefers the canonical (non-channel) provider entry
+- Fix duration display showing "0h" when only minutes are known
+- Fix calendar opening the old music review modal instead of the cinema detail modal
+- Fix main search page not remembering search mode/recent searches when navigating away and back
+- Fix loading spinners rendering off-center or far down the page on profile, friends, and calendar screens; calendar's loader now sits in-flow below the Upcoming/Past tabs instead of a full-screen takeover
+- Default main search page to Cinema mode instead of Music
+- Add "Searching for" query text to the friends search loading state
+
+Docs: updated release-notes.json with a user-facing summary of the above

@@ -2,6 +2,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  OnDestroy,
   OnInit,
   ViewChild,
 } from '@angular/core';
@@ -34,6 +35,7 @@ import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { CinemaItem, CinemaSearchResult } from 'src/app/models/responses/cinema-response';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
+import { MainSearchStateService } from 'src/app/services/main-search-state.service';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { MarqueeComponent } from './marquee/marquee.component';
 
@@ -73,7 +75,7 @@ type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
     ])
   ]
 })
-export class MainSearchComponent implements OnInit {
+export class MainSearchComponent implements OnInit, OnDestroy {
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
 
   @ViewChild('dropdownContainer') dropdownContainer!: ElementRef;
@@ -89,7 +91,7 @@ export class MainSearchComponent implements OnInit {
   // `activeTab` so switching it doesn't change the currently shown results.
   selectedSearchTab: 'songs' | 'albums' | 'artists' = 'songs';
   activeDiscoverTab: 'mainSearch' | 'popular' | 'recentActivity' = 'mainSearch';
-  searchType: 'music' | 'cinema' = 'music';
+  searchType: 'music' | 'cinema' = 'cinema';
   cinemaResults: CinemaSearchResult[] = [];
   isModalOpen = false;
   selectedRecord: Album | Artist | Song | null = null;
@@ -203,7 +205,8 @@ export class MainSearchComponent implements OnInit {
     private router: Router,
     private userService: UserService,
     private timeAgoPipe: TimeAgoPipe,
-    private cinemaService: CinemaService
+    private cinemaService: CinemaService,
+    private searchStateService: MainSearchStateService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -218,6 +221,59 @@ export class MainSearchComponent implements OnInit {
     ) {
       this.setActiveDiscoverTab(this.section);
     }
+
+    this.restoreSearchState();
+  }
+
+  ngOnDestroy(): void {
+    this.searchStateService.save({
+      searchType: this.searchType,
+      query: this.query,
+      lastSearchedQuery: this.lastSearchedQuery,
+      searchAttempted: this.searchAttempted,
+      selectedSearchTab: this.selectedSearchTab,
+      activeTab: this.activeTab,
+      results: this.results,
+      filteredResults: this.filteredResults,
+      selectedGenre: this.selectedGenre,
+      cinemaResults: this.cinemaResults,
+      scrollY: window.scrollY,
+    });
+  }
+
+  // Restores whatever search mode/query/results/scroll position was active
+  // last time this page was visited (see MainSearchStateService) - without
+  // this, navigating away and back always resets to a blank music search.
+  private restoreSearchState(): void {
+    const saved = this.searchStateService.getState();
+    if (!saved) return;
+
+    // Restore the mode/query even if no search was actually completed (e.g.
+    // the user just toggled to Cinema and left) - previously this whole
+    // method bailed out on !searchAttempted, silently reverting the mode
+    // back to music on return.
+    this.searchType = saved.searchType;
+    this.query = saved.query;
+    this.lastSearchedQuery = saved.lastSearchedQuery;
+    this.searchAttempted = saved.searchAttempted;
+    this.selectedSearchTab = saved.selectedSearchTab;
+    this.activeTab = saved.activeTab;
+    this.results = saved.results;
+    this.filteredResults = saved.filteredResults;
+    this.selectedGenre = saved.selectedGenre;
+    this.cinemaResults = saved.cinemaResults;
+
+    // setUserProfile() (called just before this, in ngOnInit) already loaded
+    // recent searches using the pre-restore (default 'music') searchType -
+    // redo it now that the real mode has been restored, otherwise Cinema
+    // mode shows Music's recent searches list until the user switches again.
+    this.loadRecentSearches();
+
+    if (!saved.searchAttempted) return;
+
+    // Wait for the restored results to actually render before scrolling,
+    // same pattern already used elsewhere in this component after a search
+    setTimeout(() => window.scrollTo({ top: saved.scrollY }), 0);
   }
 
   onMarqueeCardClick(event: { album: any; list: any[]; index: number }): void {
@@ -884,6 +940,7 @@ export class MainSearchComponent implements OnInit {
       cover: item.cover ?? undefined,
       releaseDate: item.releaseDate ?? undefined,
       isWatchlist: false,
+      isWatched: false,
       isUnrefinedImport: false,
       traktSynced: false,
       createdAt: new Date().toISOString(),
@@ -1126,6 +1183,14 @@ export class MainSearchComponent implements OnInit {
       'artists',
     ];
     return order.indexOf(this.activeTab);
+  }
+
+  // Simple date-string compare (no live TMDb call needed) - releaseDate is
+  // already returned for every cinema search result, so this is free.
+  isComingSoon(releaseDate?: string | null): boolean {
+    if (!releaseDate) return false;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    return releaseDate.slice(0, 10) > todayStr;
   }
 
   getReleaseLabel(releaseDate: string | Date): string {

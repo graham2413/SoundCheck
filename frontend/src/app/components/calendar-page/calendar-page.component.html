@@ -37,24 +37,16 @@
       </button>
     </div>
 
-    <!-- Skeleton Loader -->
-    <div *ngIf="isLoading" class="flex flex-col gap-3">
-      <div
-        *ngFor="let i of [1, 2, 3, 4, 5]"
-        class="animate-pulse flex flex-row items-center gap-4 rounded-lg overflow-hidden"
-        style="background-color: #101621"
-      >
-        <div class="aspect-[2/3] h-32 md:h-40 bg-gray-700 flex-shrink-0"></div>
-        <div class="flex flex-col justify-center flex-1 gap-2 py-3 pr-3">
-          <div class="h-4 bg-gray-700 rounded w-1/2"></div>
-          <div class="h-3 bg-gray-700 rounded w-1/4"></div>
-        </div>
-      </div>
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="flex flex-col items-center justify-center gap-4 py-24">
+      <div class="cinema-loader-ring"></div>
+      <p class="cinema-loader-text">Loading calendar...</p>
     </div>
 
     <!-- Entries -->
-    <div *ngIf="!isLoading && entries.length > 0" class="flex flex-col gap-3">
+    <div *ngIf="!isLoading && entries.length > 0" @listAnim class="flex flex-col gap-3">
       <div
+        @entryAnim
         *ngFor="let entry of entries; let i = index"
         (click)="openEntry(entry)"
         class="flex flex-row items-center gap-4 rounded-lg cursor-pointer overflow-hidden border"

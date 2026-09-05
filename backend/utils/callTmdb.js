@@ -85,7 +85,10 @@ async function callTmdb(path, params = {}) {
 
 // Cache-aware wrapper: GET /movie/:id or /tv/:id details
 async function getTmdbDetails(tmdbId, mediaType = "movie") {
-  const cacheKey = `tmdb:details:${tmdbId}`;
+  // v2: bumped so older cached blobs (from before release_dates was added to
+  // append_to_response) get treated as a miss and re-fetched, instead of
+  // silently missing release_dates for up to the full 7-day TTL.
+  const cacheKey = `tmdb:details:v2:${tmdbId}`;
   const cached = await redis.get(cacheKey);
   if (cached) return JSON.parse(cached);
 

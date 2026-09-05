@@ -1,14 +1,15 @@
 {
   "New features": [
-    "The calendar now has separate Upcoming and Past tabs, so you can look back at what's already released or aired, not just what's coming next",
-    "Your watchlist can now be filtered to just Movies or just TV Shows, and shows richer info at a glance - genres, release year (or full year range for ongoing shows), and posters",
-    "The forced update screen now shows friendlier, easier-to-read notes about what's new"
+    "Added a full Sort & Filter panel to your watchlist - filter by watched status, release status (Available Now/In Theaters/Coming Soon), genre, streaming platform, and sort order",
+    "Added Unwatched/Watched status tracking so your watchlist and calendar both reflect what you've actually seen",
+    "The main search page now opens to Movies & TV Shows by default"
   ],
   "Performance & stability": [
-    "Fixed a bug where the calendar's \"today\" releases could be dropped or shown a day off due to timezone handling",
-    "Fixed a bug where opening a movie/show detail screen could unexpectedly scroll the page behind it to the bottom",
-    "Watchlist items now keep their genre, runtime, and streaming info up to date automatically when added"
+    "Fixed loading spinners appearing off-center or too far down the page on the profile, friends, and calendar screens",
+    "Fixed some movies incorrectly showing as still in theaters after they were already available to stream",
+    "Fixed search history and search mode not being remembered correctly when navigating away and back"
   ]
 }
+
 
 

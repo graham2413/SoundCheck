@@ -30,6 +30,31 @@ const getUsTheatricalRelease = (movieDetails) => {
 };
 exports.getUsTheatricalRelease = getUsTheatricalRelease;
 
+// Whether this movie actually had/has a theatrical run at all (TMDb release
+// types: 1=Premiere, 2=Theatrical limited, 3=Theatrical, 4=Digital,
+// 5=Physical, 6=TV). Needed because plenty of movies (streaming originals,
+// VOD-only releases) never go to theaters - falling back to "no streaming
+// platform yet = in theaters" would misclassify those as "In Theaters" when
+// they simply haven't been picked up by a major platform we track yet.
+const hasTheatricalRelease = (movieDetails) => {
+  const usDates = movieDetails?.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates;
+  return !!usDates?.some((d) => d.type === 2 || d.type === 3);
+};
+exports.hasTheatricalRelease = hasTheatricalRelease;
+
+// Earliest US "Digital" release date TMDb has on record (type 4), if any -
+// lets "in theaters" be dynamic per-movie instead of a fixed day-count guess:
+// once this date exists and has passed, the movie has left its exclusive
+// theatrical window even if our own streamingPlatforms field hasn't been
+// refreshed to reflect it yet.
+const getUsDigitalRelease = (movieDetails) => {
+  const usDates = movieDetails?.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates;
+  const digitalDates = usDates?.filter((d) => d.type === 4).map((d) => d.release_date?.slice(0, 10)).filter(Boolean);
+  if (!digitalDates?.length) return null;
+  return digitalDates.sort()[0];
+};
+exports.getUsDigitalRelease = getUsDigitalRelease;
+
 
 
 // Today's date (YYYY-MM-DD) in a fixed local timezone, so "a new day" lines up
@@ -135,7 +160,7 @@ exports.getCalendar = async (req, res) => {
     const items = await CinemaItem.find({
       user: req.user._id,
       tmdbId: { $exists: true, $ne: null },
-      $or: [{ isWatchlist: true }, { decimalRating: { $ne: null } }],
+      $or: [{ isWatchlist: true }, { isWatched: true }],
     });
 
     const tvItems = items.filter((i) => i.mediaType === "tv");
@@ -341,26 +366,38 @@ const MAJOR_WATCH_PROVIDERS = new Set([
 // Strips "... Amazon Channel" / "... Roku Premium Channel" style suffixes TMDb
 // uses for bundled add-on listings, so e.g. "HBO Max Amazon Channel" dedupes
 // against a plain "HBO Max" entry instead of showing as a separate tile.
-const normalizeProviderName = (name) =>
-  name.replace(/\s+(Amazon Channel|Roku Premium Channel|Apple TV Channel|Channel)$/i, "").trim();
+const CHANNEL_SUFFIX_RE = /\s+(Amazon Channel|Roku Premium Channel|Apple TV Channel|Channel)$/i;
+const normalizeProviderName = (name) => name.replace(CHANNEL_SUFFIX_RE, "").trim();
 
-const TMDB_PROVIDER_LOGO_BASE = "https://image.tmdb.org/t/p/w92";
+// Tile renders at 76px but pull the max source resolution TMDb offers so
+// logos stay crisp on any display density.
+const TMDB_PROVIDER_LOGO_BASE = "https://image.tmdb.org/t/p/original";
 
 const buildWatchProviders = (flatrateProviders) => {
   if (!Array.isArray(flatrateProviders)) return [];
 
   const seen = new Map();
   for (const provider of flatrateProviders) {
-    const normalizedName = normalizeProviderName(provider.provider_name || "");
-    if (!MAJOR_WATCH_PROVIDERS.has(normalizedName) || seen.has(normalizedName)) continue;
+    const rawName = provider.provider_name || "";
+    const normalizedName = normalizeProviderName(rawName);
+    if (!MAJOR_WATCH_PROVIDERS.has(normalizedName)) continue;
+
+    // TMDb often lists both a clean canonical entry ("HBO Max") and a
+    // bundled "channel" add-on entry ("HBO Max Amazon Channel") for the same
+    // platform - the channel variant's logo is a composited "X on Y" badge,
+    // not the plain brand mark, so always prefer the canonical one if seen.
+    const isCanonical = !CHANNEL_SUFFIX_RE.test(rawName);
+    const existing = seen.get(normalizedName);
+    if (existing && (existing.isCanonical || !isCanonical)) continue;
 
     seen.set(normalizedName, {
       name: normalizedName,
       logoUrl: provider.logo_path ? `${TMDB_PROVIDER_LOGO_BASE}${provider.logo_path}` : null,
+      isCanonical,
     });
   }
 
-  return Array.from(seen.values());
+  return Array.from(seen.values()).map(({ name, logoUrl }) => ({ name, logoUrl }));
 };
 exports.buildWatchProviders = buildWatchProviders;
 
@@ -587,6 +624,7 @@ exports.editCinemaItem = async (req, res) => {
     item.decimalRating = decimalRating;
     item.isUnrefinedImport = false;
     item.isWatchlist = false; // rating it means it's watched, not still "to watch"
+    item.isWatched = true;
     if (reviewText !== undefined) item.reviewText = reviewText;
     if (!isRefinement) item.createdAt = new Date();
     await item.save();
@@ -628,6 +666,11 @@ const fetchCinemaMetadata = async (tmdbId, mediaType) => {
     mediaType === "movie" ? getUsTheatricalRelease(details).releaseDate : details.first_air_date;
   if (releaseDate) {
     metadata.releaseDate = releaseDate;
+  }
+
+  if (mediaType === "movie") {
+    metadata.hadTheatricalRelease = hasTheatricalRelease(details);
+    metadata.digitalReleaseDate = getUsDigitalRelease(details);
   }
 
   if (mediaType === "tv") {
@@ -703,13 +746,13 @@ exports.toggleWatchlist = async (req, res) => {
   }
 };
 
-// GET /api/cinema/watchlist/:userId (Protected)
-// Owners can always view their own watchlist; viewing someone else's requires
-// that user to have set cinemaWatchlistIsPublic (private by default).
-exports.getWatchlist = async (req, res) => {
+// GET /api/cinema/watchlist/:userId/filters (Protected)
+// Distinct genres/providers actually present across everything this user is
+// tracking (watchlist or watched) - powers the Genre/Availability dropdowns
+// in the filter overlay so they only ever show options that could match something.
+exports.getWatchlistFilterOptions = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { cursorDate, cursorId, limit = 30, mediaType } = req.query;
     const isOwner = userId === req.user._id.toString();
 
     if (!isOwner) {
@@ -722,34 +765,175 @@ exports.getWatchlist = async (req, res) => {
       }
     }
 
-    const baseQuery = { user: userId, isWatchlist: true };
-    if (mediaType === "movie" || mediaType === "tv") {
-      baseQuery.mediaType = mediaType;
+    const trackedFilter = { user: userId, $or: [{ isWatchlist: true }, { isWatched: true }] };
+    const [genres, providers] = await Promise.all([
+      CinemaItem.distinct("genres", trackedFilter),
+      CinemaItem.distinct("streamingPlatforms", trackedFilter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      genres: genres.filter(Boolean).sort(),
+      providers: providers.filter(Boolean).sort(),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// GET /api/cinema/watchlist/:userId (Protected)
+// Owners can always view their own watchlist; viewing someone else's requires
+// that user to have set cinemaWatchlistIsPublic (private by default).
+exports.getWatchlist = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const {
+      cursorValue,
+      cursorId,
+      limit = 30,
+      mediaType,
+      search,
+      status,
+      releaseStatus,
+      genre,
+      provider,
+      hasReleaseDate,
+      hasRating,
+      sortBy,
+      sortOrder,
+    } = req.query;
+    const isOwner = userId === req.user._id.toString();
+
+    if (!isOwner) {
+      const targetUser = await User.findById(userId).select("cinemaWatchlistIsPublic");
+      if (!targetUser) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+      if (!targetUser.cinemaWatchlistIsPublic) {
+        return res.status(403).json({ success: false, message: "This watchlist is private" });
+      }
     }
+
+    // Default (no status filter) shows everything actively tracked - still
+    // on the watchlist OR already watched (rating something flips isWatchlist
+    // off, so without the isWatched half here, watched items would never
+    // show up at all). "unwatched"/"watched" narrow to just one side.
+    const conditions = [];
+    if (status === "unwatched") {
+      conditions.push({ isWatchlist: true, isWatched: { $ne: true } });
+    } else if (status === "watched") {
+      conditions.push({ isWatched: true });
+    } else {
+      conditions.push({ $or: [{ isWatchlist: true }, { isWatched: true }] });
+    }
+    if (mediaType === "movie" || mediaType === "tv") {
+      conditions.push({ mediaType });
+    }
+    if (search?.trim()) {
+      // Escape regex special characters so a title like "Se7en" or a stray
+      // "(" in a search term doesn't throw/behave unexpectedly
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      conditions.push({ title: { $regex: escaped, $options: "i" } });
+    }
+    if (genre?.trim()) {
+      conditions.push({ genres: genre.trim() });
+    }
+    if (provider?.trim()) {
+      conditions.push({ streamingPlatforms: provider.trim() });
+    }
+    if (hasReleaseDate === "true") {
+      conditions.push({ releaseDate: { $ne: null } });
+    }
+    if (hasRating === "true") {
+      conditions.push({ decimalRating: { $ne: null } });
+    }
+    // Release status: "coming_soon" is releaseDate in the future for either
+    // media type. For movies specifically, we distinguish "in_theaters" from
+    // "available" using each movie's own TMDb digital-release record instead
+    // of a fixed day-count guess: once digitalReleaseDate exists and has
+    // passed, it's left its exclusive theatrical window (even if our own
+    // streamingPlatforms field hasn't caught up to reflect that yet). TV
+    // shows have no theatrical stage, so they're just "available" once aired.
+    // Caveat: streamingPlatforms/digitalReleaseDate aren't refreshed on a
+    // recurring schedule yet (only at add-time/backfill), so a movie can
+    // still lag briefly after actually becoming available.
+    if (["available", "in_theaters", "coming_soon"].includes(releaseStatus)) {
+      const todayBoundary = new Date(`${getLocalDateString(CALENDAR_CACHE_TIMEZONE)}T00:00:00`);
+      const hasStreamingPlatform = { streamingPlatforms: { $exists: true, $ne: [] } };
+      const noStreamingPlatform = { $or: [{ streamingPlatforms: { $exists: false } }, { streamingPlatforms: { $size: 0 } }] };
+      const isReleased = { releaseDate: { $ne: null, $lte: todayBoundary } };
+      const digitalReleaseArrived = { digitalReleaseDate: { $ne: null, $lte: todayBoundary } };
+      const digitalReleaseNotArrived = {
+        $or: [{ digitalReleaseDate: { $exists: false } }, { digitalReleaseDate: null }, { digitalReleaseDate: { $gt: todayBoundary } }],
+      };
+
+      if (releaseStatus === "coming_soon") {
+        conditions.push({ releaseDate: { $gt: todayBoundary } });
+      } else if (releaseStatus === "in_theaters") {
+        // Only counts as "in theaters" if it actually had a US theatrical run
+        // at all - otherwise a streaming-only/VOD-only movie that just hasn't
+        // been picked up by a tracked platform yet would be misclassified.
+        // noStreamingPlatform/digitalReleaseNotArrived both use "$or" - can't
+        // spread both into one object (the second would silently clobber the
+        // first's key), so combine them via an explicit "$and" instead.
+        conditions.push({
+          mediaType: "movie",
+          hadTheatricalRelease: true,
+          ...isReleased,
+          $and: [noStreamingPlatform, digitalReleaseNotArrived],
+        });
+      } else {
+        conditions.push({
+          $or: [
+            { mediaType: "tv", ...isReleased },
+            { mediaType: "movie", $or: [hasStreamingPlatform, digitalReleaseArrived] },
+          ],
+        });
+      }
+    }
+
+    const baseQuery = { user: userId, $and: conditions };
     const query = { ...baseQuery };
 
-    // Apply cursor logic if present - same pattern as getActivityFeed
-    if (cursorDate && cursorId) {
+    // Sort field is selectable now (previously always createdAt) - cursor
+    // pagination generalizes to whichever field is active. Known limitation:
+    // items with no releaseDate (sorting by releaseDate) can make the cursor
+    // comparison at that exact page boundary imprecise - acceptable given
+    // how few items that affects in practice.
+    const SORT_FIELDS = { dateAdded: "createdAt", releaseDate: "releaseDate", title: "title" };
+    const sortField = SORT_FIELDS[sortBy] || "createdAt";
+    const sortDirection = sortOrder === "asc" ? 1 : -1;
+
+    if (cursorValue && cursorId) {
+      const parsedCursorValue = sortField === "title" ? cursorValue : new Date(cursorValue);
+      const cmpOp = sortDirection === 1 ? "$gt" : "$lt";
       query.$or = [
-        { createdAt: { $lt: new Date(cursorDate) } },
-        { createdAt: new Date(cursorDate), _id: { $lt: cursorId } },
+        { [sortField]: { [cmpOp]: parsedCursorValue } },
+        { [sortField]: parsedCursorValue, _id: { [cmpOp]: cursorId } },
       ];
     }
 
-    // totalCount reflects the full watchlist (ignores the cursor), so the
-    // profile stat badge/panel header can show the real total, not just
-    // however many items happen to be loaded on the current page
-    const [items, totalCount] = await Promise.all([
-      CinemaItem.find(query).sort({ createdAt: -1, _id: -1 }).limit(Number(limit)),
+    // totalCount reflects the current filters (ignores the cursor) - what the
+    // panel header shows. watchlistCount is ALWAYS the true "still on my
+    // watchlist" count regardless of any filter - what the outer profile stat
+    // badge shows, kept separate so broadening the default above doesn't
+    // change what that stat means.
+    const [items, totalCount, watchlistCount] = await Promise.all([
+      CinemaItem.find(query).sort({ [sortField]: sortDirection, _id: sortDirection }).limit(Number(limit)),
       CinemaItem.countDocuments(baseQuery),
+      CinemaItem.countDocuments({ user: userId, isWatchlist: true }),
     ]);
 
     const last = items[items.length - 1];
     const nextCursor = last
-      ? { cursorDate: last.createdAt.toISOString(), cursorId: last._id }
+      ? {
+          cursorValue:
+            sortField === "title" ? last.title : last[sortField] ? last[sortField].toISOString() : "",
+          cursorId: last._id,
+        }
       : null;
 
-    res.status(200).json({ success: true, data: items, nextCursor, totalCount });
+    res.status(200).json({ success: true, data: items, nextCursor, totalCount, watchlistCount });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }

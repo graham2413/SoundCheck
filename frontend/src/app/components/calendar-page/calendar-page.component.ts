@@ -1,10 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { CalendarEntry } from 'src/app/models/responses/cinema-response';
+import { CinemaItem } from 'src/app/models/responses/cinema-response';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { ReviewPageComponent } from '../review-page/review-page.component';
+import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
 
 @Component({
   selector: 'app-calendar',
@@ -12,6 +15,21 @@ import { ReviewPageComponent } from '../review-page/review-page.component';
   styleUrls: ['./calendar-page.component.css'],
   standalone: true,
   imports: [CommonModule],
+  animations: [
+    // Container - staggers each row's own @entryAnim as they enter, so the
+    // list reveals top-down instead of popping in all at once.
+    trigger('listAnim', [
+      transition(':enter', [
+        query('@entryAnim', [stagger(50, animateChild())], { optional: true }),
+      ]),
+    ]),
+    trigger('entryAnim', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-16px)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
+      ]),
+    ]),
+  ],
 })
 export class CalendarPageComponent implements OnInit {
   entries: CalendarEntry[] = [];
@@ -108,10 +126,8 @@ export class CalendarPageComponent implements OnInit {
       scrollable: false,
     };
 
-    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
-
-    const record = {
-      type: 'Cinema' as const,
+    const record: CinemaItem = {
+      type: 'Cinema',
       _id: entry._id,
       user: '',
       mediaType: entry.mediaType,
@@ -119,6 +135,7 @@ export class CalendarPageComponent implements OnInit {
       title: entry.title,
       cover: entry.cover ?? undefined,
       isWatchlist: entry.isWatchlist,
+      isWatched: entry.isWatched ?? false,
       decimalRating: entry.decimalRating,
       reviewText: entry.reviewText,
       isUnrefinedImport: entry.isUnrefinedImport,
@@ -126,8 +143,38 @@ export class CalendarPageComponent implements OnInit {
       createdAt: new Date().toISOString(),
     };
 
+    const modalRef = this.modal.open(CinemaReviewModalComponent, modalOptions);
+    modalRef.componentInstance.record = record;
+    modalRef.componentInstance.recordList = [record];
+    modalRef.componentInstance.currentIndex = 0;
+
+    modalRef.componentInstance.rate.subscribe(() => {
+      modalRef.close();
+      this.openRatingModal(record);
+    });
+
+    // Rating/watchlist changes can move an entry between the Upcoming/Past
+    // tabs (or off the calendar entirely), so just reload from the server
+    // instead of trying to patch the local list in place.
+    modalRef.componentInstance.watchlistToggled?.subscribe(() => this.loadCalendar());
+  }
+
+  private openRatingModal(record: CinemaItem): void {
+    const modalOptions: NgbModalOptions = {
+      backdrop: 'static',
+      keyboard: true,
+      centered: true,
+      scrollable: false,
+    };
+
+    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+
     modalRef.componentInstance.recordList = [record];
     modalRef.componentInstance.currentIndex = 0;
     modalRef.componentInstance.record = record;
+
+    modalRef.componentInstance.reviewCreated?.subscribe(() => this.loadCalendar());
+    modalRef.componentInstance.reviewEdited?.subscribe(() => this.loadCalendar());
+    modalRef.componentInstance.reviewDeleted?.subscribe(() => this.loadCalendar());
   }
 }

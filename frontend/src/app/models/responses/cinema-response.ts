@@ -1,16 +1,10 @@
-export interface Episode {
+export interface EpisodeReview {
   seasonNumber: number;
   episodeNumber: number;
-  title?: string;
-  duration?: number; // seconds
-  airDate?: string;
   isWatched: boolean;
-}
-
-export interface Season {
-  seasonNumber: number;
-  title?: string;
-  episodes: Episode[];
+  decimalRating?: number;
+  reviewText?: string;
+  reviewedAt?: string;
 }
 
 export interface CinemaItem {
@@ -28,6 +22,8 @@ export interface CinemaItem {
   duration?: number; // seconds (movie only)
   releaseDate?: string;
   releaseYearRange?: string; // TV only, e.g. "2017-2025" or "2016-Present"
+  hadTheatricalRelease?: boolean; // movie only - did it actually get a US theatrical run at all
+  digitalReleaseDate?: string; // movie only - earliest known US digital release date, if any
   genres?: string[];
   streamingPlatforms?: string[];
   decimalRating?: number;
@@ -35,10 +31,10 @@ export interface CinemaItem {
   likes?: number;
   likedBy?: string[];
   isWatchlist: boolean;
+  isWatched: boolean;
   isUnrefinedImport: boolean;
   traktSynced: boolean;
-  seasons?: Season[];
-  completionPercentage?: number; // TV only, computed virtual
+  episodeReviews?: EpisodeReview[]; // TV only, sparse - see backend model comment
   createdAt: string;
 }
 
@@ -88,6 +84,7 @@ export interface CalendarEntry {
   episodeName?: string;
   isRerelease?: boolean;
   isWatchlist: boolean;
+  isWatched?: boolean;
   decimalRating?: number;
   reviewText?: string;
   isUnrefinedImport: boolean;

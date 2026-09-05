@@ -226,13 +226,11 @@
 
         <div
           *ngIf="retrievingFriendInfo"
-          class="mt-[5rem] w-full max-w-3xl mx-auto flex flex-col justify-center items-center"
+          class="fixed inset-0 z-10 flex flex-col justify-center items-center bg-[#020814]/80"
         >
-          <div
-            class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
-          ></div>
-          <p class="text-gray-400 text-lg md:text-2xl mt-4">
-            Loading Friends...
+          <div class="cinema-loader-ring"></div>
+          <p class="cinema-loader-text mt-4">
+            Loading friends...
           </p>
         </div>
 
@@ -365,13 +363,11 @@
 
         <div
           *ngIf="retrievingFriendInfo"
-          class="mt-[5rem] w-full max-w-3xl mx-auto flex flex-col justify-center items-center"
+          class="fixed inset-0 z-10 flex flex-col justify-center items-center bg-[#020814]/80"
         >
-          <div
-            class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
-          ></div>
-          <p class="text-gray-400 text-lg md:text-2xl mt-4">
-            Loading Friend Requests...
+          <div class="cinema-loader-ring"></div>
+          <p class="cinema-loader-text mt-4">
+            Loading friend requests...
           </p>
         </div>
 
@@ -529,12 +525,10 @@
         <!-- Show Skeleton Loader While Searching -->
         <div
           *ngIf="addFriendsSearchLoading"
-          class="mt-6 w-full max-w-3xl mx-auto flex flex-col justify-center items-center"
+          class="fixed inset-0 z-10 flex flex-col justify-center items-center bg-[#020814]/80"
         >
-          <div
-            class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-opacity-50"
-          ></div>
-          <p class="text-gray-400 text-lg md:text-2xl mt-4">Searching...</p>
+          <div class="cinema-loader-ring"></div>
+          <p class="cinema-loader-text mt-4">Searching for "{{ lastSearchedQuery }}"...</p>
         </div>
 
         <!-- Display Users (Only if users are found) -->

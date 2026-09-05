@@ -100,7 +100,9 @@ export class CinemaReviewPageComponent {
     if (!this.runtimeMinutes) return null;
     const hours = Math.floor(this.runtimeMinutes / 60);
     const minutes = this.runtimeMinutes % 60;
-    return `${hours}h ${minutes}m`;
+    if (hours && minutes) return `${hours}h ${minutes}m`;
+    if (hours) return `${hours}h`;
+    return `${minutes}m`;
   }
 
   get isUpcoming(): boolean {

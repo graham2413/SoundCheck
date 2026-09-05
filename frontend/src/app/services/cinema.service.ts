@@ -4,6 +4,32 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
 import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CinemaDetailResponse } from '../models/responses/cinema-response';
 
+export interface WatchlistCursor {
+  cursorValue: string;
+  cursorId: string;
+}
+
+export interface WatchlistFilters {
+  mediaType?: 'movie' | 'tv';
+  search?: string;
+  status?: 'unwatched' | 'watched';
+  releaseStatus?: 'available' | 'in_theaters' | 'coming_soon';
+  genre?: string;
+  provider?: string;
+  hasReleaseDate?: boolean;
+  hasRating?: boolean;
+  sortBy?: 'dateAdded' | 'releaseDate' | 'title';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface WatchlistResponse {
+  success: boolean;
+  data: CinemaItem[];
+  nextCursor: WatchlistCursor | null;
+  totalCount: number;
+  watchlistCount: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -39,23 +65,42 @@ export class CinemaService {
 
   // A user's watchlist - owner always allowed, others only if public.
   // Cursor-paginated (same pattern as the activity/artist feeds) so a large
-  // watchlist doesn't have to load/render all at once. `mediaType` optionally
-  // filters to just movies or just TV shows (omit/'all' for everything).
+  // watchlist doesn't have to load/render all at once. All narrowing options
+  // live on `filters` (all optional/omittable for "no filter").
   getWatchlist(
     userId: string,
-    cursor?: { cursorDate: string; cursorId: string } | null,
-    mediaType?: 'movie' | 'tv'
-  ): Observable<{ success: boolean; data: CinemaItem[]; nextCursor: { cursorDate: string; cursorId: string } | null; totalCount: number }> {
+    cursor?: WatchlistCursor | null,
+    filters: WatchlistFilters = {}
+  ): Observable<WatchlistResponse> {
     let params: Record<string, string> = { limit: '30' };
     if (cursor) {
-      params = { ...params, cursorDate: cursor.cursorDate, cursorId: cursor.cursorId };
+      params = { ...params, cursorValue: cursor.cursorValue, cursorId: cursor.cursorId };
     }
-    if (mediaType) {
-      params = { ...params, mediaType };
-    }
-    return this.http.get<{ success: boolean; data: CinemaItem[]; nextCursor: { cursorDate: string; cursorId: string } | null; totalCount: number }>(
-      `${this.apiUrl}/watchlist/${userId}`,
-      { headers: this.authHeaders(), params }
+    if (filters.mediaType) params = { ...params, mediaType: filters.mediaType };
+    if (filters.search?.trim()) params = { ...params, search: filters.search.trim() };
+    if (filters.status) params = { ...params, status: filters.status };
+    if (filters.releaseStatus) params = { ...params, releaseStatus: filters.releaseStatus };
+    if (filters.genre) params = { ...params, genre: filters.genre };
+    if (filters.provider) params = { ...params, provider: filters.provider };
+    if (filters.hasReleaseDate) params = { ...params, hasReleaseDate: 'true' };
+    if (filters.hasRating) params = { ...params, hasRating: 'true' };
+    if (filters.sortBy) params = { ...params, sortBy: filters.sortBy };
+    if (filters.sortOrder) params = { ...params, sortOrder: filters.sortOrder };
+
+    return this.http.get<WatchlistResponse>(`${this.apiUrl}/watchlist/${userId}`, {
+      headers: this.authHeaders(),
+      params,
+    });
+  }
+
+  // Distinct genres/providers actually present in the user's watchlist -
+  // powers the Genre/Availability dropdowns in the filter overlay.
+  getWatchlistFilterOptions(
+    userId: string
+  ): Observable<{ success: boolean; genres: string[]; providers: string[] }> {
+    return this.http.get<{ success: boolean; genres: string[]; providers: string[] }>(
+      `${this.apiUrl}/watchlist/${userId}/filters`,
+      { headers: this.authHeaders() }
     );
   }
 
