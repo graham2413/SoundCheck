@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
+import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 
 // Presentational watchlist list (mirrors the calendar page's row layout) -
 // purely renders/paginates whatever list it's given. All data-fetching and
@@ -11,7 +12,7 @@ import { CinemaItem } from 'src/app/models/responses/cinema-response';
 @Component({
   selector: 'app-cinema-watchlist',
   standalone: true,
-  imports: [CommonModule, InfiniteScrollDirective],
+  imports: [CommonModule, InfiniteScrollDirective, TimeAgoPipe],
   templateUrl: './cinema-watchlist.component.html',
   styleUrl: './cinema-watchlist.component.css',
 })
@@ -29,6 +30,12 @@ export class CinemaWatchlistComponent {
 
   onItemClick(item: CinemaItem, index: number): void {
     this.itemClicked.emit({ item, list: this.items, index });
+  }
+
+  // Pre-existing items were added before watchlistAddedAt existed - fall
+  // back to createdAt as a best-effort approximation for those.
+  watchlistAddedDate(item: CinemaItem): string | undefined {
+    return item.watchlistAddedAt || item.createdAt;
   }
 
   // Only meaningful when groupByReleaseStatus is on - buckets whatever's

@@ -19,12 +19,14 @@
       <h1 class="text-white font-bold text-2xl leading-snug break-words">{{ title }}</h1>
 
       <p class="text-gray-400 text-sm mt-1" *ngIf="!isUpcoming">
-        <span *ngIf="year">{{ year }}</span>
+        <span *ngIf="mediaType === 'tv' && releaseYearRange">{{ releaseYearRange }}</span>
+        <span *ngIf="mediaType !== 'tv' && year">{{ year }}</span>
         <span *ngIf="year && runtimeLabel">&nbsp;&middot;&nbsp;</span>
         <span *ngIf="runtimeLabel">{{ runtimeLabel }}</span>
       </p>
       <p class="text-gray-400 text-sm mt-1" *ngIf="isUpcoming && formattedReleaseDate">
         Releases {{ formattedReleaseDate }}
+        <span *ngIf="runtimeLabel">&nbsp;&middot;&nbsp;{{ runtimeLabel }}</span>
       </p>
 
       <p class="text-[#3B82F6] text-sm mt-2" *ngIf="genres.length">
@@ -35,6 +37,8 @@
         <span class="cert-pill" *ngIf="certification">{{ certification }}</span>
         <span class="status-pill status-pill-blue" *ngIf="isUpcoming">Coming Soon</span>
         <span class="status-pill status-pill-green" *ngIf="isRecentRelease">New Release</span>
+        <span class="status-pill status-pill-green" *ngIf="isNewEpisode">New Episode</span>
+        <span class="status-pill status-pill-green" *ngIf="isAiringSoon">Airing Soon</span>
       </div>
     </div>
   </div>
@@ -95,14 +99,29 @@
   </div>
 
   <!-- Actions -->
-  <div class="flex items-center gap-3 px-4 mt-4">
+  <div class="flex items-center gap-2 px-4 mt-4">
     <button type="button" class="action-btn action-btn-primary" (click)="addToWatchlist.emit()">
-      <i class="fas" [class.fa-plus]="!isWatchlist" [class.fa-check]="isWatchlist"></i>
-      {{ isWatchlist ? 'On Watchlist' : 'Add to Watchlist' }}
+      <i class="fas flex-shrink-0" [class.fa-plus]="!isWatchlist" [class.fa-check]="isWatchlist"></i>
+      <!-- Short label below the sm breakpoint - clamp()'d font-size alone
+           can't make all 3 buttons' full labels fit on common phone widths
+           without truncating, so swap to shorter wording there instead. -->
+      <span class="action-btn-label hidden sm:inline">{{ isWatchlist ? 'On Watchlist' : 'Add to Watchlist' }}</span>
+      <span class="action-btn-label sm:hidden">{{ isWatchlist ? 'Added' : 'Add' }}</span>
     </button>
     <button type="button" class="action-btn action-btn-outline" (click)="rate.emit()">
-      <i class="far fa-star"></i>
-      Rate
+      <i class="far fa-star flex-shrink-0"></i>
+      <span class="action-btn-label">Rate</span>
+    </button>
+    <button
+      type="button"
+      class="action-btn"
+      [class.action-btn-outline]="!isWatched"
+      [class.action-btn-primary]="isWatched"
+      (click)="markWatched.emit()"
+    >
+      <i class="fas flex-shrink-0" [class.fa-eye]="!isWatched" [class.fa-check]="isWatched"></i>
+      <span class="action-btn-label hidden sm:inline">{{ isWatched ? 'Watched' : 'Mark Watched' }}</span>
+      <span class="action-btn-label sm:hidden">{{ isWatched ? 'Watched' : 'Mark' }}</span>
     </button>
   </div>
 
@@ -203,7 +222,7 @@
 
     <div class="watch-providers-row mt-3">
       <div class="watch-provider-tile" *ngFor="let provider of visibleWatchProviders">
-        <img [src]="provider.logoUrl" [alt]="provider.name" />
+        <img [src]="providerLogoUrl(provider)" [alt]="provider.name" />
       </div>
       <button
         type="button"

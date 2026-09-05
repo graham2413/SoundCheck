@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { PROVIDER_LOGO_OVERRIDES } from '../../shared/provider-logo-overrides';
 
 export interface WatchProvider {
   name: string;
@@ -21,16 +22,21 @@ export interface WatchProvider {
 export class CinemaReviewPageComponent {
   @Input() title = '';
   @Input() cover: string | null = null;
+  @Input() mediaType: 'movie' | 'tv' | null = null;
   @Input() year: number | null = null;
+  @Input() releaseYearRange: string | null = null;
   @Input() runtimeMinutes: number | null = null;
   @Input() certification: string | null = null;
   @Input() releaseDate: string | null = null;
+  @Input() lastEpisodeAirDate: string | null = null;
+  @Input() nextEpisodeAirDate: string | null = null;
   @Input() genres: string[] = [];
   @Input() appRating: number | null = null;
   @Input() appReviewCount: number | null = null;
   @Input() imdbRating: number | null = null;
   @Input() imdbVoteCount: number | null = null;
   @Input() isWatchlist = false;
+  @Input() isWatched = false;
   @Input() description: string | null = null;
   @Input() director: string | null = null;
   @Input() awardsSummary: string | null = null;
@@ -41,13 +47,14 @@ export class CinemaReviewPageComponent {
   @Output() moreOptions = new EventEmitter<void>();
   @Output() addToWatchlist = new EventEmitter<void>();
   @Output() rate = new EventEmitter<void>();
+  @Output() markWatched = new EventEmitter<void>();
   @Output() viewCast = new EventEmitter<void>();
   @Output() viewAwards = new EventEmitter<void>();
   @Output() seeAllProviders = new EventEmitter<void>();
 
   isDescriptionExpanded = false;
 
-  readonly tabs = ['Overview', 'Cast', 'Reviews', 'Trailer', 'Similar'] as const;
+  readonly tabs = ['Overview', 'Reviews', 'Trailer', 'Similar'] as const;
   activeTab: (typeof this.tabs)[number] = 'Overview';
 
   private static readonly VISIBLE_PROVIDER_COUNT = 5;
@@ -60,8 +67,32 @@ export class CinemaReviewPageComponent {
     return Math.max(0, this.watchProviders.length - CinemaReviewPageComponent.VISIBLE_PROVIDER_COUNT);
   }
 
+  // Prefers a locally-bundled higher-res logo over TMDb's (capped at 332x332).
+  providerLogoUrl(provider: WatchProvider): string | null {
+    return PROVIDER_LOGO_OVERRIDES[provider.name] || provider.logoUrl;
+  }
+
   private static readonly NEW_RELEASE_WINDOW_DAYS = 30;
+  private static readonly UPCOMING_EPISODE_WINDOW_DAYS = 7;
   private static readonly RING_RADIUS = 45;
+
+  // TV only - last aired episode was recent (mirrors movies' "New Release").
+  get isNewEpisode(): boolean {
+    if (this.mediaType !== 'tv' || !this.lastEpisodeAirDate) return false;
+    const daysSinceAired =
+      (Date.now() - this.parseLocalDate(this.lastEpisodeAirDate).getTime()) / (1000 * 60 * 60 * 24);
+    return daysSinceAired >= 0 && daysSinceAired <= CinemaReviewPageComponent.NEW_RELEASE_WINDOW_DAYS;
+  }
+
+  // TV only - next episode airs soon. Only shown when isNewEpisode is false -
+  // one badge at a time, "New Episode" takes priority since it's a concrete
+  // recency signal rather than a forward-looking estimate.
+  get isAiringSoon(): boolean {
+    if (this.mediaType !== 'tv' || !this.nextEpisodeAirDate || this.isNewEpisode) return false;
+    const daysUntilAirs =
+      (this.parseLocalDate(this.nextEpisodeAirDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return daysUntilAirs >= 0 && daysUntilAirs <= CinemaReviewPageComponent.UPCOMING_EPISODE_WINDOW_DAYS;
+  }
 
   get ringCircumference(): number {
     return 2 * Math.PI * CinemaReviewPageComponent.RING_RADIUS;

@@ -31,6 +31,7 @@ export interface CinemaItem {
   likes?: number;
   likedBy?: string[];
   isWatchlist: boolean;
+  watchlistAddedAt?: string;
   isWatched: boolean;
   isUnrefinedImport: boolean;
   traktSynced: boolean;
@@ -96,9 +97,12 @@ export interface ImdbStatsResponse {
 }
 
 export interface CinemaCastMember {
+  personId?: number;
   name: string;
   character: string;
   profilePath: string | null;
+  order?: number;
+  popularity?: number;
 }
 
 export interface CinemaWatchProvider {
@@ -115,8 +119,11 @@ export interface CinemaDetail {
   title: string;
   cover: string | null;
   year: number | null;
+  releaseYearRange: string | null;
   releaseDate: string | null;
   isRerelease: boolean;
+  lastEpisodeAirDate: string | null;
+  nextEpisodeAirDate: string | null;
   runtimeMinutes: number | null;
   certification: string | null;
   genres: string[];
@@ -134,4 +141,39 @@ export interface CinemaDetail {
 export interface CinemaDetailResponse {
   success: boolean;
   data: CinemaDetail;
+}
+
+export interface CinemaPersonCredit {
+  tmdbId: string;
+  mediaType: 'movie' | 'tv';
+  title: string;
+  cover: string | null;
+  releaseDate: string | null;
+}
+
+// Payload from GET /api/cinema/person/:personId - powers the cast list's
+// tap-to-expand detail popup.
+export interface CinemaPersonDetail {
+  name: string;
+  profilePath: string | null;
+  biography: string | null;
+  instagramUrl: string | null;
+  twitterUrl: string | null;
+  imdbUrl: string | null;
+  acting: CinemaPersonCredit[];
+  directed: CinemaPersonCredit[];
+}
+
+export interface CinemaPersonDetailResponse {
+  success: boolean;
+  data: CinemaPersonDetail;
+}
+
+export interface CinemaPopularActor {
+  personId: number;
+  name: string;
+  profilePath: string | null;
+  popularity: number;
+  isEstimated: boolean;
+  knownForTitle: string | null;
 }

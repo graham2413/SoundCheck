@@ -88,10 +88,11 @@ async function callTmdb(path, params = {}) {
 // it actually sees changes, instead of just re-reading the same 7-day-stale
 // cached blob) but still writes the fresh result back to cache either way.
 async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = false } = {}) {
-  // v2: bumped so older cached blobs (from before release_dates was added to
-  // append_to_response) get treated as a miss and re-fetched, instead of
-  // silently missing release_dates for up to the full 7-day TTL.
-  const cacheKey = `tmdb:details:v2:${tmdbId}`;
+  // v4: bumped so older cached blobs (from before external_ids was added for
+  // TV) get treated as a miss and re-fetched - unlike movies, /tv/:id doesn't
+  // return imdb_id at the top level at all, so IMDb rating/votes were always
+  // null for every TV show until this was added.
+  const cacheKey = `tmdb:details:v4:${tmdbId}`;
   if (!forceRefresh) {
     const cached = await redis.get(cacheKey);
     if (cached) return JSON.parse(cached);
@@ -99,8 +100,14 @@ async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = fals
 
   // release_dates is movie-only (TV uses content_ratings instead) - needed
   // for certification + accurate US theatrical release date/re-release detection.
+  // aggregate_credits is TV-only - merges cast across every season/episode,
+  // unlike the plain "credits" field which is just the current season.
+  // external_ids is TV-only - movies already get imdb_id natively, but TV's
+  // top-level details response never includes it.
   const appendToResponse =
-    mediaType === "movie" ? "watch/providers,credits,release_dates" : "watch/providers,credits";
+    mediaType === "movie"
+      ? "watch/providers,credits,release_dates"
+      : "watch/providers,credits,aggregate_credits,external_ids";
 
   const response = await callTmdb(`/${mediaType}/${tmdbId}`, {
     append_to_response: appendToResponse,
@@ -173,4 +180,72 @@ async function getGenreMap(mediaType) {
   return map;
 }
 
-module.exports = { callTmdb, getTmdbDetails, getTmdbDetailsForCalendar, searchTmdb, getGenreMap };
+// Cache-aware wrapper: GET /person/:id - bio + combined credits (movies/TV,
+// both as cast and crew) + external social/IMDb ids. Used by the cast list's
+// tap-to-expand detail popup.
+async function getTmdbPersonDetails(personId) {
+  const cacheKey = `tmdb:person:${personId}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const response = await callTmdb(`/person/${personId}`, {
+    append_to_response: "combined_credits,external_ids",
+  });
+
+  if (response.data) {
+    await redis.set(cacheKey, JSON.stringify(response.data), "EX", DETAILS_CACHE_TTL);
+  }
+
+  return response.data;
+}
+
+// Cache-aware wrapper: GET /person/popular - real, TMDb-wide (not scoped to
+// any single movie/show) live popularity ranking. Fetches enough pages to
+// have 50+ people after filtering to known_for_department === "Acting"
+// (directors/crew aren't reliably represented in this endpoint).
+const POPULAR_PEOPLE_CACHE_TTL = 43200; // 12h - popularity shifts day to day, not minute to minute
+async function getTmdbPopularActors() {
+  const cacheKey = "tmdb:popular-actors";
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const actors = [];
+  for (let page = 1; page <= 5 && actors.length < 50; page++) {
+    const response = await callTmdb("/person/popular", { page });
+    const results = response.data?.results || [];
+    if (!results.length) break;
+    actors.push(...results.filter((p) => p.known_for_department === "Acting"));
+  }
+
+  await redis.set(cacheKey, JSON.stringify(actors), "EX", POPULAR_PEOPLE_CACHE_TTL);
+  return actors;
+}
+
+// Cache-aware wrapper: GET /person/:id/external_ids - just the lightweight
+// social/wikidata IDs, without the heavy combined_credits payload
+// getTmdbPersonDetails also fetches. Wikidata IDs essentially never change,
+// so this gets a long TTL.
+const EXTERNAL_IDS_CACHE_TTL = 2592000; // 30 days
+async function getTmdbExternalIds(personId) {
+  const cacheKey = `tmdb:person-external-ids:${personId}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const response = await callTmdb(`/person/${personId}/external_ids`);
+  if (response.data) {
+    await redis.set(cacheKey, JSON.stringify(response.data), "EX", EXTERNAL_IDS_CACHE_TTL);
+  }
+
+  return response.data;
+}
+
+module.exports = {
+  callTmdb,
+  getTmdbDetails,
+  getTmdbDetailsForCalendar,
+  searchTmdb,
+  getGenreMap,
+  getTmdbPersonDetails,
+  getTmdbPopularActors,
+  getTmdbExternalIds,
+};

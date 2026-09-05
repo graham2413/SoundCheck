@@ -1,7 +1,8 @@
 const axios = require("axios");
 const redis = require("../utils/redisClient");
 const { fetchWithRetry } = require("../utils/fetchWithRetry");
-const { getTmdbDetails, getTmdbDetailsForCalendar, searchTmdb, getGenreMap } = require("../utils/callTmdb");
+const { getTmdbDetails, getTmdbDetailsForCalendar, searchTmdb, getGenreMap, getTmdbPersonDetails, getTmdbPopularActors } = require("../utils/callTmdb");
+const { getPersonWikipediaPopularity } = require("../utils/wikipediaPopularity");
 const { parseTraktExport } = require("../utils/parseTraktExport");
 const { backfillCinemaCovers } = require("../scripts/backfillCinemaCovers");
 const { getMediaCanonicalId } = require("../utils/canonical-id");
@@ -355,12 +356,28 @@ const MAJOR_WATCH_PROVIDERS = new Set([
   "YouTube",
   "Google Play Movies",
   "Vudu",
+  "Fandango At Home",
   "fuboTV",
   "Starz",
   "Showtime",
   "AMC+",
   "Crunchyroll",
   "ESPN Plus",
+  "Tubi",
+  "Pluto TV",
+  "MGM Plus",
+  "Discovery Plus",
+  "Discovery+",
+  "BritBox",
+  "Acorn TV",
+  "Shudder",
+  "MUBI",
+  "Criterion Channel",
+  "Philo",
+  "The Roku Channel",
+  "Sling TV Orange",
+  "Sling TV Orange and Blue",
+  "YouTube TV",
 ]);
 
 // Strips "... Amazon Channel" / "... Roku Premium Channel" style suffixes TMDb
@@ -417,16 +434,53 @@ exports.getCinemaDetail = async (req, res) => {
     }
 
     const director = details.credits?.crew?.find((c) => c.job === "Director")?.name || null;
-    const cast = (details.credits?.cast || []).slice(0, 10).map((c) => ({
-      name: c.name,
-      character: c.character,
-      profilePath: c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : null,
-    }));
+    // Full cast list, no cap (the frontend's "View full cast" screen is a
+    // plain scrollable list). Movies: TMDb's plain credits.cast is already
+    // the full film cast, ordered by billing. TV: the plain "credits" field
+    // only covers the CURRENT season, so aggregate_credits (merged across
+    // every season/episode) is used instead - its cast entries nest
+    // character(s) under "roles" rather than a flat "character" field.
+    // order/popularity passed through as-is (real TMDb fields) so the
+    // frontend can offer Credit Order/Popularity sort without extra calls.
+    const cast =
+      mediaType === "tv"
+        ? (details.aggregate_credits?.cast || []).map((c) => ({
+            personId: c.id,
+            name: c.name,
+            character: c.roles?.[0]?.character || "",
+            profilePath: c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : null,
+            order: c.order,
+            popularity: c.popularity,
+          }))
+        : (details.credits?.cast || []).map((c) => ({
+            personId: c.id,
+            name: c.name,
+            character: c.character,
+            profilePath: c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : null,
+            order: c.order,
+            popularity: c.popularity,
+          }));
 
     const { releaseDate, isRerelease } =
       mediaType === "movie"
         ? getUsTheatricalRelease(details)
         : { releaseDate: details.first_air_date || null, isRerelease: false };
+
+    // TV only - "2016-2025"/"2023-Present" style range shown instead of a
+    // single year (mirrors the same logic already used for watchlist rows/
+    // fetchCinemaMetadata, just inlined here since getCinemaDetail doesn't
+    // go through that helper).
+    let releaseYearRange = null;
+    if (mediaType === "tv" && releaseDate) {
+      const startYear = new Date(releaseDate).getFullYear();
+      const endYear = details.last_air_date ? new Date(details.last_air_date).getFullYear() : null;
+      const hasEnded = details.status === "Ended" || details.status === "Canceled";
+      if (hasEnded) {
+        releaseYearRange = endYear && endYear !== startYear ? `${startYear}-${endYear}` : `${startYear}`;
+      } else {
+        releaseYearRange = endYear && endYear !== startYear ? `${startYear}-Present` : `${startYear}`;
+      }
+    }
 
     const certification =
       mediaType === "movie"
@@ -435,9 +489,12 @@ exports.getCinemaDetail = async (req, res) => {
           )?.certification || null
         : null;
 
+    // Movies have imdb_id natively; TV only exposes it via external_ids.
+    const imdbId = details.imdb_id || details.external_ids?.imdb_id || null;
+
     let omdbData = null;
-    if (details.imdb_id) {
-      omdbData = await fetchOmdbData(details.imdb_id).catch(() => null);
+    if (imdbId) {
+      omdbData = await fetchOmdbData(imdbId).catch(() => null);
     }
 
     const watchProviders = buildWatchProviders(
@@ -449,12 +506,16 @@ exports.getCinemaDetail = async (req, res) => {
       data: {
         tmdbId,
         mediaType,
-        imdbId: details.imdb_id || null,
+        imdbId,
         title: details.title || details.name,
         cover: details.poster_path ? `${TMDB_IMAGE_BASE}${details.poster_path}` : null,
         year: releaseDate ? Number(releaseDate.slice(0, 4)) : null,
+        releaseYearRange,
         releaseDate,
         isRerelease,
+        // TV only - drives the "New Episode"/"Airing Soon" badge client-side.
+        lastEpisodeAirDate: mediaType === "tv" ? details.last_episode_to_air?.air_date || null : null,
+        nextEpisodeAirDate: mediaType === "tv" ? details.next_episode_to_air?.air_date || null : null,
         runtimeMinutes: details.runtime || details.episode_run_time?.[0] || null,
         certification,
         genres: (details.genres || []).map((g) => g.name),
@@ -476,7 +537,115 @@ exports.getCinemaDetail = async (req, res) => {
   }
 };
 
+// GET /api/cinema/person/:personId (Protected)
+// Bio + filmography + social links for the cast list's tap-to-expand detail
+// popup. Filmography is split into "acting" (combined_credits.cast) and
+// "directed" (combined_credits.crew filtered to job === "Director") per
+// user's choice - full lists, not capped, sorted newest-release-first.
+exports.getCinemaPersonDetail = async (req, res) => {
+  try {
+    const { personId } = req.params;
 
+    const details = await getTmdbPersonDetails(personId);
+    if (!details) {
+      return res.status(404).json({ success: false, message: "Person not found" });
+    }
+
+    const toCredit = (c) => ({
+      tmdbId: String(c.id),
+      mediaType: c.media_type,
+      title: c.title || c.name,
+      cover: c.poster_path ? `${TMDB_IMAGE_BASE}${c.poster_path}` : null,
+      releaseDate: c.release_date || c.first_air_date || null,
+    });
+
+    // A person can appear more than once in combined_credits.cast for the
+    // same title (e.g. multiple TV credit entries per season) - dedupe by
+    // tmdbId+mediaType, keeping the first (TMDb's own array order).
+    const dedupe = (credits) => {
+      const seen = new Set();
+      return credits.filter((c) => {
+        const key = `${c.tmdbId}:${c.mediaType}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    };
+
+    const sortNewestFirst = (a, b) => (b.releaseDate || "").localeCompare(a.releaseDate || "");
+
+    const acting = dedupe(
+      (details.combined_credits?.cast || []).filter((c) => c.poster_path).map(toCredit)
+    ).sort(sortNewestFirst);
+
+    const directed = dedupe(
+      (details.combined_credits?.crew || [])
+        .filter((c) => c.job === "Director" && c.poster_path)
+        .map(toCredit)
+    ).sort(sortNewestFirst);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        name: details.name,
+        profilePath: details.profile_path ? `https://image.tmdb.org/t/p/w185${details.profile_path}` : null,
+        biography: details.biography || null,
+        instagramUrl: details.external_ids?.instagram_id
+          ? `https://instagram.com/${details.external_ids.instagram_id}`
+          : null,
+        twitterUrl: details.external_ids?.twitter_id
+          ? `https://x.com/${details.external_ids.twitter_id}`
+          : null,
+        imdbUrl: details.external_ids?.imdb_id
+          ? `https://www.imdb.com/name/${details.external_ids.imdb_id}`
+          : null,
+        acting,
+        directed,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// GET /api/cinema/popular-actors (Protected)
+// Real, TMDb-wide "Top 50 Actors" ranking (not scoped to any single title) -
+// opened by tapping a cast member's popularity number. Directors are
+// deliberately not included here yet - TMDb's /person/popular endpoint isn't
+// filterable by department and skews heavily toward actors, so a reliable
+// "Top 50 Directors" list isn't available from this endpoint alone.
+//
+// Ranked by real Wikipedia monthly pageviews (not TMDb's raw `popularity`),
+// which is a far more reliable "real world fame" signal - TMDb's own score
+// can be skewed by a minor credit on an otherwise high-traffic show. This
+// only re-ranks the candidates TMDb's /person/popular already surfaced; it
+// can't surface someone who never made that seed list at all.
+exports.getPopularActors = async (req, res) => {
+  try {
+    const actors = await getTmdbPopularActors();
+    const candidates = actors.slice(0, 50);
+
+    const enriched = await Promise.all(
+      candidates.map(async (p) => {
+        const { views, isFallback } = await getPersonWikipediaPopularity(p.id, p.popularity);
+        return {
+          personId: p.id,
+          name: p.name,
+          profilePath: p.profile_path ? `https://image.tmdb.org/t/p/w185${p.profile_path}` : null,
+          popularity: views,
+          isEstimated: isFallback,
+          knownForTitle: p.known_for?.[0]?.title || p.known_for?.[0]?.name || null,
+        };
+      })
+    );
+
+    enriched.sort((a, b) => b.popularity - a.popularity);
+
+    res.status(200).json({ success: true, data: enriched });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
 
 // TEMP DEBUG ONLY - remove once real Phase 2 TMDb routes exist
 // GET /api/cinema/debug/tmdb-details/:tmdbId?mediaType=movie
@@ -691,8 +860,8 @@ const fetchCinemaMetadata = async (tmdbId, mediaType, { forceRefresh = false } =
     metadata.streamingPlatforms = providers.map((p) => p.name);
   }
 
-  if (details.imdb_id) {
-    metadata.imdbId = details.imdb_id;
+  if (details.imdb_id || details.external_ids?.imdb_id) {
+    metadata.imdbId = details.imdb_id || details.external_ids.imdb_id;
   }
 
   return metadata;
@@ -812,6 +981,7 @@ exports.toggleWatchlist = async (req, res) => {
 
     if (item) {
       item.isWatchlist = true;
+      item.watchlistAddedAt = new Date();
       // Backfill metadata on re-add too, in case it was created before this capture existed
       if (!item.genres?.length) {
         Object.assign(item, await fetchCinemaMetadata(tmdbId, mediaType));
@@ -826,6 +996,7 @@ exports.toggleWatchlist = async (req, res) => {
         title,
         cover,
         isWatchlist: true,
+        watchlistAddedAt: new Date(),
         ...metadata,
         // Frontend-supplied releaseDate is a reasonable fallback if the TMDb
         // lookup above failed/returned nothing
@@ -834,6 +1005,60 @@ exports.toggleWatchlist = async (req, res) => {
     }
 
     res.status(200).json({ success: true, data: { isWatchlist: true, item } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// POST /api/cinema/mark-watched (Protected)
+// Toggles watched WITHOUT a rating (e.g. "I've seen this but don't want to
+// rate it") - mirrors toggleWatchlist's create-if-missing/delete-if-nothing-
+// left pattern. Unlike editCinemaItem (rating), this never touches decimalRating.
+exports.markCinemaWatched = async (req, res) => {
+  try {
+    const { tmdbId, mediaType, title, cover, releaseDate } = req.body;
+
+    if (!tmdbId || !mediaType || !title) {
+      return res.status(400).json({ success: false, message: "tmdbId, mediaType, and title are required" });
+    }
+
+    let item = await CinemaItem.findOne({ user: req.user._id, tmdbId, mediaType });
+
+    if (item && item.isWatched) {
+      // Undo - nothing left tracking this item (no rating, not on
+      // watchlist), so delete it entirely instead of leaving an empty record.
+      if (item.decimalRating == null && !item.isWatchlist) {
+        await item.deleteOne();
+        return res.status(200).json({ success: true, data: null });
+      }
+      item.isWatched = false;
+      await item.save();
+      return res.status(200).json({ success: true, data: item });
+    }
+
+    if (item) {
+      item.isWatched = true;
+      item.isWatchlist = false;
+      if (!item.genres?.length) {
+        Object.assign(item, await fetchCinemaMetadata(tmdbId, mediaType));
+      }
+      await item.save();
+    } else {
+      const metadata = await fetchCinemaMetadata(tmdbId, mediaType);
+      item = await CinemaItem.create({
+        user: req.user._id,
+        tmdbId,
+        mediaType,
+        title,
+        cover,
+        isWatched: true,
+        isWatchlist: false,
+        ...metadata,
+        ...(!metadata.releaseDate && releaseDate ? { releaseDate } : {}),
+      });
+    }
+
+    res.status(200).json({ success: true, data: item });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }

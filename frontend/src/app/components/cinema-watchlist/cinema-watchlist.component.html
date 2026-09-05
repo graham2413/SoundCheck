@@ -109,6 +109,12 @@
       >
         {{ item.genres?.join(', ') }}
       </p>
+      <p
+        *ngIf="watchlistAddedDate(item) as addedDate"
+        class="text-gray-500 text-xs mt-1 truncate overflow-hidden whitespace-nowrap"
+      >
+        Added {{ addedDate | timeAgo }}
+      </p>
       <span
         *ngIf="isComingSoon(item.releaseDate)"
         class="inline-block w-fit mt-1 px-2 py-0.5 rounded-md text-xs font-semibold"

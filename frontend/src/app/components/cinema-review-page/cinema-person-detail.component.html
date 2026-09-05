@@ -1,0 +1,131 @@
+<div class="fixed inset-0 z-40 bg-black/60" (click)="close.emit()"></div>
+
+<div class="fixed bottom-0 left-0 right-0 z-50 max-h-[92vh] overflow-y-auto rounded-t-2xl bg-[#0b1120] pb-4">
+  <div class="w-10 h-1 rounded-full bg-gray-600 mx-auto mt-2"></div>
+
+  <button
+    type="button"
+    aria-label="Close"
+    (click)="close.emit()"
+    class="absolute right-4 top-4 w-8 h-8 rounded-full bg-gray-800 text-gray-300 flex items-center justify-center"
+  >
+    <i class="fas fa-times"></i>
+  </button>
+
+  <div class="flex items-start gap-4 px-4 pt-4">
+    <div class="aspect-[2/3] w-20 flex-shrink-0">
+      <img
+        *ngIf="fallbackProfilePath"
+        [src]="fallbackProfilePath"
+        [alt]="fallbackName"
+        class="h-full w-full object-cover rounded-lg"
+      />
+      <div
+        *ngIf="!fallbackProfilePath"
+        class="h-full w-full rounded-lg bg-gray-800 flex items-center justify-center"
+      >
+        <i class="fas fa-user text-gray-600"></i>
+      </div>
+    </div>
+    <div class="min-w-0 pt-1">
+      <p class="text-white font-bold text-lg">{{ fallbackName }}</p>
+      <p class="text-gray-400 text-sm">{{ fallbackCharacter }}</p>
+    </div>
+  </div>
+
+  <div class="px-4 mt-4" *ngIf="isLoading">
+    <div class="flex justify-center py-6">
+      <div class="cinema-loader-ring"></div>
+    </div>
+  </div>
+
+  <div class="px-4 mt-3" *ngIf="detail">
+    <p
+      class="text-gray-300 text-sm leading-relaxed"
+      *ngIf="detail.biography"
+      [class.line-clamp-5]="!isBioExpanded"
+    >
+      {{ detail.biography }}
+    </p>
+    <button
+      type="button"
+      *ngIf="detail.biography"
+      (click)="isBioExpanded = !isBioExpanded"
+      class="text-[#0F5EE4] text-sm font-semibold mt-1"
+    >
+      {{ isBioExpanded ? 'Show less' : 'Show more' }}
+    </button>
+
+    <div class="flex gap-2 mt-3" *ngIf="detail.directed.length">
+      <button
+        type="button"
+        (click)="activeTab = 'acting'"
+        class="px-4 py-1.5 rounded-full text-sm font-semibold transition"
+        [ngClass]="activeTab === 'acting' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+      >
+        Acting
+      </button>
+      <button
+        type="button"
+        (click)="activeTab = 'directed'"
+        class="px-4 py-1.5 rounded-full text-sm font-semibold transition"
+        [ngClass]="activeTab === 'directed' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+      >
+        Directed
+      </button>
+    </div>
+
+    <div class="flex gap-3 overflow-x-auto mt-3 pb-1" *ngIf="credits.length">
+      <div class="flex-shrink-0 w-20" *ngFor="let credit of credits">
+        <div class="aspect-[2/3] w-20">
+          <img
+            *ngIf="credit.cover"
+            [src]="credit.cover"
+            [alt]="credit.title"
+            loading="lazy"
+            class="h-full w-full object-cover rounded-lg"
+          />
+          <div *ngIf="!credit.cover" class="h-full w-full rounded-lg bg-gray-800"></div>
+        </div>
+        <p class="text-white text-xs font-semibold mt-1 truncate">{{ credit.title }}</p>
+        <p class="text-gray-500 text-xs truncate">{{ formattedYear(credit.releaseDate) }}</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col mt-3">
+      <a
+        *ngIf="detail.instagramUrl"
+        [href]="detail.instagramUrl"
+        target="_blank"
+        rel="noopener"
+        class="flex items-center gap-3 py-2 border-b border-gray-800 text-gray-200"
+      >
+        <i class="fab fa-instagram w-5 text-center"></i>
+        <span class="flex-1">View on Instagram</span>
+        <i class="fas fa-external-link-alt text-sm text-gray-500"></i>
+      </a>
+      <a
+        *ngIf="detail.twitterUrl"
+        [href]="detail.twitterUrl"
+        target="_blank"
+        rel="noopener"
+        class="flex items-center gap-3 py-2 border-b border-gray-800 text-gray-200"
+      >
+        <i class="fab fa-x-twitter w-5 text-center"></i>
+        <span class="flex-1">View on X (Twitter)</span>
+        <i class="fas fa-external-link-alt text-sm text-gray-500"></i>
+      </a>
+      <a
+        *ngIf="detail.imdbUrl"
+        [href]="detail.imdbUrl"
+        target="_blank"
+        rel="noopener"
+        class="flex items-center gap-3 py-2 text-gray-200"
+      >
+        <i class="fas fa-film w-5 text-center"></i>
+        <span class="flex-1">View on IMDb</span>
+        <i class="fas fa-external-link-alt text-sm text-gray-500"></i>
+      </a>
+    </div>
+  </div>
+</div>

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
-import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CinemaDetailResponse } from '../models/responses/cinema-response';
+import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor } from '../models/responses/cinema-response';
 
 export interface WatchlistCursor {
   cursorValue: string;
@@ -51,6 +51,20 @@ export class CinemaService {
   // Consolidated detail payload for the cinema review page (TMDb metadata/credits/providers + OMDb ratings/awards)
   getCinemaDetail(mediaType: 'movie' | 'tv', tmdbId: string): Observable<CinemaDetailResponse> {
     return this.http.get<CinemaDetailResponse>(`${this.apiUrl}/detail/${mediaType}/${tmdbId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  // Bio + filmography + social links for the cast detail popup
+  getCinemaPersonDetail(personId: number): Observable<CinemaPersonDetailResponse> {
+    return this.http.get<CinemaPersonDetailResponse>(`${this.apiUrl}/person/${personId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  // Top 50 Actors ranking, TMDb-wide (not scoped to any single title)
+  getPopularActors(): Observable<{ success: boolean; data: CinemaPopularActor[] }> {
+    return this.http.get<{ success: boolean; data: CinemaPopularActor[] }>(`${this.apiUrl}/popular-actors`, {
       headers: this.authHeaders(),
     });
   }
@@ -114,6 +128,22 @@ export class CinemaService {
   }): Observable<{ success: boolean; data: { isWatchlist: boolean; item: CinemaItem | null } }> {
     return this.http.post<{ success: boolean; data: { isWatchlist: boolean; item: CinemaItem | null } }>(
       `${this.apiUrl}/watchlist/toggle`,
+      payload,
+      { headers: this.authHeaders() }
+    );
+  }
+
+  // Toggles watched WITHOUT a rating (e.g. "seen it, don't want to rate it") -
+  // data is null if the item had nothing else tracking it and got deleted.
+  markWatched(payload: {
+    tmdbId: string;
+    mediaType: 'movie' | 'tv';
+    title: string;
+    cover?: string;
+    releaseDate?: string;
+  }): Observable<{ success: boolean; data: CinemaItem | null }> {
+    return this.http.post<{ success: boolean; data: CinemaItem | null }>(
+      `${this.apiUrl}/mark-watched`,
       payload,
       { headers: this.authHeaders() }
     );

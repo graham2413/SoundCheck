@@ -156,14 +156,23 @@
 
 .action-btn {
   flex: 1;
+  min-width: 0; /* lets the label truncate instead of overflowing/wrapping */
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1rem;
+  gap: clamp(0.3rem, 1.5vw, 0.5rem);
+  /* Fluid (not a fixed breakpoint) so this scales continuously with any
+     screen width instead of a single "narrow vs not" cutoff. */
+  padding: clamp(0.55rem, 2vw, 0.7rem) clamp(0.4rem, 3vw, 1rem);
   border-radius: 0.6rem;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: clamp(0.75rem, 2.8vw, 0.9rem);
+}
+
+.action-btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .action-btn-primary {

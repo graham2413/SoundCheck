@@ -35,6 +35,7 @@ const cinemaItemSchema = new mongoose.Schema({
   likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
   isWatchlist: { type: Boolean, default: false },
+  watchlistAddedAt: Date, // set whenever isWatchlist flips to true - decoupled from createdAt, which gets bumped on every rating edit
   isWatched: { type: Boolean, default: false }, // coarse "watched at least once" flag, used for filtering
   isUnrefinedImport: { type: Boolean, default: false }, // true if imported without full metadata (e.g. Trakt/Nuvio)
   traktSynced: { type: Boolean, default: false },
