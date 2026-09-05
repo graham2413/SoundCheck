@@ -55,6 +55,14 @@ export class CinemaService {
     });
   }
 
+  // Whether the current user already has this exact title tracked (watchlist/watched/rating) -
+  // used when opening from an untracked context (search results) with no real CinemaItem yet.
+  getCinemaItemStatus(mediaType: 'movie' | 'tv', tmdbId: string): Observable<{ success: boolean; data: CinemaItem | null }> {
+    return this.http.get<{ success: boolean; data: CinemaItem | null }>(`${this.apiUrl}/status/${mediaType}/${tmdbId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
   // Bio + filmography + social links for the cast detail popup
   getCinemaPersonDetail(personId: number): Observable<CinemaPersonDetailResponse> {
     return this.http.get<CinemaPersonDetailResponse>(`${this.apiUrl}/person/${personId}`, {

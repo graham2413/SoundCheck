@@ -18,6 +18,7 @@ const {
   getCalendar,
   toggleWatchlist,
   markCinemaWatched,
+  getCinemaItemStatus,
 } = require("../controllers/cinemaController");
 
 // Zip never touches disk/Cloudinary - parsed directly from the in-memory buffer
@@ -28,6 +29,9 @@ router.get("/imdb-stats/:imdbId", getImdbStats);
 
 // Consolidated payload for the cinema review detail page (Protected)
 router.get("/detail/:mediaType/:tmdbId", authenticateUser, getCinemaDetail);
+
+// Whether the current user already has this title tracked, keyed by tmdbId+mediaType (Protected)
+router.get("/status/:mediaType/:tmdbId", authenticateUser, getCinemaItemStatus);
 
 // Bio + filmography + social links for the cast detail popup (Protected)
 router.get("/person/:personId", authenticateUser, getCinemaPersonDetail);

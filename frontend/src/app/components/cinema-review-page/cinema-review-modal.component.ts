@@ -86,6 +86,21 @@ export class CinemaReviewModalComponent implements OnInit {
     this.isWatchlist = this.record.isWatchlist;
     this.isWatched = this.record.isWatched;
 
+    // Search results are untracked stubs (no real CinemaItem _id) that
+    // always assume isWatchlist/isWatched false - if the user already has
+    // this exact title tracked, look up the real state so the buttons don't
+    // wrongly show "Add to Watchlist" for something already tracked.
+    if (!this.record._id) {
+      this.cinemaService.getCinemaItemStatus(this.record.mediaType, this.record.tmdbId!).subscribe({
+        next: ({ data }) => {
+          if (!data) return;
+          this.isWatchlist = data.isWatchlist;
+          this.isWatched = data.isWatched;
+          this.record = { ...this.record, ...data };
+        },
+      });
+    }
+
     this.cinemaService.getCinemaDetail(this.record.mediaType, this.record.tmdbId!).subscribe({
       next: (res) => (this.detail = res.data),
       error: () => this.toastr.error('Failed to load details.', 'Error'),

@@ -418,6 +418,22 @@ const buildWatchProviders = (flatrateProviders) => {
 };
 exports.buildWatchProviders = buildWatchProviders;
 
+// GET /api/cinema/status/:mediaType/:tmdbId (Protected)
+// Whether the current user already has this exact title tracked (watchlist/
+// watched/rating), keyed only by tmdbId+mediaType - used when opening a
+// detail modal from an untracked context (search results) that has no real
+// CinemaItem _id yet, so the modal doesn't wrongly show "Add to Watchlist"
+// for something already on the user's watchlist.
+exports.getCinemaItemStatus = async (req, res) => {
+  try {
+    const { mediaType, tmdbId } = req.params;
+    const item = await CinemaItem.findOne({ user: req.user._id, mediaType, tmdbId });
+    res.status(200).json({ success: true, data: item });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
 // GET /api/cinema/detail/:mediaType/:tmdbId (Protected)
 // Consolidated payload for the cinema review detail page: TMDb metadata +
 // credits + watch providers, plus OMDb-derived IMDb rating/awards/box office.
