@@ -33,6 +33,7 @@ import { CinemaDetail, CinemaItem } from '../../models/responses/cinema-response
         [runtimeMinutes]="detail.runtimeMinutes"
         [certification]="detail.certification"
         [releaseDate]="detail.releaseDate"
+        [status]="detail.status"
         [lastEpisodeAirDate]="detail.lastEpisodeAirDate"
         [nextEpisodeAirDate]="detail.nextEpisodeAirDate"
         [genres]="detail.genres"

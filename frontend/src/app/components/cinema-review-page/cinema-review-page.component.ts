@@ -28,6 +28,7 @@ export class CinemaReviewPageComponent {
   @Input() runtimeMinutes: number | null = null;
   @Input() certification: string | null = null;
   @Input() releaseDate: string | null = null;
+  @Input() status: string | null = null;
   @Input() lastEpisodeAirDate: string | null = null;
   @Input() nextEpisodeAirDate: string | null = null;
   @Input() genres: string[] = [];
@@ -156,6 +157,14 @@ export class CinemaReviewPageComponent {
       day: 'numeric',
       year: 'numeric',
     });
+  }
+
+  // Shown instead of a date for titles with no releaseDate at all (e.g. "In
+  // Production" movies/shows announced before a date is set) - TMDb's status
+  // field is already human-readable ("In Production", "Post Production",
+  // "Planned", "Returning Series", etc), just passed through as-is.
+  get formattedStatus(): string | null {
+    return !this.releaseDate && this.status ? this.status : null;
   }
 
   // releaseDate is a date-only string (e.g. "2026-12-25") - parsing it

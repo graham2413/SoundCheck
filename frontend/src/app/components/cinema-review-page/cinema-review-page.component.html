@@ -13,12 +13,18 @@
   <div class="flex items-start gap-4 px-4 pt-5">
     <div class="poster-frame">
       <img *ngIf="cover" [src]="cover" [alt]="title" class="poster-img" />
+      <div class="poster-placeholder" *ngIf="!cover">
+        <i class="fas fa-clapperboard"></i>
+        <span class="poster-placeholder-title">{{ formattedStatus || 'Unavailable' | uppercase }}</span>
+        <span class="poster-placeholder-divider"></span>
+        <span class="poster-placeholder-subtitle">Poster Unavailable</span>
+      </div>
     </div>
 
     <div class="flex flex-col min-w-0 pt-1">
       <h1 class="text-white font-bold text-2xl leading-snug break-words">{{ title }}</h1>
 
-      <p class="text-gray-400 text-sm mt-1" *ngIf="!isUpcoming">
+      <p class="text-gray-400 text-sm mt-1" *ngIf="!isUpcoming && (releaseDate || year)">
         <span *ngIf="mediaType === 'tv' && releaseYearRange">{{ releaseYearRange }}</span>
         <span *ngIf="mediaType !== 'tv' && year">{{ year }}</span>
         <span *ngIf="year && runtimeLabel">&nbsp;&middot;&nbsp;</span>
@@ -27,6 +33,9 @@
       <p class="text-gray-400 text-sm mt-1" *ngIf="isUpcoming && formattedReleaseDate">
         Releases {{ formattedReleaseDate }}
         <span *ngIf="runtimeLabel">&nbsp;&middot;&nbsp;{{ runtimeLabel }}</span>
+      </p>
+      <p class="text-gray-400 text-sm mt-1" *ngIf="!releaseDate">
+        TBD<span *ngIf="formattedStatus">&nbsp;&middot;&nbsp;{{ formattedStatus }}</span>
       </p>
 
       <p class="text-[#3B82F6] text-sm mt-2" *ngIf="genres.length">
@@ -44,9 +53,9 @@
   </div>
 
   <!-- Ratings -->
-  <div class="ratings-card mx-4 mt-4" *ngIf="appRating != null || imdbRating != null">
+  <div class="ratings-card mx-4 mt-4">
     <div class="flex items-center justify-around">
-      <div class="flex items-center gap-3" *ngIf="appRating != null">
+      <div class="flex items-center gap-3">
         <img src="assets/scLogo.png" alt="Cinewave" class="rating-logo" />
 
         <div class="flex flex-col items-center">
@@ -62,17 +71,20 @@
                 [style.strokeDashoffset]="appRingDashoffset"
               ></circle>
             </svg>
-            <span class="rating-ring-value">{{ formattedAppRating }}</span>
+            <span class="rating-ring-value">{{ appRating != null ? formattedAppRating : '—' }}</span>
           </div>
-          <span class="rating-caption" *ngIf="formattedAppReviewCount">
+          <span class="rating-caption" *ngIf="appRating != null; else noAppRating">
             {{ formattedAppReviewCount }} reviews
           </span>
+          <ng-template #noAppRating>
+            <span class="rating-caption">Ratings not available</span>
+          </ng-template>
         </div>
       </div>
 
-      <div class="ratings-divider" *ngIf="appRating != null && imdbRating != null"></div>
+      <div class="ratings-divider"></div>
 
-      <div class="flex items-center gap-3" *ngIf="imdbRating != null">
+      <div class="flex items-center gap-3">
         <img src="assets/imdb-logo.svg" alt="IMDb" class="imdb-logo" />
 
         <div class="flex flex-col items-center">
@@ -88,11 +100,14 @@
                 [style.strokeDashoffset]="imdbRingDashoffset"
               ></circle>
             </svg>
-            <span class="rating-ring-value">{{ formattedImdbRating }}</span>
+            <span class="rating-ring-value">{{ imdbRating != null ? formattedImdbRating : '—' }}</span>
           </div>
-          <span class="rating-caption" *ngIf="formattedImdbVoteCount">
+          <span class="rating-caption" *ngIf="imdbRating != null; else noImdbRating">
             {{ formattedImdbVoteCount }} ratings
           </span>
+          <ng-template #noImdbRating>
+            <span class="rating-caption">Ratings not available</span>
+          </ng-template>
         </div>
       </div>
     </div>

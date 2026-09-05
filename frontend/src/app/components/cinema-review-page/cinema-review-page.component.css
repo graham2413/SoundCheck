@@ -46,6 +46,44 @@
   object-fit: cover;
 }
 
+.poster-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.poster-placeholder i {
+  font-size: 1.6rem;
+  color: #6b7280;
+}
+
+.poster-placeholder-title {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #e5e7eb;
+  line-height: 1.2;
+}
+
+.poster-placeholder-divider {
+  width: 2rem;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.3);
+}
+
+.poster-placeholder-subtitle {
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
 .cert-pill {
   display: inline-block;
   width: fit-content;

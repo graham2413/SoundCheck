@@ -122,6 +122,7 @@ export interface CinemaDetail {
   releaseYearRange: string | null;
   releaseDate: string | null;
   isRerelease: boolean;
+  status: string | null;
   lastEpisodeAirDate: string | null;
   nextEpisodeAirDate: string | null;
   runtimeMinutes: number | null;

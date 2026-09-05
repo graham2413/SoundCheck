@@ -529,6 +529,10 @@ exports.getCinemaDetail = async (req, res) => {
         releaseYearRange,
         releaseDate,
         isRerelease,
+        // TMDb's production status ("In Production", "Post Production",
+        // "Planned", "Released", "Ended", "Returning Series", etc) - shown
+        // instead of a release date for titles that don't have one yet.
+        status: details.status || null,
         // TV only - drives the "New Episode"/"Airing Soon" badge client-side.
         lastEpisodeAirDate: mediaType === "tv" ? details.last_episode_to_air?.air_date || null : null,
         nextEpisodeAirDate: mediaType === "tv" ? details.next_episode_to_air?.air_date || null : null,
