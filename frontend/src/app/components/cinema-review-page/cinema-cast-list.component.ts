@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CinemaPersonDetailComponent } from './cinema-person-detail.component';
 import { CinemaPopularActorsComponent } from './cinema-popular-actors.component';
@@ -27,15 +27,13 @@ type SortOption = 'order' | 'name' | 'popularity';
   templateUrl: './cinema-cast-list.component.html',
   styleUrl: './cinema-cast-list.component.css',
 })
-export class CinemaCastListComponent {
+export class CinemaCastListComponent implements OnChanges {
   @Input() cast: CastMember[] = [];
 
   @Output() back = new EventEmitter<void>();
 
   showSearch = false;
-  searchQuery = '';
   showSortMenu = false;
-  sortBy: SortOption = 'order';
   selectedMember: CastMember | null = null;
   showPopularActors = false;
 
@@ -46,21 +44,50 @@ export class CinemaCastListComponent {
     popularity: 'Popularity',
   };
 
-  get filteredSortedCast(): CastMember[] {
-    const query = this.searchQuery.trim().toLowerCase();
+  // Cast lists can have 300-500+ people (aggregate_credits across every
+  // season). filteredSortedCast used to be a plain getter, which Angular
+  // re-evaluates on EVERY change-detection cycle (any scroll/touch/event) -
+  // for a list this size that's a full filter+sort re-run many times a
+  // second, causing real jank on mobile-class CPUs. Now only recomputed
+  // when cast/searchQuery/sortBy actually change, via the setters/ngOnChanges
+  // below, and the template just reads the cached result.
+  private _searchQuery = '';
+  private _sortBy: SortOption = 'order';
+  filteredSortedCast: CastMember[] = [];
+
+  get searchQuery(): string {
+    return this._searchQuery;
+  }
+  set searchQuery(value: string) {
+    this._searchQuery = value;
+    this.recomputeFilteredSortedCast();
+  }
+
+  get sortBy(): SortOption {
+    return this._sortBy;
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['cast']) {
+      this.recomputeFilteredSortedCast();
+    }
+  }
+
+  private recomputeFilteredSortedCast(): void {
+    const query = this._searchQuery.trim().toLowerCase();
     const filtered = query
       ? this.cast.filter((m) => m.name.toLowerCase().includes(query))
       : this.cast;
 
     const sorted = [...filtered];
-    if (this.sortBy === 'name') {
+    if (this._sortBy === 'name') {
       sorted.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (this.sortBy === 'popularity') {
+    } else if (this._sortBy === 'popularity') {
       sorted.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
     } else {
       sorted.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
-    return sorted;
+    this.filteredSortedCast = sorted;
   }
 
   toggleSearch(): void {
@@ -69,7 +96,8 @@ export class CinemaCastListComponent {
   }
 
   setSortBy(option: SortOption): void {
-    this.sortBy = option;
+    this._sortBy = option;
     this.showSortMenu = false;
+    this.recomputeFilteredSortedCast();
   }
 }
