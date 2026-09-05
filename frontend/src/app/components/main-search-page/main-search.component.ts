@@ -34,6 +34,9 @@ import {
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { CinemaItem, CinemaSearchResult } from 'src/app/models/responses/cinema-response';
+import { getTvEpisodeBadge, tvEpisodeBadgeLabel as getTvEpisodeBadgeLabel, TvEpisodeBadge } from 'src/app/shared/tv-episode-badge';
+import { getMovieRereleaseBadge, movieRereleaseBadgeLabel as getMovieRereleaseBadgeLabel, MovieRereleaseBadge } from 'src/app/shared/movie-rerelease-badge';
+import { getMovieReleaseBadge, movieReleaseBadgeLabel as getMovieReleaseBadgeLabel, MovieReleaseBadge } from 'src/app/shared/movie-release-badge';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
 import { MainSearchStateService } from 'src/app/services/main-search-state.service';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
@@ -1191,6 +1194,44 @@ export class MainSearchComponent implements OnInit, OnDestroy {
     if (!releaseDate) return false;
     const todayStr = new Date().toISOString().slice(0, 10);
     return releaseDate.slice(0, 10) > todayStr;
+  }
+
+  // TV only - "New Episode" (aired recently) / "Airing Soon" (airs within a
+  // week) badge, independent of the movie-only "Coming Soon" release badge.
+  tvEpisodeBadge(item: CinemaSearchResult): TvEpisodeBadge {
+    if (item.mediaType !== 'tv') return null;
+    return getTvEpisodeBadge(item.lastEpisodeAirDate, item.nextEpisodeAirDate, item.nextEpisodeNumber);
+  }
+
+  tvEpisodeBadgeLabel(badge: TvEpisodeBadge): string {
+    return getTvEpisodeBadgeLabel(badge);
+  }
+
+  // Movie only - a later theatrical reissue on record (e.g. an anniversary
+  // re-release), independent of the "Coming Soon" badge for the original release.
+  movieRereleaseBadge(item: CinemaSearchResult): MovieRereleaseBadge {
+    if (item.mediaType !== 'movie') return null;
+    return getMovieRereleaseBadge(item.rereleaseDate);
+  }
+
+  movieRereleaseBadgeLabel(badge: MovieRereleaseBadge): string {
+    return getMovieRereleaseBadgeLabel(badge);
+  }
+
+  // Movie only - "In Theaters"/"New Release" for the ORIGINAL release, takes
+  // priority over the rerelease badge above.
+  movieReleaseBadge(item: CinemaSearchResult): MovieReleaseBadge {
+    if (item.mediaType !== 'movie') return null;
+    return getMovieReleaseBadge({
+      releaseDate: item.releaseDate,
+      hadTheatricalRelease: item.hadTheatricalRelease,
+      hasStreamingAvailability: item.hasStreamingAvailability,
+      digitalReleaseDate: item.digitalReleaseDate,
+    });
+  }
+
+  movieReleaseBadgeLabel(badge: MovieReleaseBadge): string {
+    return getMovieReleaseBadgeLabel(badge);
   }
 
   getReleaseLabel(releaseDate: string | Date): string {

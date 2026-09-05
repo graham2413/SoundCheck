@@ -107,6 +107,10 @@ export class ViewProfilePageComponent implements OnInit {
   // backend now returns as its own dedicated always-true-total field so
   // broadening the panel's default listing below doesn't affect it).
   filteredWatchlistCount: number = 0;
+  // All/Movies/TV Shows tab counts - each ignores the mediaType filter
+  // itself so switching tabs shows what each WOULD contain given every
+  // other active filter, not a count already narrowed by the current tab.
+  watchlistMediaTypeCounts: { all: number; movie: number; tv: number } = { all: 0, movie: 0, tv: 0 };
   watchlistFilters: CinemaWatchlistFilterState = { ...DEFAULT_WATCHLIST_FILTERS };
   watchlistFilterOptions: { genres: string[]; providers: string[] } = { genres: [], providers: [] };
   showWatchlistFilterOverlay = false;
@@ -864,6 +868,7 @@ export class ViewProfilePageComponent implements OnInit {
         this.watchlistItems = response.data;
         this.filteredWatchlistCount = response.totalCount;
         this.watchlistTotalCount = response.watchlistCount;
+        this.watchlistMediaTypeCounts = response.mediaTypeCounts;
         this.watchlistCursor = response.nextCursor;
         this.hasMoreWatchlist = !!response.nextCursor;
         this.isLoadingWatchlist = false;
@@ -919,6 +924,20 @@ export class ViewProfilePageComponent implements OnInit {
     this.watchlistFilters = filters;
     this.showWatchlistFilterOverlay = false;
     this.loadWatchlistIfVisible();
+  }
+
+  // Quick-access All/Movies/TV Shows tabs above the watchlist list (separate
+  // from the same mediaType option inside the full Sort & Filter overlay -
+  // both just set the same underlying filter).
+  setWatchlistMediaTypeTab(mediaType: CinemaWatchlistFilterState['mediaType']): void {
+    if (this.watchlistFilters.mediaType === mediaType) return;
+    this.watchlistFilters = { ...this.watchlistFilters, mediaType };
+    this.loadWatchlistIfVisible();
+  }
+
+  // Drives the sliding pill indicator's position behind the All/Movies/Shows tabs.
+  get watchlistTabIndex(): number {
+    return this.watchlistFilters.mediaType === 'movie' ? 1 : this.watchlistFilters.mediaType === 'tv' ? 2 : 0;
   }
 
   // Debounced so we don't fire a request on every keystroke - backend-side

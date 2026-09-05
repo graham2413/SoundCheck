@@ -8,7 +8,7 @@
 
 <div
   *ngIf="!isLoading && items.length > 0 && !groupByReleaseStatus"
-  class="flex flex-col gap-3 max-w-3xl mx-auto"
+  class="flex flex-col gap-3 max-w-3xl mx-auto -mx-2"
   infiniteScroll
   [infiniteScrollDistance]="2"
   [infiniteScrollThrottle]="150"
@@ -23,7 +23,7 @@
 
 <div
   *ngIf="!isLoading && items.length > 0 && groupByReleaseStatus"
-  class="flex flex-col gap-5 max-w-3xl mx-auto"
+  class="flex flex-col gap-5 max-w-3xl mx-auto -mx-2"
   infiniteScroll
   [infiniteScrollDistance]="2"
   [infiniteScrollThrottle]="150"
@@ -32,21 +32,21 @@
   (scrolled)="loadMore.emit()"
 >
   <div *ngIf="availableNowItems.length" class="flex flex-col gap-3">
-    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wide px-1">Available Now</h3>
+    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wide px-3">Available Now</h3>
     <ng-container *ngFor="let item of availableNowItems">
       <ng-container *ngTemplateOutlet="row; context: { item: item, i: indexOfItem(item) }"></ng-container>
     </ng-container>
   </div>
 
   <div *ngIf="inTheatersItems.length" class="flex flex-col gap-3">
-    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wide px-1">In Theaters</h3>
+    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wide px-3">In Theaters</h3>
     <ng-container *ngFor="let item of inTheatersItems">
       <ng-container *ngTemplateOutlet="row; context: { item: item, i: indexOfItem(item) }"></ng-container>
     </ng-container>
   </div>
 
   <div *ngIf="comingSoonItems.length" class="flex flex-col gap-3">
-    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wide px-1">Coming Soon</h3>
+    <h3 class="text-gray-400 text-xs font-bold uppercase tracking-wide px-3">Coming Soon</h3>
     <ng-container *ngFor="let item of comingSoonItems">
       <ng-container *ngTemplateOutlet="row; context: { item: item, i: indexOfItem(item) }"></ng-container>
     </ng-container>
@@ -59,17 +59,17 @@
     class="flex flex-row items-center gap-4 rounded-lg cursor-pointer overflow-hidden border"
     style="background-color: #101621; border-color: #212530"
   >
-    <div class="relative aspect-[2/3] h-32 md:h-40 flex-shrink-0">
-      <!-- No cover on file (e.g. TMDb had no poster yet) - cinema-specific
-           placeholder instead of the shared music-themed fallback image -->
+    <div class="relative aspect-[2/3] h-36 md:h-40 flex-shrink-0">
+      <!-- No cover on file (e.g. TMDb had no poster yet) - mirrors the
+           detail page's placeholder so it's consistent across the app. -->
       <div
         *ngIf="!getThumbUrl(item.cover)"
-        class="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-900"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-lg bg-gray-900 px-2 text-center"
       >
-        <i
-          class="fas text-3xl text-gray-600"
-          [ngClass]="item.mediaType === 'movie' ? 'fa-film' : 'fa-tv'"
-        ></i>
+        <i class="fas fa-clapperboard text-lg text-gray-500"></i>
+        <span class="text-[10px] font-bold uppercase leading-tight text-gray-200">{{ item.status || 'Unavailable' }}</span>
+        <span class="h-px w-6 bg-gray-700"></span>
+        <span class="text-[9px] uppercase tracking-wide text-gray-500">Poster Unavailable</span>
       </div>
 
       <ng-container *ngIf="getThumbUrl(item.cover) as thumbUrl">
@@ -92,36 +92,78 @@
       </ng-container>
     </div>
 
-    <div class="flex flex-col justify-center flex-1 min-w-0 py-3 pr-3">
-      <span
-        class="text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
-        [title]="item.title"
-      >
-        {{ item.title }}
-      </span>
-      <p class="text-gray-400 text-sm mt-1 truncate overflow-hidden whitespace-nowrap">
-        {{ item.mediaType === 'tv' && item.releaseYearRange ? item.releaseYearRange : ((item.releaseDate | date : "yyyy") || 'TBA') }}
-        &nbsp;&middot;&nbsp;{{ item.mediaType === 'movie' ? 'Movie' : 'TV Series' }}
-      </p>
-      <p
-        *ngIf="item.genres?.length"
-        class="text-[#3B82F6] text-sm mt-1 truncate overflow-hidden whitespace-nowrap"
-      >
-        {{ item.genres?.join(', ') }}
-      </p>
-      <p
-        *ngIf="watchlistAddedDate(item) as addedDate"
-        class="text-gray-500 text-xs mt-1 truncate overflow-hidden whitespace-nowrap"
-      >
-        Added {{ addedDate | timeAgo }}
-      </p>
-      <span
-        *ngIf="isComingSoon(item.releaseDate)"
-        class="inline-block w-fit mt-1 px-2 py-0.5 rounded-md text-xs font-semibold"
-        style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.5); color: #93c5fd"
-      >
-        Coming Soon
-      </span>
+    <div class="flex flex-col justify-between flex-1 min-w-0 h-36 md:h-40 py-3 pr-3">
+      <div class="min-w-0">
+        <span
+          class="text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
+          [title]="item.title"
+        >
+          {{ item.title }}
+        </span>
+        <div class="flex items-center gap-2 mt-1">
+          <p class="text-gray-400 text-sm truncate overflow-hidden whitespace-nowrap min-w-0">
+            <ng-container *ngIf="item.mediaType === 'tv' && item.releaseYearRange; else noYearRange">{{ item.releaseYearRange }}</ng-container>
+            <ng-template #noYearRange>
+              <ng-container *ngIf="item.releaseDate; else noDate">{{ item.releaseDate | date : "yyyy" }}</ng-container>
+              <ng-template #noDate>TBA<span *ngIf="item.status">&nbsp;&middot;&nbsp;{{ item.status }}</span></ng-template>
+            </ng-template>
+            &nbsp;&middot;&nbsp;{{ item.mediaType === 'movie' ? 'Movie' : 'TV Series' }}
+            <span *ngIf="item.mediaType === 'tv' && item.numberOfSeasons as seasons">
+              &nbsp;&middot;&nbsp;{{ seasons }} Season{{ seasons === 1 ? '' : 's' }}
+            </span>
+          </p>
+        </div>
+        <p
+          *ngIf="item.genres?.length"
+          class="text-[#3B82F6] text-sm mt-1 truncate overflow-hidden whitespace-nowrap"
+        >
+          {{ item.genres?.join(', ') }}
+        </p>
+      </div>
+      <div class="flex items-center justify-between gap-2 flex-wrap mt-2 mb-0.5">
+        <span
+          *ngIf="isComingSoon(item.releaseDate)"
+          class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
+          style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.5); color: #93c5fd"
+        >
+          Coming Soon
+        </span>
+        <span
+          *ngIf="!isComingSoon(item.releaseDate) && tvEpisodeBadge(item) as badge"
+          class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
+          [ngStyle]="
+            badge === 'new-season'
+              ? { background: 'rgba(167, 139, 250, 0.15)', border: '1px solid rgba(167, 139, 250, 0.5)', color: '#c4b5fd' }
+              : { background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.5)', color: '#86efac' }
+          "
+        >
+          {{ tvEpisodeBadgeLabel(badge) }}
+        </span>
+        <span
+          *ngIf="!isComingSoon(item.releaseDate) && movieReleaseBadge(item) as releaseBadge"
+          class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
+          [ngStyle]="
+            releaseBadge === 'in-theaters'
+              ? { background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.5)', color: '#5eead4' }
+              : { background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.5)', color: '#86efac' }
+          "
+        >
+          {{ movieReleaseBadgeLabel(releaseBadge) }}
+        </span>
+        <span
+          *ngIf="!isComingSoon(item.releaseDate) && !movieReleaseBadge(item) && movieRereleaseBadge(item) as movieBadge"
+          class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
+          style="background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.5); color: #fcd34d"
+        >
+          {{ movieRereleaseBadgeLabel(movieBadge) }}
+        </span>
+        <span
+          *ngIf="watchlistAddedDate(item) as addedDate"
+          class="text-gray-500 text-xs flex-shrink-0 whitespace-nowrap ml-auto"
+        >
+          Added {{ addedDate | timeAgo }}
+        </span>
+      </div>
     </div>
 
     <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>

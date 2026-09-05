@@ -3,6 +3,17 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
 import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
+import { getTvEpisodeBadge, tvEpisodeBadgeLabel as getTvEpisodeBadgeLabel, TvEpisodeBadge } from 'src/app/shared/tv-episode-badge';
+import { getMovieRereleaseBadge, movieRereleaseBadgeLabel as getMovieRereleaseBadgeLabel, MovieRereleaseBadge } from 'src/app/shared/movie-rerelease-badge';
+import { getMovieReleaseBadge, movieReleaseBadgeLabel as getMovieReleaseBadgeLabel, MovieReleaseBadge } from 'src/app/shared/movie-release-badge';
+
+// Exclusive theatrical windows don't last forever - without this bound, an
+// old catalog title that never got streamingPlatforms/digitalReleaseDate
+// backfilled (missing data, not actually still in theaters) would be
+// misclassified as "in theaters" indefinitely. Mirrors the same bound used
+// server-side (getWatchlist's releaseStatus=in_theaters) and in the shared
+// movie-release-badge helper.
+const IN_THEATERS_WINDOW_DAYS = 90;
 
 // Presentational watchlist list (mirrors the calendar page's row layout) -
 // purely renders/paginates whatever list it's given. All data-fetching and
@@ -65,7 +76,8 @@ export class CinemaWatchlistComponent {
         item.mediaType === 'movie' &&
         item.hadTheatricalRelease &&
         !item.streamingPlatforms?.length &&
-        !this.hasDigitalReleaseArrived(item)
+        !this.hasDigitalReleaseArrived(item) &&
+        this.daysSinceRelease(item.releaseDate) <= IN_THEATERS_WINDOW_DAYS
     );
   }
 
@@ -73,10 +85,19 @@ export class CinemaWatchlistComponent {
     return this.items.filter((item) => {
       if (this.isComingSoon(item.releaseDate)) return false;
       if (item.mediaType === 'movie') {
-        return !!item.streamingPlatforms?.length || this.hasDigitalReleaseArrived(item);
+        if (item.streamingPlatforms?.length || this.hasDigitalReleaseArrived(item)) return true;
+        // Aged out of the in-theaters window with no streaming/digital data
+        // on record - assume it's available by now rather than leaving it
+        // out of every group.
+        return item.hadTheatricalRelease && this.daysSinceRelease(item.releaseDate) > IN_THEATERS_WINDOW_DAYS;
       }
       return true;
     });
+  }
+
+  private daysSinceRelease(releaseDate?: string): number {
+    if (!releaseDate) return Infinity;
+    return (Date.now() - new Date(releaseDate).getTime()) / (1000 * 60 * 60 * 24);
   }
 
   indexOfItem(item: CinemaItem): number {
@@ -89,6 +110,46 @@ export class CinemaWatchlistComponent {
     if (!releaseDate) return false;
     const todayStr = new Date().toISOString().slice(0, 10);
     return releaseDate.slice(0, 10) > todayStr;
+  }
+
+  // TV only - "New Episode" (aired recently) / "New Season Soon" (season
+  // premiere airs soon) / "Airing Soon" (regular next episode airs soon)
+  // badge, independent of the movie-only "Coming Soon" release badge.
+  tvEpisodeBadge(item: CinemaItem): TvEpisodeBadge {
+    if (item.mediaType !== 'tv') return null;
+    return getTvEpisodeBadge(item.lastEpisodeAirDate, item.nextEpisodeAirDate, item.nextEpisodeNumber);
+  }
+
+  // Movie only - a later theatrical reissue on record (e.g. an anniversary
+  // re-release), independent of the "Coming Soon" badge for the original release.
+  movieRereleaseBadge(item: CinemaItem): MovieRereleaseBadge {
+    if (item.mediaType !== 'movie') return null;
+    return getMovieRereleaseBadge(item.rereleaseDate);
+  }
+
+  movieRereleaseBadgeLabel(badge: MovieRereleaseBadge): string {
+    return getMovieRereleaseBadgeLabel(badge);
+  }
+
+  // Movie only - "In Theaters"/"New Release" for the ORIGINAL release, takes
+  // priority over the rerelease badge above (mutually exclusive in practice -
+  // a movie can't be a new release and have a reissue already).
+  movieReleaseBadge(item: CinemaItem): MovieReleaseBadge {
+    if (item.mediaType !== 'movie') return null;
+    return getMovieReleaseBadge({
+      releaseDate: item.releaseDate,
+      hadTheatricalRelease: item.hadTheatricalRelease,
+      hasStreamingAvailability: !!item.streamingPlatforms?.length,
+      digitalReleaseDate: item.digitalReleaseDate,
+    });
+  }
+
+  movieReleaseBadgeLabel(badge: MovieReleaseBadge): string {
+    return getMovieReleaseBadgeLabel(badge);
+  }
+
+  tvEpisodeBadgeLabel(badge: TvEpisodeBadge): string {
+    return getTvEpisodeBadgeLabel(badge);
   }
 
   markImageLoaded(i: number): void {

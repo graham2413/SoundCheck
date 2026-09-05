@@ -13,7 +13,7 @@ export interface WatchlistFilters {
   mediaType?: 'movie' | 'tv';
   search?: string;
   status?: 'unwatched' | 'watched';
-  releaseStatus?: 'available' | 'in_theaters' | 'coming_soon';
+  releaseStatus?: 'available' | 'in_theaters' | 'coming_soon' | 'new_episodes' | 'back_in_theaters';
   genre?: string;
   provider?: string;
   hasReleaseDate?: boolean;
@@ -28,6 +28,7 @@ export interface WatchlistResponse {
   nextCursor: WatchlistCursor | null;
   totalCount: number;
   watchlistCount: number;
+  mediaTypeCounts: { all: number; movie: number; tv: number };
 }
 
 @Injectable({

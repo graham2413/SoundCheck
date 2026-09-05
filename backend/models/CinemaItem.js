@@ -25,8 +25,14 @@ const cinemaItemSchema = new mongoose.Schema({
   duration: Number, // runtime in seconds (movie only)
   releaseDate: Date,
   releaseYearRange: String, // TV only, e.g. "2017-2025" or "2016-Present" (mirrors search's display format)
+  status: String, // TMDb's raw production status, e.g. "In Production", "Post Production", "Planned", "Returning Series"
+  numberOfSeasons: Number, // TV only - free from the same TMDb details call, no extra API cost
+  lastEpisodeAirDate: Date, // TV only - drives the "New Episode" badge
+  nextEpisodeAirDate: Date, // TV only - drives the "Airing Soon"/"New Season Soon" badge
+  nextEpisodeNumber: Number, // TV only - 1 means the next episode is a season premiere
   hadTheatricalRelease: Boolean, // movie only - did it actually get a US theatrical run at all (see hasTheatricalRelease())
   digitalReleaseDate: Date, // movie only - earliest known US digital release date, see getUsDigitalRelease()
+  rereleaseDate: Date, // movie only - a later theatrical reissue on record, if any (see getUsRerelease())
   genres: [String],
   streamingPlatforms: [String],
   decimalRating: { type: Number, min: 0, max: 10 }, // e.g. 8.4

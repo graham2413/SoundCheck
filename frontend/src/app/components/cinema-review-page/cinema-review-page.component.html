@@ -35,7 +35,7 @@
         <span *ngIf="runtimeLabel">&nbsp;&middot;&nbsp;{{ runtimeLabel }}</span>
       </p>
       <p class="text-gray-400 text-sm mt-1" *ngIf="!releaseDate">
-        TBD<span *ngIf="formattedStatus">&nbsp;&middot;&nbsp;{{ formattedStatus }}</span>
+        TBA<span *ngIf="formattedStatus">&nbsp;&middot;&nbsp;{{ formattedStatus }}</span>
       </p>
 
       <p class="text-[#3B82F6] text-sm mt-2" *ngIf="genres.length">
@@ -45,9 +45,18 @@
       <div class="flex items-center gap-2 mt-3">
         <span class="cert-pill" *ngIf="certification">{{ certification }}</span>
         <span class="status-pill status-pill-blue" *ngIf="isUpcoming">Coming Soon</span>
-        <span class="status-pill status-pill-green" *ngIf="isRecentRelease">New Release</span>
+        <span class="status-pill status-pill-green" *ngIf="isNewSeriesRelease">New Release</span>
+        <span
+          class="status-pill"
+          [ngClass]="movieReleaseBadge === 'in-theaters' ? 'status-pill-teal' : 'status-pill-green'"
+          *ngIf="movieReleaseBadge"
+        >
+          {{ movieReleaseBadgeLabel }}
+        </span>
         <span class="status-pill status-pill-green" *ngIf="isNewEpisode">New Episode</span>
+        <span class="status-pill status-pill-purple" *ngIf="isNewSeasonSoon">{{ episodeBadgeLabel }}</span>
         <span class="status-pill status-pill-green" *ngIf="isAiringSoon">Airing Soon</span>
+        <span class="status-pill status-pill-amber" *ngIf="!movieReleaseBadge && movieRereleaseBadge">{{ movieRereleaseBadgeLabel }}</span>
       </div>
     </div>
   </div>

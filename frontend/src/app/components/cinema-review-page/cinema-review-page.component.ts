@@ -1,6 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { PROVIDER_LOGO_OVERRIDES } from '../../shared/provider-logo-overrides';
+import { getTvEpisodeBadge, tvEpisodeBadgeLabel, TvEpisodeBadge } from '../../shared/tv-episode-badge';
+import { getMovieRereleaseBadge, movieRereleaseBadgeLabel, MovieRereleaseBadge } from '../../shared/movie-rerelease-badge';
+import { getMovieReleaseBadge, movieReleaseBadgeLabel, MovieReleaseBadge } from '../../shared/movie-release-badge';
 
 export interface WatchProvider {
   name: string;
@@ -28,9 +31,13 @@ export class CinemaReviewPageComponent {
   @Input() runtimeMinutes: number | null = null;
   @Input() certification: string | null = null;
   @Input() releaseDate: string | null = null;
+  @Input() rereleaseDate: string | null = null;
+  @Input() hadTheatricalRelease = false;
+  @Input() digitalReleaseDate: string | null = null;
   @Input() status: string | null = null;
   @Input() lastEpisodeAirDate: string | null = null;
   @Input() nextEpisodeAirDate: string | null = null;
+  @Input() nextEpisodeNumber: number | null = null;
   @Input() genres: string[] = [];
   @Input() appRating: number | null = null;
   @Input() appReviewCount: number | null = null;
@@ -74,25 +81,57 @@ export class CinemaReviewPageComponent {
   }
 
   private static readonly NEW_RELEASE_WINDOW_DAYS = 30;
-  private static readonly UPCOMING_EPISODE_WINDOW_DAYS = 7;
   private static readonly RING_RADIUS = 45;
 
-  // TV only - last aired episode was recent (mirrors movies' "New Release").
-  get isNewEpisode(): boolean {
-    if (this.mediaType !== 'tv' || !this.lastEpisodeAirDate) return false;
-    const daysSinceAired =
-      (Date.now() - this.parseLocalDate(this.lastEpisodeAirDate).getTime()) / (1000 * 60 * 60 * 24);
-    return daysSinceAired >= 0 && daysSinceAired <= CinemaReviewPageComponent.NEW_RELEASE_WINDOW_DAYS;
+  // TV only - "New Episode" (aired recently) / "New Season Soon" (premiere
+  // airs soon) / "Airing Soon" (regular next episode airs soon) - one at a
+  // time, mirrors the same shared logic used by watchlist/search rows.
+  get episodeBadge(): TvEpisodeBadge {
+    if (this.mediaType !== 'tv') return null;
+    return getTvEpisodeBadge(this.lastEpisodeAirDate, this.nextEpisodeAirDate, this.nextEpisodeNumber);
   }
 
-  // TV only - next episode airs soon. Only shown when isNewEpisode is false -
-  // one badge at a time, "New Episode" takes priority since it's a concrete
-  // recency signal rather than a forward-looking estimate.
+  get isNewEpisode(): boolean {
+    return this.episodeBadge === 'new-episode';
+  }
+
   get isAiringSoon(): boolean {
-    if (this.mediaType !== 'tv' || !this.nextEpisodeAirDate || this.isNewEpisode) return false;
-    const daysUntilAirs =
-      (this.parseLocalDate(this.nextEpisodeAirDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-    return daysUntilAirs >= 0 && daysUntilAirs <= CinemaReviewPageComponent.UPCOMING_EPISODE_WINDOW_DAYS;
+    return this.episodeBadge === 'airing-soon';
+  }
+
+  get isNewSeasonSoon(): boolean {
+    return this.episodeBadge === 'new-season';
+  }
+
+  get episodeBadgeLabel(): string {
+    return tvEpisodeBadgeLabel(this.episodeBadge);
+  }
+
+  // Movie only - a later theatrical reissue on record (e.g. an anniversary
+  // re-release), independent of the "Coming Soon"/"New Release" badges above.
+  get movieRereleaseBadge(): MovieRereleaseBadge {
+    if (this.mediaType !== 'movie') return null;
+    return getMovieRereleaseBadge(this.rereleaseDate);
+  }
+
+  get movieRereleaseBadgeLabel(): string {
+    return movieRereleaseBadgeLabel(this.movieRereleaseBadge);
+  }
+
+  // Movie only - "In Theaters"/"New Release" for the ORIGINAL release, takes
+  // priority over the rerelease badge above.
+  get movieReleaseBadge(): MovieReleaseBadge {
+    if (this.mediaType !== 'movie') return null;
+    return getMovieReleaseBadge({
+      releaseDate: this.releaseDate,
+      hadTheatricalRelease: this.hadTheatricalRelease,
+      hasStreamingAvailability: this.watchProviders.length > 0,
+      digitalReleaseDate: this.digitalReleaseDate,
+    });
+  }
+
+  get movieReleaseBadgeLabel(): string {
+    return movieReleaseBadgeLabel(this.movieReleaseBadge);
   }
 
   get ringCircumference(): number {
@@ -141,10 +180,10 @@ export class CinemaReviewPageComponent {
     return !!this.releaseDate && this.parseLocalDate(this.releaseDate) > new Date();
   }
 
-  // Only one status pill shows at a time - upcoming takes priority over
-  // "recent" since a re-released/upcoming title isn't a "new release" yet
-  get isRecentRelease(): boolean {
-    if (!this.releaseDate || this.isUpcoming) return false;
+  // TV only - the series itself just premiered recently (movies use the
+  // smarter movieReleaseBadge above, which accounts for theatrical windows).
+  get isNewSeriesRelease(): boolean {
+    if (this.mediaType !== 'tv' || !this.releaseDate || this.isUpcoming) return false;
     const daysSinceRelease =
       (Date.now() - this.parseLocalDate(this.releaseDate).getTime()) / (1000 * 60 * 60 * 24);
     return daysSinceRelease <= CinemaReviewPageComponent.NEW_RELEASE_WINDOW_DAYS;

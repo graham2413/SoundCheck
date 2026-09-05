@@ -5,7 +5,7 @@
     (click)="$event.stopPropagation()"
   >
     <div class="flex items-center justify-between mb-5">
-      <h2 class="text-xl font-semibold text-white">Sort &amp; Filter</h2>
+      <h2 class="text-xl font-semibold text-white">Sort</h2>
       <button type="button" (click)="close()" class="text-gray-400 hover:text-white text-2xl leading-none">
         &times;
       </button>
@@ -14,135 +14,94 @@
     <!-- Sort By -->
     <div class="mb-5">
       <h3 class="text-sm font-semibold text-gray-300 mb-2">Sort By</h3>
-      <select
-        [(ngModel)]="draft.sortBy"
-        class="w-full px-3 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-[#0F5EE4] mb-2"
-      >
-        <option value="dateAdded">Date Added</option>
-        <option value="releaseDate">Release Date</option>
-        <option value="title">Title</option>
-      </select>
-
-      <div class="flex gap-2">
+      <div class="relative">
         <button
           type="button"
-          (click)="setSortOrder('desc')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
-          [ngClass]="draft.sortOrder === 'desc' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+          (click)="toggleDropdown('sort')"
+          class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-gray-800/60 text-white border transition"
+          [ngClass]="openDropdown === 'sort' ? 'border-[#0F5EE4] ring-2 ring-[#0F5EE4]/30' : 'border-gray-700'"
         >
-          {{ sortOrderLabels.desc }}
+          <span class="truncate">{{ sortLabel }}</span>
+          <i class="fas fa-chevron-down text-gray-400 text-xs flex-shrink-0 ml-2" [ngClass]="openDropdown === 'sort' ? 'rotate-180' : ''"></i>
         </button>
-        <button
-          type="button"
-          (click)="setSortOrder('asc')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
-          [ngClass]="draft.sortOrder === 'asc' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+        <div
+          *ngIf="openDropdown === 'sort'"
+          class="absolute z-20 mt-2 w-full rounded-xl border border-gray-700 shadow-2xl overflow-hidden"
+          style="background-color: #111827"
         >
-          {{ sortOrderLabels.asc }}
-        </button>
+          <button
+            *ngFor="let opt of sortOptions"
+            type="button"
+            (click)="setSortCombined(opt.value)"
+            class="w-full text-left px-4 py-2.5 text-sm transition"
+            [ngClass]="sortCombinedValue === opt.value ? 'bg-[#0F5EE4]/15 text-[#93c5fd] font-semibold' : 'text-gray-300 hover:bg-gray-800'"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
       </div>
     </div>
 
     <hr class="border-gray-700 mb-5" />
     <h2 class="text-lg font-semibold text-white mb-4">Filter</h2>
 
-    <!-- Watch Status -->
-    <div class="mb-5">
-      <h3 class="text-sm font-semibold text-gray-300 mb-2">Watch Status</h3>
-      <div class="flex gap-2">
-        <button
-          type="button"
-          (click)="setStatus('unwatched')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
-          [ngClass]="draft.status === 'unwatched' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
-        >
-          Unwatched
-        </button>
-        <button
-          type="button"
-          (click)="setStatus('watched')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
-          [ngClass]="draft.status === 'watched' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
-        >
-          Watched
-        </button>
-        <button
-          type="button"
-          (click)="setStatus('all')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
-          [ngClass]="draft.status === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
-        >
-          All
-        </button>
-      </div>
-    </div>
-
     <!-- Release Status -->
     <div class="mb-5">
       <h3 class="text-sm font-semibold text-gray-300 mb-2">Release Status</h3>
-      <div class="flex flex-wrap gap-2">
+      <div class="grid grid-cols-2 gap-2">
         <button
           type="button"
           (click)="setReleaseStatus('all')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
-          [ngClass]="draft.releaseStatus === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+          class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition border"
+          [ngClass]="draft.releaseStatus === 'all' ? 'bg-[#0F5EE4]/15 border-[#0F5EE4] text-[#93c5fd]' : 'bg-gray-800/50 border-gray-700 text-gray-400'"
         >
+          <i class="fas fa-layer-group"></i>
           All
         </button>
         <button
           type="button"
           (click)="setReleaseStatus('available')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
-          [ngClass]="draft.releaseStatus === 'available' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+          class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition border"
+          [ngClass]="draft.releaseStatus === 'available' ? 'bg-[#0F5EE4]/15 border-[#0F5EE4] text-[#93c5fd]' : 'bg-gray-800/50 border-gray-700 text-gray-400'"
         >
+          <i class="fas fa-play-circle"></i>
           Available Now
         </button>
         <button
           type="button"
           (click)="setReleaseStatus('in_theaters')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
-          [ngClass]="draft.releaseStatus === 'in_theaters' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+          class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition border"
+          [ngClass]="draft.releaseStatus === 'in_theaters' ? 'bg-[#0F5EE4]/15 border-[#0F5EE4] text-[#93c5fd]' : 'bg-gray-800/50 border-gray-700 text-gray-400'"
         >
+          <i class="fas fa-film"></i>
           In Theaters
         </button>
         <button
           type="button"
           (click)="setReleaseStatus('coming_soon')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition"
-          [ngClass]="draft.releaseStatus === 'coming_soon' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+          class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition border"
+          [ngClass]="draft.releaseStatus === 'coming_soon' ? 'bg-[#0F5EE4]/15 border-[#0F5EE4] text-[#93c5fd]' : 'bg-gray-800/50 border-gray-700 text-gray-400'"
         >
+          <i class="fas fa-clock"></i>
           Coming Soon
         </button>
-      </div>
-    </div>
-
-    <!-- Content Type -->
-    <div class="mb-5">
-      <h3 class="text-sm font-semibold text-gray-300 mb-2">Content Type</h3>
-      <div class="flex gap-2">
         <button
           type="button"
-          (click)="setMediaType('all')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
-          [ngClass]="draft.mediaType === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+          (click)="setReleaseStatus('new_episodes')"
+          class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition border"
+          [ngClass]="draft.releaseStatus === 'new_episodes' ? 'bg-[#0F5EE4]/15 border-[#0F5EE4] text-[#93c5fd]' : 'bg-gray-800/50 border-gray-700 text-gray-400'"
         >
-          All
+          <i class="fas fa-tv"></i>
+          New Episodes
         </button>
         <button
           type="button"
-          (click)="setMediaType('movie')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
-          [ngClass]="draft.mediaType === 'movie' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
+          (click)="setReleaseStatus('back_in_theaters')"
+          class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition border"
+          [ngClass]="draft.releaseStatus === 'back_in_theaters' ? 'bg-[#0F5EE4]/15 border-[#0F5EE4] text-[#93c5fd]' : 'bg-gray-800/50 border-gray-700 text-gray-400'"
         >
-          Movies
-        </button>
-        <button
-          type="button"
-          (click)="setMediaType('tv')"
-          class="flex-1 px-3 py-1.5 rounded-full text-sm font-semibold transition"
-          [ngClass]="draft.mediaType === 'tv' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800 text-gray-400'"
-        >
-          TV Shows
+          <i class="fas fa-film"></i>
+          Back in Theaters
         </button>
       </div>
     </div>
@@ -150,25 +109,79 @@
     <!-- Genres -->
     <div class="mb-5">
       <h3 class="text-sm font-semibold text-gray-300 mb-2">Genres</h3>
-      <select
-        [(ngModel)]="draft.genre"
-        class="w-full px-3 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-[#0F5EE4]"
-      >
-        <option value="">All Genres</option>
-        <option *ngFor="let g of genres" [value]="g">{{ g }}</option>
-      </select>
+      <div class="relative">
+        <button
+          type="button"
+          (click)="toggleDropdown('genre')"
+          class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-gray-800/60 text-white border transition"
+          [ngClass]="openDropdown === 'genre' ? 'border-[#0F5EE4] ring-2 ring-[#0F5EE4]/30' : 'border-gray-700'"
+        >
+          <span class="truncate">{{ genreLabel }}</span>
+          <i class="fas fa-chevron-down text-gray-400 text-xs flex-shrink-0 ml-2" [ngClass]="openDropdown === 'genre' ? 'rotate-180' : ''"></i>
+        </button>
+        <div
+          *ngIf="openDropdown === 'genre'"
+          class="absolute z-20 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-gray-700 shadow-2xl"
+          style="background-color: #111827"
+        >
+          <button
+            type="button"
+            (click)="selectGenre('')"
+            class="w-full text-left px-4 py-2.5 text-sm transition"
+            [ngClass]="draft.genre === '' ? 'bg-[#0F5EE4]/15 text-[#93c5fd] font-semibold' : 'text-gray-300 hover:bg-gray-800'"
+          >
+            All Genres
+          </button>
+          <button
+            *ngFor="let g of genres"
+            type="button"
+            (click)="selectGenre(g)"
+            class="w-full text-left px-4 py-2.5 text-sm transition"
+            [ngClass]="draft.genre === g ? 'bg-[#0F5EE4]/15 text-[#93c5fd] font-semibold' : 'text-gray-300 hover:bg-gray-800'"
+          >
+            {{ g }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Availability -->
     <div class="mb-5">
       <h3 class="text-sm font-semibold text-gray-300 mb-2">Availability</h3>
-      <select
-        [(ngModel)]="draft.provider"
-        class="w-full px-3 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-[#0F5EE4]"
-      >
-        <option value="">All Providers</option>
-        <option *ngFor="let p of providers" [value]="p">{{ p }}</option>
-      </select>
+      <div class="relative">
+        <button
+          type="button"
+          (click)="toggleDropdown('provider')"
+          class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-gray-800/60 text-white border transition"
+          [ngClass]="openDropdown === 'provider' ? 'border-[#0F5EE4] ring-2 ring-[#0F5EE4]/30' : 'border-gray-700'"
+        >
+          <span class="truncate">{{ providerLabel }}</span>
+          <i class="fas fa-chevron-down text-gray-400 text-xs flex-shrink-0 ml-2" [ngClass]="openDropdown === 'provider' ? 'rotate-180' : ''"></i>
+        </button>
+        <div
+          *ngIf="openDropdown === 'provider'"
+          class="absolute z-20 mt-2 w-full max-h-60 overflow-y-auto rounded-xl border border-gray-700 shadow-2xl"
+          style="background-color: #111827"
+        >
+          <button
+            type="button"
+            (click)="selectProvider('')"
+            class="w-full text-left px-4 py-2.5 text-sm transition"
+            [ngClass]="draft.provider === '' ? 'bg-[#0F5EE4]/15 text-[#93c5fd] font-semibold' : 'text-gray-300 hover:bg-gray-800'"
+          >
+            All Providers
+          </button>
+          <button
+            *ngFor="let p of providers"
+            type="button"
+            (click)="selectProvider(p)"
+            class="w-full text-left px-4 py-2.5 text-sm transition"
+            [ngClass]="draft.provider === p ? 'bg-[#0F5EE4]/15 text-[#93c5fd] font-semibold' : 'text-gray-300 hover:bg-gray-800'"
+          >
+            {{ p }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Toggles -->

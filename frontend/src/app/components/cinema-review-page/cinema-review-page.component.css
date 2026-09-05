@@ -115,6 +115,24 @@
   color: #86efac;
 }
 
+.status-pill-teal {
+  background: rgba(20, 184, 166, 0.15);
+  border: 1px solid rgba(20, 184, 166, 0.5);
+  color: #5eead4;
+}
+
+.status-pill-purple {
+  background: rgba(167, 139, 250, 0.15);
+  border: 1px solid rgba(167, 139, 250, 0.5);
+  color: #c4b5fd;
+}
+
+.status-pill-amber {
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  color: #fcd34d;
+}
+
 .ratings-card {
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 0.75rem;

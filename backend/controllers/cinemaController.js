@@ -31,6 +31,37 @@ const getUsTheatricalRelease = (movieDetails) => {
 };
 exports.getUsTheatricalRelease = getUsTheatricalRelease;
 
+// The movie's actual original theatrical release date, ignoring any later
+// re-release/reissue (e.g. a 25th-anniversary theatrical re-release) - the
+// earliest US "Theatrical limited"/"Theatrical" (type 2/3) entry on record,
+// since a reissue can only ever come after the original by definition. Used
+// anywhere the title's canonical release year is shown (search, watchlist,
+// detail page, sorting) - unlike getUsTheatricalRelease above, which is only
+// for the calendar's "next theatrical event" (which legitimately wants to
+// surface an upcoming re-release as its own event).
+const getUsOriginalTheatricalRelease = (movieDetails) => {
+  const usDates = movieDetails?.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates || [];
+  const earliestTheatrical = usDates
+    .filter((d) => d.type === 2 || d.type === 3)
+    .sort((a, b) => (a.release_date || "").localeCompare(b.release_date || ""))[0];
+  return (earliestTheatrical?.release_date || movieDetails?.release_date)?.slice(0, 10) || null;
+};
+exports.getUsOriginalTheatricalRelease = getUsOriginalTheatricalRelease;
+
+// The most recent US theatrical re-release date on record, if any - any
+// type 2/3 entry that's a different date than the original (rather than
+// pattern-matching the note text, which isn't always populated) - drives a
+// "Back in Theaters"/"Returning to Theaters" badge for movies like Wet Hot
+// American Summer or Akira that get an anniversary reissue.
+const getUsRerelease = (movieDetails, originalReleaseDate) => {
+  const usDates = movieDetails?.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates || [];
+  const rereleases = usDates
+    .filter((d) => (d.type === 2 || d.type === 3) && d.release_date?.slice(0, 10) !== originalReleaseDate)
+    .sort((a, b) => (b.release_date || "").localeCompare(a.release_date || ""));
+  return rereleases[0]?.release_date?.slice(0, 10) || null;
+};
+exports.getUsRerelease = getUsRerelease;
+
 // Whether this movie actually had/has a theatrical run at all (TMDb release
 // types: 1=Premiere, 2=Theatrical limited, 3=Theatrical, 4=Digital,
 // 5=Physical, 6=TV). Needed because plenty of movies (streaming originals,
@@ -117,6 +148,41 @@ exports.searchCinema = async (req, res) => {
         } else if (endYear && endYear !== startYear) {
           r.releaseYearRange = `${startYear}-Present`;
         }
+        // Free - already have the full details object fetched above for the year range.
+        if (details.number_of_seasons) {
+          r.numberOfSeasons = details.number_of_seasons;
+        }
+        // Free too - drives the "New Episode"/"Airing Soon"/"New Season Soon" badge client-side.
+        r.lastEpisodeAirDate = details.last_episode_to_air?.air_date || null;
+        r.nextEpisodeAirDate = details.next_episode_to_air?.air_date || null;
+        r.nextEpisodeNumber = details.next_episode_to_air?.episode_number ?? null;
+      });
+    }
+
+    // Movies need their own details call (release_dates isn't in /search/multi)
+    // to know about a later theatrical reissue - mirrors the TV block above so
+    // watchlist and search show the exact same "Back in Theaters"/"Returning
+    // to Theaters" badge, and also corrects the release year for the rare
+    // title whose only US theatrical entry on record is itself a reissue.
+    // Also drives the "In Theaters"/"New Release" badge (see movie-release-badge.ts).
+    const movieResults = results.filter((r) => r.mediaType === "movie");
+    if (movieResults.length > 0) {
+      const movieDetailsList = await Promise.all(
+        movieResults.map((r) => getTmdbDetails(r.tmdbId, "movie").catch(() => null))
+      );
+
+      movieResults.forEach((r, i) => {
+        const details = movieDetailsList[i];
+        if (!details) return;
+
+        const originalReleaseDate = getUsOriginalTheatricalRelease(details);
+        if (originalReleaseDate) {
+          r.releaseDate = originalReleaseDate;
+        }
+        r.rereleaseDate = getUsRerelease(details, originalReleaseDate);
+        r.hadTheatricalRelease = hasTheatricalRelease(details);
+        r.digitalReleaseDate = getUsDigitalRelease(details);
+        r.hasStreamingAvailability = !!buildWatchProviders(details["watch/providers"]?.results?.US?.flatrate).length;
       });
     }
 
@@ -477,10 +543,22 @@ exports.getCinemaDetail = async (req, res) => {
             popularity: c.popularity,
           }));
 
-    const { releaseDate, isRerelease } =
-      mediaType === "movie"
-        ? getUsTheatricalRelease(details)
-        : { releaseDate: details.first_air_date || null, isRerelease: false };
+    // Detail page shows the title's canonical release date (not a later
+    // reissue), so use the original-release helper here - isRerelease is
+    // only meaningful for the calendar's "next theatrical event" concept.
+    const releaseDate =
+      mediaType === "movie" ? getUsOriginalTheatricalRelease(details) : details.first_air_date || null;
+
+    // Movie only - a later theatrical reissue (e.g. an anniversary
+    // re-release), if TMDb has one on record. Drives "Back in Theaters"/
+    // "Returning to Theaters" client-side.
+    const rereleaseDate = mediaType === "movie" ? getUsRerelease(details, releaseDate) : null;
+
+    // Movie only - drives the "In Theaters"/"New Release" badge client-side
+    // (see movie-release-badge.ts) alongside watchProviders below.
+    const hadTheatricalReleaseValue = mediaType === "movie" ? hasTheatricalRelease(details) : false;
+    const digitalReleaseDate = mediaType === "movie" ? getUsDigitalRelease(details) : null;
+
 
     // TV only - "2016-2025"/"2023-Present" style range shown instead of a
     // single year (mirrors the same logic already used for watchlist rows/
@@ -528,14 +606,17 @@ exports.getCinemaDetail = async (req, res) => {
         year: releaseDate ? Number(releaseDate.slice(0, 4)) : null,
         releaseYearRange,
         releaseDate,
-        isRerelease,
+        rereleaseDate,
+        hadTheatricalRelease: hadTheatricalReleaseValue,
+        digitalReleaseDate,
         // TMDb's production status ("In Production", "Post Production",
         // "Planned", "Released", "Ended", "Returning Series", etc) - shown
         // instead of a release date for titles that don't have one yet.
         status: details.status || null,
-        // TV only - drives the "New Episode"/"Airing Soon" badge client-side.
+        // TV only - drives the "New Episode"/"Airing Soon"/"New Season Soon" badge.
         lastEpisodeAirDate: mediaType === "tv" ? details.last_episode_to_air?.air_date || null : null,
         nextEpisodeAirDate: mediaType === "tv" ? details.next_episode_to_air?.air_date || null : null,
+        nextEpisodeNumber: mediaType === "tv" ? details.next_episode_to_air?.episode_number ?? null : null,
         runtimeMinutes: details.runtime || details.episode_run_time?.[0] || null,
         certification,
         genres: (details.genres || []).map((g) => g.name),
@@ -852,15 +933,23 @@ const fetchCinemaMetadata = async (tmdbId, mediaType, { forceRefresh = false } =
     metadata.duration = details.episode_run_time[0] * 60;
   }
 
+  // Canonical release date (not a later reissue) - see getUsOriginalTheatricalRelease.
   const releaseDate =
-    mediaType === "movie" ? getUsTheatricalRelease(details).releaseDate : details.first_air_date;
+    mediaType === "movie" ? getUsOriginalTheatricalRelease(details) : details.first_air_date;
   if (releaseDate) {
     metadata.releaseDate = releaseDate;
+  }
+
+  if (details.status) {
+    metadata.status = details.status;
   }
 
   if (mediaType === "movie") {
     metadata.hadTheatricalRelease = hasTheatricalRelease(details);
     metadata.digitalReleaseDate = getUsDigitalRelease(details);
+    // Free too - same details call already fetched above. Drives the
+    // "Back in Theaters"/"Returning to Theaters" badge client-side.
+    metadata.rereleaseDate = getUsRerelease(details, releaseDate);
   }
 
   if (mediaType === "tv") {
@@ -873,6 +962,16 @@ const fetchCinemaMetadata = async (tmdbId, mediaType, { forceRefresh = false } =
     } else if (startYear) {
       metadata.releaseYearRange = endYear && endYear !== startYear ? `${startYear}-Present` : `${startYear}`;
     }
+
+    if (details.number_of_seasons) {
+      metadata.numberOfSeasons = details.number_of_seasons;
+    }
+
+    // Free too - same details call already fetched above. Drives the
+    // "New Episode"/"Airing Soon"/"New Season Soon" badge client-side.
+    metadata.lastEpisodeAirDate = details.last_episode_to_air?.air_date || null;
+    metadata.nextEpisodeAirDate = details.next_episode_to_air?.air_date || null;
+    metadata.nextEpisodeNumber = details.next_episode_to_air?.episode_number ?? null;
   }
 
   const providers = buildWatchProviders(details["watch/providers"]?.results?.US?.flatrate);
@@ -1156,6 +1255,10 @@ exports.getWatchlist = async (req, res) => {
     // on the watchlist OR already watched (rating something flips isWatchlist
     // off, so without the isWatched half here, watched items would never
     // show up at all). "unwatched"/"watched" narrow to just one side.
+    // mediaType is deliberately NOT pushed into `conditions` here - it's
+    // combined in separately below, so `conditions` alone (everything else)
+    // can be reused to compute the All/Movies/TV Shows tab counts without
+    // one tab's count being restricted by another tab's own filter.
     const conditions = [];
     if (status === "unwatched") {
       conditions.push({ isWatchlist: true, isWatched: { $ne: true } });
@@ -1163,9 +1266,6 @@ exports.getWatchlist = async (req, res) => {
       conditions.push({ isWatched: true });
     } else {
       conditions.push({ $or: [{ isWatchlist: true }, { isWatched: true }] });
-    }
-    if (mediaType === "movie" || mediaType === "tv") {
-      conditions.push({ mediaType });
     }
     if (search?.trim()) {
       // Escape regex special characters so a title like "Se7en" or a stray
@@ -1204,6 +1304,14 @@ exports.getWatchlist = async (req, res) => {
       const digitalReleaseNotArrived = {
         $or: [{ digitalReleaseDate: { $exists: false } }, { digitalReleaseDate: null }, { digitalReleaseDate: { $gt: todayBoundary } }],
       };
+      // Exclusive theatrical windows don't last forever - without this bound,
+      // an old catalog title that never got streamingPlatforms/digitalReleaseDate
+      // backfilled (missing data, not actually still in theaters) would be
+      // misclassified as "in theaters" indefinitely.
+      const IN_THEATERS_WINDOW_DAYS = 90;
+      const inTheatersWindowStart = new Date(todayBoundary.getTime() - IN_THEATERS_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+      const releasedWithinTheatersWindow = { releaseDate: { $ne: null, $lte: todayBoundary, $gte: inTheatersWindowStart } };
+      const releasedBeforeTheatersWindow = { releaseDate: { $lt: inTheatersWindowStart } };
 
       if (releaseStatus === "coming_soon") {
         conditions.push({ releaseDate: { $gt: todayBoundary } });
@@ -1217,7 +1325,7 @@ exports.getWatchlist = async (req, res) => {
         conditions.push({
           mediaType: "movie",
           hadTheatricalRelease: true,
-          ...isReleased,
+          ...releasedWithinTheatersWindow,
           $and: [noStreamingPlatform, digitalReleaseNotArrived],
         });
       } else {
@@ -1225,12 +1333,49 @@ exports.getWatchlist = async (req, res) => {
           $or: [
             { mediaType: "tv", ...isReleased },
             { mediaType: "movie", $or: [hasStreamingPlatform, digitalReleaseArrived] },
+            // Fallback for the same aged-out-of-theaters gap above: past the
+            // window with no streaming/digital data on record, assume it's
+            // available by now rather than leaving it in neither bucket.
+            { mediaType: "movie", hadTheatricalRelease: true, ...releasedBeforeTheatersWindow },
           ],
         });
       }
     }
 
-    const baseQuery = { user: userId, $and: conditions };
+    // TV only - mirrors the client's shared getTvEpisodeBadge windows: a
+    // recently-aired episode (30 days), a soon-airing season premiere (45
+    // days, episode 1), or a soon-airing regular next episode (7 days).
+    if (releaseStatus === "new_episodes") {
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const fortyFiveDaysFromNow = new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000);
+      conditions.push({
+        mediaType: "tv",
+        $or: [
+          { lastEpisodeAirDate: { $gte: thirtyDaysAgo, $lte: now } },
+          { nextEpisodeAirDate: { $gte: now, $lte: sevenDaysFromNow }, nextEpisodeNumber: { $ne: 1 } },
+          { nextEpisodeAirDate: { $gte: now, $lte: fortyFiveDaysFromNow }, nextEpisodeNumber: 1 },
+        ],
+      });
+    }
+
+    // Movie only - mirrors the client's shared getMovieRereleaseBadge windows:
+    // a theatrical reissue that's either recently happened or coming soon
+    // (both ±45 days), e.g. an anniversary re-release like Akira or Wet Hot
+    // American Summer.
+    if (releaseStatus === "back_in_theaters") {
+      const now = new Date();
+      const fortyFiveDaysAgo = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
+      const fortyFiveDaysFromNow = new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000);
+      conditions.push({
+        mediaType: "movie",
+        rereleaseDate: { $gte: fortyFiveDaysAgo, $lte: fortyFiveDaysFromNow },
+      });
+    }
+
+    const mediaTypeCondition = mediaType === "movie" || mediaType === "tv" ? [{ mediaType }] : [];
+    const baseQuery = { user: userId, $and: [...conditions, ...mediaTypeCondition] };
     const query = { ...baseQuery };
 
     // Sort field is selectable now (previously always createdAt) - cursor
@@ -1255,11 +1400,18 @@ exports.getWatchlist = async (req, res) => {
     // panel header shows. watchlistCount is ALWAYS the true "still on my
     // watchlist" count regardless of any filter - what the outer profile stat
     // badge shows, kept separate so broadening the default above doesn't
-    // change what that stat means.
-    const [items, totalCount, watchlistCount] = await Promise.all([
+    // change what that stat means. movieCount/tvCount/allCount power the
+    // All/Movies/TV Shows tabs - each computed against every OTHER active
+    // filter but ignoring the mediaType filter itself, so switching tabs
+    // shows what each tab WOULD contain, not a count already narrowed by
+    // whichever tab happens to be selected right now.
+    const [items, totalCount, watchlistCount, allCount, movieCount, tvCount] = await Promise.all([
       CinemaItem.find(query).sort({ [sortField]: sortDirection, _id: sortDirection }).limit(Number(limit)),
       CinemaItem.countDocuments(baseQuery),
       CinemaItem.countDocuments({ user: userId, isWatchlist: true }),
+      CinemaItem.countDocuments({ user: userId, $and: conditions }),
+      CinemaItem.countDocuments({ user: userId, $and: [...conditions, { mediaType: "movie" }] }),
+      CinemaItem.countDocuments({ user: userId, $and: [...conditions, { mediaType: "tv" }] }),
     ]);
 
     const last = items[items.length - 1];
@@ -1271,7 +1423,14 @@ exports.getWatchlist = async (req, res) => {
         }
       : null;
 
-    res.status(200).json({ success: true, data: items, nextCursor, totalCount, watchlistCount });
+    res.status(200).json({
+      success: true,
+      data: items,
+      nextCursor,
+      totalCount,
+      watchlistCount,
+      mediaTypeCounts: { all: allCount, movie: movieCount, tv: tvCount },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }

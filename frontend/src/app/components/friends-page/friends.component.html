@@ -215,12 +215,16 @@
           #searchBar
           class="relative w-[95%] sm:max-w-[800px] mb-6 mx-auto pt-[.5rem] md:pt-0"
         >
+          <i
+            class="fas fa-search absolute md:text-lg lg:text-xl left-5 top-1/2 transform -translate-y-1/2 text-gray-400 pt-[.5rem] md:pt-0"
+          ></i>
           <input
             type="text"
             [(ngModel)]="searchQuery"
             placeholder="{{ getSearchPlaceholder() }}"
             (keyup.enter)="searchUsers()"
-            class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg lg:text-2xl shadow-md"
+            style="background-color: #131928"
+            class="w-full rounded-full border border-gray-700 text-white py-3 pl-12 pr-5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg lg:text-2xl shadow-md"
           />
         </div>
 
@@ -509,17 +513,18 @@
             [(ngModel)]="searchQuery"
             placeholder="{{ getSearchPlaceholder() }}"
             (keydown.enter)="searchUsers()"
-            class="w-full rounded-full bg-gray-800 border border-gray-700 text-white py-3 pl-5 pr-12 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg lg:text-2xl shadow-md"
+            style="background-color: #131928"
+            class="w-full rounded-full border border-gray-700 text-white py-3 pl-12 pr-5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg lg:text-2xl shadow-md"
           />
           <i
             *ngIf="!(searchQuery.trim() && searchQuery.trim() === lastSearchedQuery)"
             (click)="searchUsers()"
-            class="fas fa-search absolute md:text-lg lg:text-xl right-4 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer pt-[.5rem] md:pt-0"
+            class="fas fa-search absolute md:text-lg lg:text-xl left-4 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer pt-[.5rem] md:pt-0"
           ></i>
           <i
             *ngIf="searchQuery.trim() && searchQuery.trim() === lastSearchedQuery"
             (click)="clearSearchQuery()"
-            class="fas fa-times absolute md:text-lg lg:text-xl right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition cursor-pointer pt-[.5rem] md:pt-0"
+            class="fas fa-times absolute md:text-lg lg:text-xl left-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition cursor-pointer pt-[.5rem] md:pt-0"
           ></i>
         </div>
         <!-- Show Skeleton Loader While Searching -->

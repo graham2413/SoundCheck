@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 export interface CinemaWatchlistFilterState {
   status: 'all' | 'unwatched' | 'watched';
   mediaType: 'all' | 'movie' | 'tv';
-  releaseStatus: 'all' | 'available' | 'in_theaters' | 'coming_soon';
+  releaseStatus: 'all' | 'available' | 'in_theaters' | 'coming_soon' | 'new_episodes' | 'back_in_theaters';
   genre: string; // '' = All Genres
   provider: string; // '' = All Providers
   sortBy: 'dateAdded' | 'releaseDate' | 'title';
@@ -49,15 +49,63 @@ export class CinemaWatchlistFilterComponent implements OnChanges {
 
   draft: CinemaWatchlistFilterState = { ...DEFAULT_WATCHLIST_FILTERS };
 
+  // Native <select> option lists can't be restyled (browser-rendered, ignores
+  // our CSS) - these three use a custom dropdown (button + absolutely
+  // positioned list) instead, so the open list matches the app's dark theme.
+  openDropdown: 'sort' | 'genre' | 'provider' | null = null;
+
+  readonly sortOptions: { value: string; label: string }[] = [
+    { value: 'dateAdded-desc', label: 'Date Added - Newest First' },
+    { value: 'dateAdded-asc', label: 'Date Added - Oldest First' },
+    { value: 'releaseDate-desc', label: 'Release Date - Newest First' },
+    { value: 'releaseDate-asc', label: 'Release Date - Oldest First' },
+    { value: 'title-asc', label: 'Title - A-Z' },
+    { value: 'title-desc', label: 'Title - Z-A' },
+  ];
+
+  get sortLabel(): string {
+    return this.sortOptions.find((o) => o.value === this.sortCombinedValue)?.label || '';
+  }
+
+  get genreLabel(): string {
+    return this.draft.genre || 'All Genres';
+  }
+
+  get providerLabel(): string {
+    return this.draft.provider || 'All Providers';
+  }
+
+  toggleDropdown(name: 'sort' | 'genre' | 'provider'): void {
+    this.openDropdown = this.openDropdown === name ? null : name;
+  }
+
+  selectGenre(genre: string): void {
+    this.draft.genre = genre;
+    this.openDropdown = null;
+  }
+
+  selectProvider(provider: string): void {
+    this.draft.provider = provider;
+    this.openDropdown = null;
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['filters']) {
       this.draft = { ...this.filters };
     }
   }
 
-  get sortOrderLabels(): { asc: string; desc: string } {
-    if (this.draft.sortBy === 'title') return { asc: 'A-Z', desc: 'Z-A' };
-    return { asc: 'Oldest First', desc: 'Newest First' };
+  // Single dropdown combining sortBy+sortOrder (e.g. "dateAdded-desc") instead
+  // of a separate select + Newest/Oldest pill row.
+  get sortCombinedValue(): string {
+    return `${this.draft.sortBy}-${this.draft.sortOrder}`;
+  }
+
+  setSortCombined(value: string): void {
+    const separatorIndex = value.lastIndexOf('-');
+    this.draft.sortBy = value.slice(0, separatorIndex) as CinemaWatchlistFilterState['sortBy'];
+    this.draft.sortOrder = value.slice(separatorIndex + 1) as CinemaWatchlistFilterState['sortOrder'];
+    this.openDropdown = null;
   }
 
   setStatus(status: CinemaWatchlistFilterState['status']): void {
@@ -70,10 +118,18 @@ export class CinemaWatchlistFilterComponent implements OnChanges {
 
   setReleaseStatus(releaseStatus: CinemaWatchlistFilterState['releaseStatus']): void {
     this.draft.releaseStatus = releaseStatus;
-  }
-
-  setSortOrder(sortOrder: CinemaWatchlistFilterState['sortOrder']): void {
-    this.draft.sortOrder = sortOrder;
+    // These release statuses only apply to one media type, so jump the
+    // All/Movies/Shows tab to match instead of showing a filter that can
+    // never match anything under the currently-selected tab.
+    if (releaseStatus === 'new_episodes') {
+      this.draft.mediaType = 'tv';
+    } else if (releaseStatus === 'in_theaters' || releaseStatus === 'back_in_theaters') {
+      this.draft.mediaType = 'movie';
+      // Newest theatrical releases first, so a movie that's been sitting in
+      // theaters for months doesn't bury ones that just opened.
+      this.draft.sortBy = 'releaseDate';
+      this.draft.sortOrder = 'desc';
+    }
   }
 
   reset(): void {

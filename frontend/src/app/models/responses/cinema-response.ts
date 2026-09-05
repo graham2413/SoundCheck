@@ -22,8 +22,14 @@ export interface CinemaItem {
   duration?: number; // seconds (movie only)
   releaseDate?: string;
   releaseYearRange?: string; // TV only, e.g. "2017-2025" or "2016-Present"
+  status?: string; // TMDb's raw production status, e.g. "In Production", "Planned"
+  numberOfSeasons?: number; // TV only
+  lastEpisodeAirDate?: string; // TV only - drives the "New Episode" badge
+  nextEpisodeAirDate?: string; // TV only - drives the "Airing Soon"/"New Season Soon" badge
+  nextEpisodeNumber?: number | null; // TV only - 1 means the next episode is a season premiere
   hadTheatricalRelease?: boolean; // movie only - did it actually get a US theatrical run at all
   digitalReleaseDate?: string; // movie only - earliest known US digital release date, if any
+  rereleaseDate?: string | null; // movie only - a later theatrical reissue on record, if any
   genres?: string[];
   streamingPlatforms?: string[];
   decimalRating?: number;
@@ -47,6 +53,14 @@ export interface CinemaSearchResult {
   cover: string | null;
   releaseDate: string | null;
   releaseYearRange?: string;
+  numberOfSeasons?: number;
+  lastEpisodeAirDate?: string;
+  nextEpisodeAirDate?: string;
+  nextEpisodeNumber?: number | null;
+  rereleaseDate?: string | null;
+  hadTheatricalRelease?: boolean;
+  digitalReleaseDate?: string | null;
+  hasStreamingAvailability?: boolean;
   genres?: string[];
 }
 
@@ -121,10 +135,13 @@ export interface CinemaDetail {
   year: number | null;
   releaseYearRange: string | null;
   releaseDate: string | null;
-  isRerelease: boolean;
+  rereleaseDate: string | null;
+  hadTheatricalRelease: boolean;
+  digitalReleaseDate: string | null;
   status: string | null;
   lastEpisodeAirDate: string | null;
   nextEpisodeAirDate: string | null;
+  nextEpisodeNumber: number | null;
   runtimeMinutes: number | null;
   certification: string | null;
   genres: string[];

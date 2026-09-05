@@ -20,7 +20,7 @@ if (require.main === module) {
 const mongoose = require("mongoose");
 const CinemaItem = require("../models/CinemaItem");
 const { getTmdbDetails } = require("../utils/callTmdb");
-const { getUsTheatricalRelease, hasTheatricalRelease, getUsDigitalRelease, buildWatchProviders } = require("../controllers/cinemaController");
+const { getUsOriginalTheatricalRelease, getUsRerelease, hasTheatricalRelease, getUsDigitalRelease, buildWatchProviders } = require("../controllers/cinemaController");
 
 // filter lets callers scope this to one user's items instead of the whole DB.
 // force re-backfills items that already have this data (e.g. one-time quality upgrades).
@@ -71,7 +71,7 @@ async function backfillCinemaMetadata(filter = {}, { force = false } = {}) {
 
       const releaseDate =
         item.mediaType === "movie"
-          ? getUsTheatricalRelease(details).releaseDate
+          ? getUsOriginalTheatricalRelease(details)
           : details.first_air_date;
       if (releaseDate) {
         item.releaseDate = new Date(releaseDate);
@@ -81,6 +81,12 @@ async function backfillCinemaMetadata(filter = {}, { force = false } = {}) {
         item.hadTheatricalRelease = hasTheatricalRelease(details);
         const digitalReleaseDate = getUsDigitalRelease(details);
         item.digitalReleaseDate = digitalReleaseDate ? new Date(digitalReleaseDate) : null;
+        const rereleaseDate = getUsRerelease(details, releaseDate);
+        item.rereleaseDate = rereleaseDate ? new Date(rereleaseDate) : null;
+      }
+
+      if (details.status) {
+        item.status = details.status;
       }
 
       // TV only - mirrors searchCinema's "2017-2025"/"2016-Present" display format
@@ -94,6 +100,18 @@ async function backfillCinemaMetadata(filter = {}, { force = false } = {}) {
         } else if (startYear) {
           item.releaseYearRange = endYear && endYear !== startYear ? `${startYear}-Present` : `${startYear}`;
         }
+
+        if (details.number_of_seasons) {
+          item.numberOfSeasons = details.number_of_seasons;
+        }
+
+        item.lastEpisodeAirDate = details.last_episode_to_air?.air_date
+          ? new Date(details.last_episode_to_air.air_date)
+          : null;
+        item.nextEpisodeAirDate = details.next_episode_to_air?.air_date
+          ? new Date(details.next_episode_to_air.air_date)
+          : null;
+        item.nextEpisodeNumber = details.next_episode_to_air?.episode_number ?? null;
       }
 
       const providers = buildWatchProviders(details["watch/providers"]?.results?.US?.flatrate);
