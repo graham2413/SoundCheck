@@ -86,6 +86,14 @@ export class CinemaService {
     });
   }
 
+  // Trending movies/shows this week (powers the cinema marquee)
+  getTrendingCinema(mediaType: 'movie' | 'tv'): Observable<{ success: boolean; data: CinemaSearchResult[] }> {
+    return this.http.get<{ success: boolean; data: CinemaSearchResult[] }>(`${this.apiUrl}/trending`, {
+      headers: this.authHeaders(),
+      params: { mediaType },
+    });
+  }
+
   // A user's watchlist - owner always allowed, others only if public.
   // Cursor-paginated (same pattern as the activity/artist feeds) so a large
   // watchlist doesn't have to load/render all at once. All narrowing options
@@ -198,8 +206,11 @@ export class CinemaService {
   }
 
   // Everyone's reviews (rating + text) for the same movie/show as `item`
-  getCinemaReviews(item: CinemaItem): Observable<{ success: boolean; data: CinemaReviewsResponse }> {
-    let params = new HttpParams();
+  getCinemaReviews(
+    item: CinemaItem,
+    sort: 'recent' | 'highest' | 'liked' = 'recent'
+  ): Observable<{ success: boolean; data: CinemaReviewsResponse }> {
+    let params = new HttpParams().set('sort', sort);
 
     if (item.imdbId) {
       params = params.set('imdbId', item.imdbId);

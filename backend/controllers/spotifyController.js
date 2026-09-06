@@ -1,7 +1,6 @@
 const axios = require("axios");
 const User = require("../models/User");
 const AlbumImage = require("../models/AlbumImage");
-const getSpotifyAccessToken = require("../auth/spotifyAuth");
 const path = require("path");
 const https = require("https");
 const fs = require("fs");
@@ -95,187 +94,52 @@ const importPlaylists = async (req, res) => {
   }
 };
 
-// Fetch top albums from Spotify and store them in the database (runs once a week)
+// Fetch top albums from Apple Music's official charts and store them in the
+// database (runs once a week). Previously did its own from-scratch "trending"
+// approximation via Spotify search+new-releases+artist-popularity heuristics
+// (very complex, many hundreds of API calls). Apple's Marketing Tools RSS
+// feed is a free, unauthenticated, officially-maintained real chart (no API
+// key, no rate limit found in practice) that's already ranked and regional -
+// so this just consumes it directly instead of re-deriving a "top albums"
+// ranking ourselves. Deezer is still used for cover art/preview/track-count
+// (same as before), just matching against Apple's title+artist instead.
 const setAlbumImages = async () => {
   try {
-    const accessToken = await getSpotifyAccessToken();
-    if (!accessToken) {
-      console.error("Failed to get Spotify access token.");
-      return false;
-    }
-
-    // Substring-matched against each artist's Spotify genre tags
-    const SPOTIFY_GENRE_BLOCKLIST = [
-      "bollywood", "desi", "latin", "reggaeton", "sertanejo",
-      "k-pop", "mandopop", "afrobeats", "punjabi",
-      // Brazilian funk
-      "brazilian funk", "funk carioca", "brega funk", "phonk", "brazilian phonk",
-      "brazilian trap", "funk consciente", "funk bruxaria", "funk de bh",
-      // Mexican regional / corridos
-      "corridos", "sierreño", "banda", "norteño", "música mexicana", "corrido",
-      "cumbia norteña", "dembow belico",
-      // Tamil/Telugu film industry (same category as bollywood)
-      "kollywood", "tollywood", "tamil pop", "telugu pop", "tamil dance", "tamil hip hop",
-      // Classical
-      "baroque", "classical", "concerto", "early music", "choral", "renaissance",
-      "gregorian chant", "opera", "chamber music", "orchestral",
-    ];
-
     // Exact-matched against the Deezer album genre name
     const DEEZER_GENRE_BLOCKLIST = [
       "films/games", "brazilian music", "unknown", "asian music", "latin music", "traditional mexicano", "electro", "banda/grupero", "classical",
       "Indian Music"
     ];
 
-    const currentYear = new Date().getFullYear();
     const TARGET_COUNT = 110;
-    const PAGE_LIMIT = 50;
-    const MAX_OFFSET = 950; // Spotify search caps offset+limit at 1000
+    // Apple's chart mixes in still-popular older albums alongside new ones -
+    // restrict to the last 6 months so "top new music" stays true to its name.
+    const NEW_RELEASE_CUTOFF_MONTHS = 6;
+    const APPLE_CHART_LIMIT = 100; // 100 is the real max - 150+ 500s in testing
+    const APPLE_CHART_URL = `https://rss.marketingtools.apple.com/api/v2/us/music/most-played/${APPLE_CHART_LIMIT}/albums.json`;
 
-    const artistPopularityMap = new Map();
-    const artistGenresMap = new Map();
-    const candidatePool = []; // every album passing popularity+genre filters, across all pages
-
-    let offset = 0;
-
-    // Phase 1: scan every page (Spotify-only, no Deezer yet) to build the full candidate pool
-    while (offset <= MAX_OFFSET) {
-      const res = await axios.get("https://api.spotify.com/v1/search", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        params: {
-          q: `year:${currentYear} tag:new`,
-          type: "album",
-          limit: PAGE_LIMIT,
-          offset,
-          market: "US",
-        },
-        httpsAgent,
-      });
-
-      const pageAlbums = res.data.albums?.items || [];
-      offset += PAGE_LIMIT;
-
-      if (pageAlbums.length === 0) {
-        console.log("No more Spotify results, stopping pagination.");
-        break;
-      }
-
-      // Fetch popularity + genres for any artists we haven't seen yet
-      const newArtistIds = [
-        ...new Set(pageAlbums.flatMap((a) => a.artists.map((ar) => ar.id))),
-      ].filter((id) => !artistPopularityMap.has(id));
-
-      for (let i = 0; i < newArtistIds.length; i += 50) {
-        const batch = newArtistIds.slice(i, i + 50);
-        const artistRes = await axios.get("https://api.spotify.com/v1/artists", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          params: { ids: batch.join(",") },
-          httpsAgent,
-        });
-
-        artistRes.data.artists.forEach((artist) => {
-          artistPopularityMap.set(artist.id, artist.popularity);
-          artistGenresMap.set(artist.id, artist.genres || []);
-        });
-      }
-
-      // Filter this page by artist popularity + exclude blocklisted genres (US-only marquee)
-      const popularityFilteredAlbums = pageAlbums.filter((album) =>
-        album.artists.some((artist) => (artistPopularityMap.get(artist.id) || 0) >= 75)
-      );
-
-      const filteredPageAlbums = popularityFilteredAlbums.filter((album) =>
-        !album.artists.some((artist) =>
-          (artistGenresMap.get(artist.id) || []).some((genre) =>
-            SPOTIFY_GENRE_BLOCKLIST.some((blocked) => genre.toLowerCase().includes(blocked))
-          )
-        )
-      );
-
-      console.log(
-        `Funnel (offset ${offset - PAGE_LIMIT}): raw=${pageAlbums.length} -> popularity>=75=${popularityFilteredAlbums.length} -> after genre blocklist=${filteredPageAlbums.length}`
-      );
-
-      candidatePool.push(...filteredPageAlbums);
+    const appleRes = await axios.get(APPLE_CHART_URL, { httpsAgent });
+    const appleAlbums = appleRes.data?.feed?.results || [];
+    if (appleAlbums.length === 0) {
+      console.error("Apple Music charts returned no results.");
+      return false;
     }
 
-    // Phase 1b: supplement with Spotify's own editorially-curated New Releases feed
-    // (a different endpoint than /search - skews toward notable releases, not just anything tagged "new")
-    const seenSpotifyIds = new Set(candidatePool.map((a) => a.id));
-    const newReleasesCutoff = new Date();
-    newReleasesCutoff.setMonth(newReleasesCutoff.getMonth() - 3); // endpoint has no date param, so enforce it ourselves
-    let newReleasesOffset = 0;
-    let newReleasesAdded = 0;
+    const releaseCutoff = new Date();
+    releaseCutoff.setMonth(releaseCutoff.getMonth() - NEW_RELEASE_CUTOFF_MONTHS);
 
-    while (newReleasesOffset <= 950) {
-      const res = await axios.get("https://api.spotify.com/v1/browse/new-releases", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        params: { country: "US", limit: PAGE_LIMIT, offset: newReleasesOffset },
-        httpsAgent,
-      });
+    // Already ranked by Apple (index 0 = #1) - keep that order, just filter to recent releases.
+    const candidatePool = appleAlbums
+      .filter((album) => new Date(album.releaseDate || 0).getTime() >= releaseCutoff.getTime())
+      .map((album, index) => ({
+        name: album.name,
+        artists: [{ id: album.artistId, name: album.artistName }],
+        release_date: album.releaseDate,
+        // Synthetic popularity from chart rank (rank 1 = highest)
+        applePopularity: Math.max(0, appleAlbums.length - index),
+      }));
 
-      const pageAlbums = (res.data.albums?.items || []).filter((a) => !seenSpotifyIds.has(a.id));
-      newReleasesOffset += PAGE_LIMIT;
-
-      if (pageAlbums.length === 0) {
-        if (!res.data.albums?.next) break;
-        continue;
-      }
-
-      const newArtistIds = [
-        ...new Set(pageAlbums.flatMap((a) => a.artists.map((ar) => ar.id))),
-      ].filter((id) => !artistPopularityMap.has(id));
-
-      for (let i = 0; i < newArtistIds.length; i += 50) {
-        const batch = newArtistIds.slice(i, i + 50);
-        const artistRes = await axios.get("https://api.spotify.com/v1/artists", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          params: { ids: batch.join(",") },
-          httpsAgent,
-        });
-
-        artistRes.data.artists.forEach((artist) => {
-          artistPopularityMap.set(artist.id, artist.popularity);
-          artistGenresMap.set(artist.id, artist.genres || []);
-        });
-      }
-
-      const dateFilteredAlbums = pageAlbums.filter((album) =>
-        new Date(album.release_date || 0).getTime() >= newReleasesCutoff.getTime()
-      );
-
-      const popularityFilteredAlbums = dateFilteredAlbums.filter((album) =>
-        album.artists.some((artist) => (artistPopularityMap.get(artist.id) || 0) >= 75)
-      );
-
-      const filteredPageAlbums = popularityFilteredAlbums.filter((album) =>
-        !album.artists.some((artist) =>
-          (artistGenresMap.get(artist.id) || []).some((genre) =>
-            SPOTIFY_GENRE_BLOCKLIST.some((blocked) => genre.toLowerCase().includes(blocked))
-          )
-        )
-      );
-
-      filteredPageAlbums.forEach((album) => seenSpotifyIds.add(album.id));
-      candidatePool.push(...filteredPageAlbums);
-      newReleasesAdded += filteredPageAlbums.length;
-
-      console.log(
-        `Phase 1b funnel (offset ${newReleasesOffset - PAGE_LIMIT}): raw=${pageAlbums.length} -> within 3mo=${dateFilteredAlbums.length} -> popularity>=75=${popularityFilteredAlbums.length} -> after genre blocklist=${filteredPageAlbums.length}`
-      );
-
-      if (!res.data.albums?.next) break;
-    }
-
-    console.log(`Phase 1b (new-releases feed): added ${newReleasesAdded} new candidates, pool now ${candidatePool.length}`);
-
-    // Phase 2: rank the full pool by popularity (tiebreak: release date, newest first)
-    candidatePool.sort((a, b) => {
-      const popA = Math.max(...a.artists.map((ar) => artistPopularityMap.get(ar.id) || 0));
-      const popB = Math.max(...b.artists.map((ar) => artistPopularityMap.get(ar.id) || 0));
-      if (popB !== popA) return popB - popA;
-      return new Date(b.release_date || 0).getTime() - new Date(a.release_date || 0).getTime();
-    });
+    console.log(`Apple Music charts: ${appleAlbums.length} raw -> ${candidatePool.length} within last ${NEW_RELEASE_CUTOFF_MONTHS} months`);
 
     console.log(`Ranked candidate pool: ${candidatePool.length} albums, walking down for Deezer matches...`);
 
@@ -296,9 +160,7 @@ const setAlbumImages = async () => {
           const name = album.name;
           const artistName = album.artists.map((a) => a.name).join(", ");
           const releaseDate = album.release_date || "0000-00-00";
-          const maxPopularity = Math.max(
-            ...album.artists.map((a) => artistPopularityMap.get(a.id) || 0)
-          );
+          const maxPopularity = album.applePopularity;
 
           try {
             // Deezer titles don't include feature credits, and its search relevance
@@ -331,9 +193,8 @@ const setAlbumImages = async () => {
 
             if (!matchedAlbum) {
               const candidateCount = deezerSearchRes.data.data?.length || 0;
-              const artistGenres = album.artists.flatMap((a) => artistGenresMap.get(a.id) || []);
               console.log(
-                `No Deezer match for "${name}" by ${artistName} - Deezer returned ${candidateCount} candidate(s) - Spotify genres: [${artistGenres.join(", ")}]`
+                `No Deezer match for "${name}" by ${artistName} - Deezer returned ${candidateCount} candidate(s)`
               );
               return;
             }
@@ -442,18 +303,17 @@ const setAlbumImages = async () => {
 
     let dedupedAlbums = Array.from(finalAlbumsMap.values());
 
-    // Sort albums by release date (newest first), then popularity
+    // Sort albums by popularity (tiebreak: release date, newest first)
     dedupedAlbums.sort((a, b) => {
-      const dateDiff =
-        new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
-      if (dateDiff !== 0) return dateDiff;
-      return (b.popularity || 0) - (a.popularity || 0);
+      const popDiff = (b.popularity || 0) - (a.popularity || 0);
+      if (popDiff !== 0) return popDiff;
+      return new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
     });
 
     // Last-resort fallback: only if Spotify pagination ran dry before hitting the target
     if (dedupedAlbums.length < TARGET_COUNT) {
       const existingAlbums = await AlbumImage.find()
-        .sort({ releaseDate: -1, popularity: -1 })
+        .sort({ popularity: -1, releaseDate: -1 })
         .lean();
 
       const needed = TARGET_COUNT - dedupedAlbums.length;
@@ -474,11 +334,11 @@ const setAlbumImages = async () => {
     // Final cap
     dedupedAlbums = dedupedAlbums.slice(0, TARGET_COUNT);
 
-    // Display order: most recently released first (already sorted this way above)
+    // Display order: most popular first (already sorted this way above)
     dedupedAlbums = dedupedAlbums.map((album, index) => ({ ...album, order: index }));
 
-    console.log("Final order (order: releaseDate - title):");
-    console.log(dedupedAlbums.map((a) => `${a.order}: ${a.releaseDate} - ${a.title}`).join("\n"));
+    console.log("Final order (order: popularity - releaseDate - title):");
+    console.log(dedupedAlbums.map((a) => `${a.order}: ${a.popularity} - ${a.releaseDate} - ${a.title}`).join("\n"));
 
     // Clear out old records and store the final set
     await AlbumImage.deleteMany({});

@@ -1,9 +1,19 @@
-<div class="fixed inset-0 z-30 flex justify-end bg-black/60" (click)="close()">
+<div
+  class="fixed inset-0 z-30 flex items-end justify-center bg-black/60 transition-opacity duration-200"
+  [class.opacity-0]="!isOpen"
+  (click)="close()"
+>
   <div
-    class="w-full max-w-sm h-full overflow-y-auto p-5"
+    class="w-full max-w-lg max-h-[70vh] overflow-y-auto rounded-t-3xl p-5 transition-transform duration-300 ease-out"
+    [class.translate-y-full]="!isOpen"
+    [class.translate-y-0]="isOpen"
     style="background-color: #0b1120"
     (click)="$event.stopPropagation()"
   >
+    <div class="flex justify-center mb-3">
+      <div class="w-10 h-1.5 rounded-full bg-gray-600"></div>
+    </div>
+
     <div class="flex items-center justify-between mb-5">
       <h2 class="text-xl font-semibold text-white">Sort</h2>
       <button type="button" (click)="close()" class="text-gray-400 hover:text-white text-2xl leading-none">

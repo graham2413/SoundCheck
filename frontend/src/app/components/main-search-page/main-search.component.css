@@ -15,6 +15,22 @@
   animation: bounce-twice 3s ease-in-out infinite;
 }
 
+.see-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #0f5ee4;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.see-all-btn i {
+  font-size: 0.75rem;
+}
+
 input[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
   appearance: none;

@@ -62,6 +62,7 @@ export interface CinemaSearchResult {
   digitalReleaseDate?: string | null;
   hasStreamingAvailability?: boolean;
   genres?: string[];
+  voteAverage?: number | null; // only present on trending marquee results
 }
 
 // A CinemaItem as returned by getCinemaReviews, with `user` populated
@@ -81,8 +82,10 @@ export interface CinemaReviewsResponse {
 
 export interface ImdbStats {
   imdbId: string;
-  imdbRating: string | null;
-  voteCount: string | null;
+  imdbRating: number | null;
+  voteCount: number | null;
+  awardsRaw?: string | null;
+  boxOfficeUs?: string | null;
 }
 
 // One row from GET /api/cinema/calendar - a TV show's next episode to air,

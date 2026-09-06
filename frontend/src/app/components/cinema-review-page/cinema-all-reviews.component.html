@@ -1,0 +1,121 @@
+<div class="cinema-all-reviews h-screen flex flex-col">
+  <!-- Sticky header block: back/title, poster+title+rating, filter row -->
+  <div class="flex-shrink-0">
+    <div class="relative flex items-center px-4 pt-4">
+      <button type="button" aria-label="Back" class="icon-circle-btn" (click)="back.emit()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h1 class="absolute left-1/2 -translate-x-1/2 text-white font-bold text-xl">
+        Reviews ({{ filteredReviews.length }})
+      </h1>
+    </div>
+
+    <div class="flex items-center gap-3 px-4 mt-4">
+      <div class="all-reviews-poster-frame" *ngIf="cover">
+        <div class="all-reviews-poster-loader" *ngIf="!posterLoaded">
+          <div class="all-reviews-poster-spinner"></div>
+        </div>
+        <img
+          [src]="cover"
+          [alt]="title"
+          (load)="markPosterLoaded()"
+          (error)="markPosterLoaded()"
+          [class.invisible]="!posterLoaded"
+          class="all-reviews-poster"
+        />
+      </div>
+
+      <div class="flex flex-col min-w-0">
+        <h2 class="text-white font-bold text-base truncate">{{ title }}</h2>
+      </div>
+
+      <div class="ml-auto flex flex-col items-center flex-shrink-0">
+        <div class="rating-ring">
+          <svg viewBox="0 0 100 100">
+            <circle class="ring-track" cx="50" cy="50" r="45"></circle>
+            <circle
+              class="ring-progress ring-progress-blue"
+              cx="50"
+              cy="50"
+              r="45"
+              [style.strokeDasharray]="ringCircumference"
+              [style.strokeDashoffset]="appRingDashoffset"
+            ></circle>
+          </svg>
+          <span class="rating-ring-value">{{ appRating != null ? formattedAppRating : '—' }}</span>
+        </div>
+        <span class="rating-caption" *ngIf="appReviewCount != null">{{ appReviewCount }} reviews</span>
+      </div>
+    </div>
+
+    <div class="reviews-filter-row px-4 mt-4">
+      <button
+        type="button"
+        class="review-filter-pill"
+        [class.review-filter-pill-active]="reviewFilter === 'all'"
+        (click)="onReviewFilterChange('all')"
+      >
+        All ({{ reviews.length }})
+      </button>
+      <button
+        type="button"
+        class="review-filter-pill"
+        [class.review-filter-pill-active]="reviewFilter === 'mine'"
+        (click)="onReviewFilterChange('mine')"
+      >
+        My Review
+      </button>
+      <select class="review-sort-select" [(ngModel)]="reviewSort" (ngModelChange)="onReviewSortChange($event)">
+        <option value="recent">Most Recent</option>
+        <option value="highest">Highest Rated</option>
+        <option value="liked">Most Liked</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Only this list scrolls -->
+  <div class="flex-1 overflow-y-auto px-4 pb-8 mt-4">
+    <p class="reviews-empty-subtitle" *ngIf="filteredReviews.length === 0">
+      {{ reviewFilter === 'mine' ? "You haven't written a review yet." : 'No reviews yet.' }}
+    </p>
+
+    <div class="review-card" *ngFor="let review of filteredReviews">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="review-avatar-frame">
+            <div class="review-avatar-loader" *ngIf="!isAvatarLoaded(review._id)">
+              <div class="review-avatar-spinner"></div>
+            </div>
+            <img
+              [src]="profilePictureUrl(review.user.profilePicture)"
+              (load)="markAvatarLoaded(review._id)"
+              (error)="markAvatarLoaded(review._id)"
+              [class.invisible]="!isAvatarLoaded(review._id)"
+              alt=""
+              class="review-avatar"
+            />
+          </div>
+          <span class="review-username">{{ review.user.username }}</span>
+        </div>
+        <span class="review-date">{{ review.createdAt | date : 'MMM d, y' }}</span>
+      </div>
+
+      <div class="flex items-center gap-2 mt-2">
+        <span class="star-rating">
+          <span class="star" *ngFor="let i of [1, 2, 3, 4, 5]">
+            <i class="far fa-star star-empty"></i>
+            <i class="fas fa-star star-filled" [style.width.%]="starFillPercent(i, review.decimalRating)"></i>
+          </span>
+        </span>
+        <span class="review-score">{{ review.decimalRating }} / 10</span>
+      </div>
+
+      <p class="review-text" *ngIf="review.reviewText">{{ review.reviewText }}</p>
+
+      <button type="button" class="review-like-btn" (click)="toggleReviewLike.emit(review)">
+        <i class="fas fa-heart" [class.review-like-active]="isReviewLiked(review)"></i>
+        {{ review.likes || 0 }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,89 @@
+<div class="see-all-trending h-screen flex flex-col bg-[#020814]">
+  <!-- Sticky header -->
+  <div class="flex-shrink-0 sticky top-0 z-10 bg-[#020814] border-b border-gray-800 px-4 pt-4 pb-3">
+    <div class="flex items-center gap-3">
+      <button type="button" class="icon-circle-btn" aria-label="Back" (click)="back.emit()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h1 class="text-white font-bold text-xl flex-1">
+        {{ kind === 'music' ? 'Trending Music' : 'Trending ' + (cinemaMode === 'movie' ? 'Movies' : 'Shows') }}
+      </h1>
+    </div>
+
+    <div *ngIf="kind === 'cinema'" class="relative flex items-center p-1 mt-3 rounded-full border border-gray-700 bg-gray-900/50 w-fit">
+      <div
+        class="absolute top-1 bottom-1 left-1 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
+        style="width: calc((100% - 0.5rem) / 2)"
+        [ngStyle]="{ transform: 'translateX(' + (cinemaMode === 'tv' ? 100 : 0) + '%)' }"
+      ></div>
+      <button
+        type="button"
+        (click)="setCinemaMode('movie')"
+        [ngClass]="cinemaMode === 'movie' ? 'text-white' : 'text-gray-300'"
+        class="relative z-10 whitespace-nowrap px-3 py-1 rounded-full text-xs font-semibold transition-colors"
+      >
+        Movies
+      </button>
+      <button
+        type="button"
+        (click)="setCinemaMode('tv')"
+        [ngClass]="cinemaMode === 'tv' ? 'text-white' : 'text-gray-300'"
+        class="relative z-10 whitespace-nowrap px-3 py-1 rounded-full text-xs font-semibold transition-colors"
+      >
+        Shows
+      </button>
+    </div>
+  </div>
+
+  <!-- Grid body -->
+  <div class="flex-1 overflow-y-auto px-4 py-4">
+    <div *ngIf="isLoading" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+      <div *ngFor="let _ of [1,2,3,4,5,6,7,8,9]" class="skeleton-card">
+        <div class="skeleton-img"></div>
+      </div>
+    </div>
+
+    <!-- Music grid -->
+    <div *ngIf="!isLoading && kind === 'music'" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+      <div
+        *ngFor="let album of albums; let i = index"
+        (click)="onMusicCardClick(i)"
+        class="grid-card cursor-pointer"
+      >
+        <img [src]="album.cover" [alt]="album.title" class="grid-card-img" />
+        <p class="grid-card-title truncate" [title]="album.title">{{ album.title }}</p>
+        <p class="grid-card-subtitle truncate" [title]="album.artist">{{ album.artist }}</p>
+      </div>
+    </div>
+
+    <!-- Cinema grid -->
+    <div *ngIf="!isLoading && kind === 'cinema'" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+      <div
+        *ngFor="let item of cinemaItems; let i = index"
+        (click)="onCinemaCardClick(i)"
+        class="grid-card cursor-pointer"
+      >
+        <div class="relative">
+          <img
+            [src]="item.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
+            [alt]="item.title"
+            class="grid-card-img"
+          />
+          <span *ngIf="cinemaBadge(item) as badge" class="grid-card-badge" [ngClass]="'badge-' + badge.kind">
+            <i class="fas" [ngClass]="badge.icon"></i>
+            {{ badge.label }}
+          </span>
+        </div>
+        <p class="grid-card-title truncate" [title]="item.title">{{ item.title }}</p>
+        <p class="grid-card-subtitle truncate">{{ releaseMonthYear(item) }}</p>
+      </div>
+    </div>
+
+    <div
+      *ngIf="!isLoading && ((kind === 'music' && albums.length === 0) || (kind === 'cinema' && cinemaItems.length === 0))"
+      class="text-center text-gray-400 mt-10"
+    >
+      Nothing trending right now.
+    </div>
+  </div>
+</div>

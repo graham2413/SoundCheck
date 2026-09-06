@@ -571,7 +571,7 @@ exports.removeFromArtistList = async (req, res) => {
   }
 };
 
-const RECENT_SEARCHES_LIMIT = 8;
+const RECENT_SEARCHES_LIMIT = 5;
 
 exports.addRecentSearch = async (req, res) => {
   try {

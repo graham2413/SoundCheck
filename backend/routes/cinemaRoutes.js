@@ -15,6 +15,7 @@ const {
   editCinemaItem,
   getCinemaReviews,
   searchCinema,
+  getCinemaTrending,
   getCalendar,
   toggleWatchlist,
   markCinemaWatched,
@@ -41,6 +42,7 @@ router.get("/popular-actors", authenticateUser, getPopularActors);
 
 // Search movies/shows via TMDb (Protected)
 router.get("/search", authenticateUser, searchCinema);
+router.get("/trending", authenticateUser, getCinemaTrending);
 
 // Distinct genres/providers available to filter this user's watchlist by (Protected)
 router.get("/watchlist/:userId/filters", authenticateUser, getWatchlistFilterOptions);

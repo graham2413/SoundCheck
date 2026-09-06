@@ -94,40 +94,48 @@
 
 <div *ngIf="activeDiscoverTab === 'mainSearch'">
   <!-- Heading -->
-  <div class="text-center max-w-5xl mx-auto px-3">
-    <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mt-7">
-      Explore
-      <span
-        (click)="toggleSearchType()"
-        class="cursor-pointer text-[#0F5EE4] hover:text-[#3b82f6] transition inline-flex items-center gap-1.5"
-        title="Click to switch between Music and Cinema"
-      >
-        {{ searchType === 'music' ? 'Music' : 'Cinema' }}
-        <i class="fas fa-repeat text-base md:text-xl animate-bounce-twice"></i>
-      </span>
-    </h1>
-    <p class="mt-1 text-base md:text-xl text-gray-300">
-      {{
-        searchType === 'music'
-          ? 'Find your next favorite track'
-          : 'Find your next favorite movie or show'
-      }}
-    </p>
+  <div class="max-w-5xl mx-auto px-3 flex items-start justify-between gap-3">
+    <div class="md:flex-1 md:text-center">
+      <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mt-3 pl-3 md:pl-0">
+        Explore
+        <span
+          (click)="toggleSearchType()"
+          class="text-[#0F5EE4] cursor-pointer hover:text-[#3b82f6] transition"
+          title="Click to switch between Music and Cinema"
+        >{{ searchType === 'music' ? 'Music' : 'Cinema' }}</span>
+        <button
+          type="button"
+          (click)="toggleSearchType()"
+          title="Click to switch between Music and Cinema"
+          class="hidden md:inline-flex align-middle ml-2 w-10 h-10 md:w-12 md:h-12 rounded-full transition items-center justify-center"
+          style="background: #020814; border: 1px solid rgba(15,94,228,0.4)"
+        >
+          <i class="fas fa-right-left text-base md:text-lg" style="color: #0F5EE4"></i>
+        </button>
+      </h1>
+      <p class="mt-1 md:mb-4 text-base md:text-xl text-gray-300 pl-3 md:pl-0">
+        {{
+          searchType === 'music'
+            ? 'Find your next favorite track'
+            : 'Find your next favorite movie or show'
+        }}
+      </p>
+    </div>
+    <button
+      type="button"
+      (click)="toggleSearchType()"
+      title="Click to switch between Music and Cinema"
+      class="md:hidden flex-shrink-0 mt-3 w-10 h-10 md:w-12 md:h-12 rounded-full transition flex items-center justify-center"
+      style="background: #020814; border: 1px solid rgba(15,94,228,0.4)"
+    >
+      <i class="fas fa-right-left text-base md:text-lg" style="color: #0F5EE4"></i>
+    </button>
   </div>
-
-  <!-- Trending Right Now -->
-  <div class="max-w-5xl mx-auto px-4 mt-7 flex items-center gap-2">
-    <span class="material-icons-outlined text-[#0F5EE4] text-2xl">local_fire_department</span>
-    <span class="text-xl md:text-2xl font-bold text-white">Trending Right Now</span>
-  </div>
-
-  <!-- Marquee -->
-  <app-marquee (cardClick)="onMarqueeCardClick($event)"></app-marquee>
 
   <!-- Search Bar -->
   <div
     #searchBar
-    class="relative mt-3 md:mt-1 w-full max-w-[450px] sm:max-w-[550px] md:max-w-[700px] mx-auto px-4"
+    class="relative mt-3 md:mt-1 w-full max-w-3xl mx-auto px-2"
   >
     <button
       *ngIf="searchType === 'music'"
@@ -135,7 +143,7 @@
       [disabled]="isLoading"
       (click)="cycleSearchTab()"
       title="Click to switch between Songs, Albums, and Artists"
-      class="absolute inset-y-0 left-6 my-auto h-8 flex items-center rounded-full bg-[#0F5EE4] px-3 text-white text-sm md:text-base font-medium capitalize hover:bg-[#0D51CC] transition"
+      class="absolute inset-y-0 left-4 my-auto h-7 flex items-center rounded-full bg-[#0F5EE4] px-3 text-white text-sm md:text-base font-medium capitalize hover:bg-[#0D51CC] transition"
     >
       {{ selectedSearchTab }}
     </button>
@@ -144,7 +152,7 @@
       [disabled]="isLoading"
       (click)="searchType === 'music' ? onSearch(selectedSearchTab, false) : onSearch('songs')"
       class="absolute inset-y-0 flex items-center"
-      [ngClass]="searchType === 'music' ? 'left-24 md:left-28' : 'left-7'"
+      [ngClass]="searchType === 'music' ? 'left-[5.5rem] md:left-[5.5rem]' : 'left-5'"
     >
       <svg
         class="h-5 w-5 text-gray-400 md:hover:text-white transition"
@@ -164,9 +172,11 @@
       *ngIf="query.trim() && query.trim() === lastSearchedQuery"
       type="button"
       (click)="clearSearchQuery()"
-      class="absolute inset-y-0 right-8 flex items-center"
+      class="absolute inset-y-0 right-4 flex items-center"
     >
-      <i class="fas fa-times text-gray-400 hover:text-white transition text-lg"></i>
+      <span class="flex items-center justify-center w-5 h-5 rounded-full bg-gray-400 hover:bg-gray-300 transition">
+        <i class="fas fa-times text-sm" style="color: #131928"></i>
+      </span>
     </button>
     <input
       type="search"
@@ -179,10 +189,10 @@
           ? 'Search music & artists...'
           : 'Search movies and shows...'
       }}"
-      class="w-full rounded-full border border-gray-700 text-white py-3 focus:ring-2 focus:ring-white-500 focus:border-white-500 outline-none text-base md:text-lg text-ellipsis overflow-hidden"
+      class="w-full rounded-full border border-gray-700 text-white py-2 focus:outline-none focus:border-[#0F5EE4] text-base md:text-lg text-ellipsis overflow-hidden"
       [ngClass]="[
-        searchType === 'music' ? 'pl-28 md:pl-32' : 'pl-11 md:pl-12',
-        query.trim() && query.trim() === lastSearchedQuery ? 'pr-10' : 'pr-5'
+        searchType === 'music' ? 'pl-28 md:pl-32' : 'pl-9 md:pl-10',
+        query.trim() && query.trim() === lastSearchedQuery ? 'pr-9' : 'pr-5'
       ]"
       style="direction: ltr; text-align: left; background-color: #131928"
     />
@@ -191,23 +201,24 @@
   <!-- Recent Searches -->
   <div
     *ngIf="recentSearches.length > 0 && !searchAttempted"
-    class="w-full max-w-[450px] sm:max-w-[550px] md:max-w-[700px] mx-auto px-4 mt-3 pb-[10rem]"
+    class="w-full max-w-3xl mx-auto px-2 mt-3"
   >
     <div class="flex items-center justify-between mb-2 pl-2 pr-6">
-      <span class="text-gray-400 text-sm md:text-base">Recent searches</span>
+      <span class="text-white text-base md:text-lg font-bold">Recent searches</span>
       <button
         (click)="clearRecentSearches()"
-        class="text-[#0F5EE4] text-sm md:text-base font-medium hover:text-[#3b82f6] transition"
+        class="px-3 py-1 rounded-full border border-gray-700 text-[#0F5EE4] text-sm md:text-base font-semibold hover:bg-gray-800/50 transition"
       >
-        Clear
+        Clear all
       </button>
     </div>
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col pt-1">
       <div
-        *ngFor="let term of recentSearches"
+        *ngFor="let term of visibleRecentSearches"
         (click)="selectRecentSearch(term)"
-        class="flex items-center gap-2 w-full bg-gray-800 border border-gray-700 rounded-full pl-4 pr-2 py-2 cursor-pointer whitespace-nowrap"
+        class="flex items-center gap-2 w-full pl-2 pr-2 py-3 cursor-pointer whitespace-nowrap border-b border-gray-800"
       >
+        <i class="fas fa-clock text-gray-500 text-sm flex-shrink-0"></i>
         <span class="text-white text-sm md:text-base flex-1 truncate">{{ term }}</span>
         <button
           (click)="removeRecentSearch(term); $event.stopPropagation()"
@@ -217,58 +228,142 @@
         </button>
       </div>
     </div>
+    <button
+      *ngIf="recentSearches.length > 2"
+      type="button"
+      (click)="toggleRecentSearchesExpanded()"
+      class="w-full text-center mt-3 py-2 rounded-full border border-gray-700 text-[#0F5EE4] font-semibold hover:bg-gray-800/50 transition"
+    >
+      <i class="fas" [ngClass]="recentSearchesExpanded ? 'fa-minus' : 'fa-plus'"></i>
+      {{ recentSearchesExpanded ? 'Show less' : 'Show more' }}
+    </button>
   </div>
 
-  <!-- Search Tabs with Sliding Highlight -->
-  <div
-    *ngIf="searchType === 'music' && (searchAttempted || isLoading)"
-    class="mt-6 flex justify-center"
-  >
-    <div class="relative flex bg-gray-800 rounded-full p-1 w-fit">
-      <!-- Sliding highlight -->
-      <div
-        class="absolute top-0 left-0 h-full bg-[#0F5EE4] rounded-full transition-all duration-300"
-        [ngStyle]="{
-          width: 100 / 3 + '%',
-          transform: 'translateX(' + getActiveSearchTabIndex() * 100 + '%)'
-        }"
-      ></div>
-
-      <!-- Buttons -->
-      <button
-        (click)="onSearch('songs', false)"
-        [disabled]="isLoading"
-        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl rounded-full transition text-center"
-        [ngClass]="{
-          'text-white font-semibold': activeTab === 'songs',
-          'text-gray-300': activeTab !== 'songs'
-        }"
-      >
-        Songs
-      </button>
-      <button
-        (click)="onSearch('albums', false)"
-        [disabled]="isLoading"
-        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl rounded-full transition text-center"
-        [ngClass]="{
-          'text-white font-semibold': activeTab === 'albums',
-          'text-gray-300': activeTab !== 'albums'
-        }"
-      >
-        Albums
-      </button>
-      <button
-        (click)="onSearch('artists', false)"
-        [disabled]="isLoading"
-        class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl rounded-full transition text-center"
-        [ngClass]="{
-          'text-white font-semibold': activeTab === 'artists',
-          'text-gray-300': activeTab !== 'artists'
-        }"
-      >
-        Artists
+  <!-- Trending Right Now - hidden once a search is active so results always
+       show immediately below the search bar, not interleaved below this. -->
+  <div *ngIf="!searchAttempted">
+  <div class="max-w-5xl mx-auto px-4 mt-7">
+    <div class="flex items-center gap-2">
+      <span class="material-icons-outlined text-[#0F5EE4] text-2xl">local_fire_department</span>
+      <span class="text-xl md:text-2xl font-bold text-white flex-1">Trending Right Now</span>
+      <button type="button" class="see-all-btn flex-shrink-0" (click)="openSeeAllTrending()">
+        See All
+        <i class="fas fa-chevron-right"></i>
       </button>
     </div>
+    <div *ngIf="searchType === 'cinema'" class="relative flex items-center p-1 mt-3 rounded-full border border-gray-700 bg-gray-900/50 w-fit">
+      <div
+        class="absolute top-1 bottom-1 left-1 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
+        style="width: calc((100% - 0.5rem) / 2)"
+        [ngStyle]="{ transform: 'translateX(' + (cinemaMarqueeMode === 'tv' ? 100 : 0) + '%)' }"
+      ></div>
+      <button
+        type="button"
+        (click)="cinemaMarqueeMode = 'movie'"
+        [ngClass]="cinemaMarqueeMode === 'movie' ? 'text-white' : 'text-gray-300'"
+        class="relative z-10 whitespace-nowrap px-3 py-1 rounded-full text-xs font-semibold transition-colors"
+      >
+        Movies
+      </button>
+      <button
+        type="button"
+        (click)="cinemaMarqueeMode = 'tv'"
+        [ngClass]="cinemaMarqueeMode === 'tv' ? 'text-white' : 'text-gray-300'"
+        class="relative z-10 whitespace-nowrap px-3 py-1 rounded-full text-xs font-semibold transition-colors"
+      >
+        Shows
+      </button>
+    </div>
+  </div>
+
+  <!-- Marquee -->
+  <app-marquee *ngIf="searchType === 'music'" (cardClick)="onMarqueeCardClick($event)"></app-marquee>
+  <app-cinema-marquee
+    *ngIf="searchType === 'cinema'"
+    [mode]="cinemaMarqueeMode"
+    (cardClick)="onCinemaMarqueeCardClick($event)"
+  ></app-cinema-marquee>
+  </div>
+
+  <!-- Result Type Filter Pills (All/Songs/Albums/Artists) -->
+  <div
+    *ngIf="searchType === 'music' && (searchAttempted || isLoading)"
+    class="mt-6 w-full max-w-3xl mx-auto px-2 flex items-center gap-2 overflow-x-auto"
+  >
+    <button
+      type="button"
+      [disabled]="isLoading"
+      (click)="selectResultsTab('all')"
+      [ngClass]="activeTab === 'all' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
+      class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+    >
+      All ({{ combinedAllResults.length }})
+    </button>
+    <button
+      type="button"
+      [disabled]="isLoading"
+      (click)="selectResultsTab('songs')"
+      [ngClass]="activeTab === 'songs' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
+      class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+    >
+      Songs ({{ filteredResults.songs.length }})
+    </button>
+    <button
+      type="button"
+      [disabled]="isLoading"
+      (click)="selectResultsTab('albums')"
+      [ngClass]="activeTab === 'albums' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
+      class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+    >
+      Albums ({{ filteredResults.albums.length }})
+    </button>
+    <button
+      type="button"
+      [disabled]="isLoading"
+      (click)="selectResultsTab('artists')"
+      [ngClass]="activeTab === 'artists' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
+      class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+    >
+      Artists ({{ filteredResults.artists.length }})
+    </button>
+  </div>
+
+  <!-- All (combined) results -->
+  <div
+    @fadeSlideIn
+    *ngIf="searchType === 'music' && !isLoading && activeTab === 'all'"
+    class="mt-4 w-full max-w-3xl mx-auto px-2 pb-[4rem] sm:pb-1"
+  >
+    <ul class="space-y-2">
+      <li
+        @itemAnim
+        *ngFor="let item of (resultsExpanded ? combinedAllResults : (combinedAllResults | slice:0:10)); let i = index"
+        class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
+        (click)="openModal(item)"
+      >
+        <img
+          [src]="allResultImage(item) || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
+          alt="Cover"
+          class="h-16 w-16 md:h-20 md:w-20 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
+        />
+        <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
+          <p class="text-base md:text-lg font-semibold text-white leading-tight truncate" [title]="allResultTitle(item)">
+            {{ allResultTitle(item) }}
+          </p>
+          <p class="text-sm md:text-base text-gray-400 mt-1 truncate">
+            {{ allResultSubtitle(item) }}
+          </p>
+        </div>
+      </li>
+    </ul>
+    <button
+      *ngIf="!resultsExpanded && combinedAllResults.length > 10"
+      type="button"
+      (click)="toggleResultsExpanded()"
+      class="w-full text-center mt-3 py-2 rounded-full border border-gray-700 text-[#0F5EE4] font-semibold hover:bg-gray-800/50 transition"
+    >
+      View all results for "{{ lastSearchedQuery }}"
+    </button>
   </div>
 
   <!-- Skeleton Loader -->
@@ -365,7 +460,7 @@
       <ul class="mt-2 space-y-2">
         <li
           @itemAnim
-          *ngFor="let song of filteredResults.songs; let i = index"
+          *ngFor="let song of (resultsExpanded ? filteredResults.songs : (filteredResults.songs | slice:0:10)); let i = index"
           class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
           (click)="openModal(song)"
         >
@@ -418,6 +513,14 @@
           </div>
         </li>
       </ul>
+      <button
+        *ngIf="!resultsExpanded && filteredResults.songs.length > 10"
+        type="button"
+        (click)="toggleResultsExpanded()"
+        class="w-full text-center mt-3 py-2 rounded-full border border-gray-700 text-[#0F5EE4] font-semibold hover:bg-gray-800/50 transition"
+      >
+        View all results for "{{ lastSearchedQuery }}"
+      </button>
     </div>
 
     <!-- Albums -->
@@ -483,7 +586,7 @@
       <ul class="mt-2 space-y-2">
         <li
           @itemAnim
-          *ngFor="let album of filteredResults.albums; let i = index"
+          *ngFor="let album of (resultsExpanded ? filteredResults.albums : (filteredResults.albums | slice:0:10)); let i = index"
           class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
           (click)="openModal(album)"
         >
@@ -536,6 +639,14 @@
           </div>
         </li>
       </ul>
+      <button
+        *ngIf="!resultsExpanded && filteredResults.albums.length > 10"
+        type="button"
+        (click)="toggleResultsExpanded()"
+        class="w-full text-center mt-3 py-2 rounded-full border border-gray-700 text-[#0F5EE4] font-semibold hover:bg-gray-800/50 transition"
+      >
+        View all results for "{{ lastSearchedQuery }}"
+      </button>
     </div>
 
     <!-- Artists -->
@@ -548,7 +659,7 @@
         <ul class="mt-2 2">
           <li
             @itemAnim
-            *ngFor="let artist of filteredResults.artists; let i = index"
+            *ngFor="let artist of (resultsExpanded ? filteredResults.artists : (filteredResults.artists | slice:0:10)); let i = index"
             class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
             (click)="openModal(artist)"
           >
@@ -588,6 +699,14 @@
             </div>
           </li>
         </ul>
+        <button
+          *ngIf="!resultsExpanded && filteredResults.artists.length > 10"
+          type="button"
+          (click)="toggleResultsExpanded()"
+          class="w-full text-center mt-3 py-2 rounded-full border border-gray-700 text-[#0F5EE4] font-semibold hover:bg-gray-800/50 transition"
+        >
+          View all results for "{{ lastSearchedQuery }}"
+        </button>
       </div>
     </div>
   </div>
@@ -632,12 +751,35 @@
     *ngIf="searchType === 'cinema' && !isLoading && cinemaResults.length > 0"
     class="mt-6 max-w-3xl mx-auto px-2 pb-[5rem]"
   >
-    <p class="text-gray-400 text-sm mb-3">
-      {{ cinemaResults.length }} result{{ cinemaResults.length === 1 ? '' : 's' }} found for "<span class="text-white">{{ lastSearchedQuery }}</span>"
-    </p>
+    <div class="flex items-center gap-2 overflow-x-auto mb-3">
+      <button
+        type="button"
+        (click)="selectCinemaTab('all')"
+        [ngClass]="cinemaActiveTab === 'all' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
+        class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+      >
+        All ({{ cinemaResults.length }})
+      </button>
+      <button
+        type="button"
+        (click)="selectCinemaTab('movie')"
+        [ngClass]="cinemaActiveTab === 'movie' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
+        class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+      >
+        Movies ({{ cinemaMovieResults.length }})
+      </button>
+      <button
+        type="button"
+        (click)="selectCinemaTab('tv')"
+        [ngClass]="cinemaActiveTab === 'tv' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
+        class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+      >
+        TV ({{ cinemaTvResults.length }})
+      </button>
+    </div>
     <div class="flex flex-col gap-3">
     <div
-      *ngFor="let item of cinemaResults; let i = index"
+      *ngFor="let item of (resultsExpanded ? cinemaResultsForTab : (cinemaResultsForTab | slice:0:10)); let i = index"
       (click)="openCinemaSearchResult(item)"
       class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
       style="background-color: #101621; border-color: #212530"
@@ -702,14 +844,14 @@
         </div>
         <div class="flex items-center justify-between gap-2 flex-wrap mt-2 mb-0.5">
           <span
-            *ngIf="isComingSoon(item.releaseDate)"
+            *ngIf="isComingSoon(item.releaseDate) && !tvEpisodeBadge(item)"
             class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
             style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.5); color: #93c5fd"
           >
             Coming Soon
           </span>
           <span
-            *ngIf="!isComingSoon(item.releaseDate) && tvEpisodeBadge(item) as badge"
+            *ngIf="tvEpisodeBadge(item) as badge"
             class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
             [ngStyle]="
               badge === 'new-season'
@@ -742,6 +884,14 @@
       <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
     </div>
     </div>
+    <button
+      *ngIf="!resultsExpanded && cinemaResultsForTab.length > 10"
+      type="button"
+      (click)="toggleResultsExpanded()"
+      class="w-full text-center mt-3 py-2 rounded-full border border-gray-700 text-[#0F5EE4] font-semibold hover:bg-gray-800/50 transition"
+    >
+      View all results for "{{ lastSearchedQuery }}"
+    </button>
   </div>
 
   <!-- Cinema No Results Found -->
@@ -992,24 +1142,20 @@
   <div class="bg-[#020814] text-white min-h-screen pt-4 pb-24 px-2">
     <div class="md:max-w-[1000px] md:mx-auto">
       <div
-        class="relative flex bg-gray-800 rounded-full p-1 w-fit mx-auto mb-5 mt-2"
+        class="relative flex items-center max-w-xs mx-auto mb-5 mt-2 p-1 rounded-full border border-gray-700 bg-gray-900/50"
       >
         <!-- Sliding Highlight -->
         <div
-          class="absolute top-0 left-0 h-full w-1/2 bg-[#0F5EE4] rounded-full transition-all duration-300"
-          [ngStyle]="{
-            transform:
-              activeFeedType === 'Artists'
-                ? 'translateX(100%)'
-                : 'translateX(0%)'
-          }"
+          class="absolute top-1 bottom-1 left-1 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
+          style="width: calc((100% - 0.5rem) / 2)"
+          [ngStyle]="{ transform: 'translateX(' + feedTabIndex * 100 + '%)' }"
         ></div>
 
         <!-- Buttons -->
         <ng-container *ngFor="let feedType of activityFeedTypes">
           <button
             (click)="setFeedType(feedType)"
-            class="relative z-10 w-[10.5rem] py-2 text-lg md:text-xl rounded-full transition text-center"
+            class="relative z-10 flex-1 whitespace-nowrap px-4 py-2 text-base md:text-lg rounded-full transition-colors text-center"
             [ngClass]="{
               'text-white font-semibold': activeFeedType === feedType,
               'text-gray-300': activeFeedType !== feedType
@@ -1387,4 +1533,15 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- "See All" Trending full-screen grid -->
+<div *ngIf="showSeeAllTrending" class="fixed inset-0 z-50">
+  <app-see-all-trending
+    [kind]="searchType === 'music' ? 'music' : 'cinema'"
+    [initialCinemaMode]="cinemaMarqueeMode"
+    (back)="onSeeAllTrendingBack()"
+    (musicCardClick)="onSeeAllMusicCardClick($event)"
+    (cinemaCardClick)="onSeeAllCinemaCardClick($event)"
+  ></app-see-all-trending>
 </div>

@@ -148,19 +148,39 @@ async function getTmdbDetailsForCalendar(tmdbId, mediaType, forceRefresh = false
   return response.data;
 }
 
-// Cache-aware wrapper: GET /search/multi?query=...
+// Cache-aware wrapper: GET /search/multi?query=... - fetches 2 pages (up to
+// 40 raw results, TMDb returns 20/page) in parallel and merges them, so the
+// cinema search cap isn't stuck at a single page's worth of results. Both
+// pages are fetched unconditionally - TMDb returns an empty `results` array
+// (not an error) for a page past the end, so this is safe even for queries
+// with under 20 total matches.
+const SEARCH_PAGES = 2;
 async function searchTmdb(query) {
   const cacheKey = `tmdb:search:${query}`;
   const cached = await redis.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
-  const response = await callTmdb("/search/multi", { query });
+  const pages = await Promise.all(
+    Array.from({ length: SEARCH_PAGES }, (_, i) => callTmdb("/search/multi", { query, page: i + 1 }))
+  );
 
-  if (response.data) {
-    await redis.set(cacheKey, JSON.stringify(response.data), "EX", SEARCH_CACHE_TTL);
+  const seen = new Set();
+  const results = [];
+  for (const response of pages) {
+    for (const item of response.data?.results || []) {
+      // Movie/TV ids share the same numeric namespace on TMDb, so a movie
+      // and a show can have the same `id` - key on media_type too.
+      const key = `${item.media_type}:${item.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      results.push(item);
+    }
   }
 
-  return response.data;
+  const data = { results };
+  await redis.set(cacheKey, JSON.stringify(data), "EX", SEARCH_CACHE_TTL);
+
+  return data;
 }
 
 // Cache-aware wrapper: GET /genre/movie|tv/list -> { [id]: name }. Fetched live
@@ -239,6 +259,36 @@ async function getTmdbExternalIds(personId) {
   return response.data;
 }
 
+// Cache-aware wrapper: GET /trending/movie|tv/week - TMDb's own pre-ranked
+// trending list (unlike /search, no popularity/genre filtering needed on our
+// end). Fetches 3 pages (60 raw results) as a buffer against cross-page
+// duplicates (TMDb's live ranking can shift slightly between our page 1 and
+// page 2 requests, causing the same title to appear on both) and against
+// obscure/low-vote noise that starts showing up past page ~2. Dedupes by id.
+const TRENDING_CACHE_TTL = 86400; // 24h - trending/week updates continuously server-side, not tied to a fixed weekly release cycle like Spotify
+async function getTmdbTrending(mediaType) {
+  const cacheKey = `tmdb:trending:${mediaType}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const seen = new Set();
+  const results = [];
+  for (let page = 1; page <= 3; page++) {
+    const response = await callTmdb(`/trending/${mediaType}/week`, { page });
+    const pageResults = response.data?.results || [];
+    if (!pageResults.length) break;
+
+    for (const item of pageResults) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      results.push(item);
+    }
+  }
+
+  await redis.set(cacheKey, JSON.stringify(results), "EX", TRENDING_CACHE_TTL);
+  return results;
+}
+
 module.exports = {
   callTmdb,
   getTmdbDetails,
@@ -248,4 +298,5 @@ module.exports = {
   getTmdbPersonDetails,
   getTmdbPopularActors,
   getTmdbExternalIds,
+  getTmdbTrending,
 };

@@ -1,0 +1,92 @@
+.icon-circle-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: transparent;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.grid-card-img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  background: #1f2937;
+}
+
+.grid-card-title {
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 0.35rem;
+}
+
+.grid-card-subtitle {
+  color: #9ca3af;
+  font-size: 0.7rem;
+  margin-top: 0.1rem;
+}
+
+.grid-card-badge {
+  position: absolute;
+  top: 0.35rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.4rem;
+  border-radius: 9999px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 0.7rem);
+  background: rgba(8, 11, 18, 0.88);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+
+.grid-card-badge.badge-in-theaters,
+.grid-card-badge.badge-new-release,
+.grid-card-badge.badge-new-episode,
+.grid-card-badge.badge-new-season {
+  border: 1px solid rgba(34, 197, 94, 0.8);
+  color: #86efac;
+}
+
+.grid-card-badge.badge-airing-soon {
+  border: 1px solid rgba(20, 184, 166, 0.8);
+  color: #5eead4;
+}
+
+.grid-card-badge.badge-returning-soon,
+.grid-card-badge.badge-back-in-theaters {
+  border: 1px solid rgba(251, 191, 36, 0.8);
+  color: #fcd34d;
+}
+
+.grid-card-badge.badge-coming-soon {
+  border: 1px solid rgba(59, 130, 246, 0.8);
+  color: #93c5fd;
+}
+
+@keyframes see-all-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.skeleton-img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  background: #2d3748;
+  border-radius: 0.5rem;
+}
+
+.skeleton-card {
+  animation: see-all-pulse 1.5s ease-in-out infinite;
+}

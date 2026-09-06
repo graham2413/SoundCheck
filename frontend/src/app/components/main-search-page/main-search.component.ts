@@ -41,6 +41,8 @@ import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-
 import { MainSearchStateService } from 'src/app/services/main-search-state.service';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { MarqueeComponent } from './marquee/marquee.component';
+import { CinemaMarqueeComponent } from './marquee/cinema-marquee.component';
+import { SeeAllTrendingComponent } from './see-all-trending/see-all-trending.component';
 
 type ActivityRecord = Review['albumSongOrArtist'];
 type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
@@ -55,6 +57,8 @@ type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
     TimeAgoPipe,
     InfiniteScrollDirective,
     MarqueeComponent,
+    CinemaMarqueeComponent,
+    SeeAllTrendingComponent,
   ],
   animations: [
     trigger('fadeSlideIn', [
@@ -87,15 +91,19 @@ export class MainSearchComponent implements OnInit, OnDestroy {
   query: string = '';
   lastSearchedQuery: string = '';
   recentSearches: string[] = [];
-  private readonly RECENT_SEARCHES_LIMIT = 8;
+  recentSearchesExpanded = false;
+  private readonly RECENT_SEARCHES_LIMIT = 5;
   isLoading: boolean = false;
-  activeTab: 'songs' | 'albums' | 'artists' = 'songs';
+  activeTab: 'all' | 'songs' | 'albums' | 'artists' = 'all';
+  // Only shows up to 5 results per tab until expanded - reset on every new search.
+  resultsExpanded = false;
   // What the search-bar type button will search as next - independent of
   // `activeTab` so switching it doesn't change the currently shown results.
   selectedSearchTab: 'songs' | 'albums' | 'artists' = 'songs';
   activeDiscoverTab: 'mainSearch' | 'popular' | 'recentActivity' = 'mainSearch';
   searchType: 'music' | 'cinema' = 'cinema';
   cinemaResults: CinemaSearchResult[] = [];
+  cinemaActiveTab: 'all' | 'movie' | 'tv' = 'all';
   isModalOpen = false;
   selectedRecord: Album | Artist | Song | null = null;
   searchAttempted = false;
@@ -135,6 +143,11 @@ export class MainSearchComponent implements OnInit, OnDestroy {
     'Artist',
   ];
   activeFeedType: 'Friends' | 'Artists' = 'Friends';
+
+  get feedTabIndex(): number {
+    return this.activeFeedType === 'Artists' ? 1 : 0;
+  }
+
   readonly activityFeedTypes: Array<'Friends' | 'Artists'> = [
     'Friends',
     'Artists',
@@ -283,6 +296,32 @@ export class MainSearchComponent implements OnInit, OnDestroy {
     this.openModal(event.album, event.list, event.index);
   }
 
+  cinemaMarqueeMode: 'movie' | 'tv' = 'movie';
+
+  onCinemaMarqueeCardClick(event: { item: CinemaSearchResult; list: CinemaSearchResult[]; index: number }): void {
+    this.openCinemaSearchResult(event.item);
+  }
+
+  // "See All" full-screen trending grid, opened from the "Trending Right
+  // Now" row - shows music albums or cinema items depending on searchType.
+  showSeeAllTrending = false;
+
+  openSeeAllTrending(): void {
+    this.showSeeAllTrending = true;
+  }
+
+  onSeeAllTrendingBack(): void {
+    this.showSeeAllTrending = false;
+  }
+
+  onSeeAllMusicCardClick(event: { album: any; list: any[]; index: number }): void {
+    this.openModal(event.album, event.list, event.index);
+  }
+
+  onSeeAllCinemaCardClick(event: { item: CinemaSearchResult; list: CinemaSearchResult[]; index: number }): void {
+    this.openCinemaSearchResult(event.item);
+  }
+
   setUserProfile() {
     // Subscribes to updates from the user profile observable
     this.userService.userProfile$.subscribe((profile) => {
@@ -352,6 +391,7 @@ export class MainSearchComponent implements OnInit, OnDestroy {
 
     this.results = { songs: [], albums: [], artists: [] };
     this.filteredResults = { songs: [], albums: [], artists: [] };
+    this.resultsExpanded = false;
 
     this.imageLoaded = {
       songs: {},
@@ -360,132 +400,54 @@ export class MainSearchComponent implements OnInit, OnDestroy {
       cinema: this.imageLoaded.cinema,
     };
 
-    const fallbackOrder: ('songs' | 'albums' | 'artists')[] = [
-      'songs',
-      'albums',
-      'artists',
-    ];
-    const startIndex = fallbackOrder.indexOf(type);
+    // Single "all" request already returns songs+albums+artists together
+    // (backend: mainSearchController's type=all branch) - so every search
+    // populates the counts/pills for all 3 types at once, and switching
+    // between All/Songs/Albums/Artists afterward is instant (no re-fetch).
+    this.searchService.searchMusic(query, 'all').subscribe({
+      next: (data: SearchResponse) => {
+        this.results = {
+          songs:
+            data.songs?.map((song) => ({
+              ...song,
+              cover: this.getHighQualityImage(song.cover),
+              type: 'Song' as const,
+            })) || [],
+          albums:
+            data.albums?.map((album) => ({
+              ...album,
+              cover: this.getHighQualityImage(album.cover),
+              type: 'Album' as const,
+            })) || [],
+          artists:
+            data.artists?.map((artist) => ({
+              ...artist,
+              picture: this.getHighQualityImage(artist.picture),
+              type: 'Artist' as const,
+            })) || [],
+        };
 
-    if (!useFallback) {
-      // Manual search: only search for the requested type
-      this.setActiveTab(type);
-      this.searchService.searchMusic(this.query, type).subscribe({
-        next: (data: SearchResponse) => {
-          this.results = {
-            songs:
-              data.songs?.map((song) => ({
-                ...song,
-                cover: this.getHighQualityImage(song.cover),
-                type: 'Song' as const,
-              })) || [],
-            albums:
-              data.albums?.map((album) => ({
-                ...album,
-                cover: this.getHighQualityImage(album.cover),
-                type: 'Album' as const,
-              })) || [],
-            artists:
-              data.artists?.map((artist) => ({
-                ...artist,
-                picture: this.getHighQualityImage(artist.picture),
-                type: 'Artist' as const,
-              })) || [],
-          };
+        this.filteredResults = { ...this.results };
+        this.extractGenres();
 
-          this.filteredResults = { ...this.results };
+        // A fresh search always lands on the combined "All" view (matches
+        // the mockup) - the dropdown/pill type selection only matters for
+        // switching tabs afterward, not for what's shown immediately.
+        this.selectedSearchTab = type;
+        this.activeTab = 'all';
 
-          if (type !== 'artists') {
-            this.extractGenres();
-          }
-
-          setTimeout(() => {
-            this.isLoading = false;
-          }, 50);
-        },
-        error: () => {
-          this.toastr.error(
-            `Error occurred while searching for "${this.query}"`,
-            'Error'
-          );
+        setTimeout(() => {
           this.isLoading = false;
-        },
-      });
-      return;
-    }
-
-    // Smart fallback search
-    const attemptSearch = (i: number) => {
-      if (i >= fallbackOrder.length) {
+        }, 50);
+      },
+      error: () => {
+        this.toastr.error(
+          `Error occurred while searching for "${this.query}"`,
+          'Error'
+        );
         this.isLoading = false;
-        return;
-      }
-
-      const currentType = fallbackOrder[i];
-      this.searchService.searchMusic(this.query, currentType).subscribe({
-        next: (data: SearchResponse) => {
-          const isEmpty =
-            (!data.songs?.length && currentType === 'songs') ||
-            (!data.albums?.length && currentType === 'albums') ||
-            (!data.artists?.length && currentType === 'artists');
-
-          if (isEmpty) {
-            attemptSearch(i + 1); // fallback to next
-            return;
-          }
-
-          // We have results, switch to that tab
-          this.setActiveTab(currentType);
-
-          this.results = {
-            ...this.results,
-            songs:
-              data.songs?.map((song) => ({
-                ...song,
-                cover: this.getHighQualityImage(song.cover),
-                type: 'Song' as const,
-              })) || [],
-            albums:
-              data.albums?.map((album) => ({
-                ...album,
-                cover: this.getHighQualityImage(album.cover),
-                type: 'Album' as const,
-              })) || [],
-            artists:
-              data.artists?.map((artist) => ({
-                ...artist,
-                picture: this.getHighQualityImage(artist.picture),
-                type: 'Artist' as const,
-              })) || [],
-          };
-
-          this.filteredResults = { ...this.results };
-          this.imageLoaded = {
-            songs: {},
-            albums: {},
-            artists: {},
-            cinema: this.imageLoaded.cinema,
-          };
-
-          if (currentType !== 'artists') {
-            this.extractGenres();
-          }
-
-          setTimeout(() => {
-            this.isLoading = false;
-          }, 50);
-        },
-        error: () => {
-          this.toastr.error(
-            `Error occurred while searching for "${this.query}"`,
-            'Error'
-          );
-          this.isLoading = false;
-        },
-      });
-    };
-
-    attemptSearch(startIndex);
+      },
+    });
   }
 
   searchCinemaResults() {
@@ -513,6 +475,8 @@ export class MainSearchComponent implements OnInit, OnDestroy {
 
     this.cinemaResults = [];
     this.imageLoaded.cinema = {};
+    this.resultsExpanded = false;
+    this.cinemaActiveTab = 'all';
 
     this.cinemaService.searchCinema(query).subscribe({
       next: ({ data }) => {
@@ -593,6 +557,72 @@ export class MainSearchComponent implements OnInit, OnDestroy {
   setActiveTab(tab: 'songs' | 'albums' | 'artists') {
     this.activeTab = tab;
     this.selectedSearchTab = tab;
+  }
+
+  // Switching tabs is purely client-side now (all 3 types already fetched
+  // together - see onSearch) - no network call, so results expand/collapse
+  // state resets to keep "View all" behavior predictable per tab.
+  selectResultsTab(tab: 'all' | 'songs' | 'albums' | 'artists') {
+    this.activeTab = tab;
+    this.resultsExpanded = false;
+  }
+
+  toggleResultsExpanded(): void {
+    this.resultsExpanded = !this.resultsExpanded;
+  }
+
+  toggleRecentSearchesExpanded(): void {
+    this.recentSearchesExpanded = !this.recentSearchesExpanded;
+  }
+
+  get visibleRecentSearches(): string[] {
+    return this.recentSearchesExpanded ? this.recentSearches : this.recentSearches.slice(0, 2);
+  }
+
+  // Combined preview for the "All" tab - songs first, then albums, then
+  // artists (matches the order results normally get scanned in).
+  get combinedAllResults(): (Song | Album | Artist)[] {
+    return [
+      ...this.filteredResults.songs,
+      ...this.filteredResults.albums,
+      ...this.filteredResults.artists,
+    ];
+  }
+
+  allResultTitle(item: Song | Album | Artist): string {
+    return (item as Artist).type === 'Artist' ? (item as Artist).name : (item as Song | Album).title;
+  }
+
+  allResultImage(item: Song | Album | Artist): string | null {
+    return (item as Artist).type === 'Artist' ? (item as Artist).picture : (item as Song | Album).cover;
+  }
+
+  allResultSubtitle(item: Song | Album | Artist): string {
+    if ((item as Artist).type === 'Artist') return 'Artist';
+    if ((item as Album).type === 'Album') return `${(item as Album).artist} · Album`;
+    return `${(item as Song).artist} · Song`;
+  }
+
+  // Same client-side split as music's All/Songs/Albums/Artists pills - one
+  // cinema search already returns both movies and TV shows together, so no
+  // extra network call needed to filter by media type.
+  selectCinemaTab(tab: 'all' | 'movie' | 'tv') {
+    this.cinemaActiveTab = tab;
+    this.resultsExpanded = false;
+  }
+
+  get cinemaMovieResults(): CinemaSearchResult[] {
+    return this.cinemaResults.filter((r) => r.mediaType === 'movie');
+  }
+
+  get cinemaTvResults(): CinemaSearchResult[] {
+    return this.cinemaResults.filter((r) => r.mediaType === 'tv');
+  }
+
+  get cinemaResultsForTab(): CinemaSearchResult[] {
+    if (this.cinemaActiveTab === 'movie') return this.cinemaMovieResults;
+    if (this.cinemaActiveTab === 'tv') return this.cinemaTvResults;
+    return this.cinemaResults;
   }
 
   // Only controls what type the *next* search runs as - does not touch
@@ -1177,15 +1207,6 @@ export class MainSearchComponent implements OnInit, OnDestroy {
 
   setActivityImageLoaded(i: number, type: 'cover' | 'profile'): void {
     this.activityImageLoaded[`${i}-${type}`] = true;
-  }
-
-  getActiveSearchTabIndex(): number {
-    const order: ('songs' | 'albums' | 'artists')[] = [
-      'songs',
-      'albums',
-      'artists',
-    ];
-    return order.indexOf(this.activeTab);
   }
 
   // Simple date-string compare (no live TMDb call needed) - releaseDate is

@@ -1,6 +1,9 @@
 // Shared "New Episode"/"New Season Soon"/"Airing Soon" TV badge logic - used
 // by the watchlist rows, main search results, and the cinema item detail
-// page so the three surfaces stay in sync.
+// page so the three surfaces stay in sync. "Airing Soon" only ever fires
+// when "New Episode" doesn't apply (priority order below), so in practice it
+// only shows for a show resuming after a >30-day gap with a regular
+// (non-premiere) episode - not during normal active weekly airing.
 const NEW_RELEASE_WINDOW_DAYS = 30;
 const UPCOMING_EPISODE_WINDOW_DAYS = 7;
 // Season premieres get announced/anticipated further ahead than a regular

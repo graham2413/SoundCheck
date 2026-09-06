@@ -1,7 +1,8 @@
 const axios = require("axios");
 const redis = require("../utils/redisClient");
 const { fetchWithRetry } = require("../utils/fetchWithRetry");
-const { getTmdbDetails, getTmdbDetailsForCalendar, searchTmdb, getGenreMap, getTmdbPersonDetails, getTmdbPopularActors } = require("../utils/callTmdb");
+const { getTmdbDetails, getTmdbDetailsForCalendar, searchTmdb, getGenreMap, getTmdbPersonDetails, getTmdbPopularActors, getTmdbTrending } = require("../utils/callTmdb");
+const { getLocalImdbRating } = require("../utils/imdbRatingsSync");
 const { getPersonWikipediaPopularity } = require("../utils/wikipediaPopularity");
 const { parseTraktExport } = require("../utils/parseTraktExport");
 const { backfillCinemaCovers } = require("../scripts/backfillCinemaCovers");
@@ -180,7 +181,85 @@ exports.searchCinema = async (req, res) => {
   }
 };
 
-// GET /api/cinema/calendar?range=upcoming|past (Protected)
+// GET /api/cinema/trending?mediaType=movie|tv (Protected)
+// Powers the cinema marquee (mirrors the music marquee's role, but no cron
+// needed - TMDb's /trending/week is already pre-ranked, getTmdbTrending just
+// caches the raw call). Filters out near-zero-vote noise, sorts by raw
+// `popularity` descending (TMDb's own trending order is NOT the same as
+// popularity order - verified directly against the API), and maps to the
+// same lean shape searchCinema uses.
+//
+// Also enriches every item with the same status-badge fields searchCinema
+// adds (hadTheatricalRelease/digitalReleaseDate/hasStreamingAvailability for
+// movies, lastEpisodeAirDate/nextEpisodeAirDate/nextEpisodeNumber for TV) so
+// the marquee card badges (In Theaters/New Release/Coming Soon/New Episode)
+// match the rest of the app instead of just showing a generic label. The
+// FINAL enriched+filtered list is cached 24h (same as getTmdbTrending's own
+// cache) under its own key so the ~50-80 getTmdbDetails calls only happen
+// once/day, not on every request - each is already individually cached 7
+// days via getTmdbDetails too, so this is a small, bounded, TTL'd addition.
+const TRENDING_MIN_VOTE_COUNT = 15;
+const TRENDING_ENRICHED_CACHE_TTL = 86400; // 24h
+
+exports.getCinemaTrending = async (req, res) => {
+  try {
+    const mediaType = req.query.mediaType === "tv" ? "tv" : "movie";
+    const cacheKey = `cinema:trending-enriched:${mediaType}`;
+
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return res.status(200).json({ success: true, data: JSON.parse(cached) });
+    }
+
+    const [rawResults, genreMap] = await Promise.all([
+      getTmdbTrending(mediaType),
+      getGenreMap(mediaType),
+    ]);
+
+    const results = rawResults
+      .filter((r) => (r.vote_count || 0) >= TRENDING_MIN_VOTE_COUNT)
+      .sort((a, b) => b.popularity - a.popularity)
+      .map((r) => ({
+        tmdbId: r.id.toString(),
+        mediaType,
+        title: r.title || r.name,
+        cover: r.poster_path ? `${TMDB_IMAGE_BASE}${r.poster_path}` : null,
+        releaseDate: r.release_date || r.first_air_date || null,
+        genres: (r.genre_ids || []).map((id) => genreMap[id]).filter(Boolean),
+        voteAverage: r.vote_average || null,
+      }));
+
+    const detailsList = await Promise.all(
+      results.map((r) => getTmdbDetails(r.tmdbId, mediaType).catch(() => null))
+    );
+
+    results.forEach((r, i) => {
+      const details = detailsList[i];
+      if (!details) return;
+
+      if (mediaType === "movie") {
+        const originalReleaseDate = getUsOriginalTheatricalRelease(details);
+        if (originalReleaseDate) r.releaseDate = originalReleaseDate;
+        r.rereleaseDate = getUsRerelease(details, originalReleaseDate);
+        r.hadTheatricalRelease = hasTheatricalRelease(details);
+        r.digitalReleaseDate = getUsDigitalRelease(details);
+        r.hasStreamingAvailability = !!buildWatchProviders(details["watch/providers"]?.results?.US?.flatrate).length;
+      } else {
+        r.lastEpisodeAirDate = details.last_episode_to_air?.air_date || null;
+        r.nextEpisodeAirDate = details.next_episode_to_air?.air_date || null;
+        r.nextEpisodeNumber = details.next_episode_to_air?.episode_number ?? null;
+      }
+    });
+
+    await redis.set(cacheKey, JSON.stringify(results), "EX", TRENDING_ENRICHED_CACHE_TTL);
+
+    res.status(200).json({ success: true, data: results });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+
 // Upcoming (default): next episode to air for tracked TV shows (watchlisted
 // OR already reviewed, so a show doesn't disappear once you've reviewed an
 // earlier season), plus watchlisted movies with a release date today or
@@ -314,7 +393,9 @@ exports.getCalendar = async (req, res) => {
 };
 
 // GET /api/cinema/imdb-stats/:imdbId
-// Fetches live IMDb community rating/vote count via OMDb (no stale data stored in Mongo)
+// Fetches IMDb community rating/vote count from our locally-synced dataset
+// (see utils/imdbRatingsSync.js) plus Awards/BoxOffice from OMDb (the ratings
+// dataset doesn't include those fields).
 exports.getImdbStats = async (req, res) => {
   try {
     const { imdbId } = req.params;
@@ -323,20 +404,34 @@ exports.getImdbStats = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid imdbId" });
     }
 
-    const data = await fetchOmdbData(imdbId);
+    const [localRating, omdbData] = await Promise.all([
+      getLocalImdbRating(imdbId),
+      fetchOmdbData(imdbId).catch(() => null),
+    ]);
 
-    if (!data) {
+    if (!localRating && !omdbData) {
       return res.status(404).json({ success: false, message: "Title not found" });
     }
 
-    res.status(200).json({ success: true, data });
+    res.status(200).json({
+      success: true,
+      data: {
+        imdbId,
+        imdbRating: localRating?.imdbRating ?? null,
+        voteCount: localRating?.voteCount ?? null,
+        awardsRaw: omdbData?.awardsRaw ?? null,
+        boxOfficeUs: omdbData?.boxOfficeUs ?? null,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }
 };
 
 // Shared OMDb fetch (cached) used by both getImdbStats and getCinemaDetail -
-// avoids double-hitting OMDb for the same imdbId across endpoints.
+// avoids double-hitting OMDb for the same imdbId across endpoints. Only used
+// for Awards/BoxOffice now - rating/vote count come from the local IMDb
+// dataset (see utils/imdbRatingsSync.js) instead, which is far fresher.
 const fetchOmdbData = async (imdbId) => {
   const cacheKey = `imdb:stats:${imdbId}`;
   const cached = await redis.get(cacheKey);
@@ -357,9 +452,6 @@ const fetchOmdbData = async (imdbId) => {
   if (!omdbData || omdbData.Response === "False") return null;
 
   const data = {
-    imdbId,
-    imdbRating: omdbData.imdbRating ?? null,
-    voteCount: omdbData.imdbVotes ?? null,
     awardsRaw: omdbData.Awards && omdbData.Awards !== "N/A" ? omdbData.Awards : null,
     boxOfficeUs: omdbData.BoxOffice && omdbData.BoxOffice !== "N/A" ? omdbData.BoxOffice : null,
   };
@@ -595,10 +687,10 @@ exports.getCinemaDetail = async (req, res) => {
     // Movies have imdb_id natively; TV only exposes it via external_ids.
     const imdbId = details.imdb_id || details.external_ids?.imdb_id || null;
 
-    let omdbData = null;
-    if (imdbId) {
-      omdbData = await fetchOmdbData(imdbId).catch(() => null);
-    }
+    const [omdbData, localRating] = await Promise.all([
+      imdbId ? fetchOmdbData(imdbId).catch(() => null) : Promise.resolve(null),
+      getLocalImdbRating(imdbId).catch(() => null),
+    ]);
 
     const watchProviders = buildWatchProviders(
       details["watch/providers"]?.results?.US?.flatrate
@@ -635,10 +727,8 @@ exports.getCinemaDetail = async (req, res) => {
         awardsRaw: omdbData?.awardsRaw || null,
         awardsSummary: parseAwardsSummary(omdbData?.awardsRaw),
         boxOffice: formatBoxOffice(omdbData?.boxOfficeUs, details.revenue),
-        imdbRating: omdbData?.imdbRating ? Number(omdbData.imdbRating) : null,
-        imdbVoteCount: omdbData?.voteCount
-          ? Number(omdbData.voteCount.replace(/,/g, ""))
-          : null,
+        imdbRating: localRating?.imdbRating ?? null,
+        imdbVoteCount: localRating?.voteCount ?? null,
         watchProviders,
       },
     });
@@ -1459,9 +1549,15 @@ exports.getWatchlist = async (req, res) => {
 // (most reliable), then tmdbId, then canonicalId (title+year, scoped to
 // mediaType since canonicalId alone can't distinguish a movie from a show
 // sharing the same title/year).
+const REVIEW_SORT_OPTIONS = {
+  recent: { createdAt: -1 },
+  highest: { decimalRating: -1, createdAt: -1 },
+  liked: { likes: -1, createdAt: -1 },
+};
+
 exports.getCinemaReviews = async (req, res) => {
   try {
-    const { imdbId, tmdbId, canonicalId, mediaType } = req.query;
+    const { imdbId, tmdbId, canonicalId, mediaType, sort } = req.query;
     const userId = req.user._id;
 
     let identityQuery;
@@ -1475,12 +1571,14 @@ exports.getCinemaReviews = async (req, res) => {
       return res.status(400).json({ success: false, message: "imdbId, tmdbId, or canonicalId is required." });
     }
 
+    const sortOrder = REVIEW_SORT_OPTIONS[sort] || REVIEW_SORT_OPTIONS.recent;
+
     const reviews = await CinemaItem.find({
       ...identityQuery,
       decimalRating: { $ne: null },
     })
       .populate("user", "username profilePicture")
-      .sort({ createdAt: -1 })
+      .sort(sortOrder)
       .lean();
 
     const userReview =

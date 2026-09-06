@@ -7,7 +7,7 @@
 // should only show "In Theaters"; a Netflix/streaming-exclusive movie with
 // no theatrical run just shows "New Release".
 const IN_THEATERS_WINDOW_DAYS = 90;
-const NEW_RELEASE_WINDOW_DAYS = 30;
+const NEW_RELEASE_WINDOW_DAYS = 45;
 
 function parseLocalDate(dateStr: string): Date {
   const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number);

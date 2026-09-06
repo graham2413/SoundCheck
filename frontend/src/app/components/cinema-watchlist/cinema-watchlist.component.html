@@ -122,14 +122,14 @@
       </div>
       <div class="flex items-center justify-between gap-2 flex-wrap mt-2 mb-0.5">
         <span
-          *ngIf="isComingSoon(item.releaseDate)"
+          *ngIf="isComingSoon(item.releaseDate) && !tvEpisodeBadge(item)"
           class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
           style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.5); color: #93c5fd"
         >
           Coming Soon
         </span>
         <span
-          *ngIf="!isComingSoon(item.releaseDate) && tvEpisodeBadge(item) as badge"
+          *ngIf="tvEpisodeBadge(item) as badge"
           class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
           [ngStyle]="
             badge === 'new-season'

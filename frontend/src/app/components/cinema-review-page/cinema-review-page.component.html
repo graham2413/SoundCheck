@@ -12,7 +12,18 @@
   <!-- Poster + Title block -->
   <div class="flex items-start gap-4 px-4 pt-5">
     <div class="poster-frame">
-      <img *ngIf="cover" [src]="cover" [alt]="title" class="poster-img" />
+      <div class="poster-loader" *ngIf="cover && !posterLoaded">
+        <div class="poster-loader-spinner"></div>
+      </div>
+      <img
+        *ngIf="cover"
+        [src]="cover"
+        [alt]="title"
+        (load)="markPosterLoaded()"
+        (error)="markPosterLoaded()"
+        [class.invisible]="!posterLoaded"
+        class="poster-img"
+      />
       <div class="poster-placeholder" *ngIf="!cover">
         <i class="fas fa-clapperboard"></i>
         <span class="poster-placeholder-title">{{ formattedStatus || 'Unavailable' | uppercase }}</span>
@@ -44,7 +55,7 @@
 
       <div class="flex items-center gap-2 mt-3">
         <span class="cert-pill" *ngIf="certification">{{ certification }}</span>
-        <span class="status-pill status-pill-blue" *ngIf="isUpcoming">Coming Soon</span>
+        <span class="status-pill status-pill-blue" *ngIf="isUpcoming && !episodeBadge">Coming Soon</span>
         <span class="status-pill status-pill-green" *ngIf="isNewSeriesRelease">New Release</span>
         <span
           class="status-pill"
@@ -124,8 +135,19 @@
 
   <!-- Actions -->
   <div class="flex items-center gap-2 px-4 mt-4">
-    <button type="button" class="action-btn action-btn-primary" (click)="addToWatchlist.emit()">
-      <i class="fas flex-shrink-0" [class.fa-plus]="!isWatchlist" [class.fa-check]="isWatchlist"></i>
+    <button
+      type="button"
+      class="action-btn action-btn-primary"
+      [disabled]="isTogglingWatchlist"
+      (click)="addToWatchlist.emit()"
+    >
+      <i
+        class="fas flex-shrink-0"
+        [class.fa-spinner]="isTogglingWatchlist"
+        [class.fa-spin]="isTogglingWatchlist"
+        [class.fa-plus]="!isTogglingWatchlist && !isWatchlist"
+        [class.fa-check]="!isTogglingWatchlist && isWatchlist"
+      ></i>
       <!-- Short label below the sm breakpoint - clamp()'d font-size alone
            can't make all 3 buttons' full labels fit on common phone widths
            without truncating, so swap to shorter wording there instead. -->
@@ -141,9 +163,16 @@
       class="action-btn"
       [class.action-btn-outline]="!isWatched"
       [class.action-btn-primary]="isWatched"
+      [disabled]="isTogglingWatched"
       (click)="markWatched.emit()"
     >
-      <i class="fas flex-shrink-0" [class.fa-eye]="!isWatched" [class.fa-check]="isWatched"></i>
+      <i
+        class="fas flex-shrink-0"
+        [class.fa-spinner]="isTogglingWatched"
+        [class.fa-spin]="isTogglingWatched"
+        [class.fa-eye]="!isTogglingWatched && !isWatched"
+        [class.fa-check]="!isTogglingWatched && isWatched"
+      ></i>
       <span class="action-btn-label hidden sm:inline">{{ isWatched ? 'Watched' : 'Mark Watched' }}</span>
       <span class="action-btn-label sm:hidden">{{ isWatched ? 'Watched' : 'Mark' }}</span>
     </button>
@@ -174,7 +203,7 @@
       class="tab-btn"
       *ngFor="let tab of tabs"
       [class.tab-btn-active]="activeTab === tab"
-      (click)="activeTab = tab"
+      (click)="selectTab(tab)"
     >
       {{ tab }}
     </button>
@@ -227,6 +256,137 @@
       </div>
       <span class="detail-row-value">{{ boxOffice }}</span>
     </div>
+  </div>
+
+  <!-- Reviews -->
+  <div class="mx-4 mt-4" *ngIf="activeTab === 'Reviews'">
+    <!-- Empty state: nobody (including you) has reviewed yet -->
+    <div class="reviews-empty" *ngIf="reviews.length === 0">
+      <i class="far fa-comment-dots reviews-empty-icon"></i>
+      <h3 class="reviews-empty-title">No reviews yet</h3>
+      <p class="reviews-empty-subtitle">Be the first to share your thoughts on {{ title }}.</p>
+      <button type="button" class="action-btn action-btn-primary reviews-empty-btn" (click)="rate.emit()">
+        Write the First Review
+      </button>
+    </div>
+
+    <ng-container *ngIf="reviews.length > 0">
+      <!-- You've rated but haven't written a review yet -->
+      <div class="review-prompt-card" *ngIf="showWriteReviewPrompt">
+        <div class="flex items-center gap-2">
+          <div class="review-avatar-frame">
+            <div class="review-avatar-loader" *ngIf="!isAvatarLoaded('prompt')">
+              <div class="review-avatar-spinner"></div>
+            </div>
+            <img
+              [src]="profilePictureUrl(userReview!.user.profilePicture)"
+              (load)="markAvatarLoaded('prompt')"
+              (error)="markAvatarLoaded('prompt')"
+              [class.invisible]="!isAvatarLoaded('prompt')"
+              alt=""
+              class="review-avatar"
+            />
+          </div>
+          <span class="review-prompt-label">Your Rating</span>
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+          <span class="star-rating">
+            <span class="star" *ngFor="let i of [1, 2, 3, 4, 5]">
+              <i class="far fa-star star-empty"></i>
+              <i class="fas fa-star star-filled" [style.width.%]="starFillPercent(i, userReview!.decimalRating)"></i>
+            </span>
+          </span>
+          <span class="review-score">{{ userReview!.decimalRating }} / 10</span>
+        </div>
+        <p class="review-prompt-text">
+          You haven't written a review yet. Share your thoughts, what you liked (or didn't), and help others
+          in the community.
+        </p>
+        <button type="button" class="action-btn action-btn-primary reviews-empty-btn" (click)="rate.emit()">
+          Write Your Review
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <h3 class="reviews-header">Reviews ({{ filteredReviews.length }})</h3>
+      </div>
+
+      <div class="reviews-filter-row">
+        <button
+          type="button"
+          class="review-filter-pill"
+          [class.review-filter-pill-active]="reviewFilter === 'all'"
+          (click)="onReviewFilterChange('all')"
+        >
+          All ({{ reviews.length }})
+        </button>
+        <button
+          type="button"
+          class="review-filter-pill"
+          [class.review-filter-pill-active]="reviewFilter === 'mine'"
+          (click)="onReviewFilterChange('mine')"
+        >
+          My Review
+        </button>
+        <select
+          class="review-sort-select"
+          [(ngModel)]="reviewSort"
+          (ngModelChange)="onReviewSortChange($event)"
+        >
+          <option value="recent">Most Recent</option>
+          <option value="highest">Highest Rated</option>
+          <option value="liked">Most Liked</option>
+        </select>
+      </div>
+
+      <p class="reviews-empty-subtitle mt-4" *ngIf="filteredReviews.length === 0">
+        You haven't written a review yet.
+      </p>
+
+      <div class="review-card" *ngFor="let review of previewReviews">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="review-avatar-frame">
+              <div class="review-avatar-loader" *ngIf="!isAvatarLoaded(review._id)">
+                <div class="review-avatar-spinner"></div>
+              </div>
+              <img
+                [src]="profilePictureUrl(review.user.profilePicture)"
+                (load)="markAvatarLoaded(review._id)"
+                (error)="markAvatarLoaded(review._id)"
+                [class.invisible]="!isAvatarLoaded(review._id)"
+                alt=""
+                class="review-avatar"
+              />
+            </div>
+            <span class="review-username">{{ review.user.username }}</span>
+          </div>
+          <span class="review-date">{{ review.createdAt | date : 'MMM d, y' }}</span>
+        </div>
+
+        <div class="flex items-center gap-2 mt-2">
+          <span class="star-rating">
+            <span class="star" *ngFor="let i of [1, 2, 3, 4, 5]">
+              <i class="far fa-star star-empty"></i>
+              <i class="fas fa-star star-filled" [style.width.%]="starFillPercent(i, review.decimalRating)"></i>
+            </span>
+          </span>
+          <span class="review-score">{{ review.decimalRating }} / 10</span>
+        </div>
+
+        <p class="review-text" *ngIf="review.reviewText">{{ review.reviewText }}</p>
+
+        <button type="button" class="review-like-btn" (click)="toggleReviewLike.emit(review)">
+          <i class="fas fa-heart" [class.review-like-active]="isReviewLiked(review)"></i>
+          {{ review.likes || 0 }}
+        </button>
+      </div>
+
+      <button type="button" class="see-all-btn reviews-see-all" *ngIf="hasMoreReviews" (click)="seeAllReviews.emit()">
+        See All {{ filteredReviews.length }} Reviews
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </ng-container>
   </div>
 
   <!-- Where to Watch -->

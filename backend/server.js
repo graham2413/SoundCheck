@@ -30,6 +30,7 @@ const googleAuthRoutes = require("./auth/google");
 const cron = require("node-cron");
 const spotifyController = require("./controllers/spotifyController");
 const { cronSyncAllArtists } = require('./controllers/mainSearchController');
+const { syncImdbRatings } = require('./utils/imdbRatingsSync');
 const { cronRefreshCinemaMetadata, getLocalDayOfWeek } = require('./controllers/cinemaController');
 
 const userRoutes = require("./routes/userRoutes");
@@ -122,6 +123,16 @@ app.use("/api/cinema", cinemaRoutes);
 cron.schedule("0 6 * * 5", async () => {
 
   await spotifyController.setAlbumImages();
+}, {
+  timezone: 'America/Chicago'
+});
+
+// Sync IMDb's official daily ratings dataset (~1.7M rows, ~9MB compressed)
+// into MongoDB at 2 AM - scheduled before the 3 AM artist sync and 4 AM
+// cinema metadata refresh below so none of these three daily jobs overlap.
+cron.schedule('0 2 * * *', async () => {
+  console.log('🎥 Starting IMDb ratings dataset sync at 2 AM (local)');
+  await syncImdbRatings().catch((err) => console.error('IMDb ratings sync failed:', err));
 }, {
   timezone: 'America/Chicago'
 });

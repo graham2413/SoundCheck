@@ -2,10 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
-import { CinemaReviewPageComponent } from './cinema-review-page.component';
+import { CinemaReviewPageComponent, ReviewFilter, ReviewSort } from './cinema-review-page.component';
 import { CinemaCastListComponent } from './cinema-cast-list.component';
+import { CinemaAllReviewsComponent } from './cinema-all-reviews.component';
 import { CinemaService } from '../../services/cinema.service';
-import { CinemaDetail, CinemaItem } from '../../models/responses/cinema-response';
+import { ReviewService } from '../../services/review.service';
+import { UserService } from '../../services/user.service';
+import { CinemaDetail, CinemaItem, CinemaReview } from '../../models/responses/cinema-response';
 
 // Modal wrapper around the presentational CinemaReviewPageComponent - fetches
 // the full detail payload (TMDb + OMDb) for the given record and exposes the
@@ -15,7 +18,7 @@ import { CinemaDetail, CinemaItem } from '../../models/responses/cinema-response
 @Component({
   selector: 'app-cinema-review-modal',
   standalone: true,
-  imports: [CommonModule, CinemaReviewPageComponent, CinemaCastListComponent],
+  imports: [CommonModule, CinemaReviewPageComponent, CinemaCastListComponent, CinemaAllReviewsComponent],
   template: `
     <div #scrollContainer class="fixed inset-0 z-50 overflow-y-auto bg-[#020814]">
       <div class="cinema-loader-overlay" *ngIf="!detail">
@@ -24,7 +27,7 @@ import { CinemaDetail, CinemaItem } from '../../models/responses/cinema-response
       </div>
 
       <app-cinema-review-page
-        *ngIf="detail && !showFullCast"
+        *ngIf="detail && !showFullCast && !showAllReviews"
         [title]="detail.title"
         [cover]="detail.cover"
         [mediaType]="detail.mediaType"
@@ -41,6 +44,8 @@ import { CinemaDetail, CinemaItem } from '../../models/responses/cinema-response
         [nextEpisodeAirDate]="detail.nextEpisodeAirDate"
         [nextEpisodeNumber]="detail.nextEpisodeNumber"
         [genres]="detail.genres"
+        [appRating]="appRating"
+        [appReviewCount]="appReviewCount"
         [imdbRating]="detail.imdbRating"
         [imdbVoteCount]="detail.imdbVoteCount"
         [description]="detail.description"
@@ -50,11 +55,23 @@ import { CinemaDetail, CinemaItem } from '../../models/responses/cinema-response
         [watchProviders]="detail.watchProviders"
         [isWatchlist]="isWatchlist"
         [isWatched]="isWatched"
+        [isTogglingWatchlist]="isTogglingWatchlist"
+        [isTogglingWatched]="isTogglingWatched"
+        [reviews]="reviews"
+        [userReview]="userReview"
+        [currentUserId]="currentUserId"
+        [reviewFilter]="reviewFilter"
+        [reviewSort]="reviewSort"
         (back)="activeModal.dismiss()"
         (addToWatchlist)="onAddToWatchlist()"
         (rate)="rate.emit()"
         (markWatched)="onMarkWatched()"
         (viewCast)="switchToCast()"
+        (tabChange)="scrollToBottom()"
+        (reviewFilterChange)="reviewFilter = $event"
+        (reviewSortChange)="onReviewSortChange($event)"
+        (toggleReviewLike)="onToggleReviewLike($event)"
+        (seeAllReviews)="switchToAllReviews()"
       ></app-cinema-review-page>
 
       <app-cinema-cast-list
@@ -62,6 +79,22 @@ import { CinemaDetail, CinemaItem } from '../../models/responses/cinema-response
         [cast]="detail.cast"
         (back)="switchToReview()"
       ></app-cinema-cast-list>
+
+      <app-cinema-all-reviews
+        *ngIf="detail && showAllReviews"
+        [title]="detail.title"
+        [cover]="detail.cover"
+        [appRating]="appRating"
+        [appReviewCount]="appReviewCount"
+        [reviews]="reviews"
+        [currentUserId]="currentUserId"
+        [reviewFilter]="reviewFilter"
+        [reviewSort]="reviewSort"
+        (back)="switchToReview()"
+        (reviewFilterChange)="reviewFilter = $event"
+        (reviewSortChange)="onReviewSortChange($event)"
+        (toggleReviewLike)="onToggleReviewLike($event)"
+      ></app-cinema-all-reviews>
     </div>
   `,
 })
@@ -79,17 +112,33 @@ export class CinemaReviewModalComponent implements OnInit {
   isWatchlist = false;
   isWatched = false;
   isTogglingWatchlist = false;
+  isTogglingWatched = false;
   showFullCast = false;
+  showAllReviews = false;
+
+  reviews: CinemaReview[] = [];
+  userReview: CinemaReview | null = null;
+  currentUserId: string | null = null;
+  reviewFilter: ReviewFilter = 'all';
+  reviewSort: ReviewSort = 'recent';
+  appRating: number | null = null;
+  appReviewCount: number | null = null;
 
   constructor(
     public activeModal: NgbActiveModal,
     private cinemaService: CinemaService,
+    private reviewService: ReviewService,
+    private userService: UserService,
     private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
     this.isWatchlist = this.record.isWatchlist;
     this.isWatched = this.record.isWatched;
+
+    this.userService.userProfile$.subscribe((profile) => {
+      this.currentUserId = profile?._id ?? null;
+    });
 
     // Search results are untracked stubs (no real CinemaItem _id) that
     // always assume isWatchlist/isWatched false - if the user already has
@@ -110,6 +159,44 @@ export class CinemaReviewModalComponent implements OnInit {
       next: (res) => (this.detail = res.data),
       error: () => this.toastr.error('Failed to load details.', 'Error'),
     });
+
+    this.loadReviews();
+  }
+
+  private loadReviews(): void {
+    this.cinemaService.getCinemaReviews(this.record, this.reviewSort).subscribe({
+      next: ({ data }) => {
+        this.reviews = data.reviews;
+        this.userReview = data.userReview;
+        this.appReviewCount = data.reviews.length;
+        this.appRating = data.reviews.length
+          ? data.reviews.reduce((sum, r) => sum + (r.decimalRating || 0), 0) / data.reviews.length
+          : null;
+      },
+      error: () => this.toastr.error('Failed to load reviews.', 'Error'),
+    });
+  }
+
+  onReviewSortChange(sort: ReviewSort): void {
+    this.reviewSort = sort;
+    this.loadReviews();
+  }
+
+  onToggleReviewLike(review: CinemaReview): void {
+    this.reviewService.toggleLike(review._id, 'cinema').subscribe({
+      next: ({ likes, likedByUser }) => {
+        const apply = (r: CinemaReview) => {
+          if (r._id !== review._id) return r;
+          const likedBy = likedByUser
+            ? [...(r.likedBy || []), this.currentUserId!]
+            : (r.likedBy || []).filter((id) => id !== this.currentUserId);
+          return { ...r, likes, likedBy };
+        };
+        this.reviews = this.reviews.map(apply);
+        if (this.userReview) this.userReview = apply(this.userReview);
+      },
+      error: () => this.toastr.error('Failed to update like.', 'Error'),
+    });
   }
 
   // Review page and cast list share the same scrollable container (toggled
@@ -119,13 +206,28 @@ export class CinemaReviewModalComponent implements OnInit {
     this.scrollContainer.nativeElement.scrollTop = 0;
   }
 
+  // Deferred a tick so the newly-selected tab's content has actually
+  // rendered (and scrollHeight reflects it) before scrolling to the bottom.
+  scrollToBottom(): void {
+    setTimeout(() => {
+      const el = this.scrollContainer.nativeElement;
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    });
+  }
+
   switchToCast(): void {
     this.showFullCast = true;
     this.resetScroll();
   }
 
+  switchToAllReviews(): void {
+    this.showAllReviews = true;
+    this.resetScroll();
+  }
+
   switchToReview(): void {
     this.showFullCast = false;
+    this.showAllReviews = false;
     this.resetScroll();
   }
 
@@ -164,6 +266,9 @@ export class CinemaReviewModalComponent implements OnInit {
   }
 
   onMarkWatched(): void {
+    if (this.isTogglingWatched) return;
+    this.isTogglingWatched = true;
+
     this.cinemaService
       .markWatched({
         tmdbId: this.record.tmdbId!,
@@ -183,11 +288,13 @@ export class CinemaReviewModalComponent implements OnInit {
             isWatchlist: this.isWatchlist,
             _id: data?._id ?? this.record._id,
           };
+          this.isTogglingWatched = false;
           this.toastr.success(nowWatched ? 'Marked as watched.' : 'Removed from watched.', 'Success');
           this.watchlistToggled.emit(this.record);
         },
         error: () => {
           this.toastr.error('Error occurred while updating watched status.', 'Error');
+          this.isTogglingWatched = false;
         },
       });
   }

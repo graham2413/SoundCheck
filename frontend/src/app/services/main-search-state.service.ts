@@ -10,7 +10,7 @@ export interface MainSearchState {
   lastSearchedQuery: string;
   searchAttempted: boolean;
   selectedSearchTab: 'songs' | 'albums' | 'artists';
-  activeTab: 'songs' | 'albums' | 'artists';
+  activeTab: 'all' | 'songs' | 'albums' | 'artists';
   results: { songs: Song[]; albums: Album[]; artists: Artist[] };
   filteredResults: { songs: Song[]; albums: Album[]; artists: Artist[] };
   selectedGenre: { songs: string; albums: string };

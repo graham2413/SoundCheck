@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 export interface CinemaWatchlistFilterState {
@@ -39,13 +39,28 @@ export const DEFAULT_WATCHLIST_FILTERS: CinemaWatchlistFilterState = {
   templateUrl: './cinema-watchlist-filter.component.html',
   styleUrl: './cinema-watchlist-filter.component.css',
 })
-export class CinemaWatchlistFilterComponent implements OnChanges {
+export class CinemaWatchlistFilterComponent implements OnChanges, OnInit {
   @Input() filters: CinemaWatchlistFilterState = { ...DEFAULT_WATCHLIST_FILTERS };
   @Input() genres: string[] = [];
   @Input() providers: string[] = [];
 
   @Output() apply = new EventEmitter<CinemaWatchlistFilterState>();
   @Output() closed = new EventEmitter<void>();
+
+  // The parent removes this component via *ngIf as soon as `closed`/`apply`
+  // fires - an Angular animation trigger on an inner template element can't
+  // defer that removal (it doesn't cross the component boundary), so instead
+  // this component drives its own plain-CSS slide/fade via `isOpen`, and only
+  // emits after a timeout matching the CSS transition duration, giving the
+  // exit animation time to actually play before the parent tears it down.
+  isOpen = false;
+  private static readonly TRANSITION_MS = 220;
+
+  ngOnInit(): void {
+    // Deferred a tick so the initial 'closed' state paints first, then the
+    // transition to 'open' animates in (same trick used for the rating rings).
+    setTimeout(() => (this.isOpen = true));
+  }
 
   draft: CinemaWatchlistFilterState = { ...DEFAULT_WATCHLIST_FILTERS };
 
@@ -137,10 +152,12 @@ export class CinemaWatchlistFilterComponent implements OnChanges {
   }
 
   applyFilters(): void {
-    this.apply.emit(this.draft);
+    this.isOpen = false;
+    setTimeout(() => this.apply.emit(this.draft), CinemaWatchlistFilterComponent.TRANSITION_MS);
   }
 
   close(): void {
-    this.closed.emit();
+    this.isOpen = false;
+    setTimeout(() => this.closed.emit(), CinemaWatchlistFilterComponent.TRANSITION_MS);
   }
 }
