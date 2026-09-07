@@ -11,10 +11,11 @@ const RATE_LIMIT_WINDOW_SECONDS = 1;
 const RATE_LIMIT_MAX_REQUESTS = 40;
 const QUEUE_DELAY_MS = 200;
 
-const DETAILS_CACHE_TTL = 604800; // 7 days
+const DETAILS_CACHE_TTL = 259200; // 3 days - short enough to keep watch/providers reasonably fresh
 const SEARCH_CACHE_TTL = 7200; // 2 hours
 const GENRE_CACHE_TTL = 2592000; // 30 days
 const CALENDAR_DETAILS_CACHE_TTL = 43200; // 12 hours - short enough to always refresh at least once per calendar day
+const SEASON_CACHE_TTL = 86400; // 1 day - shorter than DETAILS_CACHE_TTL since airing seasons get new stills/air dates as episodes approach
 
 // Caps simultaneous connections to stay under TMDb's ~20 concurrent connections/IP limit
 const tmdbAgent = new https.Agent({ maxSockets: 20, keepAlive: true });
@@ -87,12 +88,106 @@ async function callTmdb(path, params = {}) {
 // bypasses the cache read (used by the daily cinema-metadata refresh cron so
 // it actually sees changes, instead of just re-reading the same 7-day-stale
 // cached blob) but still writes the fresh result back to cache either way.
+
+// Cast fields cinemaController.js actually reads (see getCinemaDetail) -
+// TMDb's raw cast objects also carry adult/gender/known_for_department/
+// original_name/cast_id/credit_id, none of which anything ever uses.
+function trimCast(cast) {
+  return (cast || []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    character: c.character,
+    profile_path: c.profile_path,
+    order: c.order,
+    popularity: c.popularity,
+    // TV's aggregate_credits nests character under roles[] instead of a
+    // flat field - only roles[0] is ever read, so the rest is dropped.
+    ...(c.roles ? { roles: c.roles.slice(0, 1).map((r) => ({ character: r.character })) } : {}),
+  }));
+}
+
+// Only the Director's name is displayed today, but a handful of other roles
+// are common "who made this" credits a future feature might want - keeping
+// just name+job for those (a few dozen bytes) avoids another cache-version
+// bump later, without keeping the full ~150-person raw crew array around.
+const KEY_CREW_JOBS = new Set([
+  "Director",
+  "Writer",
+  "Screenplay",
+  "Producer",
+  "Executive Producer",
+  "Director of Photography",
+  "Composer",
+]);
+function trimCrew(crew) {
+  return (crew || [])
+    .filter((c) => KEY_CREW_JOBS.has(c.job))
+    .map((c) => ({ name: c.name, job: c.job }));
+}
+
+// Strips TMDb's raw /movie|tv details response down to only the fields
+// cinemaController.js (and the backfill scripts) actually read, before
+// caching - the full raw response includes every country's watch-provider/
+// release-date data, ~150 full crew objects, 100+ full-size image objects,
+// etc. that were never used but still counted toward Redis storage.
+function trimTmdbDetails(raw) {
+  const usRelease = raw.release_dates?.results?.find((r) => r.iso_3166_1 === "US") || null;
+  const usProviders = raw["watch/providers"]?.results?.US || null;
+
+  return {
+    id: raw.id,
+    title: raw.title,
+    name: raw.name,
+    poster_path: raw.poster_path,
+    overview: raw.overview,
+    genres: raw.genres,
+    status: raw.status,
+    runtime: raw.runtime,
+    episode_run_time: raw.episode_run_time,
+    revenue: raw.revenue,
+    budget: raw.budget,
+    imdb_id: raw.imdb_id,
+    release_date: raw.release_date,
+    first_air_date: raw.first_air_date,
+    last_air_date: raw.last_air_date,
+    number_of_seasons: raw.number_of_seasons,
+    last_episode_to_air: raw.last_episode_to_air,
+    next_episode_to_air: raw.next_episode_to_air,
+    external_ids: raw.external_ids ? { imdb_id: raw.external_ids.imdb_id } : undefined,
+    release_dates: usRelease ? { results: [usRelease] } : null,
+    "watch/providers": usProviders ? { results: { US: { flatrate: usProviders.flatrate } } } : null,
+    credits: raw.credits ? { cast: trimCast(raw.credits.cast), crew: trimCrew(raw.credits.crew) } : undefined,
+    aggregate_credits: raw.aggregate_credits ? { cast: trimCast(raw.aggregate_credits.cast) } : undefined,
+    images: {
+      backdrops: (raw.images?.backdrops || []).slice(0, 20).map((img) => ({ file_path: img.file_path })),
+      posters: (raw.images?.posters || []).slice(0, 20).map((img) => ({ file_path: img.file_path })),
+    },
+    videos: {
+      results: (raw.videos?.results || [])
+        .filter((v) => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"))
+        .map((v) => ({ site: v.site, type: v.type, official: v.official, key: v.key })),
+    },
+    recommendations: {
+      results: (raw.recommendations?.results || []).slice(0, 15).map((r) => ({
+        id: r.id,
+        title: r.title,
+        name: r.name,
+        poster_path: r.poster_path,
+        release_date: r.release_date,
+        first_air_date: r.first_air_date,
+        genre_ids: r.genre_ids,
+      })),
+    },
+  };
+}
+
 async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = false } = {}) {
-  // v6: bumped so older cached blobs (from before recommendations was added
-  // to append_to_response) get treated as a miss and re-fetched - otherwise
-  // the "Similar" tab silently stays empty for any title already cached
-  // under the old v5 key for its full 7-day TTL.
-  const cacheKey = `tmdb:details:v6:${tmdbId}`;
+  // v7: bumped to store a trimmed response (see trimTmdbDetails above)
+  // instead of TMDb's full raw payload - the untrimmed v6 blobs were eating
+  // ~250KB/title (mostly unused watch-provider/crew/image data), which blew
+  // through the Upstash free-tier 256MB cap. Older cached blobs are treated
+  // as a miss and re-fetched/re-trimmed under this new key.
+  const cacheKey = `tmdb:details:v7:${tmdbId}`;
   if (!forceRefresh) {
     const cached = await redis.get(cacheKey);
     if (cached) return JSON.parse(cached);
@@ -114,11 +209,14 @@ async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = fals
     include_image_language: "en,null",
   });
 
-  if (response.data) {
-    await redis.set(cacheKey, JSON.stringify(response.data), "EX", DETAILS_CACHE_TTL);
+  // Trimmed before returning too (not just before caching) so callers get
+  // the same shape on a cache hit or a fresh fetch.
+  const trimmed = response.data ? trimTmdbDetails(response.data) : null;
+  if (trimmed) {
+    await redis.set(cacheKey, JSON.stringify(trimmed), "EX", DETAILS_CACHE_TTL);
   }
 
-  return response.data;
+  return trimmed;
 }
 
 // Cache-aware wrapper for the calendar: same /movie|tv/:id details call as
@@ -292,6 +390,38 @@ async function getTmdbTrending(mediaType) {
   return results;
 }
 
+// Cache-aware wrapper: GET /tv/{id}/season/{n} - episode name/overview/air
+// date/still image for one season. Neither IMDb dataset used by
+// imdbEpisodeMap.js has this metadata (only tconst/season/episode numbers),
+// so this is the only source for it. Trimmed to just the fields the
+// Episodes tab actually renders before caching.
+async function getTmdbSeasonDetails(tvId, seasonNumber) {
+  // v2: added runtime per episode - bumped so entries cached before that
+  // (e.g. from testing this session) aren't missing it until their old TTL expires.
+  const cacheKey = `tmdb:season:v2:${tvId}:${seasonNumber}`;
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const response = await callTmdb(`/tv/${tvId}/season/${seasonNumber}`);
+  const raw = response.data;
+  if (!raw) return null;
+
+  const trimmed = {
+    seasonNumber: raw.season_number,
+    episodes: (raw.episodes || []).map((e) => ({
+      episodeNumber: e.episode_number,
+      name: e.name,
+      overview: e.overview,
+      airDate: e.air_date,
+      stillPath: e.still_path,
+      runtime: e.runtime ?? null,
+    })),
+  };
+
+  await redis.set(cacheKey, JSON.stringify(trimmed), "EX", SEASON_CACHE_TTL);
+  return trimmed;
+}
+
 module.exports = {
   callTmdb,
   getTmdbDetails,
@@ -302,4 +432,5 @@ module.exports = {
   getTmdbPopularActors,
   getTmdbExternalIds,
   getTmdbTrending,
+  getTmdbSeasonDetails,
 };

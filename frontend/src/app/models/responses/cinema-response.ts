@@ -145,6 +145,7 @@ export interface CinemaDetail {
   lastEpisodeAirDate: string | null;
   nextEpisodeAirDate: string | null;
   nextEpisodeNumber: number | null;
+  numberOfSeasons: number | null; // TV only
   runtimeMinutes: number | null;
   certification: string | null;
   genres: string[];
@@ -153,7 +154,9 @@ export interface CinemaDetail {
   cast: CinemaCastMember[];
   awardsRaw: string | null;
   awardsSummary: string | null;
+  awardsStats: { oscarWins: number | null; otherWins: number | null; nominations: number | null } | null;
   boxOffice: string | null;
+  budget: string | null;
   imdbRating: number | null;
   imdbVoteCount: number | null;
   watchProviders: CinemaWatchProvider[];
@@ -165,6 +168,46 @@ export interface CinemaDetail {
 export interface CinemaDetailResponse {
   success: boolean;
   data: CinemaDetail;
+}
+
+// One episode's TMDb metadata from GET /api/cinema/tv/:tmdbId/season/:seasonNumber
+export interface CinemaSeasonEpisode {
+  episodeNumber: number;
+  name: string | null;
+  overview: string | null;
+  airDate: string | null;
+  stillPath: string | null;
+  runtime: number | null; // minutes
+}
+
+export interface CinemaSeasonEpisodesResponse {
+  success: boolean;
+  data: {
+    seasonNumber: number;
+    episodes: CinemaSeasonEpisode[];
+  };
+}
+
+// One episode's IMDb rating from GET /api/cinema/tv/:parentTconst/episodes/imdb-ratings
+export interface EpisodeImdbRating {
+  tconst: string;
+  seasonNumber: number;
+  episodeNumber: number;
+  averageRating: number | null;
+  numVotes: number | null;
+}
+
+export type EpisodeImdbRatingsCacheStatus = 'hit' | 'stale' | 'miss' | 'processing';
+
+export interface EpisodeImdbRatingsResponse {
+  success: boolean;
+  data: {
+    parentTconst: string;
+    cacheStatus: EpisodeImdbRatingsCacheStatus;
+    source?: string;
+    message?: string;
+    episodes?: EpisodeImdbRating[];
+  };
 }
 
 export interface CinemaPersonCredit {

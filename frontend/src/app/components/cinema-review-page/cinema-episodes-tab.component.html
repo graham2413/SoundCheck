@@ -1,0 +1,124 @@
+<div class="cinema-episodes-page">
+  <!-- Season dropdown - far left, custom (not native select) for a modern look -->
+  <div class="season-row">
+    <div class="season-dropdown" [class.season-dropdown-open]="seasonDropdownOpen">
+      <button
+        type="button"
+        class="season-dropdown-trigger"
+        (click)="toggleSeasonDropdown()"
+        [attr.aria-expanded]="seasonDropdownOpen"
+      >
+        <span class="season-dropdown-label">Season {{ selectedSeason }}</span>
+        <span class="season-dropdown-count" *ngIf="episodes.length">({{ episodes.length }} episodes)</span>
+        <i class="fas fa-chevron-down season-dropdown-chevron"></i>
+      </button>
+
+      <div class="season-dropdown-panel" *ngIf="seasonDropdownOpen">
+        <button
+          type="button"
+          *ngFor="let season of seasonOptions"
+          class="season-dropdown-option"
+          [class.season-dropdown-option-active]="season === selectedSeason"
+          (click)="selectSeason(season)"
+        >
+          <span>Season {{ season }}</span>
+          <i class="fas fa-check" *ngIf="season === selectedSeason"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Episode list -->
+  <div
+    #episodesContainer
+    class="mt-4 flex flex-col gap-3"
+    [style.minHeight.px]="loadingEpisodes ? listMinHeightPx : null"
+  >
+    <div class="episodes-loading" *ngIf="loadingEpisodes">
+      <div class="cinema-loader-ring"></div>
+      <p class="cinema-loader-text">Loading Season {{ selectedSeason }}…</p>
+    </div>
+
+    <!-- "contents" keeps these children participating in the parent's flex
+         layout directly, while still giving @fadeSlideIn a real host
+         element to re-enter on (re-fires on every season switch, since
+         loadingEpisodes toggles true/false around each fetch). -->
+    <div class="contents" *ngIf="!loadingEpisodes" @fadeSlideIn>
+      <div class="episode-card" @itemAnim *ngFor="let ep of episodes">
+        <div class="episode-card-media">
+          <div *ngIf="ep.stillPath && !isImageLoaded(ep.episodeNumber)" class="absolute inset-0 flex items-center justify-center bg-gray-800">
+            <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+          </div>
+          <img
+            *ngIf="ep.stillPath"
+            [src]="'https://image.tmdb.org/t/p/original' + ep.stillPath"
+            [alt]="ep.name || ''"
+            loading="lazy"
+            (load)="markImageLoaded(ep.episodeNumber)"
+            (error)="markImageLoaded(ep.episodeNumber)"
+            [class.invisible]="!isImageLoaded(ep.episodeNumber)"
+            class="episode-card-image"
+          />
+          <div *ngIf="!ep.stillPath" class="episode-card-image episode-card-image-placeholder">
+            <i class="fas fa-clapperboard"></i>
+          </div>
+
+          <div class="episode-card-rating" *ngIf="ratingFor(ep.episodeNumber) as r">
+            <span class="episode-rating-badge-label">
+              <img src="assets/imdb-logo.svg" alt="IMDb" class="episode-rating-imdb-logo" />
+            </span>
+            <span class="episode-rating-badge-value">{{ r.averageRating != null ? r.averageRating.toFixed(1) : '—' }}</span>
+          </div>
+        </div>
+
+        <div class="episode-card-body">
+          <p class="episode-card-title">{{ ep.episodeNumber }}. {{ ep.name || 'Episode ' + ep.episodeNumber }}</p>
+          <p class="episode-card-meta">
+            <i class="far fa-clock"></i>
+            <span *ngIf="formatRuntime(ep.runtime) as runtime">{{ runtime }}</span>
+            <span *ngIf="formatRuntime(ep.runtime) && formatAirDate(ep.airDate)">&nbsp;&bull;&nbsp;</span>
+            <span *ngIf="formatAirDate(ep.airDate) as airDate">{{ airDate }}</span>
+          </p>
+          <p class="episode-card-overview" *ngIf="ep.overview">{{ ep.overview }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMDb episode ratings status card - shown below the episode list,
+       which always renders independently from TMDb metadata (see component
+       header comment) -->
+  <div class="mt-4">
+    <div class="ratings-status-card ratings-status-card-loading" *ngIf="ratingsRequestState === 'loading'">
+      <div class="ratings-status-spinner"></div>
+      <div>
+        <p class="ratings-status-title">Loading IMDb episode ratings…</p>
+        <p class="ratings-status-subtitle">We're preparing episode ratings. This usually takes a few seconds.</p>
+      </div>
+    </div>
+
+    <div class="ratings-status-card ratings-status-card-processing" *ngIf="ratingsRequestState === 'processing'">
+      <div class="ratings-status-spinner ratings-status-spinner-processing"></div>
+      <div>
+        <p class="ratings-status-title">Preparing IMDb ratings…</p>
+        <p class="ratings-status-subtitle">
+          Episode ratings are being processed. This can take a few seconds. We'll update automatically.
+        </p>
+      </div>
+    </div>
+
+    <div
+      class="ratings-status-card ratings-status-card-empty"
+      *ngIf="ratingsRequestState === 'loaded' && !hasAnyRatingsData"
+    >
+      <i class="fas fa-exclamation-triangle ratings-status-icon"></i>
+      <div>
+        <p class="ratings-status-title">IMDb ratings unavailable</p>
+        <p class="ratings-status-subtitle">
+          We couldn't find episode ratings for this show yet. You can still browse episodes. Ratings may appear
+          later once they're available.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

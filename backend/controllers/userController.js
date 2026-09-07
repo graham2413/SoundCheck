@@ -225,25 +225,9 @@ exports.sendFriendRequest = async (req, res) => {
   }
 
   try {
-    const user = await User.findById(userId);
     const toUser = await User.findById(toUserId);
-
-    if (!user || !toUser) {
+    if (!toUser) {
       return res.status(404).json({ message: "User not found." });
-    }
-
-    if (user.friends.includes(toUserId)) {
-      return res.status(400).json({ message: "You are already friends." });
-    }
-
-    if (user.friendRequestsSent.includes(toUserId)) {
-      return res.status(400).json({ message: "Friend request already sent." });
-    }
-
-    if (user.friendRequestsReceived.includes(toUserId)) {
-      return res
-        .status(400)
-        .json({ message: "This user has already sent you a request." });
     }
 
     if (toUser.friendRequestsSent.includes(userId)) {
@@ -253,12 +237,42 @@ exports.sendFriendRequest = async (req, res) => {
       });
     }
 
-    // Add friend request to both users
-    user.friendRequestsSent.push(toUserId);
-    toUser.friendRequestsReceived.push(userId);
+    // Atomic check-and-update (filter + $addToSet in one op) instead of a
+    // separate read-then-save - closes the race where two near-simultaneous
+    // requests both pass a plain `.includes()` check before either has saved,
+    // and both end up pushing a duplicate friend-request entry.
+    const user = await User.findOneAndUpdate(
+      {
+        _id: userId,
+        friends: { $ne: toUserId },
+        friendRequestsSent: { $ne: toUserId },
+        friendRequestsReceived: { $ne: toUserId },
+      },
+      { $addToSet: { friendRequestsSent: toUserId } }
+    );
 
-    await user.save();
-    await toUser.save();
+    if (!user) {
+      // Filter didn't match - re-check to report the specific reason why.
+      const current = await User.findById(userId);
+      if (!current) return res.status(404).json({ message: "User not found." });
+      if (current.friends.includes(toUserId)) {
+        return res.status(400).json({ message: "You are already friends." });
+      }
+      if (current.friendRequestsSent.includes(toUserId)) {
+        return res.status(400).json({ message: "Friend request already sent." });
+      }
+      if (current.friendRequestsReceived.includes(toUserId)) {
+        return res
+          .status(400)
+          .json({ message: "This user has already sent you a request." });
+      }
+      return res.status(400).json({ message: "Unable to send friend request." });
+    }
+
+    await User.updateOne(
+      { _id: toUserId },
+      { $addToSet: { friendRequestsReceived: userId } }
+    );
 
     res.json({ message: "Friend request sent successfully." });
   } catch (error) {

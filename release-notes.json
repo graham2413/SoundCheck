@@ -1,11 +1,14 @@
 {
   "New features": [
-    "Movie and show detail pages now have a 'Similar' tab suggesting related titles you can jump straight into",
-    "Actors' filmography credits are now clickable, taking you right to that movie or show's page"
+    "TV show pages now have an Episodes tab with real IMDb ratings, runtimes, air dates, and summaries for every episode",
+    "Movie and show detail pages now have an Awards tab showing Oscar wins and nominations"
   ],
   "Performance & stability": [
-    "Various visual polish across trending grids and movie/show detail pages (spacing, loading indicators, badge labels)"
+    "Episode images now load sharper and crop in tighter on the subject",
+    "Smoother scrolling and animations when browsing episodes and switching seasons",
+    "Fixed a rare timing issue that could cause friend requests to fail"
   ]
 }
+
 
 

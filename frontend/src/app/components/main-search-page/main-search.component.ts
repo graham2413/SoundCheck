@@ -84,6 +84,7 @@ type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
 })
 export class MainSearchComponent implements OnInit, OnDestroy {
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
+  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
   @ViewChild('dropdownContainer') dropdownContainer!: ElementRef;
   @ViewChild('filterButton') filterButton!: ElementRef;
@@ -668,6 +669,9 @@ export class MainSearchComponent implements OnInit, OnDestroy {
     this.cinemaResults = [];
     this.results = { songs: [], albums: [], artists: [] };
     this.filteredResults = { songs: [], albums: [], artists: [] };
+    // Deferred - the "x" button click would otherwise steal focus back to
+    // itself right after this runs, since it's still mid-click when called.
+    setTimeout(() => this.searchInput?.nativeElement.focus());
   }
 
   // Recent Searches - persisted per-user on the backend (rides along on the

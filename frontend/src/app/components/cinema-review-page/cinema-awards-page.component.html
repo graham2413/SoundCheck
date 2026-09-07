@@ -1,0 +1,86 @@
+<div class="cinema-awards-page pb-10">
+  <!-- Header -->
+  <div class="relative flex items-center px-4 pt-4">
+    <button
+      type="button"
+      aria-label="Back"
+      (click)="back.emit()"
+      class="w-11 h-11 rounded-full border border-gray-600 text-gray-200 flex items-center justify-center text-lg flex-shrink-0"
+    >
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <h1 class="absolute left-1/2 -translate-x-1/2 text-white font-bold text-xl">Awards</h1>
+  </div>
+
+  <!-- Title context block - same text formatting/coloring as the detail
+       page's own header (just without the certification pill/status badge
+       row), aligned to the top of the poster rather than vertically centered. -->
+  <div class="flex items-start gap-3 px-4 pt-5">
+    <img *ngIf="cover" [src]="cover" [alt]="title" class="awards-poster-thumb" />
+    <div *ngIf="!cover" class="awards-poster-thumb awards-poster-placeholder">
+      <i class="fas fa-clapperboard"></i>
+    </div>
+    <div class="min-w-0 pt-1">
+      <h2 class="text-white font-bold text-2xl leading-snug break-words">{{ title }}</h2>
+      <p class="text-gray-400 text-sm mt-1">
+        <span *ngIf="yearLabel">{{ yearLabel }}</span>
+        <span *ngIf="yearLabel && runtimeLabel"> &middot; </span>
+        <span *ngIf="runtimeLabel">{{ runtimeLabel }}</span>
+        <span *ngIf="certification"> &middot; {{ certification }}</span>
+      </p>
+      <p class="text-[#3B82F6] text-sm mt-2" *ngIf="genres.length">{{ genres.join(', ') }}</p>
+    </div>
+  </div>
+
+  <!-- Stats summary card -->
+  <div class="awards-card mx-4 mt-5" *ngIf="hasAnyStat">
+    <div class="flex items-stretch justify-around text-center">
+      <div class="flex-1" *ngIf="awardsStats?.oscarWins != null">
+        <i class="fas fa-award awards-stat-icon"></i>
+        <p class="awards-stat-value">{{ awardsStats?.oscarWins }}</p>
+        <p class="awards-stat-label">Oscar Wins</p>
+      </div>
+      <div class="awards-stat-divider" *ngIf="awardsStats?.oscarWins != null && awardsStats?.otherWins != null"></div>
+      <div class="flex-1" *ngIf="awardsStats?.otherWins != null">
+        <i class="fas fa-trophy awards-stat-icon"></i>
+        <p class="awards-stat-value">{{ awardsStats?.otherWins }}</p>
+        <p class="awards-stat-label">Other Wins</p>
+      </div>
+      <div class="awards-stat-divider" *ngIf="awardsStats?.otherWins != null && awardsStats?.nominations != null"></div>
+      <div class="flex-1" *ngIf="awardsStats?.nominations != null">
+        <i class="fas fa-star awards-stat-icon"></i>
+        <p class="awards-stat-value">{{ awardsStats?.nominations }}</p>
+        <p class="awards-stat-label">Nominations</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Source/limitations card - combines both disclaimers together since the
+       raw OMDb quote itself isn't shown anymore. -->
+  <div class="awards-info-card mx-4 mt-4" *ngIf="awardsRaw">
+    <i class="fas fa-circle-info awards-info-icon"></i>
+    <div>
+      <p class="awards-fine-print">
+        This information is provided by OMDb and may not be a complete list of all awards and nominations.
+      </p>
+      <div class="awards-divider"></div>
+      <p class="awards-fine-print">
+        A detailed breakdown of awards by organization, category, and year is not available at this time.
+      </p>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="awards-card awards-empty-card mx-4 mt-5" *ngIf="!awardsRaw">
+    <i class="fas fa-trophy awards-empty-icon"></i>
+    <p class="awards-empty-title">No Awards Information Available</p>
+    <p class="awards-empty-subtitle">Awards and nominations may appear here when available.</p>
+  </div>
+
+  <div class="awards-info-card mx-4 mt-4" *ngIf="!awardsRaw">
+    <i class="fas fa-circle-info awards-info-icon"></i>
+    <p class="awards-fine-print">
+      This information is provided by OMDb and may not be a complete list of all awards and nominations.
+    </p>
+  </div>
+</div>

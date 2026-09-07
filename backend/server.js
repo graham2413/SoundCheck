@@ -31,6 +31,7 @@ const cron = require("node-cron");
 const spotifyController = require("./controllers/spotifyController");
 const { cronSyncAllArtists } = require('./controllers/mainSearchController');
 const { syncImdbRatings, logLastSyncedAt } = require('./utils/imdbRatingsSync');
+const { prewarmTrackedShowEpisodeMaps } = require('./utils/imdbEpisodeMap');
 const { cronRefreshCinemaMetadata, getLocalDayOfWeek } = require('./controllers/cinemaController');
 
 const userRoutes = require("./routes/userRoutes");
@@ -88,7 +89,15 @@ app.use(
 app.use(
   session({
     store: new RedisStore({ client: redisClient }),
-    secret: process.env.SESSION_SECRET || "fallback-secret",
+    // No insecure fallback - a missing env var should fail loudly at
+    // startup, not silently sign sessions with a known, publicly-documented
+    // default secret.
+    secret: (() => {
+      if (!process.env.SESSION_SECRET) {
+        throw new Error("SESSION_SECRET environment variable is required but not set.");
+      }
+      return process.env.SESSION_SECRET;
+    })(),
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -121,8 +130,7 @@ app.use("/api/cinema", cinemaRoutes);
 
 // Get new spotify releases every Friday at 6:00am Central
 cron.schedule("0 6 * * 5", async () => {
-
-  await spotifyController.setAlbumImages();
+  await spotifyController.setAlbumImages().catch((err) => console.error('Spotify album sync failed:', err));
 }, {
   timezone: 'America/Chicago'
 });
@@ -149,7 +157,7 @@ cron.schedule('0 11 * * *', async () => {
 // Sync all artists albums in DB daily at 3 AM
 cron.schedule('0 3 * * *', async () => {
   console.log('🔥 Starting daily artist album sync at 3 AM (local)');
-  await cronSyncAllArtists();
+  await cronSyncAllArtists().catch((err) => console.error('Daily artist album sync failed:', err));
 }, {
   timezone: 'America/Chicago'
 });
@@ -162,7 +170,20 @@ cron.schedule('0 3 * * *', async () => {
 cron.schedule('0 4 * * *', async () => {
   const fullRecheck = getLocalDayOfWeek('America/Chicago') === 'Sun';
   console.log(`🎬 Starting cinema metadata refresh at 4 AM (local) - ${fullRecheck ? 'full recheck' : 'unsettled titles only'}`);
-  await cronRefreshCinemaMetadata({ fullRecheck });
+  await cronRefreshCinemaMetadata({ fullRecheck }).catch((err) => console.error('Cinema metadata refresh failed:', err));
+}, {
+  timezone: 'America/Chicago'
+});
+
+// Bounded prewarm (see utils/imdbEpisodeMap.js) so opening Episodes for a
+// tracked TV show is a fast Redis hit instead of a multi-second cold scan -
+// runs at 4:30 AM, after the cinema metadata refresh above so imdbId/status
+// are current for anything just added. Untracked/brand-new shows still work
+// via the endpoint's own on-demand fallback - this is a warm-cache
+// optimization only, not a correctness requirement.
+cron.schedule('30 4 * * *', async () => {
+  console.log('🎥 Starting IMDb episode-map prewarm at 4:30 AM (local)');
+  await prewarmTrackedShowEpisodeMaps().catch((err) => console.error('IMDb episode-map prewarm failed:', err));
 }, {
   timezone: 'America/Chicago'
 });

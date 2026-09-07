@@ -4,11 +4,10 @@ const multer = require("multer");
 const authenticateUser = require("../middleware/authMiddleware");
 const {
   getImdbStats,
+  getEpisodeImdbRatings,
   getCinemaDetail,
   getCinemaPersonDetail,
   getPopularActors,
-  debugTmdbDetails,
-  debugTmdbSearch,
   importTraktExport,
   getWatchlist,
   getWatchlistFilterOptions,
@@ -20,6 +19,7 @@ const {
   toggleWatchlist,
   markCinemaWatched,
   getCinemaItemStatus,
+  getTvSeasonEpisodes,
 } = require("../controllers/cinemaController");
 
 // Zip never touches disk/Cloudinary - parsed directly from the in-memory buffer
@@ -27,6 +27,13 @@ const traktUpload = multer({ storage: multer.memoryStorage() });
 
 // Live IMDb community stats (cached in Redis, not persisted in Mongo)
 router.get("/imdb-stats/:imdbId", getImdbStats);
+
+// Per-episode IMDb ratings for a TV show, by its IMDb ID (Protected) - see
+// utils/imdbEpisodeMap.js for the on-demand scan + Redis cache architecture.
+router.get("/tv/:parentTconst/episodes/imdb-ratings", authenticateUser, getEpisodeImdbRatings);
+
+// Episode name/overview/air date/still image for one TV season, TMDb-sourced (Protected)
+router.get("/tv/:tmdbId/season/:seasonNumber", authenticateUser, getTvSeasonEpisodes);
 
 // Consolidated payload for the cinema review detail page (Protected)
 router.get("/detail/:mediaType/:tmdbId", authenticateUser, getCinemaDetail);
@@ -67,9 +74,5 @@ router.post("/import-trakt", authenticateUser, traktUpload.single("file"), impor
 
 // Submit a precise decimal rating for an imported item (Protected, owner only)
 router.patch("/:id/refine", authenticateUser, editCinemaItem);
-
-// TEMP DEBUG ONLY - remove once real Phase 2 TMDb routes exist
-router.get("/debug/tmdb-details/:tmdbId", debugTmdbDetails);
-router.get("/debug/tmdb-search", debugTmdbSearch);
 
 module.exports = router;

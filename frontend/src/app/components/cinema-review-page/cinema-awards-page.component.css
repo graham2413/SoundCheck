@@ -1,0 +1,110 @@
+/* Page background matches the movie detail page. */
+.cinema-awards-page {
+  min-height: 100%;
+  background: #020814;
+}
+
+.awards-poster-thumb {
+  width: 4rem;
+  height: 6rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  background: #0b1220;
+}
+
+.awards-poster-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  font-size: 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.awards-card {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.75rem;
+  background: #060d1c;
+  padding: 1rem;
+}
+
+.awards-stat-icon {
+  color: #fbbf24;
+  font-size: 1.25rem;
+}
+
+.awards-stat-value {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-top: 0.4rem;
+}
+
+.awards-stat-label {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+}
+
+.awards-stat-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(148, 163, 184, 0.2);
+  margin: 0 0.5rem;
+}
+
+.awards-fine-print {
+  color: #6b7280;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.awards-divider {
+  height: 1px;
+  background: rgba(148, 163, 184, 0.15);
+  margin: 0.6rem 0;
+}
+
+.awards-info-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.75rem;
+  background: #060d1c;
+  padding: 0.85rem 1rem;
+}
+
+.awards-info-icon {
+  color: #6b7280;
+  font-size: 1rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+.awards-empty-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.awards-empty-icon {
+  color: rgba(148, 163, 184, 0.35);
+  font-size: 3rem;
+}
+
+.awards-empty-title {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-top: 1rem;
+}
+
+.awards-empty-subtitle {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+}

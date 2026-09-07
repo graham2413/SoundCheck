@@ -225,14 +225,14 @@
       </span>
     </div>
 
-    <div class="detail-row detail-row-link" *ngIf="awardsSummary" (click)="viewAwards.emit()">
+    <div class="detail-row" [class.detail-row-link]="awardsSummary" (click)="awardsSummary && viewAwards.emit()">
       <div class="detail-row-label">
         <i class="far fa-star"></i>
         Awards
       </div>
       <span class="detail-row-value">
-        {{ awardsSummary }}
-        <i class="fas fa-chevron-right"></i>
+        {{ awardsSummary || 'No info available' }}
+        <i class="fas fa-chevron-right" *ngIf="awardsSummary"></i>
       </span>
     </div>
 
@@ -243,6 +243,25 @@
       </div>
       <span class="detail-row-value">{{ boxOffice }}</span>
     </div>
+
+    <div class="detail-row" *ngIf="budget">
+      <div class="detail-row-label">
+        <i class="far fa-money-bill-1"></i>
+        Budget
+      </div>
+      <span class="detail-row-value">{{ budget }}</span>
+    </div>
+  </div>
+
+  <!-- Episodes -->
+  <div class="mx-4 mt-4" *ngIf="activeTab === 'Episodes'">
+    <app-cinema-episodes-tab
+      [tmdbId]="tmdbId"
+      [imdbId]="imdbId"
+      [numberOfSeasons]="numberOfSeasons"
+      [showStatus]="status"
+      (contentLoaded)="onEpisodesContentLoaded()"
+    ></app-cinema-episodes-tab>
   </div>
 
   <!-- Trailer -->
@@ -509,14 +528,13 @@
       class="poster-fullscreen-track"
       [class.no-transition]="isSwiping"
       [style.transform]="trackTransform"
-      (click)="$event.stopPropagation()"
       (touchstart)="onFullScreenTouchStart($event)"
       (touchmove)="onFullScreenTouchMove($event)"
       (touchend)="onFullScreenTouchEnd()"
     >
-      <img [src]="prevFullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" />
-      <img [src]="fullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" />
-      <img [src]="nextFullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" />
+      <img [src]="prevFullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" (click)="onFullScreenImageClick($event)" />
+      <img [src]="fullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" (click)="onFullScreenImageClick($event)" />
+      <img [src]="nextFullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" (click)="onFullScreenImageClick($event)" />
     </div>
     <button
       type="button"

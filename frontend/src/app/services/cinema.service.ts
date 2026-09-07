@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
-import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor } from '../models/responses/cinema-response';
+import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor, CinemaSeasonEpisodesResponse, EpisodeImdbRatingsResponse } from '../models/responses/cinema-response';
 
 export interface WatchlistCursor {
   cursorValue: string;
@@ -53,6 +53,22 @@ export class CinemaService {
   getCinemaDetail(mediaType: 'movie' | 'tv', tmdbId: string): Observable<CinemaDetailResponse> {
     return this.http.get<CinemaDetailResponse>(`${this.apiUrl}/detail/${mediaType}/${tmdbId}`, {
       headers: this.authHeaders(),
+    });
+  }
+
+  // Episode name/overview/air date/still image for one season (TMDb-sourced)
+  getTvSeasonEpisodes(tmdbId: string, seasonNumber: number): Observable<CinemaSeasonEpisodesResponse> {
+    return this.http.get<CinemaSeasonEpisodesResponse>(`${this.apiUrl}/tv/${tmdbId}/season/${seasonNumber}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  // Per-episode IMDb ratings for a whole show (all seasons in one call) - see
+  // backend/utils/imdbEpisodeMap.js for the cacheStatus hit/stale/miss/processing states.
+  getEpisodeImdbRatings(parentTconst: string, showStatus?: 'ended' | 'ongoing'): Observable<EpisodeImdbRatingsResponse> {
+    return this.http.get<EpisodeImdbRatingsResponse>(`${this.apiUrl}/tv/${parentTconst}/episodes/imdb-ratings`, {
+      headers: this.authHeaders(),
+      params: showStatus ? { showStatus } : {},
     });
   }
 

@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { CinemaReviewPageComponent, ReviewFilter, ReviewSort } from './cinema-review-page.component';
 import { CinemaCastListComponent } from './cinema-cast-list.component';
 import { CinemaAllReviewsComponent } from './cinema-all-reviews.component';
+import { CinemaAwardsPageComponent } from './cinema-awards-page.component';
 import { CinemaService } from '../../services/cinema.service';
 import { ReviewService } from '../../services/review.service';
 import { UserService } from '../../services/user.service';
@@ -18,7 +19,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
 @Component({
   selector: 'app-cinema-review-modal',
   standalone: true,
-  imports: [CommonModule, CinemaReviewPageComponent, CinemaCastListComponent, CinemaAllReviewsComponent],
+  imports: [CommonModule, CinemaReviewPageComponent, CinemaCastListComponent, CinemaAllReviewsComponent, CinemaAwardsPageComponent],
   template: `
     <div #scrollContainer class="fixed inset-0 z-50 overflow-y-auto bg-[#020814]">
       <div class="cinema-loader-overlay" *ngIf="!detail">
@@ -27,10 +28,12 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
       </div>
 
       <app-cinema-review-page
-        *ngIf="detail && !showFullCast && !showAllReviews"
+        *ngIf="detail && !showFullCast && !showAllReviews && !showAwards"
         [title]="detail.title"
         [cover]="detail.cover"
         [mediaType]="detail.mediaType"
+        [tmdbId]="detail.tmdbId"
+        [imdbId]="detail.imdbId"
         [year]="detail.year"
         [releaseYearRange]="detail.releaseYearRange"
         [runtimeMinutes]="detail.runtimeMinutes"
@@ -43,6 +46,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
         [lastEpisodeAirDate]="detail.lastEpisodeAirDate"
         [nextEpisodeAirDate]="detail.nextEpisodeAirDate"
         [nextEpisodeNumber]="detail.nextEpisodeNumber"
+        [numberOfSeasons]="detail.numberOfSeasons"
         [genres]="detail.genres"
         [appRating]="appRating"
         [appReviewCount]="appReviewCount"
@@ -52,6 +56,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
         [director]="detail.director"
         [awardsSummary]="detail.awardsSummary"
         [boxOffice]="detail.boxOffice"
+        [budget]="detail.budget"
         [watchProviders]="detail.watchProviders"
         [images]="detail.images"
         [trailerKey]="detail.trailerKey"
@@ -70,6 +75,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
         (rate)="rate.emit()"
         (markWatched)="onMarkWatched()"
         (viewCast)="switchToCast()"
+        (viewAwards)="switchToAwards()"
         (reviewFilterChange)="reviewFilter = $event"
         (reviewSortChange)="onReviewSortChange($event)"
         (toggleReviewLike)="onToggleReviewLike($event)"
@@ -99,6 +105,21 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
         (reviewSortChange)="onReviewSortChange($event)"
         (toggleReviewLike)="onToggleReviewLike($event)"
       ></app-cinema-all-reviews>
+
+      <app-cinema-awards-page
+        *ngIf="detail && showAwards"
+        [title]="detail.title"
+        [cover]="detail.cover"
+        [mediaType]="detail.mediaType"
+        [year]="detail.year"
+        [releaseYearRange]="detail.releaseYearRange"
+        [runtimeMinutes]="detail.runtimeMinutes"
+        [certification]="detail.certification"
+        [genres]="detail.genres"
+        [awardsRaw]="detail.awardsRaw"
+        [awardsStats]="detail.awardsStats"
+        (back)="switchToReview()"
+      ></app-cinema-awards-page>
     </div>
   `,
 })
@@ -119,6 +140,7 @@ export class CinemaReviewModalComponent implements OnInit {
   isTogglingWatched = false;
   showFullCast = false;
   showAllReviews = false;
+  showAwards = false;
 
   reviews: CinemaReview[] = [];
   userReview: CinemaReview | null = null;
@@ -252,9 +274,15 @@ export class CinemaReviewModalComponent implements OnInit {
     this.resetScroll();
   }
 
+  switchToAwards(): void {
+    this.showAwards = true;
+    this.resetScroll();
+  }
+
   switchToReview(): void {
     this.showFullCast = false;
     this.showAllReviews = false;
+    this.showAwards = false;
     this.resetScroll();
   }
 

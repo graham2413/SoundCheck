@@ -98,7 +98,7 @@
   max-height: 100%;
   object-fit: contain;
   border-radius: 0;
-  padding: 2rem;
+  padding: 0;
   box-sizing: border-box;
 }
 
@@ -147,7 +147,7 @@
 .poster-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .poster-placeholder {
@@ -503,7 +503,7 @@
 
 .gallery-thumb {
   flex: 0 0 auto;
-  width: 128px;
+  width: 160px;
   aspect-ratio: 16 / 9;
   border-radius: 0.5rem;
   overflow: hidden;

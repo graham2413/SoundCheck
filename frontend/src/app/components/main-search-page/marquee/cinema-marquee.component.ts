@@ -138,6 +138,7 @@ export class CinemaMarqueeComponent implements OnInit, OnChanges {
       'new-season': 'New Season',
       'returning-soon': 'Returning Soon',
       'back-in-theaters': 'Back Soon',
+      'new-episode': 'Episode',
     };
     const shortLabel = shortLabels[badge.kind];
     return shortLabel ? { ...badge, label: shortLabel } : badge;

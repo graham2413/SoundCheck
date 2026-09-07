@@ -6,6 +6,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PROVIDER_LOGO_OVERRIDES } from '../../shared/provider-logo-overrides';
 import { getCinemaStatusBadge, withShortBadgeLabel, CinemaBadgeVm } from '../../shared/cinema-status-badge';
 import { CinemaBadgeComponent } from '../../shared/cinema-badge/cinema-badge.component';
+import { CinemaEpisodesTabComponent } from './cinema-episodes-tab.component';
 import { CinemaReview, CinemaPersonCredit } from '../../models/responses/cinema-response';
 
 export interface WatchProvider {
@@ -24,7 +25,7 @@ export type ReviewSort = 'recent' | 'highest' | 'liked';
 @Component({
   selector: 'app-cinema-review-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, CinemaBadgeComponent],
+  imports: [CommonModule, FormsModule, CinemaBadgeComponent, CinemaEpisodesTabComponent],
   templateUrl: './cinema-review-page.component.html',
   styleUrls: ['./cinema-review-page.component.css'],
   animations: [
@@ -40,6 +41,8 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   @Input() title = '';
   @Input() cover: string | null = null;
   @Input() mediaType: 'movie' | 'tv' | null = null;
+  @Input() tmdbId: string | null = null;
+  @Input() imdbId: string | null = null;
   @Input() year: number | null = null;
   @Input() releaseYearRange: string | null = null;
   @Input() runtimeMinutes: number | null = null;
@@ -65,6 +68,8 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   @Input() director: string | null = null;
   @Input() awardsSummary: string | null = null;
   @Input() boxOffice: string | null = null;
+  @Input() budget: string | null = null;
+  @Input() numberOfSeasons: number | null = null;
   @Input() watchProviders: WatchProvider[] = [];
   @Input() images: { backdrops: string[]; posters: string[] } = { backdrops: [], posters: [] };
   @Input() trailerKey: string | null = null;
@@ -131,6 +136,48 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
 
   closeFullScreenImage(): void {
     this.fullScreenImages = [];
+  }
+
+  // The <img> element itself always spans the full 100vw x 100% box
+  // (object-fit:contain only affects how the pixels are drawn *inside* that
+  // box) - so a plain stopPropagation() on the image would swallow clicks on
+  // the empty letterbox padding too, not just the visible photo. Compute the
+  // actual rendered content rect and only block the close-on-outside-click
+  // when the tap landed within it.
+  onFullScreenImageClick(event: MouseEvent): void {
+    const img = event.currentTarget as HTMLImageElement;
+    const rect = img.getBoundingClientRect();
+    if (!img.naturalWidth || !img.naturalHeight || !rect.width || !rect.height) return;
+
+    const naturalRatio = img.naturalWidth / img.naturalHeight;
+    const boxRatio = rect.width / rect.height;
+
+    let left = rect.left;
+    let right = rect.right;
+    let top = rect.top;
+    let bottom = rect.bottom;
+
+    if (naturalRatio > boxRatio) {
+      // Image is relatively wider than its box - letterboxed top/bottom.
+      const renderedHeight = rect.width / naturalRatio;
+      const offsetY = (rect.height - renderedHeight) / 2;
+      top = rect.top + offsetY;
+      bottom = top + renderedHeight;
+    } else {
+      // Image is relatively taller/narrower than its box - letterboxed left/right.
+      const renderedWidth = rect.height * naturalRatio;
+      const offsetX = (rect.width - renderedWidth) / 2;
+      left = rect.left + offsetX;
+      right = left + renderedWidth;
+    }
+
+    const clickedInsidePhoto =
+      event.clientX >= left && event.clientX <= right && event.clientY >= top && event.clientY <= bottom;
+
+    if (clickedInsidePhoto) {
+      event.stopPropagation();
+    }
+    // Otherwise let it bubble up to the overlay's closeFullScreenImage().
   }
 
   get fullScreenImageUrl(): string | null {
@@ -313,20 +360,58 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
     }
   }
 
-  readonly tabs = ['Overview', 'Reviews', 'Trailer', 'Similar'] as const;
-  activeTab: (typeof this.tabs)[number] = 'Overview';
+  // "Episodes" only shows up as a tab for TV shows we actually have season
+  // data for - inserted right after Overview to match the mockup's ordering.
+  get tabs(): string[] {
+    const episodesTab = this.mediaType === 'tv' && this.numberOfSeasons ? ['Episodes'] : [];
+    return ['Overview', ...episodesTab, 'Reviews', 'Trailer', 'Similar'];
+  }
+  activeTab = 'Overview';
 
   @Output() tabChange = new EventEmitter<void>();
   @ViewChild('tabsRow') tabsRow?: ElementRef<HTMLElement>;
 
-  selectTab(tab: (typeof this.tabs)[number]): void {
+  selectTab(tab: string): void {
     this.activeTab = tab;
     this.tabChange.emit();
+    // Episodes' content never exists synchronously at tab-select time (its
+    // child component isn't even created until this *ngIf flips, and its
+    // HTTP calls always resolve at least one tick later) - scrolling here
+    // AND again from onEpisodesContentLoaded once real content loads used
+    // to fire two overlapping `scrollIntoView({behavior:'smooth'})` calls
+    // on the same element, which browsers can resolve by overshooting way
+    // past the target (observed scrolling all the way to the page bottom).
+    // Skip the immediate scroll for Episodes - the content-driven one below
+    // is the only one that ever needs to run for that tab.
+    if (tab === 'Episodes') {
+      this.hasScrolledForEpisodesTab = false;
+      return;
+    }
     // Scroll so the tabs row lands at the top of the view - not the parent
     // modal's old "scroll to bottom" behavior, which overshot straight past
     // the newly-selected tab's content on every tab switch. Deferred a tick
     // so the new tab's content has actually rendered first.
-    setTimeout(() => this.tabsRow?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    setTimeout(() => this.scrollTabsRowIntoView());
+  }
+
+  private scrollTabsRowIntoView(): void {
+    this.tabsRow?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Episodes' content (season list, then ratings) loads asynchronously
+  // after the tab is first selected - this is the ONLY scroll trigger for
+  // that tab (see selectTab). Only fires once per Episodes visit -
+  // subsequent season switches shouldn't re-trigger a scroll.
+  private hasScrolledForEpisodesTab = false;
+
+  onEpisodesContentLoaded(): void {
+    if (this.hasScrolledForEpisodesTab) return;
+    this.hasScrolledForEpisodesTab = true;
+    // Deferred - called synchronously from inside an HTTP subscribe
+    // callback, before Angular's change detection has actually re-rendered
+    // the new episode cards into the DOM, so an un-deferred scroll here
+    // was measuring the still-old (shorter) layout.
+    setTimeout(() => this.scrollTabsRowIntoView());
   }
 
   // Reviewer avatar load state, keyed by review._id (or 'prompt' for the
