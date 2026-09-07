@@ -159,6 +159,7 @@ export interface CinemaDetail {
   watchProviders: CinemaWatchProvider[];
   images: { backdrops: string[]; posters: string[] };
   trailerKey: string | null;
+  similar: CinemaPersonCredit[];
 }
 
 export interface CinemaDetailResponse {

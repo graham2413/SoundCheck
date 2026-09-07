@@ -39,11 +39,10 @@
   </div>
 
   <!-- Grid body -->
-  <div class="flex-1 overflow-y-auto px-4 py-4">
+  <div class="flex-1 overflow-y-auto px-2 py-4">
     <div
       *ngIf="isLoading"
-      class="grid gap-3"
-      [ngClass]="kind === 'cinema' ? 'grid-cols-2 sm:grid-cols-4 md:grid-cols-5' : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5'"
+      class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3"
     >
       <div *ngFor="let _ of [1,2,3,4,5,6,7,8,9]" class="skeleton-card">
         <div class="skeleton-img"></div>
@@ -64,7 +63,17 @@
       >
         <div class="relative">
           <span class="rank-ribbon"><span>#{{ i + 1 }}</span></span>
-          <img [src]="highQualityCover(album.cover)" [alt]="album.title" class="grid-card-img grid-card-img-square" />
+          <div *ngIf="!albumImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">
+            <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+          </div>
+          <img
+            [src]="highQualityCover(album.cover)"
+            [alt]="album.title"
+            (load)="albumImageLoaded[i] = true"
+            (error)="albumImageLoaded[i] = true"
+            [class.invisible]="!albumImageLoaded[i]"
+            class="grid-card-img grid-card-img-square"
+          />
         </div>
         <p class="grid-card-title truncate" [title]="album.title">{{ album.title }}</p>
         <p class="grid-card-subtitle truncate" [title]="album.artist">{{ album.artist }}</p>
@@ -75,7 +84,7 @@
     <div
       @fadeSlideIn
       *ngIf="!isLoading && kind === 'cinema'"
-      class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-x-3 gap-y-5"
+      class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-3 gap-y-5"
     >
       <div
         @itemAnim
@@ -85,9 +94,15 @@
       >
         <div class="relative">
           <span class="rank-ribbon"><span>#{{ i + 1 }}</span></span>
+          <div *ngIf="!cinemaImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">
+            <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+          </div>
           <img
             [src]="item.cover || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
             [alt]="item.title"
+            (load)="cinemaImageLoaded[i] = true"
+            (error)="cinemaImageLoaded[i] = true"
+            [class.invisible]="!cinemaImageLoaded[i]"
             class="grid-card-img"
           />
         </div>

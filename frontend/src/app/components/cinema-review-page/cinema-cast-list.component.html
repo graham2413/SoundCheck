@@ -108,4 +108,5 @@
   [fallbackCharacter]="selectedMember.character"
   [fallbackProfilePath]="selectedMember.profilePath"
   (close)="selectedMember = null"
+  (creditClick)="creditClick.emit($event)"
 ></app-cinema-person-detail>

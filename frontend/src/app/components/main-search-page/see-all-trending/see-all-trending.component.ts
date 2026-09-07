@@ -5,7 +5,7 @@ import { SpotifyService } from 'src/app/services/spotify.service';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { AlbumImage } from '../../../models/responses/album-images-response';
 import { CinemaSearchResult } from '../../../models/responses/cinema-response';
-import { getCinemaStatusBadge, CinemaBadgeVm } from '../../../shared/cinema-status-badge';
+import { getCinemaStatusBadge, withShortBadgeLabel, CinemaBadgeVm } from '../../../shared/cinema-status-badge';
 import { CinemaBadgeComponent } from '../../../shared/cinema-badge/cinema-badge.component';
 
 export type SeeAllTrendingKind = 'music' | 'cinema';
@@ -48,6 +48,8 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
   albums: AlbumImage[] = [];
   cinemaItems: CinemaSearchResult[] = [];
   cinemaMode: 'movie' | 'tv' = 'movie';
+  albumImageLoaded: boolean[] = [];
+  cinemaImageLoaded: boolean[] = [];
 
   constructor(
     private spotifyService: SpotifyService,
@@ -77,6 +79,7 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
       this.spotifyService.getAlbumImages().subscribe({
         next: ({ albums }) => {
           this.albums = albums || [];
+          this.albumImageLoaded = [];
           this.isLoading = false;
         },
         error: () => {
@@ -88,6 +91,7 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
       this.cinemaService.getTrendingCinema(this.cinemaMode).subscribe({
         next: ({ data }) => {
           this.cinemaItems = data || [];
+          this.cinemaImageLoaded = [];
           this.isLoading = false;
         },
         error: () => {
@@ -120,8 +124,9 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
     return new Date(item.releaseDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   }
 
-  // Same badge logic/priority/icons as everywhere else (see shared/cinema-status-badge.ts).
+  // Same badge logic/priority/icons as everywhere else (see shared/cinema-status-badge.ts),
+  // with shortened labels since these grid cards are narrower than the detail page.
   cinemaBadge(item: CinemaSearchResult): CinemaBadgeVm | null {
-    return getCinemaStatusBadge(item);
+    return withShortBadgeLabel(getCinemaStatusBadge(item));
   }
 }

@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
+import { animate, style, transition, trigger } from '@angular/animations';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PROVIDER_LOGO_OVERRIDES } from '../../shared/provider-logo-overrides';
-import { getCinemaStatusBadge, CinemaBadgeVm } from '../../shared/cinema-status-badge';
+import { getCinemaStatusBadge, withShortBadgeLabel, CinemaBadgeVm } from '../../shared/cinema-status-badge';
 import { CinemaBadgeComponent } from '../../shared/cinema-badge/cinema-badge.component';
-import { CinemaReview } from '../../models/responses/cinema-response';
+import { CinemaReview, CinemaPersonCredit } from '../../models/responses/cinema-response';
 
 export interface WatchProvider {
   name: string;
@@ -26,6 +27,14 @@ export type ReviewSort = 'recent' | 'highest' | 'liked';
   imports: [CommonModule, FormsModule, CinemaBadgeComponent],
   templateUrl: './cinema-review-page.component.html',
   styleUrls: ['./cinema-review-page.component.css'],
+  animations: [
+    trigger('slideDown', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-12px)' }),
+        animate('250ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
+      ]),
+    ]),
+  ],
 })
 export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() title = '';
@@ -59,6 +68,7 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   @Input() watchProviders: WatchProvider[] = [];
   @Input() images: { backdrops: string[]; posters: string[] } = { backdrops: [], posters: [] };
   @Input() trailerKey: string | null = null;
+  @Input() similar: CinemaPersonCredit[] = [];
 
   // Reviews tab (chunk 1: in-place preview list; "See All" navigates to a
   // dedicated full-screen list in a later chunk).
@@ -75,6 +85,7 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   @Output() viewCast = new EventEmitter<void>();
   @Output() viewAwards = new EventEmitter<void>();
   @Output() seeAllProviders = new EventEmitter<void>();
+  @Output() similarItemClick = new EventEmitter<CinemaPersonCredit>();
 
   @Output() reviewFilterChange = new EventEmitter<ReviewFilter>();
   @Output() reviewSortChange = new EventEmitter<ReviewSort>();
@@ -306,10 +317,16 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   activeTab: (typeof this.tabs)[number] = 'Overview';
 
   @Output() tabChange = new EventEmitter<void>();
+  @ViewChild('tabsRow') tabsRow?: ElementRef<HTMLElement>;
 
   selectTab(tab: (typeof this.tabs)[number]): void {
     this.activeTab = tab;
     this.tabChange.emit();
+    // Scroll so the tabs row lands at the top of the view - not the parent
+    // modal's old "scroll to bottom" behavior, which overshot straight past
+    // the newly-selected tab's content on every tab switch. Deferred a tick
+    // so the new tab's content has actually rendered first.
+    setTimeout(() => this.tabsRow?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   // Reviewer avatar load state, keyed by review._id (or 'prompt' for the
@@ -414,6 +431,21 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
     });
   }
 
+  // "Similar" tab - same badge logic as everywhere else, and same caveat as
+  // the person-detail filmography: these items only carry mediaType/
+  // releaseDate, so in practice only "Coming Soon" can ever show here.
+  // Short labels since these cards are narrower than the See All grid.
+  similarImageLoaded: boolean[] = [];
+
+  similarBadge(item: CinemaPersonCredit): CinemaBadgeVm | null {
+    return withShortBadgeLabel(getCinemaStatusBadge(item));
+  }
+
+  similarReleaseDate(item: CinemaPersonCredit): string {
+    if (!item.releaseDate) return 'TBA';
+    return new Date(item.releaseDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }
+
   get ringCircumference(): number {
     return 2 * Math.PI * CinemaReviewPageComponent.RING_RADIUS;
   }
@@ -438,6 +470,9 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
       this.isDescriptionExpanded = false;
       // Wait for the clamped paragraph to render before measuring it.
       setTimeout(() => this.checkDescriptionOverflow());
+    }
+    if (changes['similar']) {
+      this.similarImageLoaded = [];
     }
   }
 

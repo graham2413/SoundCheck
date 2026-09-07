@@ -78,8 +78,9 @@
 
     <div class="flex gap-3 overflow-x-auto mt-3 pb-1" *ngIf="credits.length">
       <div
-        class="cinema-card-outer flex-shrink-0 w-[7rem] md:w-[10rem] rounded-lg overflow-hidden"
+        class="cinema-card-outer flex-shrink-0 w-[7rem] md:w-[10rem] rounded-lg overflow-hidden cursor-pointer"
         *ngFor="let credit of credits; let i = index"
+        (click)="creditClick.emit(credit)"
       >
         <div class="cinema-card relative h-[10.5rem] md:h-[15rem]">
           <div *ngIf="!creditImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">

@@ -618,6 +618,26 @@ exports.getCinemaDetail = async (req, res) => {
       return res.status(404).json({ success: false, message: "Title not found" });
     }
 
+    const genreMap = await getGenreMap(mediaType);
+
+    // "Similar" tab - TMDb's own recommendation engine (generally more
+    // relevant than its separate "similar" endpoint, which is more literal
+    // genre/keyword matching per TMDb's own docs). Capped at 15; each result
+    // only has `media_type` when it comes from a multi-search, not here, so
+    // it's assumed to match the source title's mediaType (recommendations
+    // are always same-type - a movie's recommendations are always movies).
+    const SIMILAR_LIMIT = 15;
+    const similar = (details.recommendations?.results || [])
+      .slice(0, SIMILAR_LIMIT)
+      .map((r) => ({
+        tmdbId: String(r.id),
+        mediaType,
+        title: r.title || r.name,
+        cover: r.poster_path ? `${TMDB_IMAGE_BASE}${r.poster_path}` : null,
+        releaseDate: r.release_date || r.first_air_date || null,
+        genres: (r.genre_ids || []).map((id) => genreMap[id]).filter(Boolean),
+      }));
+
     const director = details.credits?.crew?.find((c) => c.job === "Director")?.name || null;
     // Full cast list, no cap (the frontend's "View full cast" screen is a
     // plain scrollable list). Movies: TMDb's plain credits.cast is already
@@ -763,6 +783,7 @@ exports.getCinemaDetail = async (req, res) => {
         watchProviders,
         images,
         trailerKey,
+        similar,
       },
     });
   } catch (error) {

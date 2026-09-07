@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal, NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { CinemaReviewPageComponent, ReviewFilter, ReviewSort } from './cinema-review-page.component';
 import { CinemaCastListComponent } from './cinema-cast-list.component';
@@ -8,7 +8,7 @@ import { CinemaAllReviewsComponent } from './cinema-all-reviews.component';
 import { CinemaService } from '../../services/cinema.service';
 import { ReviewService } from '../../services/review.service';
 import { UserService } from '../../services/user.service';
-import { CinemaDetail, CinemaItem, CinemaReview } from '../../models/responses/cinema-response';
+import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../../models/responses/cinema-response';
 
 // Modal wrapper around the presentational CinemaReviewPageComponent - fetches
 // the full detail payload (TMDb + OMDb) for the given record and exposes the
@@ -55,6 +55,7 @@ import { CinemaDetail, CinemaItem, CinemaReview } from '../../models/responses/c
         [watchProviders]="detail.watchProviders"
         [images]="detail.images"
         [trailerKey]="detail.trailerKey"
+        [similar]="detail.similar"
         [isWatchlist]="isWatchlist"
         [isWatched]="isWatched"
         [isTogglingWatchlist]="isTogglingWatchlist"
@@ -69,17 +70,18 @@ import { CinemaDetail, CinemaItem, CinemaReview } from '../../models/responses/c
         (rate)="rate.emit()"
         (markWatched)="onMarkWatched()"
         (viewCast)="switchToCast()"
-        (tabChange)="scrollToBottom()"
         (reviewFilterChange)="reviewFilter = $event"
         (reviewSortChange)="onReviewSortChange($event)"
         (toggleReviewLike)="onToggleReviewLike($event)"
         (seeAllReviews)="switchToAllReviews()"
+        (similarItemClick)="openRelatedTitle($event)"
       ></app-cinema-review-page>
 
       <app-cinema-cast-list
         *ngIf="detail && showFullCast"
         [cast]="detail.cast"
         (back)="switchToReview()"
+        (creditClick)="openRelatedTitle($event)"
       ></app-cinema-cast-list>
 
       <app-cinema-all-reviews
@@ -128,11 +130,43 @@ export class CinemaReviewModalComponent implements OnInit {
 
   constructor(
     public activeModal: NgbActiveModal,
+    private modal: NgbModal,
     private cinemaService: CinemaService,
     private reviewService: ReviewService,
     private userService: UserService,
     private toastr: ToastrService
   ) {}
+
+  // Opens a title clicked from "Similar" or an actor's filmography as a new,
+  // stacked modal instance (ng-bootstrap supports this natively) - untracked
+  // stub record, same as a fresh search result, since there's no CinemaItem
+  // for it yet until the user actually tracks it.
+  openRelatedTitle(item: CinemaPersonCredit): void {
+    const record: CinemaItem = {
+      type: 'Cinema',
+      _id: '',
+      user: '',
+      mediaType: item.mediaType,
+      tmdbId: item.tmdbId,
+      title: item.title,
+      cover: item.cover ?? undefined,
+      releaseDate: item.releaseDate ?? undefined,
+      isWatchlist: false,
+      isWatched: false,
+      isUnrefinedImport: false,
+      traktSynced: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    const modalOptions: NgbModalOptions = {
+      backdrop: 'static',
+      keyboard: true,
+      centered: true,
+      scrollable: false,
+    };
+    const modalRef = this.modal.open(CinemaReviewModalComponent, modalOptions);
+    modalRef.componentInstance.record = record;
+  }
 
   ngOnInit(): void {
     this.isWatchlist = this.record.isWatchlist;
@@ -206,15 +240,6 @@ export class CinemaReviewModalComponent implements OnInit {
   // the cast list already scrolled down if the review page had been scrolled.
   private resetScroll(): void {
     this.scrollContainer.nativeElement.scrollTop = 0;
-  }
-
-  // Deferred a tick so the newly-selected tab's content has actually
-  // rendered (and scrollHeight reflects it) before scrolling to the bottom.
-  scrollToBottom(): void {
-    setTimeout(() => {
-      const el = this.scrollContainer.nativeElement;
-      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-    });
   }
 
   switchToCast(): void {

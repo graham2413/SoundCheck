@@ -542,6 +542,36 @@
   right: -0.25rem;
 }
 
+/* Similar tab cards - matches the "See All Trending" grid card exactly
+   (spacing, badge placement, etc.) rather than the smaller marquee style. */
+.cinema-card-outer {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0b1220;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.cinema-card img {
+  object-fit: cover;
+  border-radius: 0;
+}
+
+.cinema-card-info {
+  width: 100%;
+  padding: 0.4rem 0.55rem 0.5rem;
+}
+
+.cinema-card-date {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.cinema-card-genre {
+  color: #3b82f6;
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+}
+
 .trailer-thumb {
   position: relative;
   width: 100%;

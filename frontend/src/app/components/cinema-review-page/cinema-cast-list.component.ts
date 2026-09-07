@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from
 import { FormsModule } from '@angular/forms';
 import { CinemaPersonDetailComponent } from './cinema-person-detail.component';
 import { CinemaPopularActorsComponent } from './cinema-popular-actors.component';
+import { CinemaPersonCredit } from '../../models/responses/cinema-response';
 
 export interface CastMember {
   personId?: number;
@@ -31,6 +32,7 @@ export class CinemaCastListComponent implements OnChanges {
   @Input() cast: CastMember[] = [];
 
   @Output() back = new EventEmitter<void>();
+  @Output() creditClick = new EventEmitter<CinemaPersonCredit>();
 
   showSearch = false;
   showSortMenu = false;

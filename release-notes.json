@@ -1,14 +1,10 @@
 {
   "New features": [
-    "Movie and show trailers can now be played right in the app, full screen",
-    "Movie and show pages now show extra photos you can swipe through",
-    "Trending movies, shows, and music now show their popularity ranking (#1, #2, etc.)"
+    "Movie and show detail pages now have a 'Similar' tab suggesting related titles you can jump straight into",
+    "Actors' filmography credits are now clickable, taking you right to that movie or show's page"
   ],
   "Performance & stability": [
-    "Fixed trending music showing old, unrelated albums instead of what's actually popular right now",
-    "Fixed movie/show ratings and details sometimes staying out of date for up to a week",
-    "Fixed cast search to also find people by the character they played, not just their name",
-    "Various visual polish and bug fixes across movie/show pages, trending sections, and search"
+    "Various visual polish across trending grids and movie/show detail pages (spacing, loading indicators, badge labels)"
   ]
 }
 

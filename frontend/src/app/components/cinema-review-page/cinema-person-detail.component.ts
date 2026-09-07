@@ -25,6 +25,7 @@ export class CinemaPersonDetailComponent implements OnInit, OnChanges, OnDestroy
   @Input() fallbackProfilePath: string | null = null;
 
   @Output() close = new EventEmitter<void>();
+  @Output() creditClick = new EventEmitter<CinemaPersonCredit>();
 
   detail: CinemaPersonDetail | null = null;
   isLoading = false;

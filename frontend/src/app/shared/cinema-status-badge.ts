@@ -77,3 +77,22 @@ export function getCinemaStatusBadge(item: CinemaStatusBadgeInput): CinemaBadgeV
   }
   return null;
 }
+
+// Shortened labels for dense grids (Similar tab, See All Trending) where the
+// full labels ("Returning to Theaters", "New Season Soon") wrap/overflow the
+// narrower card width. Keyed by kind (not label), so the TV "New Series"
+// label - which reuses the 'new-release' kind - also collapses to "New".
+const SHORT_BADGE_LABELS: Record<CinemaBadgeKind, string> = {
+  'in-theaters': 'Theater',
+  'new-release': 'New',
+  'new-episode': 'Episode',
+  'new-season': 'Season',
+  'airing-soon': 'Airing',
+  'returning-soon': 'Returns',
+  'back-in-theaters': 'Back',
+  'coming-soon': 'Soon',
+};
+
+export function withShortBadgeLabel(badge: CinemaBadgeVm | null): CinemaBadgeVm | null {
+  return badge ? { ...badge, label: SHORT_BADGE_LABELS[badge.kind] } : badge;
+}

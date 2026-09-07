@@ -184,7 +184,7 @@
   </div>
 
   <!-- Tabs -->
-  <div class="tabs-row px-4 mt-4">
+  <div class="tabs-row px-4 mt-4" #tabsRow>
     <button
       type="button"
       class="tab-btn"
@@ -255,6 +255,46 @@
     </div>
     <p *ngIf="!trailerKey" class="text-gray-400 text-sm text-center py-8">
       No trailer available yet.
+    </p>
+  </div>
+
+  <!-- Similar -->
+  <div class="mx-2 mt-4" *ngIf="activeTab === 'Similar'" @slideDown>
+    <div class="flex flex-wrap gap-3" *ngIf="similar.length">
+      <div
+        class="cinema-card-outer w-[7rem] md:w-[10rem] rounded-lg overflow-hidden cursor-pointer"
+        *ngFor="let item of similar; let i = index"
+        (click)="similarItemClick.emit(item)"
+      >
+        <div class="cinema-card relative h-[10.5rem] md:h-[15rem]">
+          <div *ngIf="!similarImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">
+            <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+          </div>
+
+          <img
+            *ngIf="item.cover"
+            [src]="item.cover"
+            [alt]="item.title"
+            loading="lazy"
+            (load)="similarImageLoaded[i] = true"
+            (error)="similarImageLoaded[i] = true"
+            [class.invisible]="!similarImageLoaded[i]"
+            class="h-full w-full object-cover"
+          />
+          <div *ngIf="!item.cover" class="h-full w-full bg-gray-800"></div>
+        </div>
+
+        <div class="cinema-card-info">
+          <p class="cinema-card-date">{{ similarReleaseDate(item) }}</p>
+          <p *ngIf="item.genres?.length" class="cinema-card-genre truncate" [title]="item.genres?.join(', ')">
+            {{ item.genres?.join(', ') }}
+          </p>
+          <app-cinema-badge class="mt-1 block" [badge]="similarBadge(item)"></app-cinema-badge>
+        </div>
+      </div>
+    </div>
+    <p *ngIf="!similar.length" class="text-gray-400 text-sm text-center py-8">
+      Nothing similar found yet.
     </p>
   </div>
 

@@ -88,11 +88,11 @@ async function callTmdb(path, params = {}) {
 // it actually sees changes, instead of just re-reading the same 7-day-stale
 // cached blob) but still writes the fresh result back to cache either way.
 async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = false } = {}) {
-  // v5: bumped so older cached blobs (from before images/videos were added
+  // v6: bumped so older cached blobs (from before recommendations was added
   // to append_to_response) get treated as a miss and re-fetched - otherwise
-  // the trailer/gallery UI silently stays empty for any title already
-  // cached under the old v4 key for its full 7-day TTL.
-  const cacheKey = `tmdb:details:v5:${tmdbId}`;
+  // the "Similar" tab silently stays empty for any title already cached
+  // under the old v5 key for its full 7-day TTL.
+  const cacheKey = `tmdb:details:v6:${tmdbId}`;
   if (!forceRefresh) {
     const cached = await redis.get(cacheKey);
     if (cached) return JSON.parse(cached);
@@ -106,8 +106,8 @@ async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = fals
   // top-level details response never includes it.
   const appendToResponse =
     mediaType === "movie"
-      ? "watch/providers,credits,release_dates,images,videos"
-      : "watch/providers,credits,aggregate_credits,external_ids,images,videos";
+      ? "watch/providers,credits,release_dates,images,videos,recommendations"
+      : "watch/providers,credits,aggregate_credits,external_ids,images,videos,recommendations";
 
   const response = await callTmdb(`/${mediaType}/${tmdbId}`, {
     append_to_response: appendToResponse,
