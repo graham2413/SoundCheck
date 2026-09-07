@@ -1,12 +1,7 @@
-<div class="bg-[#020814] text-white pb-[0.5rem] md:pb-8 md:pt-[0.5rem]">
+<div class="bg-[#020814] text-white pb-[6rem] md:pb-8 md:pt-[0.5rem]">
   <!-- Marquee Container -->
-  <div #marqueeContainer class="marquee-container">
-    <div
-      #marqueeTrack
-      class="marquee-track"
-      *ngIf="!isMarqueeLoading; else loading"
-    >
-      <!-- First copy -->
+  <div class="marquee-container">
+    <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading">
       <ng-container *ngFor="let album of albums; let i = index; trackBy: trackByIndex">
         <div
           class="album-card relative w-[9.5rem] md:w-[13.5rem] h-[9.5rem] md:h-[13.5rem] rounded-lg overflow-hidden"
@@ -30,79 +25,9 @@
             "
             [alt]="album.title"
             decoding="async"
-            (load)="marqueeImageLoaded[i] = true; onFirstBatchImageEvent()"
-            (error)="marqueeImageLoaded[i] = true; onFirstBatchImageEvent()"
+            (load)="marqueeImageLoaded[i] = true"
+            (error)="marqueeImageLoaded[i] = true"
             [class.invisible]="!marqueeImageLoaded[i]"
-            class="w-full h-full object-cover"
-          />
-
-          <!-- Song/Album/EP + release date badge -->
-          <span
-            class="absolute top-2 right-2 bg-black/70 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded"
-          >
-            <span class="uppercase">{{ album?.releaseType || 'Album' }}</span
-            ><ng-container *ngIf="album?.releaseDate">
-              &nbsp;&middot; {{ getShortTimeAgo(album.releaseDate) }}
-            </ng-container>
-          </span>
-
-          <!-- Bottom gradient fade -->
-          <div
-            class="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black via-black/70 to-transparent pointer-events-none"
-          ></div>
-
-          <!-- Title / artist overlay -->
-          <div class="absolute bottom-0 left-0 right-0 p-3 overflow-hidden">
-            <p
-              class="title text-base md:text-lg truncate w-full text-left font-semibold text-white"
-              [title]="album.title"
-            >
-              {{ album.title }}
-            </p>
-            <p
-              class="artist text-sm md:text-base text-gray-300 truncate w-full text-left"
-              [title]="album.artist"
-            >
-              <span
-                *ngIf="album?.isExplicit"
-                class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
-                title="Explicit"
-              >
-                E
-              </span>
-              {{ album.artist }}
-            </p>
-          </div>
-        </div>
-      </ng-container>
-
-      <!-- Second copy (duplicate for infinite scroll) -->
-      <ng-container *ngFor="let album of albums; let i = index; trackBy: trackByIndex">
-        <div
-          class="album-card relative w-[9.5rem] md:w-[13.5rem] h-[9.5rem] md:h-[13.5rem] rounded-lg overflow-hidden"
-          (click)="onCardClick(album, i)"
-        >
-          <!-- Loader -->
-          <div
-            *ngIf="!marqueeImageLoaded[i + albums.length]"
-            class="absolute inset-0 flex items-center justify-center bg-gray-800"
-          >
-            <div
-              class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
-            ></div>
-          </div>
-
-          <!-- Image -->
-          <img
-            [src]="
-              album.cover ||
-              'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-            "
-            [alt]="album.title"
-            decoding="async"
-            (load)="marqueeImageLoaded[i + albums.length] = true"
-            (error)="marqueeImageLoaded[i + albums.length] = true"
-            [class.invisible]="!marqueeImageLoaded[i + albums.length]"
             class="w-full h-full object-cover"
           />
 
@@ -151,7 +76,7 @@
       <div class="marquee-track">
         <div
           *ngFor="let _ of skeletonArray"
-          class="skeleton-card bg-[#1F2937] p-3 rounded-lg h-[12.7rem] md:h-[17.2rem] w-[9.5rem] md:w-[13.5rem] mx-[0.5rem] shrink-0"
+          class="skeleton-card bg-[#1F2937] p-3 rounded-lg h-[12.7rem] md:h-[17.2rem] w-[9.5rem] md:w-[13.5rem] shrink-0"
         >
           <div class="skeleton-img"></div>
           <div class="skeleton-text-group w-full flex flex-col items-start">
@@ -163,3 +88,4 @@
     </ng-template>
   </div>
 </div>
+

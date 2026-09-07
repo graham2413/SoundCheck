@@ -76,7 +76,9 @@ export class CinemaCastListComponent implements OnChanges {
   private recomputeFilteredSortedCast(): void {
     const query = this._searchQuery.trim().toLowerCase();
     const filtered = query
-      ? this.cast.filter((m) => m.name.toLowerCase().includes(query))
+      ? this.cast.filter(
+          (m) => m.name.toLowerCase().includes(query) || m.character?.toLowerCase().includes(query)
+        )
       : this.cast;
 
     const sorted = [...filtered];

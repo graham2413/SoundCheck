@@ -1,21 +1,23 @@
 .marquee-container {
-  overflow: hidden;
-  white-space: nowrap;
   background: #020814;
   color: white;
-  padding: 1rem 0;
   position: relative;
 }
 
 .marquee-track {
   display: flex;
-  width: max-content;
-  padding-left: 3rem;
-  will-change: transform;
+  gap: 0.75rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 1rem 0.75rem;
+}
+
+.marquee-track::-webkit-scrollbar {
+  display: none;
 }
 
 .cinema-card-wrapper {
-  margin: 0 0.5rem;
   flex-shrink: 0;
   cursor: pointer;
   flex: 0 0 auto;
@@ -70,59 +72,6 @@
   border-radius: 0.5rem;
 }
 
-.cinema-card-badge {
-  position: absolute;
-  top: 0.4rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 9999px;
-  font-size: 0.54rem;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: fit-content;
-  max-width: calc(100% - 0.8rem);
-  background: rgba(8, 11, 18, 0.88);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
-}
-
-.cinema-card-badge.badge-in-theaters,
-.cinema-card-badge.badge-new-release,
-.cinema-card-badge.badge-new-episode,
-.cinema-card-badge.badge-new-season {
-  border: 1px solid rgba(34, 197, 94, 0.8);
-  color: #86efac;
-}
-
-.cinema-card-badge.badge-airing-soon {
-  border: 1px solid rgba(20, 184, 166, 0.8);
-  color: #5eead4;
-}
-
-.cinema-card-badge.badge-returning-soon,
-.cinema-card-badge.badge-back-in-theaters {
-  border: 1px solid rgba(251, 191, 36, 0.8);
-  color: #fcd34d;
-}
-
-.cinema-card-badge.badge-coming-soon {
-  border: 1px solid rgba(59, 130, 246, 0.8);
-  color: #93c5fd;
-}
-
-@media (min-width: 768px) {
-  .cinema-card-badge {
-    font-size: 0.68rem;
-    padding: 0.2rem 0.5rem;
-  }
-}
-
-
 @keyframes pulse {
   0% {
     opacity: 0.6;
@@ -147,7 +96,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0 0.5rem;
   flex-shrink: 0;
   flex: 0 0 auto;
   animation: pulse 1.5s ease-in-out infinite;

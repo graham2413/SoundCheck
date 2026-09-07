@@ -53,6 +53,8 @@ import { CinemaDetail, CinemaItem, CinemaReview } from '../../models/responses/c
         [awardsSummary]="detail.awardsSummary"
         [boxOffice]="detail.boxOffice"
         [watchProviders]="detail.watchProviders"
+        [images]="detail.images"
+        [trailerKey]="detail.trailerKey"
         [isWatchlist]="isWatchlist"
         [isWatched]="isWatched"
         [isTogglingWatchlist]="isTogglingWatchlist"

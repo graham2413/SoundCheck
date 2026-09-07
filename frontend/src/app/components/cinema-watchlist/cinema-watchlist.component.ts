@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
 import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
-import { getTvEpisodeBadge, tvEpisodeBadgeLabel as getTvEpisodeBadgeLabel, TvEpisodeBadge } from 'src/app/shared/tv-episode-badge';
-import { getMovieRereleaseBadge, movieRereleaseBadgeLabel as getMovieRereleaseBadgeLabel, MovieRereleaseBadge } from 'src/app/shared/movie-rerelease-badge';
-import { getMovieReleaseBadge, movieReleaseBadgeLabel as getMovieReleaseBadgeLabel, MovieReleaseBadge } from 'src/app/shared/movie-release-badge';
+import { getCinemaStatusBadge, CinemaBadgeVm } from 'src/app/shared/cinema-status-badge';
+import { CinemaBadgeComponent } from 'src/app/shared/cinema-badge/cinema-badge.component';
 
 // Exclusive theatrical windows don't last forever - without this bound, an
 // old catalog title that never got streamingPlatforms/digitalReleaseDate
@@ -23,9 +23,23 @@ const IN_THEATERS_WINDOW_DAYS = 90;
 @Component({
   selector: 'app-cinema-watchlist',
   standalone: true,
-  imports: [CommonModule, InfiniteScrollDirective, TimeAgoPipe],
+  imports: [CommonModule, InfiniteScrollDirective, TimeAgoPipe, CinemaBadgeComponent],
   templateUrl: './cinema-watchlist.component.html',
   styleUrl: './cinema-watchlist.component.css',
+  animations: [
+    // Same fade/slide-in pattern as the calendar page and main search results.
+    trigger('fadeSlideIn', [
+      transition(':enter', [
+        query('@itemAnim', [stagger(50, animateChild())], { optional: true }),
+      ]),
+    ]),
+    trigger('itemAnim', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-16px)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
+      ]),
+    ]),
+  ],
 })
 export class CinemaWatchlistComponent {
   @Input() items: CinemaItem[] = [];
@@ -115,41 +129,12 @@ export class CinemaWatchlistComponent {
   // TV only - "New Episode" (aired recently) / "New Season Soon" (season
   // premiere airs soon) / "Airing Soon" (regular next episode airs soon)
   // badge, independent of the movie-only "Coming Soon" release badge.
-  tvEpisodeBadge(item: CinemaItem): TvEpisodeBadge {
-    if (item.mediaType !== 'tv') return null;
-    return getTvEpisodeBadge(item.lastEpisodeAirDate, item.nextEpisodeAirDate, item.nextEpisodeNumber);
-  }
-
-  // Movie only - a later theatrical reissue on record (e.g. an anniversary
-  // re-release), independent of the "Coming Soon" badge for the original release.
-  movieRereleaseBadge(item: CinemaItem): MovieRereleaseBadge {
-    if (item.mediaType !== 'movie') return null;
-    return getMovieRereleaseBadge(item.rereleaseDate);
-  }
-
-  movieRereleaseBadgeLabel(badge: MovieRereleaseBadge): string {
-    return getMovieRereleaseBadgeLabel(badge);
-  }
-
-  // Movie only - "In Theaters"/"New Release" for the ORIGINAL release, takes
-  // priority over the rerelease badge above (mutually exclusive in practice -
-  // a movie can't be a new release and have a reissue already).
-  movieReleaseBadge(item: CinemaItem): MovieReleaseBadge {
-    if (item.mediaType !== 'movie') return null;
-    return getMovieReleaseBadge({
-      releaseDate: item.releaseDate,
-      hadTheatricalRelease: item.hadTheatricalRelease,
-      hasStreamingAvailability: !!item.streamingPlatforms?.length,
-      digitalReleaseDate: item.digitalReleaseDate,
-    });
-  }
-
-  movieReleaseBadgeLabel(badge: MovieReleaseBadge): string {
-    return getMovieReleaseBadgeLabel(badge);
-  }
-
-  tvEpisodeBadgeLabel(badge: TvEpisodeBadge): string {
-    return getTvEpisodeBadgeLabel(badge);
+  // Same badge logic/priority/icons as everywhere else (see shared/cinema-status-badge.ts).
+  // CinemaItem tracks availability as `streamingPlatforms` (not the
+  // `hasStreamingAvailability` boolean the shared helper expects), so it's
+  // adapted here rather than in the shared helper.
+  cinemaBadge(item: CinemaItem): CinemaBadgeVm | null {
+    return getCinemaStatusBadge({ ...item, hasStreamingAvailability: !!item.streamingPlatforms?.length });
   }
 
   markImageLoaded(i: number): void {

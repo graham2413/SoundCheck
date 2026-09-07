@@ -1,24 +1,25 @@
 .marquee-container {
-  overflow: hidden;
-  white-space: nowrap;
   background: #020814;
   color: white;
-  padding: 1rem 0;
   position: relative;
 }
 
 .marquee-track {
   display: flex;
-  width: max-content;
-  padding-left: 3rem;
-  will-change: transform;
+  gap: 0.75rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 1rem 0.75rem;
+}
+
+.marquee-track::-webkit-scrollbar {
+  display: none;
 }
 
 .album-card {
-  margin: 0 0.5rem;
   flex-shrink: 0;
   cursor: pointer;
-  flex: 0 0 auto;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
@@ -92,7 +93,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0 0.5rem;
   flex-shrink: 0;
   flex: 0 0 auto;
   animation: pulse 1.5s ease-in-out infinite;

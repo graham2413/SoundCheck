@@ -30,7 +30,7 @@ const googleAuthRoutes = require("./auth/google");
 const cron = require("node-cron");
 const spotifyController = require("./controllers/spotifyController");
 const { cronSyncAllArtists } = require('./controllers/mainSearchController');
-const { syncImdbRatings } = require('./utils/imdbRatingsSync');
+const { syncImdbRatings, logLastSyncedAt } = require('./utils/imdbRatingsSync');
 const { cronRefreshCinemaMetadata, getLocalDayOfWeek } = require('./controllers/cinemaController');
 
 const userRoutes = require("./routes/userRoutes");
@@ -128,10 +128,19 @@ cron.schedule("0 6 * * 5", async () => {
 });
 
 // Sync IMDb's official daily ratings dataset (~1.7M rows, ~9MB compressed)
-// into MongoDB at 2 AM - scheduled before the 3 AM artist sync and 4 AM
-// cinema metadata refresh below so none of these three daily jobs overlap.
-cron.schedule('0 2 * * *', async () => {
-  console.log('🎥 Starting IMDb ratings dataset sync at 2 AM (local)');
+// into MongoDB at 11 AM Central. NOT 2 AM (as it was before) - verified live
+// that IMDb doesn't actually publish that day's refreshed file until ~7:41 AM
+// Central, so the old 2 AM run was always grabbing the *previous* day's file,
+// making our data structurally always ~1 extra day stale. 11 AM gives a
+// ~3+ hour safety buffer past that observed publish time. IMDb only
+// refreshes this dataset once/day, so running more than once/day here
+// wouldn't produce fresher data - it would just waste bandwidth/CPU for no
+// gain (the syncImdbRatings Last-Modified check already skips the
+// download/rewrite entirely on days nothing changed, so this costs nothing
+// extra in storage either - it's an upsert into the same collection, not an
+// additive one).
+cron.schedule('0 11 * * *', async () => {
+  console.log('🎥 Starting IMDb ratings dataset sync at 11 AM (local)');
   await syncImdbRatings().catch((err) => console.error('IMDb ratings sync failed:', err));
 }, {
   timezone: 'America/Chicago'
@@ -168,6 +177,10 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, '0.0.0.0', () =>
   console.log(`🚀 Server running on port ${PORT}`)
 );
+
+// Surface IMDb ratings freshness on every boot so staleness is visible
+// without having to wait for/dig through the next 2 AM cron log.
+logLastSyncedAt().catch((err) => console.error('Failed to log IMDb sync freshness:', err));
 
 process.on('SIGTERM', () => {
   console.log("🛑 Caught SIGTERM: shutting down gracefully...");

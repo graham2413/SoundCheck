@@ -200,6 +200,7 @@ exports.searchCinema = async (req, res) => {
 // days via getTmdbDetails too, so this is a small, bounded, TTL'd addition.
 const TRENDING_MIN_VOTE_COUNT = 15;
 const TRENDING_ENRICHED_CACHE_TTL = 86400; // 24h
+const TRENDING_RESULT_LIMIT = 50; // true top 50 by popularity, numbered 1-50 on the frontend
 
 exports.getCinemaTrending = async (req, res) => {
   try {
@@ -219,6 +220,7 @@ exports.getCinemaTrending = async (req, res) => {
     const results = rawResults
       .filter((r) => (r.vote_count || 0) >= TRENDING_MIN_VOTE_COUNT)
       .sort((a, b) => b.popularity - a.popularity)
+      .slice(0, TRENDING_RESULT_LIMIT)
       .map((r) => ({
         tmdbId: r.id.toString(),
         mediaType,
@@ -696,6 +698,35 @@ exports.getCinemaDetail = async (req, res) => {
       details["watch/providers"]?.results?.US?.flatrate
     );
 
+    // Extra images beyond the main poster (alternate posters + backdrops) -
+    // powers the "More images" gallery on the detail page. Capped since a
+    // popular title can have 100+ of each; ordered by TMDb's own
+    // vote_average (its "best first" ranking for images).
+    const IMAGE_GALLERY_LIMIT = 20;
+    const toImageUrl = (path) => `${TMDB_IMAGE_BASE}${path}`;
+    const images = {
+      backdrops: (details.images?.backdrops || [])
+        .slice(0, IMAGE_GALLERY_LIMIT)
+        .map((img) => toImageUrl(img.file_path)),
+      posters: (details.images?.posters || [])
+        .slice(0, IMAGE_GALLERY_LIMIT)
+        .map((img) => toImageUrl(img.file_path)),
+    };
+
+    // Trailer - prefer an official YouTube "Trailer" (newest first, TMDb
+    // doesn't guarantee order), fall back to any YouTube "Teaser" if no
+    // proper trailer is on record yet (common for unreleased titles).
+    const videos = details.videos?.results || [];
+    const youtubeTrailers = videos.filter((v) => v.site === "YouTube" && v.type === "Trailer");
+    const youtubeTeasers = videos.filter((v) => v.site === "YouTube" && v.type === "Teaser");
+    const bestVideo =
+      youtubeTrailers.find((v) => v.official) ||
+      youtubeTrailers[0] ||
+      youtubeTeasers.find((v) => v.official) ||
+      youtubeTeasers[0] ||
+      null;
+    const trailerKey = bestVideo?.key || null;
+
     res.status(200).json({
       success: true,
       data: {
@@ -730,6 +761,8 @@ exports.getCinemaDetail = async (req, res) => {
         imdbRating: localRating?.imdbRating ?? null,
         imdbVoteCount: localRating?.voteCount ?? null,
         watchProviders,
+        images,
+        trailerKey,
       },
     });
   } catch (error) {
@@ -746,18 +779,26 @@ exports.getCinemaPersonDetail = async (req, res) => {
   try {
     const { personId } = req.params;
 
-    const details = await getTmdbPersonDetails(personId);
+    const [details, movieGenreMap, tvGenreMap] = await Promise.all([
+      getTmdbPersonDetails(personId),
+      getGenreMap("movie"),
+      getGenreMap("tv"),
+    ]);
     if (!details) {
       return res.status(404).json({ success: false, message: "Person not found" });
     }
 
-    const toCredit = (c) => ({
-      tmdbId: String(c.id),
-      mediaType: c.media_type,
-      title: c.title || c.name,
-      cover: c.poster_path ? `${TMDB_IMAGE_BASE}${c.poster_path}` : null,
-      releaseDate: c.release_date || c.first_air_date || null,
-    });
+    const toCredit = (c) => {
+      const genreMap = c.media_type === "tv" ? tvGenreMap : movieGenreMap;
+      return {
+        tmdbId: String(c.id),
+        mediaType: c.media_type,
+        title: c.title || c.name,
+        cover: c.poster_path ? `${TMDB_IMAGE_BASE}${c.poster_path}` : null,
+        releaseDate: c.release_date || c.first_air_date || null,
+        genres: (c.genre_ids || []).map((id) => genreMap[id]).filter(Boolean),
+      };
+    };
 
     // A person can appear more than once in combined_credits.cast for the
     // same title (e.g. multiple TV credit entries per season) - dedupe by

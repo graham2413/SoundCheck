@@ -7,6 +7,7 @@
 </p>
 
 <div
+  @fadeSlideIn
   *ngIf="!isLoading && items.length > 0 && !groupByReleaseStatus"
   class="flex flex-col gap-3 max-w-3xl mx-auto"
   infiniteScroll
@@ -22,6 +23,7 @@
 </div>
 
 <div
+  @fadeSlideIn
   *ngIf="!isLoading && items.length > 0 && groupByReleaseStatus"
   class="flex flex-col gap-5 max-w-3xl mx-auto"
   infiniteScroll
@@ -55,6 +57,7 @@
 
 <ng-template #row let-item="item" let-i="i">
   <div
+    @itemAnim
     (click)="onItemClick(item, i)"
     class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
     style="background-color: #101621; border-color: #212530"
@@ -121,42 +124,7 @@
         </p>
       </div>
       <div class="flex items-center justify-between gap-2 flex-wrap mt-2 mb-0.5">
-        <span
-          *ngIf="isComingSoon(item.releaseDate) && !tvEpisodeBadge(item)"
-          class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
-          style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.5); color: #93c5fd"
-        >
-          Coming Soon
-        </span>
-        <span
-          *ngIf="tvEpisodeBadge(item) as badge"
-          class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
-          [ngStyle]="
-            badge === 'new-season'
-              ? { background: 'rgba(167, 139, 250, 0.15)', border: '1px solid rgba(167, 139, 250, 0.5)', color: '#c4b5fd' }
-              : { background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.5)', color: '#86efac' }
-          "
-        >
-          {{ tvEpisodeBadgeLabel(badge) }}
-        </span>
-        <span
-          *ngIf="!isComingSoon(item.releaseDate) && movieReleaseBadge(item) as releaseBadge"
-          class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
-          [ngStyle]="
-            releaseBadge === 'in-theaters'
-              ? { background: 'rgba(20, 184, 166, 0.15)', border: '1px solid rgba(20, 184, 166, 0.5)', color: '#5eead4' }
-              : { background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.5)', color: '#86efac' }
-          "
-        >
-          {{ movieReleaseBadgeLabel(releaseBadge) }}
-        </span>
-        <span
-          *ngIf="!isComingSoon(item.releaseDate) && !movieReleaseBadge(item) && movieRereleaseBadge(item) as movieBadge"
-          class="inline-block w-fit flex-shrink-0 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-semibold"
-          style="background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.5); color: #fcd34d"
-        >
-          {{ movieRereleaseBadgeLabel(movieBadge) }}
-        </span>
+        <app-cinema-badge [badge]="cinemaBadge(item)"></app-cinema-badge>
         <span
           *ngIf="watchlistAddedDate(item) as addedDate"
           class="text-gray-500 text-xs flex-shrink-0 whitespace-nowrap ml-auto"

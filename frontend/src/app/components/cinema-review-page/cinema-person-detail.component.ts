@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { CinemaPersonDetail, CinemaPersonCredit } from 'src/app/models/responses/cinema-response';
+import { getCinemaStatusBadge, CinemaBadgeVm } from 'src/app/shared/cinema-status-badge';
+import { CinemaBadgeComponent } from 'src/app/shared/cinema-badge/cinema-badge.component';
 
 // Bottom-sheet popup (not full-screen) shown when tapping a cast member row -
 // bio + a horizontally-scrollable filmography (Acting/Directed toggle, full
@@ -10,7 +12,7 @@ import { CinemaPersonDetail, CinemaPersonCredit } from 'src/app/models/responses
 @Component({
   selector: 'app-cinema-person-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CinemaBadgeComponent],
   templateUrl: './cinema-person-detail.component.html',
   styleUrl: './cinema-person-detail.component.css',
 })
@@ -28,6 +30,7 @@ export class CinemaPersonDetailComponent implements OnInit, OnChanges, OnDestroy
   isLoading = false;
   activeTab: 'acting' | 'directed' = 'acting';
   isBioExpanded = false;
+  creditImageLoaded: boolean[] = [];
 
   constructor(private cinemaService: CinemaService) {}
 
@@ -53,12 +56,18 @@ export class CinemaPersonDetailComponent implements OnInit, OnChanges, OnDestroy
         next: (res) => {
           this.detail = res.data;
           this.isLoading = false;
+          this.creditImageLoaded = new Array(this.credits.length).fill(false);
         },
         error: () => {
           this.isLoading = false;
         },
       });
     }
+  }
+
+  selectTab(tab: 'acting' | 'directed'): void {
+    this.activeTab = tab;
+    this.creditImageLoaded = new Array(this.credits.length).fill(false);
   }
 
   get credits(): CinemaPersonCredit[] {
@@ -68,5 +77,14 @@ export class CinemaPersonDetailComponent implements OnInit, OnChanges, OnDestroy
 
   formattedYear(releaseDate: string | null): string {
     return releaseDate ? releaseDate.slice(0, 4) : 'TBA';
+  }
+
+  // Same badge logic/priority/icons as everywhere else (see shared/cinema-status-badge.ts).
+  // Filmography credits only carry mediaType/releaseDate (no theatrical/
+  // streaming/episode-air-date fields), so in practice only "Coming Soon"
+  // can ever show here - that's the honest subset available without an
+  // extra per-title API call for every credit in a filmography.
+  creditBadge(credit: CinemaPersonCredit): CinemaBadgeVm | null {
+    return getCinemaStatusBadge(credit);
   }
 }

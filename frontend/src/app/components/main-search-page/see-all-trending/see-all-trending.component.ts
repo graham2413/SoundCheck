@@ -1,13 +1,12 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { SpotifyService } from 'src/app/services/spotify.service';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { AlbumImage } from '../../../models/responses/album-images-response';
 import { CinemaSearchResult } from '../../../models/responses/cinema-response';
-import { getMovieReleaseBadge, movieReleaseBadgeLabel } from '../../../shared/movie-release-badge';
-import { getMovieRereleaseBadge, movieRereleaseBadgeLabel } from '../../../shared/movie-rerelease-badge';
-import { getTvEpisodeBadge, tvEpisodeBadgeLabel } from '../../../shared/tv-episode-badge';
-import { getCinemaBadgeIcon } from '../../../shared/badge-icon';
+import { getCinemaStatusBadge, CinemaBadgeVm } from '../../../shared/cinema-status-badge';
+import { CinemaBadgeComponent } from '../../../shared/cinema-badge/cinema-badge.component';
 
 export type SeeAllTrendingKind = 'music' | 'cinema';
 
@@ -18,9 +17,24 @@ export type SeeAllTrendingKind = 'music' | 'cinema';
 @Component({
   selector: 'app-see-all-trending',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CinemaBadgeComponent],
   templateUrl: './see-all-trending.component.html',
   styleUrls: ['./see-all-trending.component.css'],
+  animations: [
+    // Same fade/slide-in pattern as the calendar page, watchlist, and main
+    // search results.
+    trigger('fadeSlideIn', [
+      transition(':enter', [
+        query('@itemAnim', [stagger(50, animateChild())], { optional: true }),
+      ]),
+    ]),
+    trigger('itemAnim', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-16px)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
+      ]),
+    ]),
+  ],
 })
 export class SeeAllTrendingComponent implements OnInit, OnChanges {
   @Input() kind: SeeAllTrendingKind = 'music';
@@ -88,6 +102,14 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
     this.musicCardClick.emit({ album: this.albums[index], list: this.albums, index });
   }
 
+  // Same upscale the marquee applies (see marquee.component.ts) - stored
+  // Deezer cover URLs default to a small size unless a bigger one is requested.
+  highQualityCover(imageUrl: string): string {
+    if (!imageUrl) return '';
+    if (imageUrl.includes('api.deezer.com')) return `${imageUrl}?size=xl`;
+    return imageUrl;
+  }
+
   onCinemaCardClick(index: number): void {
     this.cinemaCardClick.emit({ item: this.cinemaItems[index], list: this.cinemaItems, index });
   }
@@ -98,32 +120,8 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
     return new Date(item.releaseDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   }
 
-  private isComingSoon(releaseDate?: string | null): boolean {
-    if (!releaseDate) return false;
-    const todayStr = new Date().toISOString().slice(0, 10);
-    return releaseDate.slice(0, 10) > todayStr;
-  }
-
-  // Same badge logic/priority/icons as the marquee (see cinema-marquee.component.ts) -
-  // full label text here since this grid's cards have more room than the marquee.
-  cinemaBadge(item: CinemaSearchResult): { kind: string; label: string; icon: string } | null {
-    if (item.mediaType === 'tv') {
-      const episodeBadge = getTvEpisodeBadge(item.lastEpisodeAirDate, item.nextEpisodeAirDate, item.nextEpisodeNumber);
-      if (episodeBadge) return { kind: episodeBadge, label: tvEpisodeBadgeLabel(episodeBadge), icon: getCinemaBadgeIcon(episodeBadge) };
-      if (this.isComingSoon(item.releaseDate)) return { kind: 'coming-soon', label: 'Coming Soon', icon: getCinemaBadgeIcon('coming-soon') };
-      return null;
-    }
-
-    const releaseBadge = getMovieReleaseBadge({
-      releaseDate: item.releaseDate,
-      hadTheatricalRelease: item.hadTheatricalRelease,
-      hasStreamingAvailability: item.hasStreamingAvailability,
-      digitalReleaseDate: item.digitalReleaseDate,
-    });
-    if (releaseBadge) return { kind: releaseBadge, label: movieReleaseBadgeLabel(releaseBadge), icon: getCinemaBadgeIcon(releaseBadge) };
-    const rereleaseBadge = getMovieRereleaseBadge(item.rereleaseDate);
-    if (rereleaseBadge) return { kind: rereleaseBadge, label: movieRereleaseBadgeLabel(rereleaseBadge), icon: getCinemaBadgeIcon(rereleaseBadge) };
-    if (this.isComingSoon(item.releaseDate)) return { kind: 'coming-soon', label: 'Coming Soon', icon: getCinemaBadgeIcon('coming-soon') };
-    return null;
+  // Same badge logic/priority/icons as everywhere else (see shared/cinema-status-badge.ts).
+  cinemaBadge(item: CinemaSearchResult): CinemaBadgeVm | null {
+    return getCinemaStatusBadge(item);
   }
 }

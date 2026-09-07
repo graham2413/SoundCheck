@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PROVIDER_LOGO_OVERRIDES } from '../../shared/provider-logo-overrides';
-import { getTvEpisodeBadge, tvEpisodeBadgeLabel, TvEpisodeBadge } from '../../shared/tv-episode-badge';
-import { getMovieRereleaseBadge, movieRereleaseBadgeLabel, MovieRereleaseBadge } from '../../shared/movie-rerelease-badge';
-import { getMovieReleaseBadge, movieReleaseBadgeLabel, MovieReleaseBadge } from '../../shared/movie-release-badge';
+import { getCinemaStatusBadge, CinemaBadgeVm } from '../../shared/cinema-status-badge';
+import { CinemaBadgeComponent } from '../../shared/cinema-badge/cinema-badge.component';
 import { CinemaReview } from '../../models/responses/cinema-response';
 
 export interface WatchProvider {
@@ -23,11 +23,11 @@ export type ReviewSort = 'recent' | 'highest' | 'liked';
 @Component({
   selector: 'app-cinema-review-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CinemaBadgeComponent],
   templateUrl: './cinema-review-page.component.html',
   styleUrls: ['./cinema-review-page.component.css'],
 })
-export class CinemaReviewPageComponent implements OnInit {
+export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() title = '';
   @Input() cover: string | null = null;
   @Input() mediaType: 'movie' | 'tv' | null = null;
@@ -57,6 +57,8 @@ export class CinemaReviewPageComponent implements OnInit {
   @Input() awardsSummary: string | null = null;
   @Input() boxOffice: string | null = null;
   @Input() watchProviders: WatchProvider[] = [];
+  @Input() images: { backdrops: string[]; posters: string[] } = { backdrops: [], posters: [] };
+  @Input() trailerKey: string | null = null;
 
   // Reviews tab (chunk 1: in-place preview list; "See All" navigates to a
   // dedicated full-screen list in a later chunk).
@@ -67,7 +69,6 @@ export class CinemaReviewPageComponent implements OnInit {
   @Input() reviewSort: ReviewSort = 'recent';
 
   @Output() back = new EventEmitter<void>();
-  @Output() moreOptions = new EventEmitter<void>();
   @Output() addToWatchlist = new EventEmitter<void>();
   @Output() rate = new EventEmitter<void>();
   @Output() markWatched = new EventEmitter<void>();
@@ -81,10 +82,224 @@ export class CinemaReviewPageComponent implements OnInit {
   @Output() seeAllReviews = new EventEmitter<void>();
 
   isDescriptionExpanded = false;
+  isDescriptionOverflowing = false;
   posterLoaded = false;
+  isTrailerFullScreen = false;
+
+  // Fullscreen image viewer state - poster + gallery images treated as one
+  // navigable list so "next/previous" and swipe work across both. Rendered
+  // as a 3-slide (prev/current/next) track so swiping slides continuously
+  // (like a native photo viewer) instead of an instant image swap.
+  private fullScreenImages: string[] = [];
+  private fullScreenIndex = 0;
+  isSwiping = false; // true only while actively dragging - disables the CSS transition so the track follows the finger with no lag
+  dragOffsetPx = 0;
+  private swipeStartX: number | null = null;
+  private static readonly SWIPE_THRESHOLD_PX = 60;
+  private static readonly SWIPE_TRANSITION_MS = 250;
+
+  @ViewChild('descriptionEl') descriptionEl?: ElementRef<HTMLElement>;
+  @ViewChild('galleryRow') galleryRow?: ElementRef<HTMLElement>;
+  @ViewChild('trailerOverlay') trailerOverlay?: ElementRef<HTMLElement>;
+
+  constructor(private sanitizer: DomSanitizer) {}
 
   markPosterLoaded(): void {
     this.posterLoaded = true;
+  }
+
+  // Shared by the poster and the "More images" gallery below - tap any of
+  // them to view full screen, landing on whichever one was tapped within
+  // the combined poster+gallery list so next/previous can move through all of them.
+  openFullScreenImage(url: string | null): void {
+    if (!url) return;
+    this.fullScreenImages = [this.cover, ...this.galleryImages].filter((u): u is string => !!u);
+    this.fullScreenIndex = Math.max(0, this.fullScreenImages.indexOf(url));
+    this.dragOffsetPx = 0;
+  }
+
+  closeFullScreenImage(): void {
+    this.fullScreenImages = [];
+  }
+
+  get fullScreenImageUrl(): string | null {
+    return this.fullScreenImages[this.fullScreenIndex] ?? null;
+  }
+
+  get prevFullScreenImageUrl(): string | null {
+    if (this.fullScreenImages.length < 2) return this.fullScreenImageUrl;
+    const idx = (this.fullScreenIndex - 1 + this.fullScreenImages.length) % this.fullScreenImages.length;
+    return this.fullScreenImages[idx];
+  }
+
+  get nextFullScreenImageUrl(): string | null {
+    if (this.fullScreenImages.length < 2) return this.fullScreenImageUrl;
+    const idx = (this.fullScreenIndex + 1) % this.fullScreenImages.length;
+    return this.fullScreenImages[idx];
+  }
+
+  get hasMultipleFullScreenImages(): boolean {
+    return this.fullScreenImages.length > 1;
+  }
+
+  // The track holds 3 full-viewport-width slides (prev/current/next) -
+  // centered at rest by sitting on the middle slide, offset live by
+  // dragOffsetPx while swiping.
+  get trackTransform(): string {
+    return `translateX(calc(-100vw + ${this.dragOffsetPx}px))`;
+  }
+
+  private nextFullScreenImage(): void {
+    if (!this.fullScreenImages.length) return;
+    this.fullScreenIndex = (this.fullScreenIndex + 1) % this.fullScreenImages.length;
+  }
+
+  private prevFullScreenImage(): void {
+    if (!this.fullScreenImages.length) return;
+    this.fullScreenIndex = (this.fullScreenIndex - 1 + this.fullScreenImages.length) % this.fullScreenImages.length;
+  }
+
+  // Button-click equivalent of a completed swipe - animates the track the
+  // rest of the way to the next/previous slide instead of an instant swap.
+  animateNextFullScreenImage(): void {
+    this.animateToSlide(true);
+  }
+
+  animatePrevFullScreenImage(): void {
+    this.animateToSlide(false);
+  }
+
+  private animateToSlide(goingNext: boolean): void {
+    if (!this.hasMultipleFullScreenImages) return;
+    this.isSwiping = false; // ensure the transition is enabled
+    this.dragOffsetPx = goingNext ? -window.innerWidth : window.innerWidth;
+    this.settleAfterSwipe(goingNext);
+  }
+
+  // Snaps the track instantly back to center (no transition) after the
+  // slide/index change, then re-enables the transition on the next frame -
+  // same double-rAF technique used for ringsReady above, to avoid a visible
+  // flicker from the instant reset.
+  private settleAfterSwipe(goingNext: boolean): void {
+    setTimeout(() => {
+      if (goingNext) this.nextFullScreenImage();
+      else this.prevFullScreenImage();
+      this.isSwiping = true;
+      this.dragOffsetPx = 0;
+      requestAnimationFrame(() => requestAnimationFrame(() => (this.isSwiping = false)));
+    }, CinemaReviewPageComponent.SWIPE_TRANSITION_MS);
+  }
+
+  // Swipe left/right through the fullscreen images on touch devices - the
+  // track follows the finger live (touchmove), then either finishes
+  // sliding to the next/previous image or snaps back to center.
+  onFullScreenTouchStart(event: TouchEvent): void {
+    this.swipeStartX = event.touches[0]?.clientX ?? null;
+    this.isSwiping = true;
+  }
+
+  onFullScreenTouchMove(event: TouchEvent): void {
+    if (this.swipeStartX === null) return;
+    const x = event.touches[0]?.clientX ?? this.swipeStartX;
+    this.dragOffsetPx = x - this.swipeStartX;
+  }
+
+  onFullScreenTouchEnd(): void {
+    if (this.swipeStartX === null) return;
+    const delta = this.dragOffsetPx;
+    this.swipeStartX = null;
+    this.isSwiping = false; // re-enable the transition so the rest of this move animates
+
+    const passedThreshold = this.hasMultipleFullScreenImages && Math.abs(delta) >= CinemaReviewPageComponent.SWIPE_THRESHOLD_PX;
+    if (!passedThreshold) {
+      this.dragOffsetPx = 0;
+      return;
+    }
+
+    const goingNext = delta < 0;
+    this.dragOffsetPx = goingNext ? -window.innerWidth : window.innerWidth;
+    this.settleAfterSwipe(goingNext);
+  }
+
+  // "More images" gallery - backdrops first (widescreen scene/promo shots),
+  // then alternate posters, skipping whichever poster's already shown up top.
+  get galleryImages(): string[] {
+    return [...this.images.backdrops, ...this.images.posters.filter((url) => url !== this.cover)];
+  }
+
+  // Mouse-wheel horizontal scroll (desktop users without a trackpad have no
+  // other way to move a horizontally-scrolling row - a plain vertical wheel
+  // does nothing on it by default) and the same for the arrow buttons.
+  onGalleryWheel(event: WheelEvent): void {
+    const el = this.galleryRow?.nativeElement;
+    if (!el) return;
+    event.preventDefault();
+    el.scrollBy({ left: event.deltaY, behavior: 'auto' });
+  }
+
+  scrollGallery(direction: 1 | -1): void {
+    const el = this.galleryRow?.nativeElement;
+    if (!el) return;
+    el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: 'smooth' });
+  }
+
+  // YouTube's own thumbnail CDN (no TMDb/API call needed) - hqdefault is
+  // available for every video, unlike maxresdefault which 404s on some.
+  get trailerThumbnailUrl(): string | null {
+    return this.trailerKey ? `https://img.youtube.com/vi/${this.trailerKey}/hqdefault.jpg` : null;
+  }
+
+  // bypassSecurityTrustResourceUrl is required for any *dynamic* iframe src -
+  // Angular blocks it otherwise since iframe src is a RESOURCE_URL sink.
+  // Safe here since trailerKey only ever comes from our own backend's TMDb
+  // passthrough, never raw user input.
+  //
+  // Memoized (not recomputed on every call) - a getter that returns a fresh
+  // SafeResourceUrl object each time makes Angular see the iframe's [src]
+  // binding as "changed" on every change-detection cycle, even when the
+  // underlying URL is identical, which reloads the iframe and restarts the
+  // video. That's exactly what caused clicking the player to restart
+  // instead of pause: any click triggers CD, CD re-evaluates this getter,
+  // and the "new" object reference looked like a real src change.
+  private cachedTrailerKey: string | null = null;
+  private cachedTrailerEmbedUrl: SafeResourceUrl | null = null;
+
+  get trailerEmbedUrl(): SafeResourceUrl | null {
+    if (!this.trailerKey) return null;
+    if (this.cachedTrailerKey !== this.trailerKey) {
+      this.cachedTrailerKey = this.trailerKey;
+      this.cachedTrailerEmbedUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+        `https://www.youtube.com/embed/${this.trailerKey}?autoplay=1&rel=0`
+      );
+    }
+    return this.cachedTrailerEmbedUrl;
+  }
+
+  playTrailerFullScreen(): void {
+    if (!this.trailerKey) return;
+    this.isTrailerFullScreen = true;
+    // Synchronous, in the same call stack as the click - the overlay
+    // element already exists (it's always in the DOM, just hidden), so this
+    // doesn't need to wait a tick like the old *ngIf'd version did. Browsers
+    // reject requestFullscreen() calls that aren't part of a real user
+    // gesture's call stack (e.g. after a setTimeout/microtask), which is
+    // exactly what silently broke it before.
+    this.trailerOverlay?.nativeElement.requestFullscreen?.().catch(() => {});
+  }
+
+  closeTrailerFullScreen(): void {
+    this.isTrailerFullScreen = false;
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  }
+
+  // Keeps isTrailerFullScreen in sync if the user exits fullscreen via
+  // Escape or the browser/OS's own control instead of our close button -
+  // otherwise the dark overlay would stay stuck open behind the exited player.
+  @HostListener('document:fullscreenchange')
+  onFullscreenChange(): void {
+    if (!document.fullscreenElement && this.isTrailerFullScreen) {
+      this.isTrailerFullScreen = false;
+    }
   }
 
   readonly tabs = ['Overview', 'Reviews', 'Trailer', 'Similar'] as const;
@@ -182,59 +397,21 @@ export class CinemaReviewPageComponent implements OnInit {
     this.reviewSortChange.emit(sort);
   }
 
-  private static readonly NEW_RELEASE_WINDOW_DAYS = 30;
   private static readonly RING_RADIUS = 45;
 
-  // TV only - "New Episode" (aired recently) / "New Season Soon" (premiere
-  // airs soon) / "Airing Soon" (regular next episode airs soon, only after a
-  // >30-day gap) - one at a time, mirrors the same shared logic used by
-  // watchlist/search rows.
-  get episodeBadge(): TvEpisodeBadge {
-    if (this.mediaType !== 'tv') return null;
-    return getTvEpisodeBadge(this.lastEpisodeAirDate, this.nextEpisodeAirDate, this.nextEpisodeNumber);
-  }
-
-  get isNewEpisode(): boolean {
-    return this.episodeBadge === 'new-episode';
-  }
-
-  get isAiringSoon(): boolean {
-    return this.episodeBadge === 'airing-soon';
-  }
-
-  get isNewSeasonSoon(): boolean {
-    return this.episodeBadge === 'new-season';
-  }
-
-  get episodeBadgeLabel(): string {
-    return tvEpisodeBadgeLabel(this.episodeBadge);
-  }
-
-  // Movie only - a later theatrical reissue on record (e.g. an anniversary
-  // re-release), independent of the "Coming Soon"/"New Release" badges above.
-  get movieRereleaseBadge(): MovieRereleaseBadge {
-    if (this.mediaType !== 'movie') return null;
-    return getMovieRereleaseBadge(this.rereleaseDate);
-  }
-
-  get movieRereleaseBadgeLabel(): string {
-    return movieRereleaseBadgeLabel(this.movieRereleaseBadge);
-  }
-
-  // Movie only - "In Theaters"/"New Release" for the ORIGINAL release, takes
-  // priority over the rerelease badge above.
-  get movieReleaseBadge(): MovieReleaseBadge {
-    if (this.mediaType !== 'movie') return null;
-    return getMovieReleaseBadge({
+  // Same badge logic/priority/icons as everywhere else (see shared/cinema-status-badge.ts).
+  get detailBadge(): CinemaBadgeVm | null {
+    return getCinemaStatusBadge({
+      mediaType: this.mediaType || 'movie',
       releaseDate: this.releaseDate,
       hadTheatricalRelease: this.hadTheatricalRelease,
       hasStreamingAvailability: this.watchProviders.length > 0,
       digitalReleaseDate: this.digitalReleaseDate,
+      rereleaseDate: this.rereleaseDate,
+      lastEpisodeAirDate: this.lastEpisodeAirDate,
+      nextEpisodeAirDate: this.nextEpisodeAirDate,
+      nextEpisodeNumber: this.nextEpisodeNumber,
     });
-  }
-
-  get movieReleaseBadgeLabel(): string {
-    return movieReleaseBadgeLabel(this.movieReleaseBadge);
   }
 
   get ringCircumference(): number {
@@ -254,6 +431,30 @@ export class CinemaReviewPageComponent implements OnInit {
     // can get batched with the value update into one paint on a fast local
     // dev server, silently skipping the animation.
     requestAnimationFrame(() => requestAnimationFrame(() => (this.ringsReady = true)));
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['description']) {
+      this.isDescriptionExpanded = false;
+      // Wait for the clamped paragraph to render before measuring it.
+      setTimeout(() => this.checkDescriptionOverflow());
+    }
+  }
+
+  ngAfterViewInit(): void {
+    // Deferred (not called synchronously here) - mutating a bound value
+    // synchronously inside ngAfterViewInit runs before Angular's dev-mode
+    // checkNoChanges pass has finished, which throws NG0100
+    // (ExpressionChangedAfterItHasBeenCheckedError).
+    setTimeout(() => this.checkDescriptionOverflow());
+  }
+
+  // "Read more" should only appear when the description is actually clamped
+  // past 3 lines - short descriptions were always showing the button even
+  // though there was nothing left to expand.
+  private checkDescriptionOverflow(): void {
+    const el = this.descriptionEl?.nativeElement;
+    this.isDescriptionOverflowing = !!el && el.scrollHeight > el.clientHeight + 1;
   }
 
   get appRingDashoffset(): number {
@@ -296,15 +497,6 @@ export class CinemaReviewPageComponent implements OnInit {
 
   get isUpcoming(): boolean {
     return !!this.releaseDate && this.parseLocalDate(this.releaseDate) > new Date();
-  }
-
-  // TV only - the series itself just premiered recently (movies use the
-  // smarter movieReleaseBadge above, which accounts for theatrical windows).
-  get isNewSeriesRelease(): boolean {
-    if (this.mediaType !== 'tv' || !this.releaseDate || this.isUpcoming) return false;
-    const daysSinceRelease =
-      (Date.now() - this.parseLocalDate(this.releaseDate).getTime()) / (1000 * 60 * 60 * 24);
-    return daysSinceRelease <= CinemaReviewPageComponent.NEW_RELEASE_WINDOW_DAYS;
   }
 
   get formattedReleaseDate(): string | null {

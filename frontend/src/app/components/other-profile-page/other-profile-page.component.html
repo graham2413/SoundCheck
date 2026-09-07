@@ -811,15 +811,15 @@
           <ng-container *ngSwitchCase="'friends'">
             <!-- Search Bar -->
             <div class="flex justify-center px-2 mb-3">
-              <div class="relative w-full max-w-[500px] md:max-w-[760px]">
+              <div class="relative w-full max-w-3xl">
                 <i
                   *ngIf="!searchQuery.trim()"
-                  class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
                 ></i>
                 <i
                   *ngIf="searchQuery.trim()"
                   (click)="clearSearchQuery()"
-                  class="fas fa-times absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition cursor-pointer"
+                  class="fas fa-times absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition cursor-pointer"
                 ></i>
                 <input
                   type="text"
@@ -827,7 +827,7 @@
                   (input)="filterFriends()"
                   placeholder="Search friends..."
                   style="background-color: #131928"
-                  class="w-full p-2 pl-10 text-base md:text-xl rounded-lg text-white placeholder-gray-300 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  class="w-full pl-10 pr-4 py-2 rounded-full text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:border-[#0F5EE4]"
                 />
               </div>
             </div>

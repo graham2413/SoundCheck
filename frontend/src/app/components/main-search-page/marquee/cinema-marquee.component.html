@@ -1,7 +1,6 @@
-<div class="bg-[#020814] text-white pb-[0.5rem] md:pb-8 md:pt-[0.5rem]">
+<div class="bg-[#020814] text-white pb-[6rem] md:pb-8 md:pt-[0.5rem]">
   <div class="marquee-container">
-    <div #marqueeTrack class="marquee-track" *ngIf="!isMarqueeLoading; else loading">
-      <!-- First copy -->
+    <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading">
       <ng-container *ngFor="let item of items; let i = index; trackBy: trackByIndex">
         <div class="cinema-card-wrapper" (click)="onCardClick(item, i)">
           <div class="cinema-card-outer w-[7rem] md:w-[10rem] rounded-lg overflow-hidden">
@@ -17,65 +16,17 @@
               "
               [alt]="item.title"
               decoding="async"
-              (load)="marqueeImageLoaded[i] = true; onFirstBatchImageEvent()"
-              (error)="marqueeImageLoaded[i] = true; onFirstBatchImageEvent()"
+              (load)="marqueeImageLoaded[i] = true"
+              (error)="marqueeImageLoaded[i] = true"
               [class.invisible]="!marqueeImageLoaded[i]"
               class="w-full h-full object-cover"
             />
 
-            <span
-              *ngIf="marqueeImageLoaded[i] && marqueeBadge(item) as badge"
-              class="cinema-card-badge"
-              [ngClass]="'badge-' + badge.kind"
-            >
-              <i class="fas" [ngClass]="marqueeBadgeIcon(badge)"></i>
-              {{ marqueeBadgeLabel(badge) }}
-            </span>
-          </div>
-
-          <div class="cinema-card-info">
-            <p class="cinema-card-date">{{ releaseMonthYear(item) }}</p>
-            <p *ngIf="item.genres?.length" class="cinema-card-genre truncate" [title]="item.genres?.join(', ')">
-              {{ item.genres?.join(', ') }}
-            </p>
-          </div>
-          </div>
-        </div>
-      </ng-container>
-
-      <!-- Second copy (duplicate for infinite scroll) -->
-      <ng-container *ngFor="let item of items; let i = index; trackBy: trackByIndex">
-        <div class="cinema-card-wrapper" (click)="onCardClick(item, i)">
-          <div class="cinema-card-outer w-[7rem] md:w-[10rem] rounded-lg overflow-hidden">
-          <div class="cinema-card relative h-[10.5rem] md:h-[15rem]">
-            <div
-              *ngIf="!marqueeImageLoaded[i + items.length]"
-              class="absolute inset-0 flex items-center justify-center bg-gray-800"
-            >
-              <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
-            </div>
-
-            <img
-              [src]="
-                item.cover ||
-                'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-              "
-              [alt]="item.title"
-              decoding="async"
-              (load)="marqueeImageLoaded[i + items.length] = true"
-              (error)="marqueeImageLoaded[i + items.length] = true"
-              [class.invisible]="!marqueeImageLoaded[i + items.length]"
-              class="w-full h-full object-cover"
-            />
-
-            <span
-              *ngIf="marqueeImageLoaded[i + items.length] && marqueeBadge(item) as badge"
-              class="cinema-card-badge"
-              [ngClass]="'badge-' + badge.kind"
-            >
-              <i class="fas" [ngClass]="marqueeBadgeIcon(badge)"></i>
-              {{ marqueeBadgeLabel(badge) }}
-            </span>
+            <app-cinema-badge
+              *ngIf="marqueeImageLoaded[i]"
+              class="cinema-badge--overlay"
+              [badge]="marqueeBadge(item)"
+            ></app-cinema-badge>
           </div>
 
           <div class="cinema-card-info">
@@ -93,7 +44,7 @@
       <div class="marquee-track">
         <div
           *ngFor="let _ of skeletonArray"
-          class="skeleton-card bg-[#1F2937] p-3 rounded-lg h-[12.7rem] md:h-[17.2rem] w-[7rem] md:w-[10rem] mx-[0.5rem] shrink-0"
+          class="skeleton-card bg-[#1F2937] p-3 rounded-lg h-[12.7rem] md:h-[17.2rem] w-[7rem] md:w-[10rem] shrink-0"
         >
           <div class="skeleton-img"></div>
           <div class="skeleton-text-group w-full flex flex-col items-start">

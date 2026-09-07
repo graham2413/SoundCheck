@@ -278,6 +278,12 @@ const setAlbumImages = async () => {
             console.warn(`Failed to fetch release date for Deezer chart album ${album.id}:`, err.message);
           }
 
+          // Same "last N months" recency rule as the Apple pool above - without
+          // this, Deezer's own chart (which mixes in long-standing catalog
+          // favorites/reissues, e.g. a 2006 album placed here once) leaks
+          // decades-old albums into what's supposed to be "trending new music."
+          if (new Date(releaseDate).getTime() < releaseCutoff.getTime()) continue;
+
           // Synthetic popularity from chart position (rank 1 = ~99, rank 100 = ~0)
           const chartPopularity = Math.max(0, 100 - (album.position || 0));
 

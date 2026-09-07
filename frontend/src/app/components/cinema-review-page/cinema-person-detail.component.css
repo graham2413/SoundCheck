@@ -1,1 +1,30 @@
-/* Intentionally empty - all styling is Tailwind utility classes in the template */
+/* Filmography cards - same look as the trending marquee's cinema cards. */
+.cinema-card-outer {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0b1220;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.cinema-card img {
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+.cinema-card-info {
+  width: 100%;
+  padding: 0.4rem 0.15rem 0;
+}
+
+.cinema-card-date {
+  color: #e5e7eb;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-top: 0.1rem;
+}
+
+.cinema-card-genre {
+  color: #3b82f6;
+  font-size: 0.62rem;
+  margin-top: 0.1rem;
+}
+

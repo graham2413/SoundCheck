@@ -157,6 +157,8 @@ export interface CinemaDetail {
   imdbRating: number | null;
   imdbVoteCount: number | null;
   watchProviders: CinemaWatchProvider[];
+  images: { backdrops: string[]; posters: string[] };
+  trailerKey: string | null;
 }
 
 export interface CinemaDetailResponse {
@@ -170,6 +172,7 @@ export interface CinemaPersonCredit {
   title: string;
   cover: string | null;
   releaseDate: string | null;
+  genres?: string[];
 }
 
 // Payload from GET /api/cinema/person/:personId - powers the cast list's

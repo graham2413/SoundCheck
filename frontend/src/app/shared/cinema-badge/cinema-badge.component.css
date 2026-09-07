@@ -1,0 +1,48 @@
+.cinema-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: fit-content;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: rgba(8, 11, 18, 0.88);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+}
+
+/* Overlay variant - absolutely positioned over a poster, like the marquee. */
+:host-context(.cinema-badge--overlay) .cinema-badge {
+  position: absolute;
+  top: 0.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 0.8rem);
+}
+
+.cinema-badge.badge-in-theaters,
+.cinema-badge.badge-new-release,
+.cinema-badge.badge-new-episode,
+.cinema-badge.badge-new-season {
+  border: 1px solid rgba(34, 197, 94, 0.8);
+  color: #86efac;
+}
+
+.cinema-badge.badge-airing-soon {
+  border: 1px solid rgba(20, 184, 166, 0.8);
+  color: #5eead4;
+}
+
+.cinema-badge.badge-returning-soon,
+.cinema-badge.badge-back-in-theaters {
+  border: 1px solid rgba(251, 191, 36, 0.8);
+  color: #fcd34d;
+}
+
+.cinema-badge.badge-coming-soon {
+  border: 1px solid rgba(59, 130, 246, 0.8);
+  color: #93c5fd;
+}

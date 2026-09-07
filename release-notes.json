@@ -1,12 +1,15 @@
 {
   "New features": [
-    "Movie and show info (genres, streaming availability, release status) now stays up to date automatically with a daily background refresh, instead of only updating when you first add something"
+    "Movie and show trailers can now be played right in the app, full screen",
+    "Movie and show pages now show extra photos you can swipe through",
+    "Trending movies, shows, and music now show their popularity ranking (#1, #2, etc.)"
   ],
   "Performance & stability": [
-    "Improved how often movie/show streaming availability gets rechecked, so \"In Theaters\"/\"Available Now\" status stays accurate over time"
+    "Fixed trending music showing old, unrelated albums instead of what's actually popular right now",
+    "Fixed movie/show ratings and details sometimes staying out of date for up to a week",
+    "Fixed cast search to also find people by the character they played, not just their name",
+    "Various visual polish and bug fixes across movie/show pages, trending sections, and search"
   ]
 }
-
-
 
 

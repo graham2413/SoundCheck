@@ -18,8 +18,26 @@ const ImdbRating = require("../models/ImdbRating");
 
 const DATASET_URL = "https://datasets.imdbws.com/title.ratings.tsv.gz";
 const LAST_MODIFIED_CACHE_KEY = "imdb-ratings:last-modified"; // single small key, negligible storage
+const LAST_SYNCED_AT_CACHE_KEY = "imdb-ratings:last-synced-at"; // our own clock - separate from IMDb's Last-Modified header, so staleness is always answerable even if IMDb's header is unchanged
 const BATCH_SIZE = 5000;
 const PROGRESS_LOG_EVERY_N_BATCHES = 20; // ~every 100k rows
+
+// "3h 5m" / "42m" - used in the sync-freshness log line below.
+function formatAge(sinceMs) {
+  const totalMinutes = Math.floor((Date.now() - sinceMs) / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m ago` : `${minutes}m ago`;
+}
+
+async function logLastSyncedAt() {
+  const lastSyncedAt = await redis.get(LAST_SYNCED_AT_CACHE_KEY);
+  if (!lastSyncedAt) {
+    console.log("IMDb ratings: no successful sync recorded yet.");
+    return;
+  }
+  console.log(`IMDb ratings last synced: ${new Date(Number(lastSyncedAt)).toISOString()} (${formatAge(Number(lastSyncedAt))})`);
+}
 
 async function syncImdbRatings() {
   const jobStart = Date.now();
@@ -33,6 +51,7 @@ async function syncImdbRatings() {
 
   if (previouslySynced && previouslySynced === lastModified) {
     console.log(`IMDb ratings dataset unchanged since last sync (${lastModified}) - skipping.`);
+    await logLastSyncedAt();
     return;
   }
 
@@ -85,6 +104,7 @@ async function syncImdbRatings() {
   }
 
   await redis.set(LAST_MODIFIED_CACHE_KEY, lastModified);
+  await redis.set(LAST_SYNCED_AT_CACHE_KEY, String(Date.now()));
 
   const totalSec = (Date.now() - jobStart) / 1000;
   console.log(`IMDb ratings sync complete - ${total} titles upserted in ${totalSec.toFixed(1)}s (${(total / totalSec).toFixed(0)} rows/sec).`);
@@ -99,4 +119,4 @@ async function getLocalImdbRating(imdbId) {
   return { imdbRating: doc.averageRating ?? null, voteCount: doc.numVotes ?? null };
 }
 
-module.exports = { syncImdbRatings, getLocalImdbRating };
+module.exports = { syncImdbRatings, getLocalImdbRating, logLastSyncedAt };

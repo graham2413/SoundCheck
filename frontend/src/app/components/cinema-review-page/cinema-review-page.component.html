@@ -4,14 +4,11 @@
     <button type="button" class="icon-circle-btn" aria-label="Back" (click)="back.emit()">
       <i class="fas fa-arrow-left"></i>
     </button>
-    <button type="button" class="icon-circle-btn" aria-label="More options" (click)="moreOptions.emit()">
-      <i class="fas fa-ellipsis-h"></i>
-    </button>
   </div>
 
   <!-- Poster + Title block -->
   <div class="flex items-start gap-4 px-4 pt-5">
-    <div class="poster-frame">
+    <div class="poster-frame" [class.cursor-pointer]="cover" (click)="openFullScreenImage(cover)">
       <div class="poster-loader" *ngIf="cover && !posterLoaded">
         <div class="poster-loader-spinner"></div>
       </div>
@@ -55,19 +52,7 @@
 
       <div class="flex items-center gap-2 mt-3">
         <span class="cert-pill" *ngIf="certification">{{ certification }}</span>
-        <span class="status-pill status-pill-blue" *ngIf="isUpcoming && !episodeBadge">Coming Soon</span>
-        <span class="status-pill status-pill-green" *ngIf="isNewSeriesRelease">New Release</span>
-        <span
-          class="status-pill"
-          [ngClass]="movieReleaseBadge === 'in-theaters' ? 'status-pill-teal' : 'status-pill-green'"
-          *ngIf="movieReleaseBadge"
-        >
-          {{ movieReleaseBadgeLabel }}
-        </span>
-        <span class="status-pill status-pill-green" *ngIf="isNewEpisode">New Episode</span>
-        <span class="status-pill status-pill-purple" *ngIf="isNewSeasonSoon">{{ episodeBadgeLabel }}</span>
-        <span class="status-pill status-pill-green" *ngIf="isAiringSoon">Airing Soon</span>
-        <span class="status-pill status-pill-amber" *ngIf="!movieReleaseBadge && movieRereleaseBadge">{{ movieRereleaseBadgeLabel }}</span>
+        <app-cinema-badge [badge]="detailBadge"></app-cinema-badge>
       </div>
     </div>
   </div>
@@ -181,12 +166,14 @@
   <!-- Description -->
   <div class="px-4 mt-4" *ngIf="description">
     <p
+      #descriptionEl
       class="text-gray-300 text-sm leading-relaxed"
       [class.description-clamped]="!isDescriptionExpanded"
     >
       {{ description }}
     </p>
     <button
+      *ngIf="isDescriptionOverflowing"
       type="button"
       class="read-more-btn"
       (click)="isDescriptionExpanded = !isDescriptionExpanded"
@@ -256,6 +243,19 @@
       </div>
       <span class="detail-row-value">{{ boxOffice }}</span>
     </div>
+  </div>
+
+  <!-- Trailer -->
+  <div class="mx-4 mt-4" *ngIf="activeTab === 'Trailer'">
+    <div class="trailer-thumb" *ngIf="trailerKey" (click)="playTrailerFullScreen()">
+      <img [src]="trailerThumbnailUrl" [alt]="title + ' trailer'" />
+      <div class="trailer-play-overlay">
+        <i class="fas fa-play"></i>
+      </div>
+    </div>
+    <p *ngIf="!trailerKey" class="text-gray-400 text-sm text-center py-8">
+      No trailer available yet.
+    </p>
   </div>
 
   <!-- Reviews -->
@@ -390,7 +390,7 @@
   </div>
 
   <!-- Where to Watch -->
-  <div class="px-4 mt-5" *ngIf="watchProviders.length">
+  <div class="px-4 mt-5" *ngIf="activeTab === 'Overview' && watchProviders.length">
     <div class="flex items-center justify-between">
       <h2 class="text-white font-bold text-base">Where to Watch</h2>
       <button
@@ -416,6 +416,101 @@
       >
         +{{ remainingWatchProviderCount }} more
       </button>
+    </div>
+  </div>
+
+  <!-- More images (backdrops + alternate posters) -->
+  <div class="px-4 mt-5" *ngIf="activeTab === 'Overview' && galleryImages.length">
+    <h2 class="text-white font-bold text-base">More Images</h2>
+    <div class="relative">
+      <div class="gallery-row mt-3" #galleryRow (wheel)="onGalleryWheel($event)">
+        <div class="gallery-thumb" *ngFor="let img of galleryImages" (click)="openFullScreenImage(img)">
+          <img [src]="img" alt="" loading="lazy" />
+        </div>
+      </div>
+      <button
+        type="button"
+        class="gallery-nav gallery-nav-left"
+        *ngIf="galleryImages.length > 2"
+        aria-label="Scroll left"
+        (click)="scrollGallery(-1)"
+      >
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <button
+        type="button"
+        class="gallery-nav gallery-nav-right"
+        *ngIf="galleryImages.length > 2"
+        aria-label="Scroll right"
+        (click)="scrollGallery(1)"
+      >
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Fullscreen image viewer (poster or gallery image) - a 3-slide
+       (prev/current/next) track so swiping slides continuously like a
+       native photo viewer, instead of an instant image swap. -->
+  <div class="poster-fullscreen-overlay" *ngIf="fullScreenImageUrl" (click)="closeFullScreenImage()">
+    <button type="button" class="icon-circle-btn poster-fullscreen-close" aria-label="Close" (click)="closeFullScreenImage()">
+      <i class="fas fa-times"></i>
+    </button>
+    <button
+      type="button"
+      class="icon-circle-btn poster-fullscreen-nav poster-fullscreen-nav-left"
+      *ngIf="hasMultipleFullScreenImages"
+      aria-label="Previous image"
+      (click)="$event.stopPropagation(); animatePrevFullScreenImage()"
+    >
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <div
+      class="poster-fullscreen-track"
+      [class.no-transition]="isSwiping"
+      [style.transform]="trackTransform"
+      (click)="$event.stopPropagation()"
+      (touchstart)="onFullScreenTouchStart($event)"
+      (touchmove)="onFullScreenTouchMove($event)"
+      (touchend)="onFullScreenTouchEnd()"
+    >
+      <img [src]="prevFullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" />
+      <img [src]="fullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" />
+      <img [src]="nextFullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" />
+    </div>
+    <button
+      type="button"
+      class="icon-circle-btn poster-fullscreen-nav poster-fullscreen-nav-right"
+      *ngIf="hasMultipleFullScreenImages"
+      aria-label="Next image"
+      (click)="$event.stopPropagation(); animateNextFullScreenImage()"
+    >
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+
+  <!-- Fullscreen trailer player - always in the DOM (not *ngIf, just
+       hidden/shown) so requestFullscreen() can target it synchronously from
+       the click handler; browsers reject fullscreen requests that aren't
+       part of the same call stack as a real user gesture. -->
+  <div
+    class="poster-fullscreen-overlay"
+    #trailerOverlay
+    [style.display]="isTrailerFullScreen ? 'flex' : 'none'"
+    (click)="closeTrailerFullScreen()"
+  >
+    <button type="button" class="icon-circle-btn poster-fullscreen-close" aria-label="Close" (click)="closeTrailerFullScreen()">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="trailer-fullscreen-player" (click)="$event.stopPropagation()">
+      <iframe
+        *ngIf="isTrailerFullScreen"
+        [src]="trailerEmbedUrl"
+        title="Trailer"
+        frameborder="0"
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+        allowfullscreen
+      ></iframe>
     </div>
   </div>
 </div>

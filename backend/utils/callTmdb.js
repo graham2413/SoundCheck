@@ -88,11 +88,11 @@ async function callTmdb(path, params = {}) {
 // it actually sees changes, instead of just re-reading the same 7-day-stale
 // cached blob) but still writes the fresh result back to cache either way.
 async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = false } = {}) {
-  // v4: bumped so older cached blobs (from before external_ids was added for
-  // TV) get treated as a miss and re-fetched - unlike movies, /tv/:id doesn't
-  // return imdb_id at the top level at all, so IMDb rating/votes were always
-  // null for every TV show until this was added.
-  const cacheKey = `tmdb:details:v4:${tmdbId}`;
+  // v5: bumped so older cached blobs (from before images/videos were added
+  // to append_to_response) get treated as a miss and re-fetched - otherwise
+  // the trailer/gallery UI silently stays empty for any title already
+  // cached under the old v4 key for its full 7-day TTL.
+  const cacheKey = `tmdb:details:v5:${tmdbId}`;
   if (!forceRefresh) {
     const cached = await redis.get(cacheKey);
     if (cached) return JSON.parse(cached);
@@ -106,11 +106,12 @@ async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = fals
   // top-level details response never includes it.
   const appendToResponse =
     mediaType === "movie"
-      ? "watch/providers,credits,release_dates"
-      : "watch/providers,credits,aggregate_credits,external_ids";
+      ? "watch/providers,credits,release_dates,images,videos"
+      : "watch/providers,credits,aggregate_credits,external_ids,images,videos";
 
   const response = await callTmdb(`/${mediaType}/${tmdbId}`, {
     append_to_response: appendToResponse,
+    include_image_language: "en,null",
   });
 
   if (response.data) {
@@ -261,10 +262,12 @@ async function getTmdbExternalIds(personId) {
 
 // Cache-aware wrapper: GET /trending/movie|tv/week - TMDb's own pre-ranked
 // trending list (unlike /search, no popularity/genre filtering needed on our
-// end). Fetches 3 pages (60 raw results) as a buffer against cross-page
+// end). Fetches 5 pages (100 raw results) as a buffer against cross-page
 // duplicates (TMDb's live ranking can shift slightly between our page 1 and
-// page 2 requests, causing the same title to appear on both) and against
-// obscure/low-vote noise that starts showing up past page ~2. Dedupes by id.
+// page 2 requests, causing the same title to appear on both), against
+// obscure/low-vote noise that starts showing up past page ~2, and so a true
+// top-50-by-popularity slice (see getCinemaTrending) still has 50+ candidates
+// left after that noise filter. Dedupes by id.
 const TRENDING_CACHE_TTL = 86400; // 24h - trending/week updates continuously server-side, not tied to a fixed weekly release cycle like Spotify
 async function getTmdbTrending(mediaType) {
   const cacheKey = `tmdb:trending:${mediaType}`;
@@ -273,7 +276,7 @@ async function getTmdbTrending(mediaType) {
 
   const seen = new Set();
   const results = [];
-  for (let page = 1; page <= 3; page++) {
+  for (let page = 1; page <= 5; page++) {
     const response = await callTmdb(`/trending/${mediaType}/week`, { page });
     const pageResults = response.data?.results || [];
     if (!pageResults.length) break;
