@@ -260,13 +260,13 @@
 
   <!-- Similar -->
   <div class="mx-2 mt-4" *ngIf="activeTab === 'Similar'" @slideDown>
-    <div class="flex flex-wrap gap-3" *ngIf="similar.length">
+    <div class="grid grid-cols-3 gap-3" *ngIf="similar.length">
       <div
-        class="cinema-card-outer w-[7rem] md:w-[10rem] rounded-lg overflow-hidden cursor-pointer"
+        class="cinema-card-outer rounded-lg overflow-hidden cursor-pointer"
         *ngFor="let item of similar; let i = index"
         (click)="similarItemClick.emit(item)"
       >
-        <div class="cinema-card relative h-[10.5rem] md:h-[15rem]">
+        <div class="cinema-card relative aspect-[2/3]">
           <div *ngIf="!similarImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">
             <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
           </div>
