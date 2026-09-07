@@ -146,6 +146,11 @@ describe("POST /api/users/friends/send/:toUserId", () => {
         save,
       })
     );
+    // sendFriendRequest uses an atomic findOneAndUpdate (not findById+save)
+    // for the sender's own document now, to close a race condition - mock
+    // it resolving truthy so the success path is reached.
+    User.findOneAndUpdate.mockResolvedValue({ _id: "user123" });
+    User.updateOne.mockResolvedValue({});
     const res = await request(app).post("/api/users/friends/send/user456");
     expect(res.status).toBe(200);
   });

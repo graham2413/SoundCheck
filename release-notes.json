@@ -1,14 +1,15 @@
 {
   "New features": [
-    "TV show pages now have an Episodes tab with real IMDb ratings, runtimes, air dates, and summaries for every episode",
-    "Movie and show detail pages now have an Awards tab showing Oscar wins and nominations"
+    "Trailers now open right from the movie/show overview page instead of a separate tab",
+    "Trending row images now slide in smoothly as they load"
   ],
   "Performance & stability": [
-    "Episode images now load sharper and crop in tighter on the subject",
-    "Smoother scrolling and animations when browsing episodes and switching seasons",
-    "Fixed a rare timing issue that could cause friend requests to fail"
+    "Your calendar now updates instantly when you add, remove, or rate a watchlist item, instead of waiting until the next day",
+    "More Images gallery now scrolls smoothly on desktop with no visible scrollbar",
+    "Smaller visual polish: bulleted update notes, better-sized IMDb ratings on episodes, sharper YouTube TV icon"
   ]
 }
+
 
 
 

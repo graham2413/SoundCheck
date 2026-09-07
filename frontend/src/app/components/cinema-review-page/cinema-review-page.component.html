@@ -251,6 +251,17 @@
       </div>
       <span class="detail-row-value">{{ budget }}</span>
     </div>
+
+    <div class="detail-row" [class.detail-row-link]="trailerKey" (click)="trailerKey && playTrailerFullScreen()">
+      <div class="detail-row-label">
+        <i class="far fa-circle-play"></i>
+        Trailer
+      </div>
+      <span class="detail-row-value">
+        {{ trailerKey ? 'Watch trailer' : 'No trailer available yet' }}
+        <i class="fas fa-chevron-right" *ngIf="trailerKey"></i>
+      </span>
+    </div>
   </div>
 
   <!-- Episodes -->
@@ -262,19 +273,6 @@
       [showStatus]="status"
       (contentLoaded)="onEpisodesContentLoaded()"
     ></app-cinema-episodes-tab>
-  </div>
-
-  <!-- Trailer -->
-  <div class="mx-4 mt-4" *ngIf="activeTab === 'Trailer'">
-    <div class="trailer-thumb" *ngIf="trailerKey" (click)="playTrailerFullScreen()">
-      <img [src]="trailerThumbnailUrl" [alt]="title + ' trailer'" />
-      <div class="trailer-play-overlay">
-        <i class="fas fa-play"></i>
-      </div>
-    </div>
-    <p *ngIf="!trailerKey" class="text-gray-400 text-sm text-center py-8">
-      No trailer available yet.
-    </p>
   </div>
 
   <!-- Similar -->
@@ -482,9 +480,19 @@
   <div class="px-4 mt-5" *ngIf="activeTab === 'Overview' && galleryImages.length">
     <h2 class="text-white font-bold text-base">More Images</h2>
     <div class="relative">
-      <div class="gallery-row mt-3" #galleryRow (wheel)="onGalleryWheel($event)">
-        <div class="gallery-thumb" *ngFor="let img of galleryImages" (click)="openFullScreenImage(img)">
-          <img [src]="img" alt="" loading="lazy" />
+      <div class="gallery-row mt-3" #galleryRow>
+        <div class="gallery-thumb" *ngFor="let img of galleryImages; let i = index" (click)="openFullScreenImage(img)">
+          <div *ngIf="!galleryImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">
+            <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+          </div>
+          <img
+            [src]="img"
+            alt=""
+            loading="lazy"
+            (load)="galleryImageLoaded[i] = true"
+            (error)="galleryImageLoaded[i] = true"
+            [class.invisible]="!galleryImageLoaded[i]"
+          />
         </div>
       </div>
       <button

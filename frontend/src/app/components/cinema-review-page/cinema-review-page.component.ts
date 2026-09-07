@@ -285,26 +285,14 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
     return [...this.images.backdrops, ...this.images.posters.filter((url) => url !== this.cover)];
   }
 
-  // Mouse-wheel horizontal scroll (desktop users without a trackpad have no
-  // other way to move a horizontally-scrolling row - a plain vertical wheel
-  // does nothing on it by default) and the same for the arrow buttons.
-  onGalleryWheel(event: WheelEvent): void {
-    const el = this.galleryRow?.nativeElement;
-    if (!el) return;
-    event.preventDefault();
-    el.scrollBy({ left: event.deltaY, behavior: 'auto' });
-  }
+  // Loading-spinner state per thumbnail, same convention as the marquee's
+  // cards (main-search's app-marquee/app-cinema-marquee).
+  galleryImageLoaded: boolean[] = [];
 
   scrollGallery(direction: 1 | -1): void {
     const el = this.galleryRow?.nativeElement;
     if (!el) return;
     el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: 'smooth' });
-  }
-
-  // YouTube's own thumbnail CDN (no TMDb/API call needed) - hqdefault is
-  // available for every video, unlike maxresdefault which 404s on some.
-  get trailerThumbnailUrl(): string | null {
-    return this.trailerKey ? `https://img.youtube.com/vi/${this.trailerKey}/hqdefault.jpg` : null;
   }
 
   // bypassSecurityTrustResourceUrl is required for any *dynamic* iframe src -
@@ -362,9 +350,12 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
 
   // "Episodes" only shows up as a tab for TV shows we actually have season
   // data for - inserted right after Overview to match the mockup's ordering.
+  // "Trailer" moved out of the tab strip entirely into an Overview row-link
+  // (see detail-rows) - playTrailerFullScreen() still opens the exact same
+  // fullscreen player, just triggered from there instead.
   get tabs(): string[] {
     const episodesTab = this.mediaType === 'tv' && this.numberOfSeasons ? ['Episodes'] : [];
-    return ['Overview', ...episodesTab, 'Reviews', 'Trailer', 'Similar'];
+    return ['Overview', ...episodesTab, 'Reviews', 'Similar'];
   }
   activeTab = 'Overview';
 
@@ -558,6 +549,9 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
     }
     if (changes['similar']) {
       this.similarImageLoaded = [];
+    }
+    if (changes['images']) {
+      this.galleryImageLoaded = [];
     }
   }
 

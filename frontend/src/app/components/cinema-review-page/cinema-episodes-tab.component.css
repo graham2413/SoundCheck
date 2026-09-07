@@ -155,7 +155,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.3rem 0.5rem;
+  /* Tighter than the value side - the logo's own SVG already has a
+     built-in yellow quiet-zone around the letters, so it doesn't need as
+     much extra padding to end up visually balanced with the number side. */
+  padding: 0.3rem 0.3rem;
   border-radius: 999px 0 0 999px;
 }
 

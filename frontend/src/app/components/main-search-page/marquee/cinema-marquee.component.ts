@@ -9,6 +9,7 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { CinemaSearchResult } from '../../../models/responses/cinema-response';
 import { getCinemaStatusBadge, CinemaBadgeVm } from '../../../shared/cinema-status-badge';
@@ -26,6 +27,21 @@ import { CinemaBadgeComponent } from '../../../shared/cinema-badge/cinema-badge.
   templateUrl: './cinema-marquee.component.html',
   styleUrls: ['./cinema-marquee.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Same staggered slide-in used on other results screens - plays once the
+  // marquee's real cards replace the skeleton loader.
+  animations: [
+    trigger('fadeSlideIn', [
+      transition(':enter', [
+        query('@itemAnim', [stagger(50, animateChild())], { optional: true }),
+      ]),
+    ]),
+    trigger('itemAnim', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateX(-20px)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateX(0)' })),
+      ]),
+    ]),
+  ],
 })
 export class CinemaMarqueeComponent implements OnInit, OnChanges {
   @Input() mode: 'movie' | 'tv' = 'movie';

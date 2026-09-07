@@ -1,8 +1,8 @@
 <div class="bg-[#020814] text-white pb-[6rem] md:pb-8 md:pt-[0.5rem]">
   <div class="marquee-container">
-    <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading">
+    <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading" @fadeSlideIn>
       <ng-container *ngFor="let item of items; let i = index; trackBy: trackByIndex">
-        <div class="cinema-card-wrapper" (click)="onCardClick(item, i)">
+        <div class="cinema-card-wrapper" @itemAnim (click)="onCardClick(item, i)">
           <div class="cinema-card-outer w-[7rem] md:w-[10rem] rounded-lg overflow-hidden">
           <div class="cinema-card relative h-[10.5rem] md:h-[15rem]">
             <div *ngIf="!marqueeImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">

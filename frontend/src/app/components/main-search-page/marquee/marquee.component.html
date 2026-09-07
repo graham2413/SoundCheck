@@ -1,10 +1,11 @@
 <div class="bg-[#020814] text-white pb-[6rem] md:pb-8 md:pt-[0.5rem]">
   <!-- Marquee Container -->
   <div class="marquee-container">
-    <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading">
+    <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading" @fadeSlideIn>
       <ng-container *ngFor="let album of albums; let i = index; trackBy: trackByIndex">
         <div
           class="album-card relative w-[9.5rem] md:w-[13.5rem] h-[9.5rem] md:h-[13.5rem] rounded-lg overflow-hidden"
+          @itemAnim
           (click)="onCardClick(album, i)"
         >
           <!-- Loader -->

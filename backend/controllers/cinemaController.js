@@ -284,6 +284,20 @@ exports.getCinemaTrending = async (req, res) => {
 // timezone behind UTC (e.g. America/Chicago) is already several hours in the
 // past by the time it's actually today in that timezone, so a naive
 // timestamp comparison incorrectly drops/moves items releasing "today".
+
+// Deletes (not just marks stale) a user's cached calendar so their next
+// load rebuilds from scratch - called on any watchlist/watched/rating
+// change instead of leaving the old list to linger until the calendar-day
+// rollover or a manual refresh tap. Cheap either way: the rebuild reuses
+// each title's own already-cached TMDb data, it just re-runs the (fast)
+// CinemaItem query and re-derives the entries.
+async function invalidateCalendarCache(userId) {
+  await Promise.all([
+    redis.del(`calendar:${userId}:upcoming`),
+    redis.del(`calendar:${userId}:past`),
+  ]).catch(() => {});
+}
+
 exports.getCalendar = async (req, res) => {
   try {
     const forceRefresh = req.query.refresh === "true";
@@ -1234,6 +1248,7 @@ exports.editCinemaItem = async (req, res) => {
     await item.save();
 
     triggerEpisodeMapPrewarmForShow(item);
+    await invalidateCalendarCache(req.user._id);
 
     res.status(200).json({ success: true, data: item });
   } catch (error) {
@@ -1435,10 +1450,12 @@ exports.toggleWatchlist = async (req, res) => {
     if (item && item.isWatchlist) {
       if (item.decimalRating == null) {
         await item.deleteOne();
+        await invalidateCalendarCache(req.user._id);
         return res.status(200).json({ success: true, data: { isWatchlist: false, item: null } });
       }
       item.isWatchlist = false;
       await item.save();
+      await invalidateCalendarCache(req.user._id);
       return res.status(200).json({ success: true, data: { isWatchlist: false, item } });
     }
 
@@ -1468,6 +1485,7 @@ exports.toggleWatchlist = async (req, res) => {
     }
 
     triggerEpisodeMapPrewarmForShow(item);
+    await invalidateCalendarCache(req.user._id);
 
     res.status(200).json({ success: true, data: { isWatchlist: true, item } });
   } catch (error) {
@@ -1494,10 +1512,12 @@ exports.markCinemaWatched = async (req, res) => {
       // watchlist), so delete it entirely instead of leaving an empty record.
       if (item.decimalRating == null && !item.isWatchlist) {
         await item.deleteOne();
+        await invalidateCalendarCache(req.user._id);
         return res.status(200).json({ success: true, data: null });
       }
       item.isWatched = false;
       await item.save();
+      await invalidateCalendarCache(req.user._id);
       return res.status(200).json({ success: true, data: item });
     }
 
@@ -1524,6 +1544,7 @@ exports.markCinemaWatched = async (req, res) => {
     }
 
     triggerEpisodeMapPrewarmForShow(item);
+    await invalidateCalendarCache(req.user._id);
 
     res.status(200).json({ success: true, data: item });
   } catch (error) {

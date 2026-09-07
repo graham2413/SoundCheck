@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { SpotifyService } from 'src/app/services/spotify.service';
 
 // Static horizontally-scrollable strip (native overflow-x scroll, like the
@@ -12,6 +13,22 @@ import { SpotifyService } from 'src/app/services/spotify.service';
   templateUrl: './marquee.component.html',
   styleUrls: ['./marquee.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Same staggered slide-in used on other results screens (e.g.
+  // main-search's own result lists) - plays once the marquee's real cards
+  // replace the skeleton loader.
+  animations: [
+    trigger('fadeSlideIn', [
+      transition(':enter', [
+        query('@itemAnim', [stagger(50, animateChild())], { optional: true }),
+      ]),
+    ]),
+    trigger('itemAnim', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateX(-20px)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateX(0)' })),
+      ]),
+    ]),
+  ],
 })
 export class MarqueeComponent implements OnInit {
   @Output() cardClick = new EventEmitter<{

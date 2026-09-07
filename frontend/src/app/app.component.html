@@ -59,7 +59,12 @@
           </div>
           <div>
             <p class="font-semibold">{{ section.key }}</p>
-            <p *ngFor="let item of section.value" class="text-gray-400 text-sm">{{ item }}</p>
+            <ul class="space-y-1 mt-1">
+              <li *ngFor="let item of section.value" class="text-gray-400 text-sm flex items-start gap-2">
+                <span class="mt-1.5 h-1 w-1 rounded-full bg-blue-500 flex-shrink-0"></span>
+                <span>{{ item }}</span>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
