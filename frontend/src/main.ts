@@ -31,6 +31,11 @@ bootstrapApplication(AppComponent, {
       progressAnimation:'increasing'
     }),
     AuthService,
+    // Note: a commit that ONLY touches .github/workflows/deploy.yml can
+    // fail to self-trigger the deploy workflow (a known GitHub Actions
+    // gotcha with a workflow's own path filters) - always pair a
+    // deploy.yml-only fix with a real frontend/** change like this one so
+    // the fix actually goes live instead of sitting committed but unreleased.
     SearchService, provideServiceWorker('ngsw-worker.js', {
             enabled: !isDevMode(),
             // Register right away instead of waiting on app-stability, so the
