@@ -83,9 +83,9 @@
   height: 100%;
   transform: translateX(-100vw);
   transition: transform 0.25s ease-out;
-  /* pan-y so vertical scroll bounce still works and pinch-zoom is left to
-     the browser natively - horizontal drags are still handled by our own
-     touchstart/touchmove swipe logic since pan-x isn't declared here. */
+  /* No JS touch handling anymore (navigation is button-only) - just let the
+     browser handle pinch-zoom and vertical scroll bounce natively, and block
+     horizontal pan so it can't trigger a browser back/forward swipe gesture. */
   touch-action: pan-y pinch-zoom;
 }
 
@@ -136,15 +136,7 @@
   height: 2.75rem;
   font-size: 1.1rem;
   z-index: 1;
-  /* Hidden by default - touch devices already have swipe, so the buttons
-     only show for mouse/trackpad users (see media query below). */
-  display: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .poster-fullscreen-nav {
-    display: flex;
-  }
+  display: flex;
 }
 
 .poster-fullscreen-nav-left {

@@ -1,5 +1,9 @@
 ﻿{
+  "New features": [
+    "Added a Check for Updates button on your profile page",
+    "Added a photo counter to the fullscreen image viewer"
+  ],
   "Performance & stability": [
-    "Stopped the IMDb ratings loading card from flashing briefly every time you open the Episodes tab, even when ratings were already cached"
+    "Fixed episode ratings and photo swiping issues, and made update checks more reliable"
   ]
 }

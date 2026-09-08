@@ -103,15 +103,14 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   isTrailerFullScreen = false;
 
   // Fullscreen image viewer state - poster + gallery images treated as one
-  // navigable list so "next/previous" and swipe work across both. Rendered
-  // as a 3-slide (prev/current/next) track so swiping slides continuously
-  // (like a native photo viewer) instead of an instant image swap.
+  // navigable list so the next/previous buttons work across both. Rendered
+  // as a 3-slide (prev/current/next) track so navigating slides continuously
+  // (like a native photo viewer) instead of an instant image swap. Button-only
+  // navigation (no touch swipe) - see animateToSlide/settleAfterSwipe.
   private fullScreenImages: string[] = [];
   private fullScreenIndex = 0;
-  isSwiping = false; // true only while actively dragging - disables the CSS transition so the track follows the finger with no lag
+  isSwiping = false; // disables the CSS transition only during the instant-reset step after a slide completes
   dragOffsetPx = 0;
-  private swipeStartX: number | null = null;
-  private static readonly SWIPE_THRESHOLD_PX = 60;
   private static readonly SWIPE_TRANSITION_MS = 250;
 
   @ViewChild('descriptionEl') descriptionEl?: ElementRef<HTMLElement>;
@@ -255,7 +254,7 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   }
 
   private animateToSlide(goingNext: boolean): void {
-    if (!this.hasMultipleFullScreenImages) return;
+    if (!this.hasMultipleFullScreenImages || this.isSettlingSwipe) return;
     this.isSwiping = false; // ensure the transition is enabled
     this.dragOffsetPx = goingNext ? -window.innerWidth : window.innerWidth;
     this.settleAfterSwipe(goingNext);
@@ -264,9 +263,9 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   // Snaps the track instantly back to center (no transition) after the
   // slide/index change, then re-enables the transition on the next frame -
   // same double-rAF technique used for ringsReady above, to avoid a visible
-  // flicker from the instant reset. Blocks new swipes from starting until
-  // this fully settles (see isSettlingSwipe) - starting a new drag mid-reset
-  // could race with the pending index swap and jump to the wrong image.
+  // flicker from the instant reset. Blocks a new nav click from starting
+  // until this fully settles (isSettlingSwipe) - a rapid double-tap mid-reset
+  // could otherwise race with the pending index swap and jump to the wrong image.
   private isSettlingSwipe = false;
 
   private settleAfterSwipe(goingNext: boolean): void {
@@ -305,52 +304,6 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
       setTimeout(() => track.removeEventListener('transitionend', onTransitionEnd), CinemaReviewPageComponent.SWIPE_TRANSITION_MS + 150);
     }
     setTimeout(swap, CinemaReviewPageComponent.SWIPE_TRANSITION_MS + 150);
-  }
-
-  // Swipe left/right through the fullscreen images on touch devices - the
-  // track follows the finger live (touchmove), then either finishes
-  // sliding to the next/previous image or snaps back to center.
-  onFullScreenTouchStart(event: TouchEvent): void {
-    // Ignore multi-touch (pinch-zoom) and anything mid-settle from a
-    // previous swipe - a second finger reading as "finger 0 moved" is what
-    // made pinching accidentally trigger a navigation.
-    if (event.touches.length > 1 || this.isSettlingSwipe) {
-      this.swipeStartX = null;
-      return;
-    }
-    this.swipeStartX = event.touches[0]?.clientX ?? null;
-    this.isSwiping = true;
-  }
-
-  onFullScreenTouchMove(event: TouchEvent): void {
-    if (this.swipeStartX === null) return;
-    // A second finger joined mid-gesture (pinch-zoom starting) - abandon the
-    // swipe instead of continuing to track finger 0's now-unreliable X.
-    if (event.touches.length > 1) {
-      this.swipeStartX = null;
-      this.isSwiping = false;
-      this.dragOffsetPx = 0;
-      return;
-    }
-    const x = event.touches[0]?.clientX ?? this.swipeStartX;
-    this.dragOffsetPx = x - this.swipeStartX;
-  }
-
-  onFullScreenTouchEnd(): void {
-    if (this.swipeStartX === null) return;
-    const delta = this.dragOffsetPx;
-    this.swipeStartX = null;
-    this.isSwiping = false; // re-enable the transition so the rest of this move animates
-
-    const passedThreshold = this.hasMultipleFullScreenImages && Math.abs(delta) >= CinemaReviewPageComponent.SWIPE_THRESHOLD_PX;
-    if (!passedThreshold) {
-      this.dragOffsetPx = 0;
-      return;
-    }
-
-    const goingNext = delta < 0;
-    this.dragOffsetPx = goingNext ? -window.innerWidth : window.innerWidth;
-    this.settleAfterSwipe(goingNext);
   }
 
   // "More images" gallery - backdrops first (widescreen scene/promo shots),
@@ -466,6 +419,16 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   // same immediate behavior as selectTab, not waiting for the new season's
   // episodes to actually finish loading.
   onEpisodesSeasonChanging(): void {
+    setTimeout(() => this.scrollTabsRowIntoView());
+  }
+
+  // One-time catch-up scroll for the very first time Episodes is opened -
+  // at that instant the page has no episode content yet, so selectTab()'s
+  // immediate scroll can only reach as far as the (too-short) page already
+  // allows. Once real content has actually grown the page, scroll again to
+  // reach the true target. Season switches/later re-visits don't need this -
+  // by then the page is already tall enough for the immediate scroll alone.
+  onFirstEpisodesLoaded(): void {
     setTimeout(() => this.scrollTabsRowIntoView());
   }
 

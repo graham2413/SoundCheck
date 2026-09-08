@@ -274,6 +274,7 @@
       [numberOfSeasons]="numberOfSeasons"
       [showStatus]="status"
       (seasonChanging)="onEpisodesSeasonChanging()"
+      (firstEpisodesLoaded)="onFirstEpisodesLoaded()"
     ></app-cinema-episodes-tab>
   </div>
 
@@ -519,8 +520,9 @@
   </div>
 
   <!-- Fullscreen image viewer (poster or gallery image) - a 3-slide
-       (prev/current/next) track so swiping slides continuously like a
-       native photo viewer, instead of an instant image swap. -->
+       (prev/current/next) track, navigated only via the left/right buttons
+       (not touch swipe - that was prone to gesture conflicts with pinch-zoom
+       and page scroll on mobile). -->
   <div class="poster-fullscreen-overlay" *ngIf="fullScreenImageUrl" (click)="closeFullScreenImage()">
     <button type="button" class="icon-circle-btn poster-fullscreen-close" aria-label="Close" (click)="closeFullScreenImage()">
       <i class="fas fa-times"></i>
@@ -540,9 +542,6 @@
       class="poster-fullscreen-track"
       [class.no-transition]="isSwiping"
       [style.transform]="trackTransform"
-      (touchstart)="onFullScreenTouchStart($event)"
-      (touchmove)="onFullScreenTouchMove($event)"
-      (touchend)="onFullScreenTouchEnd()"
     >
       <img [src]="prevFullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" (click)="onFullScreenImageClick($event)" />
       <img [src]="fullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" (click)="onFullScreenImageClick($event)" />

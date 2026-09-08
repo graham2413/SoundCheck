@@ -51,6 +51,14 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
   // the user scrolled wherever they were on the previous season's list.
   @Output() seasonChanging = new EventEmitter<void>();
 
+  // Fired once, the first time this show's episodes ever finish loading.
+  // On first open, the page isn't tall enough yet for the parent's immediate
+  // scroll-to-top to reach the tabs row's full target position - there's no
+  // episode content rendered yet to scroll past. This lets the parent do one
+  // catch-up scroll once the page has actually grown to its real height.
+  @Output() firstEpisodesLoaded = new EventEmitter<void>();
+  private hasEmittedFirstEpisodesLoaded = false;
+
   selectedSeason = 1;
   seasonDropdownOpen = false;
 
@@ -137,13 +145,21 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
         this.episodes = data.episodes;
         this.loadingEpisodes = false;
         this.listMinHeightPx = null; // let the container return to its natural height for the new content
+        this.emitFirstEpisodesLoadedOnce();
       },
       error: () => {
         this.episodes = [];
         this.loadingEpisodes = false;
         this.listMinHeightPx = null;
+        this.emitFirstEpisodesLoadedOnce();
       },
     });
+  }
+
+  private emitFirstEpisodesLoadedOnce(): void {
+    if (this.hasEmittedFirstEpisodesLoaded) return;
+    this.hasEmittedFirstEpisodesLoaded = true;
+    this.firstEpisodesLoaded.emit();
   }
 
   private get mappedShowStatus(): 'ended' | 'ongoing' | undefined {
