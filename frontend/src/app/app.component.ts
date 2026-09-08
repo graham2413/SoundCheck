@@ -23,6 +23,7 @@ import { DecodedToken } from './models/responses/decoded-token-response';
 import { UserService } from './services/user.service';
 import { forkJoin, of, timer } from 'rxjs';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
+import { CURRENT_BUILD_NUMBER } from './build-version';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -160,29 +161,42 @@ export class AppComponent implements OnInit {
   // Checks for a new deployed version and blocks the app behind a full-screen
   // overlay until the user updates, rather than silently force-reloading (which
   // could interrupt someone mid-review) or letting them dismiss it indefinitely.
-  // Also polls periodically since the SW only auto-checks once per app launch by
-  // default - important for a PWA that can stay open/backgrounded for a long time.
+  //
+  // Primary mechanism: directly poll the always-fresh, no-cache /version.json
+  // and compare its buildNumber against CURRENT_BUILD_NUMBER (baked into this
+  // running bundle at build time). This is deliberately NOT dependent on the
+  // Angular Service Worker's own update-check lifecycle (checkForUpdate/
+  // versionUpdates), which proved unreliable in practice - it only checks once
+  // per app launch by default, and on mobile can silently go a long time
+  // without ever firing VERSION_READY even though a newer build is already live.
   private initServiceWorkerUpdates(): void {
-    if (!this.swUpdate.isEnabled) return;
+    this.checkForNewVersion();
 
+    const POLL_INTERVAL_MS = 5 * 60 * 1000;
+    setInterval(() => this.checkForNewVersion(), POLL_INTERVAL_MS);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') this.checkForNewVersion();
+    });
+
+    // Secondary/best-effort: the SW's own event can still fire, sometimes faster.
+    if (!this.swUpdate.isEnabled) return;
     this.swUpdate.versionUpdates
       .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
-      .subscribe(() => {
+      .subscribe(() => this.checkForNewVersion());
+  }
+
+  private checkForNewVersion(): void {
+    fetch(`/version.json?_=${Date.now()}`, { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        const latestBuildNumber = data?.buildNumber || '';
+        if (!latestBuildNumber || latestBuildNumber === CURRENT_BUILD_NUMBER) return;
         this.updateAvailable = true;
+        this.updateNotes = data?.notes || {};
+        this.updateBuildNumber = latestBuildNumber;
         this.cdRef.markForCheck();
-
-        fetch('/version.json', { cache: 'no-store' })
-          .then((res) => res.json())
-          .then((data) => {
-            this.updateNotes = data?.notes || {};
-            this.updateBuildNumber = data?.buildNumber || '';
-            this.cdRef.markForCheck();
-          })
-          .catch(() => {});
-      });
-
-    const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
-    setInterval(() => this.swUpdate.checkForUpdate(), SIX_HOURS_MS);
+      })
+      .catch(() => {});
   }
 
   applyUpdate(): void {

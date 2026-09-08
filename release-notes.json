@@ -1,10 +1,5 @@
-{
+﻿{
   "Performance & stability": [
-    "Fixed an issue that could delay the app from detecting a new update was available"
+    "Made the app more reliably detect when a new update is available, especially on mobile"
   ]
 }
-
-
-
-
-
