@@ -23,7 +23,7 @@ import { DecodedToken } from './models/responses/decoded-token-response';
 import { UserService } from './services/user.service';
 import { forkJoin, of, timer } from 'rxjs';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
-import { CURRENT_BUILD_NUMBER } from './build-version';
+import { UpdateService } from './services/update.service';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -93,9 +93,11 @@ export class AppComponent implements OnInit {
   profileLoaded = false;
   activeOutlet: RouterOutlet | null = null;
 
-  updateAvailable = false;
-  updateNotes: Record<string, string[]> = {};
-  updateBuildNumber = '';
+  // Backed by UpdateService so the profile page's manual "Check for updates"
+  // button shares the exact same detection state/logic as this automatic poll.
+  get updateAvailable() { return this.updateService.updateAvailable; }
+  get updateNotes() { return this.updateService.updateNotes; }
+  get updateBuildNumber() { return this.updateService.updateBuildNumber; }
   isReloadingForUpdate = false; // triggers the loader's fade-out just before the hard reload fires
   updateProgressPercent = 0; // simulated (time-based) - activateUpdate() has no real byte-level progress
   updateNoteIcons: Record<string, string> = {
@@ -111,7 +113,8 @@ export class AppComponent implements OnInit {
     private authService: AuthService,
     private userService: UserService,
     private cdRef: ChangeDetectorRef,
-    private swUpdate: SwUpdate
+    private swUpdate: SwUpdate,
+    private updateService: UpdateService
   ) {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -170,39 +173,21 @@ export class AppComponent implements OnInit {
   // per app launch by default, and on mobile can silently go a long time
   // without ever firing VERSION_READY even though a newer build is already live.
   private initServiceWorkerUpdates(): void {
-    this.checkForNewVersion();
+    this.updateService.checkForNewVersion().then(() => this.cdRef.markForCheck());
 
     const POLL_INTERVAL_MS = 5 * 60 * 1000;
-    setInterval(() => this.checkForNewVersion(), POLL_INTERVAL_MS);
+    setInterval(() => this.updateService.checkForNewVersion().then(() => this.cdRef.markForCheck()), POLL_INTERVAL_MS);
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') this.checkForNewVersion();
+      if (document.visibilityState === 'visible') {
+        this.updateService.checkForNewVersion().then(() => this.cdRef.markForCheck());
+      }
     });
 
     // Secondary/best-effort: the SW's own event can still fire, sometimes faster.
     if (!this.swUpdate.isEnabled) return;
     this.swUpdate.versionUpdates
       .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
-      .subscribe(() => this.checkForNewVersion());
-  }
-
-  private checkForNewVersion(): void {
-    // Also nudges the SW to re-check/download in the background on its own,
-    // rather than only relying on it to notice on its own schedule - installed
-    // home-screen PWAs (iOS especially) are heavily background-execution
-    // restricted and may otherwise go a very long time between self-checks.
-    if (this.swUpdate.isEnabled) this.swUpdate.checkForUpdate().catch(() => {});
-
-    fetch(`/version.json?_=${Date.now()}`, { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((data) => {
-        const latestBuildNumber = data?.buildNumber || '';
-        if (!latestBuildNumber || latestBuildNumber === CURRENT_BUILD_NUMBER) return;
-        this.updateAvailable = true;
-        this.updateNotes = data?.notes || {};
-        this.updateBuildNumber = latestBuildNumber;
-        this.cdRef.markForCheck();
-      })
-      .catch(() => {});
+      .subscribe(() => this.updateService.checkForNewVersion().then(() => this.cdRef.markForCheck()));
   }
 
   applyUpdate(): void {
@@ -275,9 +260,9 @@ export class AppComponent implements OnInit {
   // data so the UI can be checked locally without a real deploy/SW update cycle.
   private previewUpdateOverlayIfRequested(): void {
     if (new URLSearchParams(window.location.search).get('previewUpdate') !== 'true') return;
-    this.updateAvailable = true;
-    this.updateBuildNumber = '42';
-    this.updateNotes = {
+    this.updateService.updateAvailable = true;
+    this.updateService.updateBuildNumber = '42';
+    this.updateService.updateNotes = {
       'New features': ['Track user lastLoggedIn timestamp, visible to admin on friends list'],
       'Performance & stability': ['Correct redis TTL handling on calendar cache'],
       'Security updates': ['Harden auth token validation on login'],

@@ -1,5 +1,8 @@
 ﻿{
+  "New features": [
+    "Added a Check for Updates button on your profile page so you can force-check right away instead of waiting"
+  ],
   "Performance & stability": [
-    "Made the app more reliably detect when a new update is available, especially on mobile"
+    "Fixed the trending Movies/Shows row sometimes getting stuck on its loading placeholders right after signing in"
   ]
 }

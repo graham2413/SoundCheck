@@ -6,6 +6,7 @@ import { ToastrService } from 'ngx-toastr';
 import { User } from 'src/app/models/responses/user.response';
 import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
+import { UpdateService } from 'src/app/services/update.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -52,6 +53,7 @@ export class ProfileComponent implements OnInit {
 
   preferredApp: string | null = null;
   appVersion: string = '';
+  isCheckingForUpdate: boolean = false;
 availablePlatforms: string[] = [
   'spotify',
   'appleMusic',
@@ -91,7 +93,8 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
     private userService: UserService,
     private toastr: ToastrService,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private updateService: UpdateService
   ) {}
 
   ngOnInit(): void {
@@ -159,6 +162,17 @@ shadeColor(color: string, percent: number) {
   logout() {
     this.authService.logout();
     this.toastr.success('Logged out successfully');
+  }
+
+  // Manual escape hatch alongside the automatic background polling - lets
+  // someone force a check right now instead of waiting on the next interval,
+  // useful if they suspect they're on a stale build.
+  async checkForUpdatesManually(): Promise<void> {
+    if (this.isCheckingForUpdate) return;
+    this.isCheckingForUpdate = true;
+    const found = await this.updateService.checkForNewVersion();
+    this.isCheckingForUpdate = false;
+    if (!found) this.toastr.success("You're on the latest version");
   }
 
 onProfilePictureChange(event: Event): void {

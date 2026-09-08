@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Input,
@@ -58,7 +59,7 @@ export class CinemaMarqueeComponent implements OnInit, OnChanges {
 
   private readonly CACHE_TTL_MS = 24 * 60 * 60 * 1000; // matches the backend's 24h Redis cache
 
-  constructor(private cinemaService: CinemaService) {}
+  constructor(private cinemaService: CinemaService, private cdRef: ChangeDetectorRef) {}
 
   async ngOnInit(): Promise<void> {
     await this.loadForMode();
@@ -127,6 +128,11 @@ export class CinemaMarqueeComponent implements OnInit, OnChanges {
     this.items = fullItemList;
     this.marqueeImageLoaded = new Array(this.items.length).fill(false);
     this.isMarqueeLoading = false;
+    // OnPush won't always repaint on its own once this resolves async (e.g.
+    // right after login, when the surrounding auth/profile flow already ran
+    // its own change detection cycle) - force it so the view doesn't get
+    // stuck showing the skeleton loader forever despite the data arriving.
+    this.cdRef.markForCheck();
   }
 
   releaseYear(item: CinemaSearchResult): string {

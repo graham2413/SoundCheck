@@ -63,6 +63,14 @@
           Logout
         </button>
         <p *ngIf="appVersion" class="text-xs text-white text-center md:text-left mt-1">App Version: {{ appVersion }}</p>
+        <button
+          (click)="checkForUpdatesManually()"
+          [disabled]="isCheckingForUpdate"
+          class="w-[12rem] buttons px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-60 text-white text-sm font-medium rounded-full transition flex items-center justify-center gap-2 mx-auto md:mx-0"
+        >
+          <i class="fas fa-sync-alt" [class.fa-spin]="isCheckingForUpdate"></i>
+          {{ isCheckingForUpdate ? 'Checking...' : 'Check for Updates' }}
+        </button>
       </div>
     </div>
 

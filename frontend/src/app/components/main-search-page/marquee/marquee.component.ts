@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { SpotifyService } from 'src/app/services/spotify.service';
@@ -42,7 +42,7 @@ export class MarqueeComponent implements OnInit {
   isMarqueeLoading = true;
   marqueeImageLoaded: boolean[] = [];
 
-  constructor(private spotifyService: SpotifyService) {}
+  constructor(private spotifyService: SpotifyService, private cdRef: ChangeDetectorRef) {}
 
   async ngOnInit(): Promise<void> {
     const stored = localStorage.getItem('albumImages');
@@ -109,6 +109,10 @@ export class MarqueeComponent implements OnInit {
     this.albums = baseAlbums;
     this.marqueeImageLoaded = new Array(this.albums.length).fill(false);
     this.isMarqueeLoading = false;
+    // OnPush won't always repaint on its own once this resolves async - force
+    // it so the view doesn't get stuck showing the skeleton loader forever
+    // despite the data arriving (see cinema-marquee.component.ts).
+    this.cdRef.markForCheck();
   }
 
   getLastFridayNoon(): number {
