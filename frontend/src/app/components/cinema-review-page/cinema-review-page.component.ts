@@ -243,14 +243,24 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   // Snaps the track instantly back to center (no transition) after the
   // slide/index change, then re-enables the transition on the next frame -
   // same double-rAF technique used for ringsReady above, to avoid a visible
-  // flicker from the instant reset.
+  // flicker from the instant reset. Blocks new swipes from starting until
+  // this fully settles (see isSettlingSwipe) - starting a new drag mid-reset
+  // could race with the pending index swap and jump to the wrong image.
+  private isSettlingSwipe = false;
+
   private settleAfterSwipe(goingNext: boolean): void {
+    this.isSettlingSwipe = true;
     setTimeout(() => {
       if (goingNext) this.nextFullScreenImage();
       else this.prevFullScreenImage();
       this.isSwiping = true;
       this.dragOffsetPx = 0;
-      requestAnimationFrame(() => requestAnimationFrame(() => (this.isSwiping = false)));
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          this.isSwiping = false;
+          this.isSettlingSwipe = false;
+        })
+      );
     }, CinemaReviewPageComponent.SWIPE_TRANSITION_MS);
   }
 
@@ -258,12 +268,27 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   // track follows the finger live (touchmove), then either finishes
   // sliding to the next/previous image or snaps back to center.
   onFullScreenTouchStart(event: TouchEvent): void {
+    // Ignore multi-touch (pinch-zoom) and anything mid-settle from a
+    // previous swipe - a second finger reading as "finger 0 moved" is what
+    // made pinching accidentally trigger a navigation.
+    if (event.touches.length > 1 || this.isSettlingSwipe) {
+      this.swipeStartX = null;
+      return;
+    }
     this.swipeStartX = event.touches[0]?.clientX ?? null;
     this.isSwiping = true;
   }
 
   onFullScreenTouchMove(event: TouchEvent): void {
     if (this.swipeStartX === null) return;
+    // A second finger joined mid-gesture (pinch-zoom starting) - abandon the
+    // swipe instead of continuing to track finger 0's now-unreliable X.
+    if (event.touches.length > 1) {
+      this.swipeStartX = null;
+      this.isSwiping = false;
+      this.dragOffsetPx = 0;
+      return;
+    }
     const x = event.touches[0]?.clientX ?? this.swipeStartX;
     this.dragOffsetPx = x - this.swipeStartX;
   }

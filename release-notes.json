@@ -1,9 +1,6 @@
 ﻿{
-  "New features": [
-    "Added an image counter (e.g. \"3 / 12\") to the fullscreen photo viewer on movie/show pages"
-  ],
   "Performance & stability": [
-    "Fixed pinch-to-zoom not working in the fullscreen photo viewer on mobile",
-    "Switching episode seasons and opening the Episodes tab now scroll back to the top immediately instead of waiting for content to load"
+    "Fixed pinch-to-zoom in the fullscreen photo viewer accidentally triggering next/previous image navigation",
+    "Fixed the fullscreen photo viewer occasionally jittering back to the previous image after a quick swipe"
   ]
 }
