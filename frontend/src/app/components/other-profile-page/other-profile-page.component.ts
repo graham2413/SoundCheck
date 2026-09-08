@@ -24,6 +24,7 @@ import { CinemaService } from 'src/app/services/cinema.service';
 import { WatchlistFilters } from 'src/app/services/cinema.service';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
+import { CinemaRateModalComponent } from '../cinema-review-page/cinema-rate-modal.component';
 import { CinemaWatchlistComponent } from '../cinema-watchlist/cinema-watchlist.component';
 import {
   CinemaWatchlistFilterComponent,
@@ -1096,16 +1097,21 @@ export class ViewProfilePageComponent implements OnInit {
       }
     });
 
-    modalRef.componentInstance.rate.subscribe(() => {
+    modalRef.componentInstance.rate.subscribe((updatedRecord: CinemaItem) => {
       modalRef.close();
-      this.openCinemaRatingModal(item, cinemaList, index);
+      this.openCinemaRatingModal(updatedRecord, cinemaList, index);
     });
 
     return modalRef;
   }
 
+  // Shared cinema rate/edit-review modal (movies + shows) - see
+  // cinema-rate-modal.component.ts. Replicates the same downstream state
+  // sync the old legacy-modal wiring did (watchlist grid/count, cached
+  // cinemaReviews list) off the modal's resolved result instead of its
+  // reviewCreated/reviewEdited/watchlistToggled outputs.
   private openCinemaRatingModal(
-    item: CinemaItem,
+    record: CinemaItem,
     cinemaList: CinemaItem[],
     index: number
   ): NgbModalRef {
@@ -1116,102 +1122,56 @@ export class ViewProfilePageComponent implements OnInit {
       scrollable: false,
     };
 
-    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+    const modalRef = this.modal.open(CinemaRateModalComponent, modalOptions);
+    const instance = modalRef.componentInstance;
+    instance.mode = 'cinema';
+    instance.tmdbId = record.tmdbId ?? '';
+    instance.mediaType = record.mediaType;
+    instance.itemTitle = record.title;
+    instance.cover = record.cover ?? null;
+    instance.releaseDate = record.releaseDate ?? null;
+    instance.displayTitle = record.title;
+    instance.displayYear =
+      record.mediaType === 'tv' ? record.releaseYearRange ?? null : record.releaseDate ? new Date(record.releaseDate).getFullYear() : null;
+    instance.typeLabel = record.mediaType === 'movie' ? 'Movie' : 'TV Show';
+    instance.genres = record.genres ?? [];
+    instance.initialRating = record.decimalRating ?? null;
+    instance.initialReviewText = record.reviewText ?? '';
+    instance.initialContainsSpoilers = record.containsSpoilers ?? false;
 
-    modalRef.componentInstance.recordList = cinemaList;
-    modalRef.componentInstance.currentIndex = index;
-    modalRef.componentInstance.record = cinemaList[index];
+    modalRef.result.then(
+      (result) => {
+        if (!result) return;
 
-    // Cinema edits/creates are emitted as normalized Review objects
-    // (rating/reviewText) - map them back onto the cached CinemaItem shape.
-    modalRef.componentInstance.reviewEdited.subscribe(
-      (updatedReview: Review) => {
-        if (this.otherUser?.cinemaReviews) {
-          const i = this.otherUser.cinemaReviews.findIndex(
-            (item) => item._id === updatedReview._id
-          );
-          if (i !== -1) {
-            const updated = {
-              ...this.otherUser.cinemaReviews[i],
-              reviewText: updatedReview.reviewText,
-              decimalRating: updatedReview.rating,
-              createdAt: updatedReview.createdAt,
-            };
-            this.otherUser.cinemaReviews.splice(i, 1);
-            this.otherUser.cinemaReviews.unshift(updated);
-          }
-        }
-      }
-    );
-
-    modalRef.componentInstance.reviewCreated?.subscribe(
-      (newReview: Review) => {
-        // Rating an item marks it "watched" server-side (isWatchlist -> false),
-        // so it needs to disappear from the watchlist grid/count immediately -
-        // checked by id since this modal can open from either the watchlist
-        // grid or the reviews panel, not just the watchlist
-        const watchlistIndex = this.watchlistItems.findIndex((w) => w._id === newReview._id);
+        const watchlistIndex = this.watchlistItems.findIndex((w) => w._id === record._id);
         if (watchlistIndex !== -1) {
           this.adjustWatchlistCounts(-1, this.watchlistItems[watchlistIndex]);
           this.watchlistItems.splice(watchlistIndex, 1);
         }
 
+        record.decimalRating = result.decimalRating;
+        record.reviewText = result.reviewText;
+        record.containsSpoilers = result.containsSpoilers;
+        record.isWatchlist = false;
+        record.isWatched = true;
+        record.isUnrefinedImport = false;
+
         if (!this.otherUser?.cinemaReviews) return;
-        const i = this.otherUser.cinemaReviews.findIndex(
-          (item) => item._id === newReview._id
-        );
+        const i = this.otherUser.cinemaReviews.findIndex((r) => r._id === record._id);
         if (i !== -1) {
-          const updated = {
-            ...this.otherUser.cinemaReviews[i],
-            reviewText: newReview.reviewText,
-            decimalRating: newReview.rating,
-            createdAt: newReview.createdAt,
-          };
+          const updated = { ...this.otherUser.cinemaReviews[i], ...record };
           this.otherUser.cinemaReviews.splice(i, 1);
           this.otherUser.cinemaReviews.unshift(updated);
         } else {
-          // Newly-refined item (e.g. from the watchlist) wasn't in the
-          // rated list yet - use the record it was opened from as the base.
-          const base = cinemaList.find((r) => r._id === newReview._id);
-          if (base) {
-            this.otherUser.cinemaReviews.unshift({
-              ...base,
-              reviewText: newReview.reviewText,
-              decimalRating: newReview.rating,
-              createdAt: newReview.createdAt,
-              isUnrefinedImport: false,
-            });
-          }
+          this.otherUser.cinemaReviews.unshift({ ...record });
         }
-      }
+      },
+      () => {}
     );
-
-    modalRef.componentInstance.reviewDeleted?.subscribe(
-      (deletedReview: Review) => {
-        if (this.otherUser?.cinemaReviews) {
-          this.otherUser.cinemaReviews = this.otherUser.cinemaReviews.filter(
-            (item) => item._id !== deletedReview._id
-          );
-        }
-      }
-    );
-
-    // Toggling watchlist from inside the modal doesn't touch reviews, but
-    // the profile's watchlist grid/count still needs to stay in sync
-    modalRef.componentInstance.watchlistToggled?.subscribe((updatedItem: CinemaItem) => {
-      const existingIndex = this.watchlistItems.findIndex((w) => w._id === updatedItem._id);
-
-      if (updatedItem.isWatchlist && existingIndex === -1) {
-        this.watchlistItems.unshift(updatedItem);
-        this.adjustWatchlistCounts(1, updatedItem);
-      } else if (!updatedItem.isWatchlist && existingIndex !== -1) {
-        this.watchlistItems.splice(existingIndex, 1);
-        this.adjustWatchlistCounts(-1, updatedItem);
-      }
-    });
 
     return modalRef;
   }
+
 
   openReview(
     record: ModalRecord,

@@ -65,11 +65,11 @@
       >
         My Review
       </button>
-      <select class="review-sort-select" [(ngModel)]="reviewSort" (ngModelChange)="onReviewSortChange($event)">
-        <option value="recent">Most Recent</option>
-        <option value="highest">Highest Rated</option>
-        <option value="liked">Most Liked</option>
-      </select>
+      <app-cinema-sort-dropdown
+        [options]="reviewSortOptions"
+        [value]="reviewSort"
+        (valueChange)="onReviewSortChange($event)"
+      ></app-cinema-sort-dropdown>
     </div>
   </div>
 

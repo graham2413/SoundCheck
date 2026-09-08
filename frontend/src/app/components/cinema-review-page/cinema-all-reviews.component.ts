@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CinemaReview } from '../../models/responses/cinema-response';
 import { ReviewFilter, ReviewSort } from './cinema-review-page.component';
+import { CinemaSortDropdownComponent, CinemaDropdownOption } from '../../shared/cinema-sort-dropdown/cinema-sort-dropdown.component';
 
 // Full-screen "See All Reviews" list (opened from the Reviews tab's "See
 // All N Reviews" link). Per the mockup: everything from the header down
@@ -12,7 +13,7 @@ import { ReviewFilter, ReviewSort } from './cinema-review-page.component';
 @Component({
   selector: 'app-cinema-all-reviews',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CinemaSortDropdownComponent],
   templateUrl: './cinema-all-reviews.component.html',
   styleUrls: ['./cinema-all-reviews.component.css'],
 })
@@ -80,10 +81,16 @@ export class CinemaAllReviewsComponent implements OnInit {
     this.reviewFilterChange.emit(filter);
   }
 
-  onReviewSortChange(sort: ReviewSort): void {
-    this.reviewSort = sort;
-    this.reviewSortChange.emit(sort);
+  onReviewSortChange(sort: string): void {
+    this.reviewSort = sort as ReviewSort;
+    this.reviewSortChange.emit(this.reviewSort);
   }
+
+  readonly reviewSortOptions: CinemaDropdownOption[] = [
+    { value: 'recent', label: 'Most Recent' },
+    { value: 'highest', label: 'Highest Rated' },
+    { value: 'liked', label: 'Most Liked' },
+  ];
 
   get ringCircumference(): number {
     return 2 * Math.PI * CinemaAllReviewsComponent.RING_RADIUS;

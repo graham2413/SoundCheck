@@ -4,6 +4,7 @@ export interface EpisodeReview {
   isWatched: boolean;
   decimalRating?: number;
   reviewText?: string;
+  containsSpoilers?: boolean;
   reviewedAt?: string;
 }
 
@@ -34,6 +35,7 @@ export interface CinemaItem {
   streamingPlatforms?: string[];
   decimalRating?: number;
   reviewText?: string;
+  containsSpoilers?: boolean;
   likes?: number;
   likedBy?: string[];
   isWatchlist: boolean;
@@ -178,12 +180,20 @@ export interface CinemaSeasonEpisode {
   airDate: string | null;
   stillPath: string | null;
   runtime: number | null; // minutes
+  myReview: {
+    isWatched: boolean;
+    decimalRating: number | null;
+    reviewText: string | null;
+    containsSpoilers: boolean;
+  } | null;
 }
 
 export interface CinemaSeasonEpisodesResponse {
   success: boolean;
   data: {
     seasonNumber: number;
+    posterPath: string | null;
+    posterUrl: string | null;
     episodes: CinemaSeasonEpisode[];
   };
 }
@@ -198,6 +208,25 @@ export interface EpisodeImdbRating {
 }
 
 export type EpisodeImdbRatingsCacheStatus = 'hit' | 'stale' | 'miss' | 'processing';
+
+// One user's rating/review for one specific episode, from GET
+// /api/cinema/tv/:tmdbId/episode/:seasonNumber/:episodeNumber/reviews
+export interface EpisodeReviewEntry {
+  user: {
+    _id: string;
+    username: string;
+    profilePicture: string;
+  };
+  decimalRating: number;
+  reviewText: string | null;
+  containsSpoilers: boolean;
+  reviewedAt: string | null;
+}
+
+export interface EpisodeReviewsResponse {
+  reviews: EpisodeReviewEntry[];
+  userReview: EpisodeReviewEntry | null;
+}
 
 export interface EpisodeImdbRatingsResponse {
   success: boolean;

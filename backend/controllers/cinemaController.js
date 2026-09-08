@@ -992,7 +992,10 @@ exports.getCinemaDetail = async (req, res) => {
 // GET /api/cinema/tv/:tmdbId/season/:seasonNumber (Protected)
 // Episode name/overview/air date/still image for one season, TMDb-sourced -
 // paired client-side with getEpisodeImdbRatings (matched by season+episode
-// number) since neither IMDb dataset has this metadata.
+// number) since neither IMDb dataset has this metadata. Also merges in the
+// current user's own per-episode watched/rating state (if this show is
+// tracked at all) so the episode detail page can show "already watched"/
+// pre-fill a rating without a separate round-trip.
 exports.getTvSeasonEpisodes = async (req, res) => {
   try {
     const { tmdbId, seasonNumber } = req.params;
@@ -1000,7 +1003,215 @@ exports.getTvSeasonEpisodes = async (req, res) => {
     if (!season) {
       return res.status(404).json({ success: false, message: "Season not found" });
     }
-    res.status(200).json({ success: true, data: season });
+
+    const item = await CinemaItem.findOne({ user: req.user._id, mediaType: "tv", tmdbId });
+    const seasonNum = Number(seasonNumber);
+    const reviewsByEpisode = new Map(
+      (item?.episodeReviews || [])
+        .filter((r) => r.seasonNumber === seasonNum)
+        .map((r) => [r.episodeNumber, r])
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...season,
+        posterUrl: season.posterPath ? `${TMDB_IMAGE_BASE}${season.posterPath}` : null,
+        episodes: season.episodes.map((e) => {
+          const myReview = reviewsByEpisode.get(e.episodeNumber);
+          return {
+            ...e,
+            myReview: myReview
+              ? {
+                  isWatched: myReview.isWatched,
+                  decimalRating: myReview.decimalRating ?? null,
+                  reviewText: myReview.reviewText ?? null,
+                  containsSpoilers: myReview.containsSpoilers ?? false,
+                }
+              : null,
+          };
+        }),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// Finds-or-creates the CinemaItem tracking a TV show, needed as the storage
+// location for an episodeReviews entry even if the user never explicitly
+// added the show to their watchlist. Mirrors toggleWatchlist/markCinemaWatched's
+// create-if-missing pattern, but never touches the show's own isWatchlist/
+// isWatched flags - those stay independent of individual episode activity.
+async function findOrCreateShowItem(userId, { tmdbId, title, cover, releaseDate }) {
+  let item = await CinemaItem.findOne({ user: userId, tmdbId, mediaType: "tv" });
+  if (item) return item;
+
+  const metadata = await fetchCinemaMetadata(tmdbId, "tv");
+  return CinemaItem.create({
+    user: userId,
+    tmdbId,
+    mediaType: "tv",
+    title,
+    cover,
+    ...metadata,
+    ...(!metadata.releaseDate && releaseDate ? { releaseDate } : {}),
+  });
+}
+
+// POST /api/cinema/episode/mark-watched (Protected)
+// Toggles watched (without a rating) for one specific episode - creates the
+// show's CinemaItem if it isn't tracked yet (see findOrCreateShowItem).
+exports.markEpisodeWatched = async (req, res) => {
+  try {
+    const { tmdbId, title, cover, releaseDate, seasonNumber, episodeNumber } = req.body;
+
+    if (!tmdbId || !title || seasonNumber == null || episodeNumber == null) {
+      return res.status(400).json({ success: false, message: "tmdbId, title, seasonNumber, and episodeNumber are required" });
+    }
+
+    const item = await findOrCreateShowItem(req.user._id, { tmdbId, title, cover, releaseDate });
+    const existing = item.episodeReviews.find(
+      (r) => r.seasonNumber === seasonNumber && r.episodeNumber === episodeNumber
+    );
+
+    if (existing && existing.isWatched) {
+      // Undo - drop the entry entirely if there's nothing else worth keeping (no rating).
+      if (existing.decimalRating == null) {
+        item.episodeReviews = item.episodeReviews.filter((r) => r !== existing);
+      } else {
+        existing.isWatched = false;
+      }
+    } else if (existing) {
+      existing.isWatched = true;
+      existing.reviewedAt = new Date();
+    } else {
+      item.episodeReviews.push({ seasonNumber, episodeNumber, isWatched: true, reviewedAt: new Date() });
+    }
+
+    await item.save();
+    triggerEpisodeMapPrewarmForShow(item);
+
+    const myReview = item.episodeReviews.find(
+      (r) => r.seasonNumber === seasonNumber && r.episodeNumber === episodeNumber
+    );
+    res.status(200).json({
+      success: true,
+      data: myReview
+        ? {
+            isWatched: myReview.isWatched,
+            decimalRating: myReview.decimalRating ?? null,
+            reviewText: myReview.reviewText ?? null,
+            containsSpoilers: myReview.containsSpoilers ?? false,
+          }
+        : null,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// POST /api/cinema/episode/rate (Protected)
+// Sets (creates or edits) a rating/review for one specific episode - creates
+// the show's CinemaItem if it isn't tracked yet (see findOrCreateShowItem).
+exports.rateEpisode = async (req, res) => {
+  try {
+    const { tmdbId, title, cover, releaseDate, seasonNumber, episodeNumber, decimalRating, reviewText, containsSpoilers } = req.body;
+
+    if (!tmdbId || !title || seasonNumber == null || episodeNumber == null) {
+      return res.status(400).json({ success: false, message: "tmdbId, title, seasonNumber, and episodeNumber are required" });
+    }
+    if (typeof decimalRating !== "number" || decimalRating < 0 || decimalRating > 10) {
+      return res.status(400).json({ success: false, message: "decimalRating must be a number between 0 and 10" });
+    }
+
+    const item = await findOrCreateShowItem(req.user._id, { tmdbId, title, cover, releaseDate });
+    let entry = item.episodeReviews.find(
+      (r) => r.seasonNumber === seasonNumber && r.episodeNumber === episodeNumber
+    );
+
+    if (!entry) {
+      entry = { seasonNumber, episodeNumber };
+      item.episodeReviews.push(entry);
+      entry = item.episodeReviews[item.episodeReviews.length - 1];
+    }
+
+    entry.isWatched = true; // rating an episode implies you watched it
+    entry.decimalRating = decimalRating;
+    if (reviewText !== undefined) entry.reviewText = reviewText;
+    if (containsSpoilers !== undefined) entry.containsSpoilers = containsSpoilers;
+    entry.reviewedAt = new Date();
+
+    await item.save();
+    triggerEpisodeMapPrewarmForShow(item);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        isWatched: entry.isWatched,
+        decimalRating: entry.decimalRating,
+        reviewText: entry.reviewText ?? null,
+        containsSpoilers: entry.containsSpoilers ?? false,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// POST /api/cinema/rate (Protected)
+// Sets (creates or edits) a rating/review for a whole movie/show - creates
+// the CinemaItem if it doesn't exist yet, same create-if-missing pattern as
+// toggleWatchlist/markCinemaWatched. Rating always implies watched (mirrors
+// editCinemaItem's refine behavior).
+exports.rateCinema = async (req, res) => {
+  try {
+    const { tmdbId, mediaType, title, cover, releaseDate, decimalRating, reviewText, containsSpoilers } = req.body;
+
+    if (!tmdbId || !mediaType || !title) {
+      return res.status(400).json({ success: false, message: "tmdbId, mediaType, and title are required" });
+    }
+    if (typeof decimalRating !== "number" || decimalRating < 0 || decimalRating > 10) {
+      return res.status(400).json({ success: false, message: "decimalRating must be a number between 0 and 10" });
+    }
+
+    let item = await CinemaItem.findOne({ user: req.user._id, tmdbId, mediaType });
+
+    if (item) {
+      const isRefinement = item.isUnrefinedImport;
+      item.decimalRating = decimalRating;
+      item.isUnrefinedImport = false;
+      item.isWatchlist = false;
+      item.isWatched = true;
+      if (reviewText !== undefined) item.reviewText = reviewText;
+      if (containsSpoilers !== undefined) item.containsSpoilers = containsSpoilers;
+      if (!isRefinement) item.createdAt = new Date();
+      if (!item.genres?.length) {
+        Object.assign(item, await fetchCinemaMetadata(tmdbId, mediaType));
+      }
+      await item.save();
+    } else {
+      const metadata = await fetchCinemaMetadata(tmdbId, mediaType);
+      item = await CinemaItem.create({
+        user: req.user._id,
+        tmdbId,
+        mediaType,
+        title,
+        cover,
+        decimalRating,
+        reviewText: reviewText ?? "",
+        containsSpoilers: containsSpoilers ?? false,
+        isWatched: true,
+        isWatchlist: false,
+        ...metadata,
+        ...(!metadata.releaseDate && releaseDate ? { releaseDate } : {}),
+      });
+    }
+
+    triggerEpisodeMapPrewarmForShow(item);
+    await invalidateCalendarCache(req.user._id);
+
+    res.status(200).json({ success: true, data: item });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }
@@ -1850,3 +2061,55 @@ exports.getCinemaReviews = async (req, res) => {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }
 };
+
+// GET /api/cinema/tv/:tmdbId/episode/:seasonNumber/:episodeNumber/reviews (Protected)
+// Everyone's rated episodeReviews entries for this exact episode, across ALL
+// users tracking the show - mirrors getCinemaReviews above but unwinds the
+// nested episodeReviews array instead of matching whole CinemaItem documents.
+const EPISODE_REVIEW_SORT_OPTIONS = {
+  recent: { reviewedAt: -1 },
+  highest: { decimalRating: -1, reviewedAt: -1 },
+};
+
+exports.getEpisodeReviews = async (req, res) => {
+  try {
+    const { tmdbId, seasonNumber, episodeNumber } = req.params;
+    const sort = req.query.sort;
+    const seasonNum = Number(seasonNumber);
+    const episodeNum = Number(episodeNumber);
+    const userId = req.user._id;
+
+    const sortOrder = EPISODE_REVIEW_SORT_OPTIONS[sort] || EPISODE_REVIEW_SORT_OPTIONS.recent;
+
+    const reviews = await CinemaItem.aggregate([
+      { $match: { tmdbId, mediaType: "tv" } },
+      { $unwind: "$episodeReviews" },
+      {
+        $match: {
+          "episodeReviews.seasonNumber": seasonNum,
+          "episodeReviews.episodeNumber": episodeNum,
+          "episodeReviews.decimalRating": { $ne: null },
+        },
+      },
+      { $lookup: { from: "users", localField: "user", foreignField: "_id", as: "user" } },
+      { $unwind: "$user" },
+      {
+        $project: {
+          _id: 0,
+          user: { _id: "$user._id", username: "$user.username", profilePicture: "$user.profilePicture" },
+          decimalRating: "$episodeReviews.decimalRating",
+          reviewText: "$episodeReviews.reviewText",
+          containsSpoilers: "$episodeReviews.containsSpoilers",
+          reviewedAt: "$episodeReviews.reviewedAt",
+        },
+      },
+      { $sort: sortOrder },
+    ]);
+
+    const userReview = reviews.find((r) => r.user?._id?.toString() === userId.toString()) || null;
+    res.status(200).json({ success: true, data: { reviews, userReview } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+

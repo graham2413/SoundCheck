@@ -44,7 +44,7 @@
          element to re-enter on (re-fires on every season switch, since
          loadingEpisodes toggles true/false around each fetch). -->
     <div class="contents" *ngIf="!loadingEpisodes" @fadeSlideIn>
-      <div class="episode-card" @itemAnim *ngFor="let ep of episodes">
+      <div class="episode-card" @itemAnim *ngFor="let ep of episodes" (click)="selectEpisode(ep)">
         <div class="episode-card-media">
           <div *ngIf="ep.stillPath && !isImageLoaded(ep.episodeNumber)" class="absolute inset-0 flex items-center justify-center bg-gray-800">
             <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>

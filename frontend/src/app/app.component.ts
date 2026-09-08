@@ -21,6 +21,7 @@ import { jwtDecode } from 'jwt-decode';
 import { AuthService } from './services/auth.service';
 import { DecodedToken } from './models/responses/decoded-token-response';
 import { UserService } from './services/user.service';
+import { NavbarVisibilityService } from './services/navbar-visibility.service';
 import { forkJoin, of, timer } from 'rxjs';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { UpdateService } from './services/update.service';
@@ -89,6 +90,7 @@ import { UpdateService } from './services/update.service';
 export class AppComponent implements OnInit {
   title = 'Cinewave';
   currentUrl: string = '';
+  isNavbarForceHidden = false;
   navigationDirection: 'forward' | 'back' = 'forward';
   profileLoaded = false;
   activeOutlet: RouterOutlet | null = null;
@@ -114,13 +116,18 @@ export class AppComponent implements OnInit {
     private userService: UserService,
     private cdRef: ChangeDetectorRef,
     private swUpdate: SwUpdate,
-    private updateService: UpdateService
+    private updateService: UpdateService,
+    private navbarVisibility: NavbarVisibilityService
   ) {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         this.currentUrl = event.urlAfterRedirects;
       });
+
+    this.navbarVisibility.hidden$.subscribe((hidden) => {
+      this.isNavbarForceHidden = hidden;
+    });
   }
 
   ngOnInit() {
@@ -354,7 +361,7 @@ export class AppComponent implements OnInit {
       '/forgot-password',
       '/not-found',
     ];
-    return !hiddenRoutes.some((route) => this.currentUrl.startsWith(route));
+    return !this.isNavbarForceHidden && !hiddenRoutes.some((route) => this.currentUrl.startsWith(route));
   }
 
   setActiveOutlet(outlet: RouterOutlet) {

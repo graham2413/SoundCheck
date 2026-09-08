@@ -6,8 +6,9 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PROVIDER_LOGO_OVERRIDES } from '../../shared/provider-logo-overrides';
 import { getCinemaStatusBadge, withShortBadgeLabel, CinemaBadgeVm } from '../../shared/cinema-status-badge';
 import { CinemaBadgeComponent } from '../../shared/cinema-badge/cinema-badge.component';
+import { CinemaSortDropdownComponent, CinemaDropdownOption } from '../../shared/cinema-sort-dropdown/cinema-sort-dropdown.component';
 import { CinemaEpisodesTabComponent } from './cinema-episodes-tab.component';
-import { CinemaReview, CinemaPersonCredit } from '../../models/responses/cinema-response';
+import { CinemaReview, CinemaPersonCredit, CinemaSeasonEpisode, EpisodeImdbRating } from '../../models/responses/cinema-response';
 
 export interface WatchProvider {
   name: string;
@@ -25,7 +26,7 @@ export type ReviewSort = 'recent' | 'highest' | 'liked';
 @Component({
   selector: 'app-cinema-review-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, CinemaBadgeComponent, CinemaEpisodesTabComponent],
+  imports: [CommonModule, FormsModule, CinemaBadgeComponent, CinemaSortDropdownComponent, CinemaEpisodesTabComponent],
   templateUrl: './cinema-review-page.component.html',
   styleUrls: ['./cinema-review-page.component.css'],
   animations: [
@@ -413,6 +414,15 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   @Output() tabChange = new EventEmitter<void>();
   @ViewChild('tabsRow') tabsRow?: ElementRef<HTMLElement>;
 
+  // Bubbled straight up from app-cinema-episodes-tab - see that component's
+  // episodeSelected output for the payload shape.
+  @Output() episodeSelected = new EventEmitter<{
+    episode: CinemaSeasonEpisode;
+    seasonNumber: number;
+    seasonPosterUrl: string | null;
+    imdbRating: EpisodeImdbRating | null;
+  }>();
+
   selectTab(tab: string): void {
     this.activeTab = tab;
     if (tab === 'Episodes') this.hasOpenedEpisodesTab = true;
@@ -531,10 +541,16 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
     this.reviewFilterChange.emit(filter);
   }
 
-  onReviewSortChange(sort: ReviewSort): void {
-    this.reviewSort = sort;
-    this.reviewSortChange.emit(sort);
+  onReviewSortChange(sort: string): void {
+    this.reviewSort = sort as ReviewSort;
+    this.reviewSortChange.emit(this.reviewSort);
   }
+
+  readonly reviewSortOptions: CinemaDropdownOption[] = [
+    { value: 'recent', label: 'Most Recent' },
+    { value: 'highest', label: 'Highest Rated' },
+    { value: 'liked', label: 'Most Liked' },
+  ];
 
   private static readonly RING_RADIUS = 45;
 

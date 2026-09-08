@@ -140,8 +140,8 @@
       <span class="action-btn-label sm:hidden">{{ isWatchlist ? 'Added' : 'Add' }}</span>
     </button>
     <button type="button" class="action-btn action-btn-outline" (click)="rate.emit()">
-      <i class="far fa-star flex-shrink-0"></i>
-      <span class="action-btn-label">Rate</span>
+      <i class="flex-shrink-0" [class.far]="!userReview" [class.fa-star]="!userReview" [class.fas]="userReview" [class.fa-pen]="userReview"></i>
+      <span class="action-btn-label">{{ userReview ? 'Edit' : 'Rate' }}</span>
     </button>
     <button
       type="button"
@@ -275,6 +275,7 @@
       [showStatus]="status"
       (seasonChanging)="onEpisodesSeasonChanging()"
       (firstEpisodesLoaded)="onFirstEpisodesLoaded()"
+      (episodeSelected)="episodeSelected.emit($event)"
     ></app-cinema-episodes-tab>
   </div>
 
@@ -363,7 +364,7 @@
           in the community.
         </p>
         <button type="button" class="action-btn action-btn-primary reviews-empty-btn" (click)="rate.emit()">
-          Write Your Review
+          Edit Your Review
         </button>
       </div>
 
@@ -388,15 +389,11 @@
         >
           My Review
         </button>
-        <select
-          class="review-sort-select"
-          [(ngModel)]="reviewSort"
-          (ngModelChange)="onReviewSortChange($event)"
-        >
-          <option value="recent">Most Recent</option>
-          <option value="highest">Highest Rated</option>
-          <option value="liked">Most Liked</option>
-        </select>
+        <app-cinema-sort-dropdown
+          [options]="reviewSortOptions"
+          [value]="reviewSort"
+          (valueChange)="onReviewSortChange($event)"
+        ></app-cinema-sort-dropdown>
       </div>
 
       <p class="reviews-empty-subtitle mt-4" *ngIf="filteredReviews.length === 0">

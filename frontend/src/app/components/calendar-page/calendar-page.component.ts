@@ -6,8 +6,8 @@ import { ToastrService } from 'ngx-toastr';
 import { CalendarEntry } from 'src/app/models/responses/cinema-response';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
 import { CinemaService } from 'src/app/services/cinema.service';
-import { ReviewPageComponent } from '../review-page/review-page.component';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
+import { CinemaRateModalComponent } from '../cinema-review-page/cinema-rate-modal.component';
 
 @Component({
   selector: 'app-calendar',
@@ -152,9 +152,9 @@ export class CalendarPageComponent implements OnInit {
     modalRef.componentInstance.recordList = [record];
     modalRef.componentInstance.currentIndex = 0;
 
-    modalRef.componentInstance.rate.subscribe(() => {
+    modalRef.componentInstance.rate.subscribe((updatedRecord: CinemaItem) => {
       modalRef.close();
-      this.openRatingModal(record);
+      this.openRatingModal(updatedRecord);
     });
 
     // Rating/watchlist changes can move an entry between the Upcoming/Past
@@ -171,14 +171,25 @@ export class CalendarPageComponent implements OnInit {
       scrollable: false,
     };
 
-    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+    const modalRef = this.modal.open(CinemaRateModalComponent, modalOptions);
+    const instance = modalRef.componentInstance;
+    instance.mode = 'cinema';
+    instance.tmdbId = record.tmdbId ?? '';
+    instance.mediaType = record.mediaType;
+    instance.itemTitle = record.title;
+    instance.cover = record.cover ?? null;
+    instance.displayTitle = record.title;
+    instance.typeLabel = record.mediaType === 'movie' ? 'Movie' : 'TV Show';
+    instance.initialRating = record.decimalRating ?? null;
+    instance.initialReviewText = record.reviewText ?? '';
+    instance.initialContainsSpoilers = record.containsSpoilers ?? false;
 
-    modalRef.componentInstance.recordList = [record];
-    modalRef.componentInstance.currentIndex = 0;
-    modalRef.componentInstance.record = record;
-
-    modalRef.componentInstance.reviewCreated?.subscribe(() => this.loadCalendar());
-    modalRef.componentInstance.reviewEdited?.subscribe(() => this.loadCalendar());
-    modalRef.componentInstance.reviewDeleted?.subscribe(() => this.loadCalendar());
+    // Rating/watchlist changes can move an entry between the Upcoming/Past
+    // tabs (or off the calendar entirely), so just reload from the server
+    // instead of trying to patch the local list in place.
+    modalRef.result.then(
+      () => this.loadCalendar(),
+      () => {}
+    );
   }
 }

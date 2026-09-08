@@ -9,6 +9,7 @@ const episodeReviewSchema = new mongoose.Schema({
   isWatched: { type: Boolean, default: true },
   decimalRating: { type: Number, min: 0, max: 10 },
   reviewText: String,
+  containsSpoilers: { type: Boolean, default: false },
   reviewedAt: Date,
 }, { _id: false });
 
@@ -37,6 +38,7 @@ const cinemaItemSchema = new mongoose.Schema({
   streamingPlatforms: [String],
   decimalRating: { type: Number, min: 0, max: 10 }, // e.g. 8.4
   reviewText: { type: String, default: "" },
+  containsSpoilers: { type: Boolean, default: false },
   likes: { type: Number, default: 0, min: 0 },
   likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 

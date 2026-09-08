@@ -1,0 +1,149 @@
+<div class="rate-modal">
+  <div class="rate-modal-header">
+    <button type="button" class="icon-circle-btn" aria-label="Close" (click)="activeModal.dismiss()">
+      <i class="fas fa-times"></i>
+    </button>
+    <h1 class="rate-modal-title">{{ isEdit ? 'Edit Review' : 'Create Review' }}</h1>
+  </div>
+
+  <div class="rate-modal-subject">
+    <img *ngIf="cover" [src]="cover" [alt]="displayTitle" class="rate-modal-cover" />
+    <div *ngIf="!cover" class="rate-modal-cover rate-modal-cover-placeholder">
+      <i class="fas fa-clapperboard"></i>
+    </div>
+
+    <div class="min-w-0">
+      <p class="rate-modal-subject-title">{{ displayTitle }}</p>
+      <p class="rate-modal-subject-meta">
+        <span *ngIf="displayYear">{{ displayYear }}</span>
+        <span *ngIf="displayYear && certification">&nbsp;&middot;&nbsp;</span>
+        <span *ngIf="certification">{{ certification }}</span>
+        <span *ngIf="(displayYear || certification) && typeLabel">&nbsp;&middot;&nbsp;</span>
+        <span *ngIf="typeLabel">{{ typeLabel }}</span>
+      </p>
+      <p class="rate-modal-subject-secondary" *ngIf="mode === 'episode'; else genresLine">
+        Season {{ seasonNumber }}, Episode {{ episodeNumber }}
+      </p>
+      <ng-template #genresLine>
+        <p class="rate-modal-subject-secondary" *ngIf="genres.length">{{ genres.join(', ') }}</p>
+      </ng-template>
+    </div>
+  </div>
+
+  <div class="rate-modal-rating-card">
+    <p class="rate-modal-rating-heading">Your Rating</p>
+    <p class="rate-modal-rating-subtext">Tap − or + to adjust (0.1 increments)</p>
+
+    <div class="rate-modal-ring-row">
+      <button
+        type="button"
+        class="rate-modal-ring-btn"
+        aria-label="Decrease rating"
+        (pointerdown)="startAdjust(-0.1)"
+        (pointerup)="stopAdjust()"
+        (pointerleave)="stopAdjust()"
+        (pointercancel)="stopAdjust()"
+      >
+        <i class="fas fa-minus"></i>
+      </button>
+
+      <div class="rate-modal-ring">
+        <svg viewBox="0 0 180 180">
+          <circle class="ring-track" cx="90" cy="90" r="80"></circle>
+          <circle
+            class="ring-progress"
+            cx="90"
+            cy="90"
+            r="80"
+            [style.strokeDasharray]="ringCircumference"
+            [style.strokeDashoffset]="ringDashoffset"
+          ></circle>
+          <circle
+            *ngFor="let p of tenCelebrationParticles; trackBy: trackCelebrationParticle"
+            [attr.cx]="p.cx"
+            [attr.cy]="p.cy"
+            r="2.5"
+            [attr.fill]="p.color"
+            [attr.style]="'--px:' + p.px + 'px; --py:' + p.py + 'px;'"
+            class="ten-celebration-particle"
+          ></circle>
+        </svg>
+        <div class="rate-modal-ring-value">
+          <span
+            *ngIf="!isEditingRatingNumber"
+            class="rate-modal-ring-number rate-modal-ring-number-editable"
+            (click)="startEditingRatingNumber()"
+            >{{ formattedRating }}</span
+          >
+          <input
+            *ngIf="isEditingRatingNumber"
+            #ratingInput
+            type="number"
+            class="rate-modal-ring-input"
+            step="0.1"
+            min="0"
+            max="10"
+            [(ngModel)]="ratingInputValue"
+            (blur)="commitRatingInput()"
+            (keydown.enter)="ratingInputEl?.nativeElement?.blur()"
+            (keydown.escape)="cancelEditingRatingNumber()"
+          />
+          <span class="rate-modal-ring-outof">/ 10</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="rate-modal-ring-btn"
+        aria-label="Increase rating"
+        (pointerdown)="startAdjust(0.1)"
+        (pointerup)="stopAdjust()"
+        (pointerleave)="stopAdjust()"
+        (pointercancel)="stopAdjust()"
+      >
+        <i class="fas fa-plus"></i>
+      </button>
+    </div>
+
+    <p class="rate-modal-mood-label">{{ moodLabel }}</p>
+  </div>
+
+  <div class="rate-modal-review">
+    <div class="flex items-center justify-between">
+      <p class="rate-modal-section-heading">Your Review</p>
+      <span class="rate-modal-char-count">{{ reviewCharCount }}/1,000</span>
+    </div>
+    <textarea
+      class="rate-modal-textarea"
+      maxlength="1000"
+      rows="4"
+      placeholder="Share your thoughts…"
+      [(ngModel)]="reviewText"
+    ></textarea>
+  </div>
+
+  <div class="rate-modal-spoiler-row">
+    <div class="rate-modal-spoiler-label">
+      <i class="fas fa-eye-slash"></i>
+      <div>
+        <p class="rate-modal-spoiler-title">Contains spoilers</p>
+        <p class="rate-modal-spoiler-subtitle">Hide sensitive content behind a spoiler warning</p>
+      </div>
+    </div>
+    <button
+      type="button"
+      class="rate-modal-toggle"
+      [class.rate-modal-toggle-on]="containsSpoilers"
+      role="switch"
+      [attr.aria-checked]="containsSpoilers"
+      (click)="containsSpoilers = !containsSpoilers"
+    >
+      <span class="rate-modal-toggle-knob"></span>
+    </button>
+  </div>
+
+  <button type="button" class="rate-modal-submit" [disabled]="isSaving" (click)="submit()">
+    <i class="fas" [class.fa-save]="!isSaving" [class.fa-spinner]="isSaving" [class.fa-spin]="isSaving"></i>
+    {{ isEdit ? 'Save Changes' : 'Create Review' }}
+  </button>
+</div>

@@ -1,0 +1,361 @@
+.rate-modal {
+  background: #020814;
+  color: #fff;
+  padding: 1.25rem;
+  height: 100vh;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rate-modal-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex: 0 0 auto;
+}
+
+.icon-circle-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  flex-shrink: 0;
+}
+
+.rate-modal-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.rate-modal-subject {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex: 0 0 auto;
+}
+
+.rate-modal-cover {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.rate-modal-cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111a2e;
+  color: #64748b;
+  font-size: 1.5rem;
+}
+
+.rate-modal-subject-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.rate-modal-subject-meta {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin: 0.15rem 0 0;
+}
+
+.rate-modal-subject-secondary {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin: 0.15rem 0 0;
+}
+
+.rate-modal-rating-card {
+  background: #0b1220;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  flex: 0 0 auto;
+}
+
+.rate-modal-rating-heading {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.rate-modal-rating-subtext {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  margin: 0.15rem 0 0.5rem;
+}
+
+.rate-modal-ring-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.rate-modal-ring-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.15);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.rate-modal-ring {
+  position: relative;
+  width: 5.25rem;
+  height: 5.25rem;
+}
+
+.rate-modal-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+
+.rate-modal-ring .ring-track {
+  fill: none;
+  stroke: rgba(148, 163, 184, 0.2);
+  stroke-width: 8;
+}
+
+.rate-modal-ring .ring-progress {
+  fill: none;
+  stroke: #2563eb;
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.15s ease;
+}
+
+.rate-modal-ring-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.rate-modal-ring-number {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.rate-modal-ring-number-editable {
+  cursor: text;
+}
+
+/* Looks exactly like the plain number until tapped (no border/background) -
+   only turns into an obvious input once it's actually being edited. */
+.rate-modal-ring-input {
+  width: 2.6rem;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  padding: 0;
+  -moz-appearance: textfield;
+}
+
+.rate-modal-ring-input:focus {
+  outline: none;
+}
+
+.rate-modal-ring-input::-webkit-outer-spin-button,
+.rate-modal-ring-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.rate-modal-ring-outof {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  margin-top: 0.1rem;
+}
+
+/* One-off confetti burst when the rating settles on a perfect 10 - each
+   particle shoots outward from the ring along its own randomized vector
+   (mirrors the legacy review-page's Overall Rating ring celebration). */
+.ten-celebration-particle {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: rate-modal-ten-celebration-pop 1.5s ease-out forwards;
+}
+
+@keyframes rate-modal-ten-celebration-pop {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.2);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(calc(var(--px) * 0.25), calc(var(--py) * 0.25)) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--px), var(--py)) scale(0.3);
+  }
+}
+
+.rate-modal-mood-label {
+  color: #3b82f6;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 0.5rem 0 0;
+}
+
+.rate-modal-review {
+  margin-bottom: 1.25rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rate-modal-section-heading {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.rate-modal-char-count {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.rate-modal-textarea {
+  width: 100%;
+  margin-top: 0.5rem;
+  background: #0b1220;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  color: #fff;
+  font-size: 0.9rem;
+  resize: none;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.rate-modal-textarea::placeholder {
+  color: #6b7280;
+}
+
+.rate-modal-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.rate-modal-spoiler-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex: 0 0 auto;
+}
+
+.rate-modal-spoiler-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #fff;
+}
+
+.rate-modal-spoiler-label i {
+  color: #9ca3af;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.rate-modal-spoiler-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.rate-modal-spoiler-subtitle {
+  color: #9ca3af;
+  font-size: 0.78rem;
+  margin: 0.1rem 0 0;
+}
+
+.rate-modal-toggle {
+  width: 3rem;
+  height: 1.65rem;
+  border-radius: 9999px;
+  background: #374151;
+  border: none;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.rate-modal-toggle-on {
+  background: #2563eb;
+}
+
+.rate-modal-toggle-knob {
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.rate-modal-toggle-on .rate-modal-toggle-knob {
+  transform: translateX(1.35rem);
+}
+
+.rate-modal-submit {
+  width: 100%;
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 0.85rem;
+  padding: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  flex: 0 0 auto;
+}
+
+.rate-modal-submit:disabled {
+  opacity: 0.7;
+}

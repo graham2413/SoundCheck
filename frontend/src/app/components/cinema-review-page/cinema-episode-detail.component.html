@@ -1,0 +1,137 @@
+<div class="cinema-episode-detail pb-10">
+  <!-- Header -->
+  <div class="relative flex items-center px-4 pt-4">
+    <button
+      type="button"
+      aria-label="Back"
+      (click)="back.emit()"
+      class="w-11 h-11 rounded-full border border-gray-600 text-gray-200 flex items-center justify-center text-lg flex-shrink-0"
+    >
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <h1 class="absolute left-1/2 -translate-x-1/2 text-white font-bold text-xl">Episode</h1>
+  </div>
+
+  <!-- Poster (season, vertical) + title block -->
+  <div class="flex items-start gap-4 px-4 pt-5">
+    <div class="episode-poster-frame">
+      <img *ngIf="posterUrl" [src]="posterUrl" [alt]="episode.name" class="episode-poster-img" />
+      <div *ngIf="!posterUrl" class="episode-poster-placeholder">
+        <i class="fas fa-clapperboard"></i>
+      </div>
+    </div>
+
+    <div class="flex flex-col min-w-0 pt-1">
+      <h2 class="text-white font-bold text-2xl leading-snug break-words">
+        {{ episode.name || 'Episode ' + episode.episodeNumber }}
+      </h2>
+      <p class="text-gray-400 text-sm mt-1">Season {{ seasonNumber }}, Episode {{ episode.episodeNumber }}</p>
+      <p class="text-gray-400 text-sm mt-1">
+        <span *ngIf="formattedRuntime">{{ formattedRuntime }}</span>
+        <span *ngIf="formattedRuntime && formattedAirDate">&nbsp;&middot;&nbsp;</span>
+        <span *ngIf="formattedAirDate">{{ formattedAirDate }}</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- Ratings -->
+  <div class="episode-ratings-card mx-4 mt-4">
+    <div class="flex items-center justify-around">
+      <div class="flex flex-col items-center">
+        <div class="episode-rating-ring">
+          <svg viewBox="0 0 100 100">
+            <circle class="ring-track" cx="50" cy="50" r="45"></circle>
+            <circle
+              class="ring-progress ring-progress-blue"
+              cx="50"
+              cy="50"
+              r="45"
+              [style.strokeDasharray]="ringCircumference"
+              [style.strokeDashoffset]="myRatingDashoffset"
+            ></circle>
+          </svg>
+          <span class="episode-rating-ring-value">{{ myRating != null ? myRating.toFixed(1) : '—' }}</span>
+        </div>
+        <span class="episode-rating-caption">My Rating</span>
+      </div>
+
+      <div class="episode-ratings-divider"></div>
+
+      <div class="flex flex-col items-center">
+        <div class="episode-rating-ring">
+          <svg viewBox="0 0 100 100">
+            <circle class="ring-track" cx="50" cy="50" r="45"></circle>
+            <circle
+              class="ring-progress ring-progress-yellow"
+              cx="50"
+              cy="50"
+              r="45"
+              [style.strokeDasharray]="ringCircumference"
+              [style.strokeDashoffset]="imdbRatingDashoffset"
+            ></circle>
+          </svg>
+          <span class="episode-rating-ring-value">{{ imdbRating?.averageRating != null ? imdbRating!.averageRating!.toFixed(1) : '—' }}</span>
+        </div>
+        <span class="episode-rating-caption">IMDb</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex items-center gap-2 px-4 mt-4">
+    <button
+      type="button"
+      class="action-btn"
+      [class.action-btn-outline]="!isWatched"
+      [class.action-btn-primary]="isWatched"
+      [disabled]="isTogglingWatched"
+      (click)="toggleWatched()"
+    >
+      <i
+        class="fas flex-shrink-0"
+        [class.fa-spinner]="isTogglingWatched"
+        [class.fa-spin]="isTogglingWatched"
+        [class.fa-check]="!isTogglingWatched"
+      ></i>
+      <span class="action-btn-label">{{ isWatched ? 'Watched' : 'Mark Watched' }}</span>
+    </button>
+    <button type="button" class="action-btn action-btn-outline" (click)="openRateModal()">
+      <i class="far fa-star flex-shrink-0"></i>
+      <span class="action-btn-label">Rate</span>
+    </button>
+  </div>
+
+  <!-- Overview -->
+  <div class="px-4 mt-5" *ngIf="episode.overview">
+    <h3 class="text-white font-bold text-lg mb-2">Overview</h3>
+    <p class="text-gray-300 text-sm leading-relaxed">{{ episode.overview }}</p>
+  </div>
+
+  <!-- Reviews -->
+  <div class="px-4 mt-5">
+    <h3 class="text-white font-bold text-lg mb-2">Reviews</h3>
+    <p class="episode-reviews-empty" *ngIf="!loadingReviews && reviews.length === 0">No reviews yet for this episode.</p>
+
+    <div class="episode-review-card" *ngFor="let review of reviews">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <img [src]="profilePictureUrl(review.user.profilePicture)" alt="" class="episode-review-avatar" />
+          <span class="episode-review-username">{{ review.user.username }}</span>
+        </div>
+        <span class="episode-review-date" *ngIf="review.reviewedAt">{{ review.reviewedAt | date : 'MMM d, y' }}</span>
+      </div>
+
+      <div class="flex items-center gap-2 mt-2">
+        <span class="star-rating">
+          <span class="star" *ngFor="let i of [1, 2, 3, 4, 5]">
+            <i class="far fa-star star-empty"></i>
+            <i class="fas fa-star star-filled" [style.width.%]="starFillPercent(i, review.decimalRating)"></i>
+          </span>
+        </span>
+        <span class="episode-review-score">{{ review.decimalRating }} / 10</span>
+      </div>
+
+      <p class="episode-review-text" *ngIf="review.reviewText">{{ review.reviewText }}</p>
+    </div>
+  </div>
+</div>

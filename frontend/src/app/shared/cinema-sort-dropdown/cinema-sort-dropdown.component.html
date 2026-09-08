@@ -1,0 +1,24 @@
+<div class="cinema-sort-dropdown" [class.cinema-sort-dropdown-open]="isOpen">
+  <button
+    type="button"
+    class="cinema-sort-dropdown-trigger"
+    (click)="toggle()"
+    [attr.aria-expanded]="isOpen"
+  >
+    <span>{{ selectedLabel }}</span>
+    <i class="fas fa-chevron-down cinema-sort-dropdown-chevron"></i>
+  </button>
+
+  <div class="cinema-sort-dropdown-panel" *ngIf="isOpen">
+    <button
+      type="button"
+      *ngFor="let option of options"
+      class="cinema-sort-dropdown-option"
+      [class.cinema-sort-dropdown-option-active]="option.value === value"
+      (click)="select(option.value)"
+    >
+      <span>{{ option.label }}</span>
+      <i class="fas fa-check" *ngIf="option.value === value"></i>
+    </button>
+  </div>
+</div>

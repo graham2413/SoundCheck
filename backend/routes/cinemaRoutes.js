@@ -20,6 +20,10 @@ const {
   markCinemaWatched,
   getCinemaItemStatus,
   getTvSeasonEpisodes,
+  rateCinema,
+  markEpisodeWatched,
+  rateEpisode,
+  getEpisodeReviews,
 } = require("../controllers/cinemaController");
 
 // Zip never touches disk/Cloudinary - parsed directly from the in-memory buffer
@@ -34,6 +38,9 @@ router.get("/tv/:parentTconst/episodes/imdb-ratings", authenticateUser, getEpiso
 
 // Episode name/overview/air date/still image for one TV season, TMDb-sourced (Protected)
 router.get("/tv/:tmdbId/season/:seasonNumber", authenticateUser, getTvSeasonEpisodes);
+
+// Everyone's reviews (rating + text) for one specific episode (Protected)
+router.get("/tv/:tmdbId/episode/:seasonNumber/:episodeNumber/reviews", authenticateUser, getEpisodeReviews);
 
 // Consolidated payload for the cinema review detail page (Protected)
 router.get("/detail/:mediaType/:tmdbId", authenticateUser, getCinemaDetail);
@@ -62,6 +69,15 @@ router.post("/watchlist/toggle", authenticateUser, toggleWatchlist);
 
 // Mark a movie/show as watched WITHOUT a rating (Protected)
 router.post("/mark-watched", authenticateUser, markCinemaWatched);
+
+// Create/edit a rating+review for a whole movie/show (Protected)
+router.post("/rate", authenticateUser, rateCinema);
+
+// Toggle watched (no rating) for one specific episode (Protected)
+router.post("/episode/mark-watched", authenticateUser, markEpisodeWatched);
+
+// Create/edit a rating+review for one specific episode (Protected)
+router.post("/episode/rate", authenticateUser, rateEpisode);
 
 // Everyone's reviews (rating + text) for the same movie/show (Protected)
 router.get("/reviews", authenticateUser, getCinemaReviews);

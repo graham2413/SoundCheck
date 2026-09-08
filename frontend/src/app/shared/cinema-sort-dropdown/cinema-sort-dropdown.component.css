@@ -1,0 +1,98 @@
+.cinema-sort-dropdown {
+  position: relative;
+  display: inline-block;
+  margin-left: auto;
+}
+
+.cinema-sort-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: linear-gradient(180deg, #131c30 0%, #0b1220 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.cinema-sort-dropdown-trigger:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.cinema-sort-dropdown-open .cinema-sort-dropdown-trigger {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.cinema-sort-dropdown-chevron {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  transition: transform 0.15s ease;
+}
+
+.cinema-sort-dropdown-open .cinema-sort-dropdown-chevron {
+  transform: rotate(180deg);
+  color: #3b82f6;
+}
+
+.cinema-sort-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  min-width: 10rem;
+  max-height: 15rem;
+  overflow-y: auto;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: #0b1120;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  z-index: 20;
+  padding: 0.35rem;
+  animation: cinema-sort-dropdown-in 0.12s ease-out;
+}
+
+@keyframes cinema-sort-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cinema-sort-dropdown-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.6rem;
+  color: #d1d5db;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.cinema-sort-dropdown-option:hover {
+  background: rgba(59, 130, 246, 0.12);
+  color: #fff;
+}
+
+.cinema-sort-dropdown-option-active {
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+.cinema-sort-dropdown-option-active i {
+  color: #3b82f6;
+  font-size: 0.75rem;
+}

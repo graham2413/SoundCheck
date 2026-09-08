@@ -6,10 +6,11 @@ import { CinemaReviewPageComponent, ReviewFilter, ReviewSort } from './cinema-re
 import { CinemaCastListComponent } from './cinema-cast-list.component';
 import { CinemaAllReviewsComponent } from './cinema-all-reviews.component';
 import { CinemaAwardsPageComponent } from './cinema-awards-page.component';
+import { CinemaEpisodeDetailComponent } from './cinema-episode-detail.component';
 import { CinemaService } from '../../services/cinema.service';
 import { ReviewService } from '../../services/review.service';
 import { UserService } from '../../services/user.service';
-import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../../models/responses/cinema-response';
+import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeasonEpisode, EpisodeImdbRating } from '../../models/responses/cinema-response';
 
 // Modal wrapper around the presentational CinemaReviewPageComponent - fetches
 // the full detail payload (TMDb + OMDb) for the given record and exposes the
@@ -19,7 +20,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
 @Component({
   selector: 'app-cinema-review-modal',
   standalone: true,
-  imports: [CommonModule, CinemaReviewPageComponent, CinemaCastListComponent, CinemaAllReviewsComponent, CinemaAwardsPageComponent],
+  imports: [CommonModule, CinemaReviewPageComponent, CinemaCastListComponent, CinemaAllReviewsComponent, CinemaAwardsPageComponent, CinemaEpisodeDetailComponent],
   template: `
     <div #scrollContainer class="fixed inset-0 z-50 overflow-y-auto bg-[#020814]">
       <div class="cinema-loader-overlay" *ngIf="!detail">
@@ -28,7 +29,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
       </div>
 
       <app-cinema-review-page
-        *ngIf="detail && !showFullCast && !showAllReviews && !showAwards"
+        *ngIf="detail && !showFullCast && !showAllReviews && !showAwards && !showEpisodeDetail"
         [title]="detail.title"
         [cover]="detail.cover"
         [mediaType]="detail.mediaType"
@@ -72,7 +73,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
         [reviewSort]="reviewSort"
         (back)="activeModal.dismiss()"
         (addToWatchlist)="onAddToWatchlist()"
-        (rate)="rate.emit()"
+        (rate)="rate.emit(record)"
         (markWatched)="onMarkWatched()"
         (viewCast)="switchToCast()"
         (viewAwards)="switchToAwards()"
@@ -81,6 +82,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
         (toggleReviewLike)="onToggleReviewLike($event)"
         (seeAllReviews)="switchToAllReviews()"
         (similarItemClick)="openRelatedTitle($event)"
+        (episodeSelected)="onEpisodeSelected($event)"
       ></app-cinema-review-page>
 
       <app-cinema-cast-list
@@ -120,6 +122,19 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview } from '../.
         [awardsStats]="detail.awardsStats"
         (back)="switchToReview()"
       ></app-cinema-awards-page>
+
+      <app-cinema-episode-detail
+        *ngIf="detail && showEpisodeDetail && selectedEpisode"
+        [tmdbId]="detail.tmdbId"
+        [showTitle]="detail.title"
+        [showCover]="detail.cover"
+        [seasonNumber]="selectedEpisodeSeasonNumber"
+        [episode]="selectedEpisode"
+        [seasonPosterUrl]="selectedEpisodeSeasonPosterUrl"
+        [imdbRating]="selectedEpisodeImdbRating"
+        (back)="switchToReview()"
+        (episodeUpdated)="onEpisodeUpdated($event)"
+      ></app-cinema-episode-detail>
     </div>
   `,
 })
@@ -131,7 +146,11 @@ export class CinemaReviewModalComponent implements OnInit {
   @Input() currentIndex = 0;
 
   @Output() watchlistToggled = new EventEmitter<CinemaItem>();
-  @Output() rate = new EventEmitter<void>();
+  // Emits the modal's own up-to-date record (merged with the current
+  // user's real reviewText/containsSpoilers once reviews load - see
+  // loadReviews()) instead of void, so whoever opens the rate modal always
+  // gets accurate pre-fill data instead of a possibly-stale closured copy.
+  @Output() rate = new EventEmitter<CinemaItem>();
 
   detail: CinemaDetail | null = null;
   isWatchlist = false;
@@ -141,6 +160,11 @@ export class CinemaReviewModalComponent implements OnInit {
   showFullCast = false;
   showAllReviews = false;
   showAwards = false;
+  showEpisodeDetail = false;
+  selectedEpisode: CinemaSeasonEpisode | null = null;
+  selectedEpisodeSeasonNumber = 1;
+  selectedEpisodeSeasonPosterUrl: string | null = null;
+  selectedEpisodeImdbRating: EpisodeImdbRating | null = null;
 
   reviews: CinemaReview[] = [];
   userReview: CinemaReview | null = null;
@@ -230,6 +254,24 @@ export class CinemaReviewModalComponent implements OnInit {
         this.appRating = data.reviews.length
           ? data.reviews.reduce((sum, r) => sum + (r.decimalRating || 0), 0) / data.reviews.length
           : null;
+
+        // The record this modal was opened with can be a stale/incomplete
+        // copy (e.g. a search-result stub, or a list item fetched before the
+        // user's own rating/review text existed) - the freshly-fetched
+        // userReview is always accurate for the CURRENT user, so merge its
+        // fields in as the source of truth for anything the "Rate"/"Edit"
+        // buttons hand off to the rate modal.
+        if (this.userReview) {
+          this.record = {
+            ...this.record,
+            _id: this.userReview._id,
+            decimalRating: this.userReview.decimalRating,
+            reviewText: this.userReview.reviewText,
+            containsSpoilers: this.userReview.containsSpoilers,
+            isWatched: true,
+            isWatchlist: false,
+          };
+        }
       },
       error: () => this.toastr.error('Failed to load reviews.', 'Error'),
     });
@@ -283,7 +325,26 @@ export class CinemaReviewModalComponent implements OnInit {
     this.showFullCast = false;
     this.showAllReviews = false;
     this.showAwards = false;
+    this.showEpisodeDetail = false;
     this.resetScroll();
+  }
+
+  onEpisodeSelected(payload: {
+    episode: CinemaSeasonEpisode;
+    seasonNumber: number;
+    seasonPosterUrl: string | null;
+    imdbRating: EpisodeImdbRating | null;
+  }): void {
+    this.selectedEpisode = payload.episode;
+    this.selectedEpisodeSeasonNumber = payload.seasonNumber;
+    this.selectedEpisodeSeasonPosterUrl = payload.seasonPosterUrl;
+    this.selectedEpisodeImdbRating = payload.imdbRating;
+    this.showEpisodeDetail = true;
+    this.resetScroll();
+  }
+
+  onEpisodeUpdated(episode: CinemaSeasonEpisode): void {
+    this.selectedEpisode = episode;
   }
 
   onAddToWatchlist(): void {

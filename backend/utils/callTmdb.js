@@ -396,9 +396,9 @@ async function getTmdbTrending(mediaType) {
 // so this is the only source for it. Trimmed to just the fields the
 // Episodes tab actually renders before caching.
 async function getTmdbSeasonDetails(tvId, seasonNumber) {
-  // v2: added runtime per episode - bumped so entries cached before that
-  // (e.g. from testing this session) aren't missing it until their old TTL expires.
-  const cacheKey = `tmdb:season:v2:${tvId}:${seasonNumber}`;
+  // v3: added season-level posterPath - bumped so entries cached before that
+  // are refetched instead of served without it until their old TTL expires.
+  const cacheKey = `tmdb:season:v3:${tvId}:${seasonNumber}`;
   const cached = await redis.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
@@ -408,6 +408,7 @@ async function getTmdbSeasonDetails(tvId, seasonNumber) {
 
   const trimmed = {
     seasonNumber: raw.season_number,
+    posterPath: raw.poster_path || null,
     episodes: (raw.episodes || []).map((e) => ({
       episodeNumber: e.episode_number,
       name: e.name,

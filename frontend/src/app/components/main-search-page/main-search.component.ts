@@ -37,6 +37,7 @@ import { CinemaItem, CinemaSearchResult } from 'src/app/models/responses/cinema-
 import { getCinemaStatusBadge, CinemaBadgeVm } from 'src/app/shared/cinema-status-badge';
 import { CinemaBadgeComponent } from 'src/app/shared/cinema-badge/cinema-badge.component';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
+import { CinemaRateModalComponent } from '../cinema-review-page/cinema-rate-modal.component';
 import { MainSearchStateService } from 'src/app/services/main-search-state.service';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { MarqueeComponent } from './marquee/marquee.component';
@@ -1006,16 +1007,18 @@ export class MainSearchComponent implements OnInit, OnDestroy {
     modalRef.componentInstance.recordList = recordList;
     modalRef.componentInstance.currentIndex = index;
 
-    modalRef.componentInstance.rate.subscribe(() => {
+    modalRef.componentInstance.rate.subscribe((updatedRecord: CinemaItem) => {
       modalRef.close();
-      this.openCinemaRatingModal(record, recordList, index);
+      this.openCinemaRatingModal(updatedRecord, recordList, index);
     });
 
     return modalRef;
   }
 
-  // Legacy full editing modal - still used for the "Rate" action until the
-  // new cinema-review-page grows its own rating UI.
+  // Shared cinema rate/edit-review modal (movies + shows) - see
+  // cinema-rate-modal.component.ts. Mutates `record` in place on success so
+  // the underlying search-result card reflects the new rating immediately
+  // (same reference the list/detail modal already renders from).
   private openCinemaRatingModal(
     record: CinemaItem,
     recordList: CinemaItem[],
@@ -1028,11 +1031,35 @@ export class MainSearchComponent implements OnInit, OnDestroy {
       scrollable: false,
     };
 
-    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+    const modalRef = this.modal.open(CinemaRateModalComponent, modalOptions);
+    const instance = modalRef.componentInstance;
+    instance.mode = 'cinema';
+    instance.tmdbId = record.tmdbId ?? '';
+    instance.mediaType = record.mediaType;
+    instance.itemTitle = record.title;
+    instance.cover = record.cover ?? null;
+    instance.releaseDate = record.releaseDate ?? null;
+    instance.displayTitle = record.title;
+    instance.displayYear =
+      record.mediaType === 'tv' ? record.releaseYearRange ?? null : record.releaseDate ? new Date(record.releaseDate).getFullYear() : null;
+    instance.typeLabel = record.mediaType === 'movie' ? 'Movie' : 'TV Show';
+    instance.genres = record.genres ?? [];
+    instance.initialRating = record.decimalRating ?? null;
+    instance.initialReviewText = record.reviewText ?? '';
+    instance.initialContainsSpoilers = record.containsSpoilers ?? false;
 
-    modalRef.componentInstance.recordList = recordList;
-    modalRef.componentInstance.currentIndex = index;
-    modalRef.componentInstance.record = record;
+    modalRef.result.then(
+      (result) => {
+        if (!result) return;
+        record.decimalRating = result.decimalRating;
+        record.reviewText = result.reviewText;
+        record.containsSpoilers = result.containsSpoilers;
+        record.isWatchlist = false;
+        record.isWatched = true;
+        record.isUnrefinedImport = false;
+      },
+      () => {}
+    );
 
     return modalRef;
   }

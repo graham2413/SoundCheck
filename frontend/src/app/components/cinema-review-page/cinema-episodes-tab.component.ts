@@ -59,11 +59,22 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
   @Output() firstEpisodesLoaded = new EventEmitter<void>();
   private hasEmittedFirstEpisodesLoaded = false;
 
+  // Fired when an episode card is tapped - the parent (cinema-review-page ->
+  // cinema-review-modal) opens the dedicated episode detail overlay with
+  // this payload, no navigation involved.
+  @Output() episodeSelected = new EventEmitter<{
+    episode: CinemaSeasonEpisode;
+    seasonNumber: number;
+    seasonPosterUrl: string | null;
+    imdbRating: EpisodeImdbRating | null;
+  }>();
+
   selectedSeason = 1;
   seasonDropdownOpen = false;
 
   episodes: CinemaSeasonEpisode[] = [];
   loadingEpisodes = false;
+  seasonPosterUrl: string | null = null;
 
   // Reserved height for the loading placeholder, measured from the real
   // list right before it's replaced (see selectSeason) - a fixed guess
@@ -143,6 +154,7 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
     this.cinemaService.getTvSeasonEpisodes(this.tmdbId, season).subscribe({
       next: ({ data }) => {
         this.episodes = data.episodes;
+        this.seasonPosterUrl = data.posterUrl;
         this.loadingEpisodes = false;
         this.listMinHeightPx = null; // let the container return to its natural height for the new content
         this.emitFirstEpisodesLoadedOnce();
@@ -234,6 +246,15 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
 
   ratingFor(episodeNumber: number): EpisodeImdbRating | null {
     return this.ratingsByKey.get(`${this.selectedSeason}-${episodeNumber}`) ?? null;
+  }
+
+  selectEpisode(episode: CinemaSeasonEpisode): void {
+    this.episodeSelected.emit({
+      episode,
+      seasonNumber: this.selectedSeason,
+      seasonPosterUrl: this.seasonPosterUrl,
+      imdbRating: this.ratingFor(episode.episodeNumber),
+    });
   }
 
   get hasAnyRatingsData(): boolean {

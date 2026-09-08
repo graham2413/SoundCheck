@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
-import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor, CinemaSeasonEpisodesResponse, EpisodeImdbRatingsResponse } from '../models/responses/cinema-response';
+import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor, CinemaSeasonEpisodesResponse, EpisodeImdbRatingsResponse, EpisodeReviewsResponse } from '../models/responses/cinema-response';
 
 export interface WatchlistCursor {
   cursorValue: string;
@@ -70,6 +70,19 @@ export class CinemaService {
       headers: this.authHeaders(),
       params: showStatus ? { showStatus } : {},
     });
+  }
+
+  // Everyone's reviews (rating + text) for one specific episode
+  getEpisodeReviews(
+    tmdbId: string,
+    seasonNumber: number,
+    episodeNumber: number,
+    sort: 'recent' | 'highest' = 'recent'
+  ): Observable<{ success: boolean; data: EpisodeReviewsResponse }> {
+    return this.http.get<{ success: boolean; data: EpisodeReviewsResponse }>(
+      `${this.apiUrl}/tv/${tmdbId}/episode/${seasonNumber}/${episodeNumber}/reviews`,
+      { headers: this.authHeaders(), params: { sort } }
+    );
   }
 
   // Whether the current user already has this exact title tracked (watchlist/watched/rating) -
@@ -217,6 +230,62 @@ export class CinemaService {
     return this.http.patch<{ success: boolean; data: CinemaItem }>(
       `${this.apiUrl}/${id}/refine`,
       { decimalRating, ...(reviewText !== undefined ? { reviewText } : {}) },
+      { headers: this.authHeaders() }
+    );
+  }
+
+  // Create/edit a rating+review for a whole movie/show - creates the
+  // CinemaItem if it doesn't exist yet (no pre-existing _id required).
+  rateCinema(payload: {
+    tmdbId: string;
+    mediaType: 'movie' | 'tv';
+    title: string;
+    cover?: string | null;
+    releaseDate?: string | null;
+    decimalRating: number;
+    reviewText?: string;
+    containsSpoilers?: boolean;
+  }): Observable<{ success: boolean; data: CinemaItem }> {
+    return this.http.post<{ success: boolean; data: CinemaItem }>(
+      `${this.apiUrl}/rate`,
+      payload,
+      { headers: this.authHeaders() }
+    );
+  }
+
+  // Toggle watched (no rating) for one specific episode - creates the show's
+  // CinemaItem if it isn't tracked yet.
+  markEpisodeWatched(payload: {
+    tmdbId: string;
+    title: string;
+    cover?: string | null;
+    releaseDate?: string | null;
+    seasonNumber: number;
+    episodeNumber: number;
+  }): Observable<{ success: boolean; data: { isWatched: boolean; decimalRating: number | null; reviewText: string | null; containsSpoilers: boolean } | null }> {
+    return this.http.post<{ success: boolean; data: { isWatched: boolean; decimalRating: number | null; reviewText: string | null; containsSpoilers: boolean } | null }>(
+      `${this.apiUrl}/episode/mark-watched`,
+      payload,
+      { headers: this.authHeaders() }
+    );
+  }
+
+  // Create/edit a rating+review for one specific episode - creates the
+  // show's CinemaItem if it isn't tracked yet.
+  rateEpisode(payload: {
+    tmdbId: string;
+    title: string;
+    cover?: string | null;
+    releaseDate?: string | null;
+    seasonNumber: number;
+    episodeNumber: number;
+    decimalRating: number;
+    reviewText?: string;
+    containsSpoilers?: boolean;
+  }): Observable<{ success: boolean; data: { isWatched: boolean; decimalRating: number | null; reviewText: string | null; containsSpoilers: boolean } }> {
+    return this.http.post<{ success: boolean; data: { isWatched: boolean; decimalRating: number | null; reviewText: string | null; containsSpoilers: boolean } }>(
+      `${this.apiUrl}/episode/rate`,
+      payload,
       { headers: this.authHeaders() }
     );
   }
