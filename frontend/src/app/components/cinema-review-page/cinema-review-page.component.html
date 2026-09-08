@@ -271,7 +271,7 @@
       [imdbId]="imdbId"
       [numberOfSeasons]="numberOfSeasons"
       [showStatus]="status"
-      (contentLoaded)="onEpisodesContentLoaded()"
+      (seasonChanging)="onEpisodesSeasonChanging()"
     ></app-cinema-episodes-tab>
   </div>
 
@@ -523,6 +523,7 @@
     <button type="button" class="icon-circle-btn poster-fullscreen-close" aria-label="Close" (click)="closeFullScreenImage()">
       <i class="fas fa-times"></i>
     </button>
+    <div class="poster-fullscreen-counter" *ngIf="fullScreenImageCounter">{{ fullScreenImageCounter }}</div>
     <button
       type="button"
       class="icon-circle-btn poster-fullscreen-nav poster-fullscreen-nav-left"

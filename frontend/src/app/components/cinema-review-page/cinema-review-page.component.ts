@@ -200,6 +200,12 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
     return this.fullScreenImages.length > 1;
   }
 
+  // "3 / 12" counter shown centered at the top of the viewer.
+  get fullScreenImageCounter(): string | null {
+    if (!this.hasMultipleFullScreenImages) return null;
+    return `${this.fullScreenIndex + 1} / ${this.fullScreenImages.length}`;
+  }
+
   // The track holds 3 full-viewport-width slides (prev/current/next) -
   // centered at rest by sitting on the middle slide, offset live by
   // dragOffsetPx while swiping.
@@ -365,23 +371,16 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   selectTab(tab: string): void {
     this.activeTab = tab;
     this.tabChange.emit();
-    // Episodes' content never exists synchronously at tab-select time (its
-    // child component isn't even created until this *ngIf flips, and its
-    // HTTP calls always resolve at least one tick later) - scrolling here
-    // AND again from onEpisodesContentLoaded once real content loads used
-    // to fire two overlapping `scrollIntoView({behavior:'smooth'})` calls
-    // on the same element, which browsers can resolve by overshooting way
-    // past the target (observed scrolling all the way to the page bottom).
-    // Skip the immediate scroll for Episodes - the content-driven one below
-    // is the only one that ever needs to run for that tab.
-    if (tab === 'Episodes') {
-      this.hasScrolledForEpisodesTab = false;
-      return;
-    }
-    // Scroll so the tabs row lands at the top of the view - not the parent
-    // modal's old "scroll to bottom" behavior, which overshot straight past
-    // the newly-selected tab's content on every tab switch. Deferred a tick
-    // so the new tab's content has actually rendered first.
+    // Scroll so the tabs row lands at the top of the view immediately - not
+    // the parent modal's old "scroll to bottom" behavior, which overshot
+    // straight past the newly-selected tab's content on every tab switch,
+    // and not waiting for Episodes' real data to load either: the loading
+    // placeholder already reserves the right amount of space, so scrolling
+    // right away lands correctly on "Loading Season X..." instead of a stale
+    // position. Deferred a tick so the new tab's content has actually
+    // rendered first (only one scroll call per switch - never combine this
+    // with a second, content-driven scroll for the same transition, which
+    // can make the browser overshoot way past the target).
     setTimeout(() => this.scrollTabsRowIntoView());
   }
 
@@ -389,19 +388,10 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
     this.tabsRow?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // Episodes' content (season list, then ratings) loads asynchronously
-  // after the tab is first selected - this is the ONLY scroll trigger for
-  // that tab (see selectTab). Only fires once per Episodes visit -
-  // subsequent season switches shouldn't re-trigger a scroll.
-  private hasScrolledForEpisodesTab = false;
-
-  onEpisodesContentLoaded(): void {
-    if (this.hasScrolledForEpisodesTab) return;
-    this.hasScrolledForEpisodesTab = true;
-    // Deferred - called synchronously from inside an HTTP subscribe
-    // callback, before Angular's change detection has actually re-rendered
-    // the new episode cards into the DOM, so an un-deferred scroll here
-    // was measuring the still-old (shorter) layout.
+  // Scrolls back to the tabs row the moment a season switch is initiated -
+  // same immediate behavior as selectTab, not waiting for the new season's
+  // episodes to actually finish loading.
+  onEpisodesSeasonChanging(): void {
     setTimeout(() => this.scrollTabsRowIntoView());
   }
 

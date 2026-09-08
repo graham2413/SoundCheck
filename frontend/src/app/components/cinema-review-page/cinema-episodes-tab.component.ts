@@ -45,12 +45,11 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
   @Input() numberOfSeasons: number | null = null;
   @Input() showStatus: string | null = null; // TMDb's raw production status, e.g. "Ended", "Returning Series"
 
-  // Fired once the season's episodes (and, separately, once ratings) finish
-  // loading - the page's scrollable height only reaches its real size after
-  // this, so the parent (cinema-review-page) uses it to re-run its "scroll
-  // tabs row to top" logic, which the initial attempt (fired before any of
-  // this content existed) couldn't fully complete.
-  @Output() contentLoaded = new EventEmitter<void>();
+  // Fired right when a season switch is initiated (not tied to data load) -
+  // lets the parent re-arm its scroll-to-top so switching seasons scrolls
+  // back up the same way opening the Episodes tab does, instead of leaving
+  // the user scrolled wherever they were on the previous season's list.
+  @Output() seasonChanging = new EventEmitter<void>();
 
   selectedSeason = 1;
   seasonDropdownOpen = false;
@@ -116,6 +115,7 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
     const currentHeight = this.episodesContainer?.nativeElement.offsetHeight;
     if (currentHeight) this.listMinHeightPx = currentHeight;
     this.selectedSeason = season;
+    this.seasonChanging.emit();
     this.loadSeason(season);
   }
 
@@ -128,13 +128,11 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
         this.episodes = data.episodes;
         this.loadingEpisodes = false;
         this.listMinHeightPx = null; // let the container return to its natural height for the new content
-        this.contentLoaded.emit();
       },
       error: () => {
         this.episodes = [];
         this.loadingEpisodes = false;
         this.listMinHeightPx = null;
-        this.contentLoaded.emit();
       },
     });
   }
@@ -174,7 +172,6 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
 
     this.ratingsByKey = new Map((episodes || []).map((e) => [`${e.seasonNumber}-${e.episodeNumber}`, e]));
     this.ratingsRequestState = 'loaded';
-    this.contentLoaded.emit();
   }
 
   private pollRatings(token: number): void {

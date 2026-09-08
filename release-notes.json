@@ -1,8 +1,9 @@
 ﻿{
   "New features": [
-    "Added a Check for Updates button on your profile page so you can force-check right away instead of waiting"
+    "Added an image counter (e.g. \"3 / 12\") to the fullscreen photo viewer on movie/show pages"
   ],
   "Performance & stability": [
-    "Fixed the trending Movies/Shows row sometimes getting stuck on its loading placeholders right after signing in"
+    "Fixed pinch-to-zoom not working in the fullscreen photo viewer on mobile",
+    "Switching episode seasons and opening the Episodes tab now scroll back to the top immediately instead of waiting for content to load"
   ]
 }
