@@ -249,11 +249,12 @@ export class AppComponent implements OnInit {
     setTimeout(finish, 5000);
   }
 
-  // A plain reload() is still subject to the ACTIVE service worker intercepting
-  // the navigation and re-serving its own cached shell if it hadn't actually
-  // finished updating in the background. Unregistering first guarantees this
-  // reload hits the network directly - a fresh SW simply re-registers itself
-  // on the next load per main.ts.
+  // A plain reload() can still be intercepted by the outgoing (soon-to-be-gone)
+  // service worker, which keeps controlling the page until it actually unloads -
+  // unregister() alone doesn't guarantee that in-flight reload wins the race.
+  // Navigating to a cache-busted URL sidesteps this: it's a URL the SW's exact-
+  // match app-shell route has never seen, so it can't serve a cached response
+  // for it even if it's technically still in control for a moment longer.
   private hardReload(): void {
     if (!navigator.serviceWorker) {
       document.location.reload();
@@ -263,7 +264,11 @@ export class AppComponent implements OnInit {
       .getRegistrations()
       .then((regs) => Promise.all(regs.map((reg) => reg.unregister())))
       .catch(() => {})
-      .then(() => document.location.reload());
+      .then(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('_v', Date.now().toString());
+        window.location.replace(url.toString());
+      });
   }
 
   // Dev-only visual preview: ?previewUpdate=true shows the overlay with sample
