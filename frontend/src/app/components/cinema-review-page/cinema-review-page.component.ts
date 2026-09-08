@@ -118,7 +118,7 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   @ViewChild('galleryRow') galleryRow?: ElementRef<HTMLElement>;
   @ViewChild('trailerOverlay') trailerOverlay?: ElementRef<HTMLElement>;
 
-  constructor(private sanitizer: DomSanitizer) {}
+  constructor(private sanitizer: DomSanitizer, private elementRef: ElementRef<HTMLElement>) {}
 
   markPosterLoaded(): void {
     this.posterLoaded = true;
@@ -132,10 +132,30 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
     this.fullScreenImages = [this.cover, ...this.galleryImages].filter((u): u is string => !!u);
     this.fullScreenIndex = Math.max(0, this.fullScreenImages.indexOf(url));
     this.dragOffsetPx = 0;
+    this.setBackgroundScrollLocked(true);
   }
 
   closeFullScreenImage(): void {
     this.fullScreenImages = [];
+    this.setBackgroundScrollLocked(false);
+  }
+
+  // The overlay itself is position:fixed and never scrolls, but the modal
+  // page underneath it (its own overflow-y-auto scroll container, not the
+  // page body) stayed scrollable the whole time - a stray scroll on that
+  // container while pinching/swiping the image on top made both gestures
+  // fight each other. Locking it only while the viewer is open fixes that
+  // without needing to know which modal/host is doing the scrolling.
+  private scrollLockContainer: HTMLElement | null = null;
+
+  private setBackgroundScrollLocked(locked: boolean): void {
+    if (locked) {
+      this.scrollLockContainer = this.elementRef.nativeElement.closest<HTMLElement>('.overflow-y-auto');
+      if (this.scrollLockContainer) this.scrollLockContainer.style.overflow = 'hidden';
+    } else if (this.scrollLockContainer) {
+      this.scrollLockContainer.style.overflow = '';
+      this.scrollLockContainer = null;
+    }
   }
 
   // The <img> element itself always spans the full 100vw x 100% box
