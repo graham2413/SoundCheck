@@ -220,6 +220,25 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
     return this.fullScreenImages.length > 1;
   }
 
+  // Slides in track order (prev/current/next), for *ngFor+trackBy below.
+  // Rendering these via ngFor keyed on the URL (rather than 3 fixed <img>
+  // tags bound to prev/current/next by position) lets Angular reuse the
+  // same DOM node - and its already-decoded bitmap - when a URL shifts from
+  // one role to another after a swipe. Without this, snapping the track
+  // back to center at the end of settleAfterSwipe() re-assigns `src` on a
+  // *different* <img> element than the one that was already showing that
+  // picture, forcing a fresh decode that briefly flashes the old image on
+  // slower (mobile) devices.
+  get fullScreenSlides(): string[] {
+    return [this.prevFullScreenImageUrl, this.fullScreenImageUrl, this.nextFullScreenImageUrl].filter(
+      (u): u is string => !!u
+    );
+  }
+
+  trackByFullScreenUrl(_index: number, url: string): string {
+    return url;
+  }
+
   // "3 / 12" counter shown centered at the top of the viewer.
   get fullScreenImageCounter(): string | null {
     if (!this.hasMultipleFullScreenImages) return null;

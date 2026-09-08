@@ -1,9 +1,5 @@
 ﻿{
-  "New features": [
-    "Added a Check for Updates button on your profile page",
-    "Added a photo counter to the fullscreen image viewer"
-  ],
   "Performance & stability": [
-    "Fixed episode ratings and photo swiping issues, and made update checks more reliable"
+    "Fixed a brief flicker back to the previous photo when swiping through movie/show images on mobile"
   ]
 }

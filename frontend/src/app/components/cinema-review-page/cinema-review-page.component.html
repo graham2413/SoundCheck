@@ -543,9 +543,13 @@
       [class.no-transition]="isSwiping"
       [style.transform]="trackTransform"
     >
-      <img [src]="prevFullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" (click)="onFullScreenImageClick($event)" />
-      <img [src]="fullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" (click)="onFullScreenImageClick($event)" />
-      <img [src]="nextFullScreenImageUrl" [alt]="title" class="poster-fullscreen-img" (click)="onFullScreenImageClick($event)" />
+      <img
+        *ngFor="let img of fullScreenSlides; trackBy: trackByFullScreenUrl"
+        [src]="img"
+        [alt]="title"
+        class="poster-fullscreen-img"
+        (click)="onFullScreenImageClick($event)"
+      />
     </div>
     <button
       type="button"
