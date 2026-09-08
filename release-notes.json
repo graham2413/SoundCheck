@@ -1,5 +1,6 @@
 ﻿{
   "Performance & stability": [
-    "Fixed the page behind the fullscreen photo viewer scrolling underneath while pinching/swiping"
+    "Fixed episode IMDb ratings reloading every time you left and returned to the Episodes tab",
+    "Fixed an intermittent glitch where swiping through fullscreen photos briefly showed the wrong image"
   ]
 }

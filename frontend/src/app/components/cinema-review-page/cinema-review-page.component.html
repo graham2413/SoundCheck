@@ -264,8 +264,10 @@
     </div>
   </div>
 
-  <!-- Episodes -->
-  <div class="mx-4 mt-4" *ngIf="activeTab === 'Episodes'">
+  <!-- Episodes - stays mounted (hidden, not destroyed) once opened once, so
+       switching to another tab and back doesn't lose the already-fetched
+       episodes/ratings and re-show their loading states for no reason. -->
+  <div class="mx-4 mt-4" [hidden]="activeTab !== 'Episodes'" *ngIf="hasOpenedEpisodesTab">
     <app-cinema-episodes-tab
       [tmdbId]="tmdbId"
       [imdbId]="imdbId"
@@ -534,6 +536,7 @@
       <i class="fas fa-chevron-left"></i>
     </button>
     <div
+      #fullScreenTrack
       class="poster-fullscreen-track"
       [class.no-transition]="isSwiping"
       [style.transform]="trackTransform"

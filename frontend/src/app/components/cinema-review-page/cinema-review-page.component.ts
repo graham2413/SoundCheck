@@ -117,6 +117,7 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   @ViewChild('descriptionEl') descriptionEl?: ElementRef<HTMLElement>;
   @ViewChild('galleryRow') galleryRow?: ElementRef<HTMLElement>;
   @ViewChild('trailerOverlay') trailerOverlay?: ElementRef<HTMLElement>;
+  @ViewChild('fullScreenTrack') fullScreenTrack?: ElementRef<HTMLElement>;
 
   constructor(private sanitizer: DomSanitizer, private elementRef: ElementRef<HTMLElement>) {}
 
@@ -270,7 +271,12 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
 
   private settleAfterSwipe(goingNext: boolean): void {
     this.isSettlingSwipe = true;
-    setTimeout(() => {
+    const track = this.fullScreenTrack?.nativeElement;
+    let swapped = false;
+
+    const swap = () => {
+      if (swapped) return;
+      swapped = true;
       if (goingNext) this.nextFullScreenImage();
       else this.prevFullScreenImage();
       this.isSwiping = true;
@@ -281,7 +287,24 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
           this.isSettlingSwipe = false;
         })
       );
-    }, CinemaReviewPageComponent.SWIPE_TRANSITION_MS);
+    };
+
+    // Swap exactly when the slide-out CSS transition actually finishes,
+    // instead of a fixed setTimeout guessed to match its duration - a real
+    // device occasionally painting a frame or two slower than that guess is
+    // what caused the intermittent "briefly shows another image" jitter.
+    // The timeout below is only a safety net in case transitionend never
+    // fires (e.g. the tab gets backgrounded mid-animation).
+    if (track) {
+      const onTransitionEnd = (e: Event) => {
+        if ((e as TransitionEvent).propertyName !== 'transform') return;
+        track.removeEventListener('transitionend', onTransitionEnd);
+        swap();
+      };
+      track.addEventListener('transitionend', onTransitionEnd);
+      setTimeout(() => track.removeEventListener('transitionend', onTransitionEnd), CinemaReviewPageComponent.SWIPE_TRANSITION_MS + 150);
+    }
+    setTimeout(swap, CinemaReviewPageComponent.SWIPE_TRANSITION_MS + 150);
   }
 
   // Swipe left/right through the fullscreen images on touch devices - the
@@ -410,11 +433,17 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   }
   activeTab = 'Overview';
 
+  // Once true, stays true for the rest of this page view - see the
+  // Episodes block in the template for why (keeps its already-fetched
+  // data alive across tab switches instead of re-fetching every time).
+  hasOpenedEpisodesTab = false;
+
   @Output() tabChange = new EventEmitter<void>();
   @ViewChild('tabsRow') tabsRow?: ElementRef<HTMLElement>;
 
   selectTab(tab: string): void {
     this.activeTab = tab;
+    if (tab === 'Episodes') this.hasOpenedEpisodesTab = true;
     this.tabChange.emit();
     // Scroll so the tabs row lands at the top of the view immediately - not
     // the parent modal's old "scroll to bottom" behavior, which overshot
