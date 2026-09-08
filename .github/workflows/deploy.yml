@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - 'frontend/**'
+      - '.github/workflows/deploy.yml'
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -51,6 +52,10 @@ jobs:
 
     - name: Force-refresh PWA files that must never be stale
       run: |
+        aws s3 cp ./frontend/dist/sound-check/browser/index.html s3://${{ secrets.S3_BUCKET_NAME }}/index.html \
+          --content-type "text/html" \
+          --cache-control "no-cache, no-store, must-revalidate" \
+          --metadata-directive REPLACE
         aws s3 cp ./frontend/dist/sound-check/browser/ngsw.json s3://${{ secrets.S3_BUCKET_NAME }}/ngsw.json \
           --content-type "application/json" \
           --cache-control "no-cache, no-store, must-revalidate" \

@@ -1,14 +1,9 @@
 {
-  "New features": [
-    "Trailers now open right from the movie/show overview page instead of a separate tab",
-    "Trending row images now slide in smoothly as they load"
-  ],
   "Performance & stability": [
-    "Your calendar now updates instantly when you add, remove, or rate a watchlist item, instead of waiting until the next day",
-    "More Images gallery now scrolls smoothly on desktop with no visible scrollbar",
-    "Smaller visual polish: bulleted update notes, better-sized IMDb ratings on episodes, sharper YouTube TV icon"
+    "Fixed an issue that could delay the app from detecting a new update was available"
   ]
 }
+
 
 
 
