@@ -34,7 +34,6 @@ export class CinemaCastListComponent implements OnChanges {
   @Output() back = new EventEmitter<void>();
   @Output() creditClick = new EventEmitter<CinemaPersonCredit>();
 
-  showSearch = false;
   showSortMenu = false;
   selectedMember: CastMember | null = null;
   showPopularActors = false;
@@ -92,11 +91,6 @@ export class CinemaCastListComponent implements OnChanges {
       sorted.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
     this.filteredSortedCast = sorted;
-  }
-
-  toggleSearch(): void {
-    this.showSearch = !this.showSearch;
-    if (!this.showSearch) this.searchQuery = '';
   }
 
   setSortBy(option: SortOption): void {

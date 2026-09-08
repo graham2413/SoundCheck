@@ -24,8 +24,13 @@ export class CinemaAwardsPageComponent {
   @Input() certification: string | null = null;
   @Input() genres: string[] = [];
   @Input() awardsRaw: string | null = null;
-  @Input() awardsStats: { oscarWins: number | null; otherWins: number | null; nominations: number | null } | null =
-    null;
+  @Input() awardsStats: {
+    oscarWins: number | null;
+    emmyWins: number | null;
+    emmyNominations: number | null;
+    otherWins: number | null;
+    nominations: number | null;
+  } | null = null;
 
   @Output() back = new EventEmitter<void>();
 
@@ -43,7 +48,27 @@ export class CinemaAwardsPageComponent {
     return `${minutes}m`;
   }
 
+  // Oscars only apply to movies, Emmys only to TV - shown in the same "top
+  // wins" tile rather than as a 4th stat, so movies/shows each get whichever
+  // one is actually relevant to them instead of both always being present.
+  // For TV, falls back to Emmy *nominations* when there's no Emmy win yet
+  // (e.g. "Nominated for 1 Primetime Emmy") - otherwise a nominated-but-not-
+  // won show would show no Emmy info at all, just the generic total noms.
+  get primaryWinsLabel(): string {
+    if (this.mediaType !== 'tv') return 'Oscar Wins';
+    return this.awardsStats?.emmyWins != null ? 'Emmy Wins' : 'Emmy Nominations';
+  }
+
+  get primaryWinsValue(): number | null {
+    if (!this.awardsStats) return null;
+    if (this.mediaType !== 'tv') return this.awardsStats.oscarWins;
+    return this.awardsStats.emmyWins ?? this.awardsStats.emmyNominations;
+  }
+
   get hasAnyStat(): boolean {
-    return !!this.awardsStats && (this.awardsStats.oscarWins != null || this.awardsStats.otherWins != null || this.awardsStats.nominations != null);
+    return (
+      !!this.awardsStats &&
+      (this.primaryWinsValue != null || this.awardsStats.otherWins != null || this.awardsStats.nominations != null)
+    );
   }
 }

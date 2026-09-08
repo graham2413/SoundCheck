@@ -60,6 +60,12 @@
   line-height: 1.4;
 }
 
+.awards-raw-text {
+  color: #d1d5db;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 .awards-divider {
   height: 1px;
   background: rgba(148, 163, 184, 0.15);

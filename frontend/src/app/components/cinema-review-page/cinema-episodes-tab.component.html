@@ -28,6 +28,31 @@
     </div>
   </div>
 
+  <!-- IMDb episode ratings loading/processing status cards - shown here
+     (below the season selector, above the list) since they represent a
+     currently-in-progress fetch, not a result. Only actually rendered past
+     a short delay (see showRatingsLoadingCard) so a fast cache hit never
+     flashes this. -->
+  <div class="mt-4" *ngIf="showRatingsLoadingCard || ratingsRequestState === 'processing'">
+    <div class="ratings-status-card ratings-status-card-loading" *ngIf="showRatingsLoadingCard">
+      <div class="ratings-status-spinner"></div>
+      <div>
+        <p class="ratings-status-title">Loading IMDb episode ratings…</p>
+        <p class="ratings-status-subtitle">We're preparing episode ratings. This usually takes a few seconds.</p>
+      </div>
+    </div>
+
+    <div class="ratings-status-card ratings-status-card-processing" *ngIf="ratingsRequestState === 'processing'">
+      <div class="ratings-status-spinner ratings-status-spinner-processing"></div>
+      <div>
+        <p class="ratings-status-title">Preparing IMDb ratings…</p>
+        <p class="ratings-status-subtitle">
+          Episode ratings are being processed. This can take a few seconds. We'll update automatically.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- Episode list -->
   <div
     #episodesContainer
@@ -85,28 +110,11 @@
     </div>
   </div>
 
-  <!-- IMDb episode ratings status card - shown below the episode list,
+  <!-- IMDb episode ratings unavailable card - shown below the episode list,
        which always renders independently from TMDb metadata (see component
-       header comment) -->
+       header comment). The loading/processing states live above the list
+       instead - see the block right after the season selector. -->
   <div class="mt-4">
-    <div class="ratings-status-card ratings-status-card-loading" *ngIf="showRatingsLoadingCard">
-      <div class="ratings-status-spinner"></div>
-      <div>
-        <p class="ratings-status-title">Loading IMDb episode ratings…</p>
-        <p class="ratings-status-subtitle">We're preparing episode ratings. This usually takes a few seconds.</p>
-      </div>
-    </div>
-
-    <div class="ratings-status-card ratings-status-card-processing" *ngIf="ratingsRequestState === 'processing'">
-      <div class="ratings-status-spinner ratings-status-spinner-processing"></div>
-      <div>
-        <p class="ratings-status-title">Preparing IMDb ratings…</p>
-        <p class="ratings-status-subtitle">
-          Episode ratings are being processed. This can take a few seconds. We'll update automatically.
-        </p>
-      </div>
-    </div>
-
     <div
       class="ratings-status-card ratings-status-card-empty"
       *ngIf="ratingsRequestState === 'loaded' && !hasAnyRatingsData"

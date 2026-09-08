@@ -118,9 +118,16 @@ export class CinemaEpisodeDetailComponent implements OnChanges {
 
   get formattedAirDate(): string | null {
     if (!this.episode?.airDate) return null;
-    const date = new Date(this.episode.airDate);
+    const date = this.parseLocalDate(this.episode.airDate);
     if (Number.isNaN(date.getTime())) return null;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // Avoids UTC midnight shifting the date back a day in negative-offset
+  // timezones (matches cinema-review-page.component.ts/tv-episode-badge.ts).
+  private parseLocalDate(dateStr: string): Date {
+    const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number);
+    return new Date(year, month - 1, day);
   }
 
   get formattedRuntime(): string | null {
@@ -190,7 +197,7 @@ export class CinemaEpisodeDetailComponent implements OnChanges {
     instance.seasonNumber = this.seasonNumber;
     instance.episodeNumber = this.episode.episodeNumber;
     instance.displayTitle = this.episode.name || `Episode ${this.episode.episodeNumber}`;
-    instance.displayYear = this.episode.airDate ? new Date(this.episode.airDate).getFullYear() : null;
+    instance.displayYear = this.episode.airDate ? this.parseLocalDate(this.episode.airDate).getFullYear() : null;
     instance.typeLabel = 'Episode';
     instance.initialRating = this.myRating;
     instance.initialReviewText = this.episode.myReview?.reviewText ?? '';

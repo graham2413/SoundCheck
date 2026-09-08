@@ -35,12 +35,12 @@
   <!-- Stats summary card -->
   <div class="awards-card mx-4 mt-5" *ngIf="hasAnyStat">
     <div class="flex items-stretch justify-around text-center">
-      <div class="flex-1" *ngIf="awardsStats?.oscarWins != null">
+      <div class="flex-1" *ngIf="primaryWinsValue != null">
         <i class="fas fa-award awards-stat-icon"></i>
-        <p class="awards-stat-value">{{ awardsStats?.oscarWins }}</p>
-        <p class="awards-stat-label">Oscar Wins</p>
+        <p class="awards-stat-value">{{ primaryWinsValue }}</p>
+        <p class="awards-stat-label">{{ primaryWinsLabel }}</p>
       </div>
-      <div class="awards-stat-divider" *ngIf="awardsStats?.oscarWins != null && awardsStats?.otherWins != null"></div>
+      <div class="awards-stat-divider" *ngIf="primaryWinsValue != null && awardsStats?.otherWins != null"></div>
       <div class="flex-1" *ngIf="awardsStats?.otherWins != null">
         <i class="fas fa-trophy awards-stat-icon"></i>
         <p class="awards-stat-value">{{ awardsStats?.otherWins }}</p>
@@ -54,9 +54,14 @@
       </div>
     </div>
   </div>
-
+  <!-- Raw OMDb sentence, verbatim - the stat tiles above are just a
+       best-effort parse of this same text, so showing it as-is covers any
+       award mentions the parsing above doesn't break out into its own tile. -->
+  <div class="awards-card mx-4 mt-4" *ngIf="awardsRaw">
+    <p class="awards-raw-text">{{ awardsRaw }}</p>
+  </div>
   <!-- Source/limitations card - combines both disclaimers together since the
-       raw OMDb quote itself isn't shown anymore. -->
+       raw OMDb quote itself is shown separately in its own card above. -->
   <div class="awards-info-card mx-4 mt-4" *ngIf="awardsRaw">
     <i class="fas fa-circle-info awards-info-icon"></i>
     <div>

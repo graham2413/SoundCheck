@@ -20,22 +20,45 @@ const SEASON_CACHE_TTL = 86400; // 1 day - shorter than DETAILS_CACHE_TTL since 
 // Caps simultaneous connections to stay under TMDb's ~20 concurrent connections/IP limit
 const tmdbAgent = new https.Agent({ maxSockets: 20, keepAlive: true });
 
+// Runs the count-check and reservation as one atomic step on Redis (Lua
+// scripts execute indivisibly there) - a plain zcard-then-zadd from Node lets
+// concurrent callers (e.g. a calendar load firing 20+ TMDb calls via
+// Promise.all in the same tick) all read the same stale "under the limit"
+// count before any of them have actually registered, letting far more than
+// RATE_LIMIT_MAX_REQUESTS slip through in one instant.
+const RATE_LIMIT_SCRIPT = `
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local windowMs = tonumber(ARGV[2])
+local maxRequests = tonumber(ARGV[3])
+local member = ARGV[4]
+
+redis.call('ZREMRANGEBYSCORE', key, '-inf', now - windowMs)
+local count = redis.call('ZCARD', key)
+if count < maxRequests then
+  redis.call('ZADD', key, now, member)
+  redis.call('PEXPIRE', key, windowMs)
+  return 1
+end
+return 0
+`;
+
 // Sliding window limiter (mirrors callDeezer.js) - delays instead of throwing 429
 async function waitForRateLimitSlot() {
-  const now = Date.now();
-
   while (true) {
-    await redis.zremrangebyscore(RATE_LIMIT_KEY, "-inf", now - RATE_LIMIT_WINDOW_SECONDS * 1000);
-    const requests = await redis.zcard(RATE_LIMIT_KEY);
+    const now = Date.now();
+    const member = `${now}:${crypto.randomUUID()}`;
+    const allowed = await redis.eval(
+      RATE_LIMIT_SCRIPT,
+      1,
+      RATE_LIMIT_KEY,
+      now,
+      RATE_LIMIT_WINDOW_SECONDS * 1000,
+      RATE_LIMIT_MAX_REQUESTS,
+      member
+    );
 
-    if (requests < RATE_LIMIT_MAX_REQUESTS) {
-      const requestId = `${now}:${crypto.randomUUID()}`;
-      await redis.multi()
-        .zadd(RATE_LIMIT_KEY, now, requestId)
-        .expire(RATE_LIMIT_KEY, RATE_LIMIT_WINDOW_SECONDS)
-        .exec();
-      return;
-    }
+    if (allowed === 1) return;
 
     await new Promise((resolve) => setTimeout(resolve, QUEUE_DELAY_MS));
   }
@@ -182,12 +205,11 @@ function trimTmdbDetails(raw) {
 }
 
 async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = false } = {}) {
-  // v7: bumped to store a trimmed response (see trimTmdbDetails above)
-  // instead of TMDb's full raw payload - the untrimmed v6 blobs were eating
-  // ~250KB/title (mostly unused watch-provider/crew/image data), which blew
-  // through the Upstash free-tier 256MB cap. Older cached blobs are treated
-  // as a miss and re-fetched/re-trimmed under this new key.
-  const cacheKey = `tmdb:details:v7:${tmdbId}`;
+  // v8: bumped to key by mediaType+tmdbId, not just tmdbId - movie IDs and TV
+  // IDs are separate TMDb namespaces (e.g. movie 1398 is "Stalker", TV 1398
+  // is "The Sopranos"), so the old tmdbId-only key let whichever media type
+  // got cached first silently serve its data for the other's requests too.
+  const cacheKey = `tmdb:details:v8:${mediaType}:${tmdbId}`;
   if (!forceRefresh) {
     const cached = await redis.get(cacheKey);
     if (cached) return JSON.parse(cached);
@@ -241,7 +263,18 @@ async function getTmdbDetailsForCalendar(tmdbId, mediaType, forceRefresh = false
   );
 
   if (response.data) {
-    await redis.set(cacheKey, JSON.stringify(response.data), "EX", CALENDAR_DETAILS_CACHE_TTL);
+    // +/-10% jitter so items cached around the same time (e.g. a user's whole
+    // watchlist backfilled at once) don't all expire in the same instant and
+    // stampede TMDb with a burst of simultaneous live calls on the next load.
+    const jitter = CALENDAR_DETAILS_CACHE_TTL * (0.9 + Math.random() * 0.2);
+    await redis.set(cacheKey, JSON.stringify(response.data), "EX", Math.round(jitter));
+  } else {
+    // callTmdb never throws itself (it exhausts retries and resolves with
+    // `{ data: null }`) - throw here instead of returning null so a genuine
+    // fetch failure is distinguishable from "TMDb succeeded, item just has no
+    // upcoming/past episode/release" up in getCalendar, which needs that
+    // distinction to avoid caching an incomplete calendar for the day.
+    throw new Error(`TMDb fetch failed for ${mediaType}/${tmdbId}`);
   }
 
   return response.data;

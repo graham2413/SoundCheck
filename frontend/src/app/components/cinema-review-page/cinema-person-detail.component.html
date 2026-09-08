@@ -41,15 +41,16 @@
 
   <div class="px-4 mt-3" *ngIf="detail">
     <p
+      #bioText
       class="text-gray-300 text-sm leading-relaxed"
       *ngIf="detail.biography"
-      [class.line-clamp-5]="!isBioExpanded"
+      [class.line-clamp-3]="!isBioExpanded"
     >
       {{ detail.biography }}
     </p>
     <button
       type="button"
-      *ngIf="detail.biography"
+      *ngIf="bioOverflows"
       (click)="isBioExpanded = !isBioExpanded"
       class="mt-2 px-4 py-1.5 rounded-full border border-gray-700 text-[#0F5EE4] font-semibold text-sm hover:bg-gray-800/50 transition"
     >

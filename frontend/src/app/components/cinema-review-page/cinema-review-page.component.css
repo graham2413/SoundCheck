@@ -72,8 +72,9 @@
   /* Not flex-centered - the track sizes/positions itself explicitly via
      100vw slides + transform, so centering the (much wider, 300vw) track
      as a flex item here would add a second, conflicting offset on top of
-     that transform. */
-  background: rgba(2, 8, 20, 0.95);
+     that transform. Fully opaque (not translucent) so the letterbox bars
+     around a contain-fit image read as solid black, not slightly see-through. */
+  background: #020814;
   overflow: hidden;
 }
 
@@ -418,6 +419,21 @@
   justify-content: space-between;
   padding: 0.85rem 1rem;
   border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  gap: 0.75rem;
+}
+
+/* Lets the value side actually shrink and truncate instead of wrapping -
+   flex items default to a min-width of their content, which is what was
+   forcing long values (e.g. a long awards summary) onto a second line. */
+.detail-row-value {
+  min-width: 0;
+}
+
+.detail-row-value-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .detail-row:last-child {

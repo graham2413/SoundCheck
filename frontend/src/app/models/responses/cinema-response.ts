@@ -156,7 +156,13 @@ export interface CinemaDetail {
   cast: CinemaCastMember[];
   awardsRaw: string | null;
   awardsSummary: string | null;
-  awardsStats: { oscarWins: number | null; otherWins: number | null; nominations: number | null } | null;
+  awardsStats: {
+    oscarWins: number | null;
+    emmyWins: number | null;
+    emmyNominations: number | null;
+    otherWins: number | null;
+    nominations: number | null;
+  } | null;
   boxOffice: string | null;
   budget: string | null;
   imdbRating: number | null;

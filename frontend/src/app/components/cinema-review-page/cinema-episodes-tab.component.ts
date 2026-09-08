@@ -263,9 +263,16 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
 
   formatAirDate(airDate: string | null): string | null {
     if (!airDate) return null;
-    const date = new Date(airDate);
+    const date = this.parseLocalDate(airDate);
     if (Number.isNaN(date.getTime())) return null;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // Avoids UTC midnight shifting the date back a day in negative-offset
+  // timezones (matches cinema-review-page.component.ts/tv-episode-badge.ts).
+  private parseLocalDate(dateStr: string): Date {
+    const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number);
+    return new Date(year, month - 1, day);
   }
 
   // Same "1h 15m"/"45m" format used elsewhere in the app (cinema-review-page,

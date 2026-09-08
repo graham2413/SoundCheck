@@ -332,9 +332,22 @@ exports.getCalendar = async (req, res) => {
     // details already refresh themselves every 3 days on their own, and with
     // a large watchlist, forcing hundreds of live calls at once (rate-limited
     // to 40/sec, each with retry/backoff) is what was making refresh take ~20s.
+    //
+    // A failed item is still just omitted from this response (not a 500) -
+    // but hadFetchError is tracked separately so the outer cache write below
+    // can be skipped, instead of baking a genuinely-transient TMDb failure
+    // into an incomplete calendar for the rest of the day.
+    let hadFetchError = false;
+    const safeGetDetails = (tmdbId, mediaType) =>
+      getTmdbDetailsForCalendar(tmdbId, mediaType).catch((err) => {
+        hadFetchError = true;
+        console.error(`Calendar item fetch failed [${mediaType}/${tmdbId}]:`, err.message);
+        return null;
+      });
+
     const [tvDetails, movieDetails] = await Promise.all([
-      Promise.all(tvItems.map((i) => getTmdbDetailsForCalendar(i.tmdbId, "tv").catch(() => null))),
-      Promise.all(movieItems.map((i) => getTmdbDetailsForCalendar(i.tmdbId, "movie").catch(() => null))),
+      Promise.all(tvItems.map((i) => safeGetDetails(i.tmdbId, "tv"))),
+      Promise.all(movieItems.map((i) => safeGetDetails(i.tmdbId, "movie"))),
     ]);
 
     const tvEntries = tvItems
@@ -410,7 +423,13 @@ exports.getCalendar = async (req, res) => {
       range === "past" ? b.airDate.localeCompare(a.airDate) : a.airDate.localeCompare(b.airDate)
     );
 
-    await redis.set(cacheKey, JSON.stringify({ cachedDate: todayStr, data: calendar }), "EX", CALENDAR_RESPONSE_CACHE_TTL);
+    // Skip caching when any item failed to fetch - otherwise a transient
+    // TMDb blip would get baked into an incomplete calendar for the rest of
+    // the day (see hadFetchError above). The client still gets today's best
+    // effort list; the next load just tries the failed item(s) again live.
+    if (!hadFetchError) {
+      await redis.set(cacheKey, JSON.stringify({ cachedDate: todayStr, data: calendar }), "EX", CALENDAR_RESPONSE_CACHE_TTL);
+    }
 
     res.status(200).json({ success: true, data: calendar });
   } catch (error) {
@@ -661,24 +680,39 @@ const parseAwardsSummary = (awardsRaw) => {
 };
 
 // Phase 1 awards stat tiles - best-effort parse of the same OMDb sentence,
-// pulled apart into the 3 numbers the Awards page's stat card shows. OMDb's
+// pulled apart into the numbers the Awards page's stat card shows. OMDb's
 // wording isn't perfectly consistent across titles, so any figure not found
 // in the sentence is left null rather than guessed - the frontend hides
 // individual stat tiles it doesn't have data for instead of showing a
-// misleading "0".
-const parseAwardsStats = (awardsRaw) => {
+// misleading "0". Emmy wins/noms are movie type-specific (Oscars don't apply
+// to TV, Emmys don't apply to movies) since a title's mediaType tells us
+// which one is actually relevant to look for.
+const parseAwardsStats = (awardsRaw, mediaType) => {
   if (!awardsRaw) return null;
 
-  const oscarWinMatch = awardsRaw.match(/Won\s+(\d+)\s+Oscars?/i);
+  const oscarWinMatch = mediaType === "movie" ? awardsRaw.match(/Won\s+(\d+)\s+Oscars?/i) : null;
+  const emmyWinMatch = mediaType === "tv" ? awardsRaw.match(/Won\s+(\d+)\s+Primetime Emmys?/i) : null;
+  const emmyNominationMatch =
+    mediaType === "tv" ? awardsRaw.match(/Nominated for\s+(\d+)\s+Primetime Emmys?/i) : null;
   const winsMatch = awardsRaw.match(/(\d+)\s+wins?/i);
   const nominationsMatch = awardsRaw.match(/(\d+)\s+nominations?/i);
 
   const oscarWins = oscarWinMatch ? Number(oscarWinMatch[1]) : null;
+  const emmyWins = emmyWinMatch ? Number(emmyWinMatch[1]) : null;
+  const emmyNominations = emmyNominationMatch ? Number(emmyNominationMatch[1]) : null;
   const otherWins = winsMatch ? Number(winsMatch[1]) : null;
   const nominations = nominationsMatch ? Number(nominationsMatch[1]) : null;
 
-  if (oscarWins == null && otherWins == null && nominations == null) return null;
-  return { oscarWins, otherWins, nominations };
+  if (
+    oscarWins == null &&
+    emmyWins == null &&
+    emmyNominations == null &&
+    otherWins == null &&
+    nominations == null
+  ) {
+    return null;
+  }
+  return { oscarWins, emmyWins, emmyNominations, otherWins, nominations };
 };
 
 // Abbreviates a raw dollar amount (number or "$1,234,567" string) to e.g. "$1.0B"/"$535M"
@@ -973,7 +1007,7 @@ exports.getCinemaDetail = async (req, res) => {
         cast,
         awardsRaw: omdbData?.awardsRaw || null,
         awardsSummary: parseAwardsSummary(omdbData?.awardsRaw),
-        awardsStats: parseAwardsStats(omdbData?.awardsRaw),
+        awardsStats: parseAwardsStats(omdbData?.awardsRaw, mediaType),
         boxOffice: formatBoxOffice(omdbData?.boxOfficeUs, details.revenue),
         budget: mediaType === "movie" ? abbreviateMoney(details.budget) : null,
         imdbRating: localRating?.imdbRating ?? null,
