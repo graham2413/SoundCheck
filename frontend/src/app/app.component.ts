@@ -186,6 +186,12 @@ export class AppComponent implements OnInit {
   }
 
   private checkForNewVersion(): void {
+    // Also nudges the SW to re-check/download in the background on its own,
+    // rather than only relying on it to notice on its own schedule - installed
+    // home-screen PWAs (iOS especially) are heavily background-execution
+    // restricted and may otherwise go a very long time between self-checks.
+    if (this.swUpdate.isEnabled) this.swUpdate.checkForUpdate().catch(() => {});
+
     fetch(`/version.json?_=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
@@ -226,7 +232,7 @@ export class AppComponent implements OnInit {
       this.updateProgressPercent = 100;
       setTimeout(() => {
         this.isReloadingForUpdate = true;
-        setTimeout(() => document.location.reload(), FADE_MS);
+        setTimeout(() => this.hardReload(), FADE_MS);
       }, SNAP_HOLD_MS);
     };
 
@@ -241,6 +247,23 @@ export class AppComponent implements OnInit {
     // activateUpdate() rejects or (worse) never settles at all
     this.swUpdate.activateUpdate().catch(() => {}).then(finish);
     setTimeout(finish, 5000);
+  }
+
+  // A plain reload() is still subject to the ACTIVE service worker intercepting
+  // the navigation and re-serving its own cached shell if it hadn't actually
+  // finished updating in the background. Unregistering first guarantees this
+  // reload hits the network directly - a fresh SW simply re-registers itself
+  // on the next load per main.ts.
+  private hardReload(): void {
+    if (!navigator.serviceWorker) {
+      document.location.reload();
+      return;
+    }
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((regs) => Promise.all(regs.map((reg) => reg.unregister())))
+      .catch(() => {})
+      .then(() => document.location.reload());
   }
 
   // Dev-only visual preview: ?previewUpdate=true shows the overlay with sample
