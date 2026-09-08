@@ -89,7 +89,7 @@
        which always renders independently from TMDb metadata (see component
        header comment) -->
   <div class="mt-4">
-    <div class="ratings-status-card ratings-status-card-loading" *ngIf="ratingsRequestState === 'loading'">
+    <div class="ratings-status-card ratings-status-card-loading" *ngIf="showRatingsLoadingCard">
       <div class="ratings-status-spinner"></div>
       <div>
         <p class="ratings-status-title">Loading IMDb episode ratings…</p>

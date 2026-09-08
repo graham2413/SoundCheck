@@ -65,6 +65,14 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
   listMinHeightPx: number | null = null;
 
   ratingsRequestState: RatingsRequestState = 'loading';
+  // The initial 'loading' state covers a round-trip that's almost always
+  // near-instant (backend already has it cached) - showing the card
+  // immediately for that made it look like ratings were "reloading every
+  // time" even on a cache hit. Only render it if that round-trip is still
+  // pending after a short delay, i.e. a genuinely slow/uncached fetch.
+  showRatingsLoadingCard = false;
+  private ratingsLoadingDelayHandle: ReturnType<typeof setTimeout> | null = null;
+  private static readonly RATINGS_LOADING_DELAY_MS = 400;
   private ratingsByKey = new Map<string, EpisodeImdbRating>();
   private pollHandle: ReturnType<typeof setTimeout> | null = null;
   // Bumped on every new fetch so a stale in-flight request (or its poll
@@ -85,6 +93,7 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearPoll();
+    if (this.ratingsLoadingDelayHandle) clearTimeout(this.ratingsLoadingDelayHandle);
   }
 
   get seasonOptions(): number[] {
@@ -146,15 +155,29 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
     if (!this.imdbId) return;
     this.clearPoll();
     this.ratingsRequestState = 'loading';
+    this.showRatingsLoadingCard = false;
+    if (this.ratingsLoadingDelayHandle) clearTimeout(this.ratingsLoadingDelayHandle);
+    this.ratingsLoadingDelayHandle = setTimeout(() => {
+      if (this.ratingsRequestState === 'loading') this.showRatingsLoadingCard = true;
+    }, CinemaEpisodesTabComponent.RATINGS_LOADING_DELAY_MS);
     const token = ++this.ratingsRequestToken;
 
     this.cinemaService.getEpisodeImdbRatings(this.imdbId, this.mappedShowStatus).subscribe({
       next: ({ data }) => this.handleRatingsResponse(token, data.cacheStatus, data.episodes),
       error: () => {
         if (token !== this.ratingsRequestToken) return;
+        this.clearRatingsLoadingDelay();
         this.ratingsRequestState = 'loaded'; // treat a failed fetch the same as the "no data" fallback
       },
     });
+  }
+
+  private clearRatingsLoadingDelay(): void {
+    if (this.ratingsLoadingDelayHandle) {
+      clearTimeout(this.ratingsLoadingDelayHandle);
+      this.ratingsLoadingDelayHandle = null;
+    }
+    this.showRatingsLoadingCard = false;
   }
 
   private handleRatingsResponse(
@@ -163,6 +186,7 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
     episodes: EpisodeImdbRating[] | undefined
   ): void {
     if (token !== this.ratingsRequestToken) return;
+    this.clearRatingsLoadingDelay();
 
     if (cacheStatus === 'processing') {
       this.ratingsRequestState = 'processing';

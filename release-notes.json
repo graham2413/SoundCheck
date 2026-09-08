@@ -1,6 +1,5 @@
 ﻿{
   "Performance & stability": [
-    "Fixed episode IMDb ratings reloading every time you left and returned to the Episodes tab",
-    "Fixed an intermittent glitch where swiping through fullscreen photos briefly showed the wrong image"
+    "Stopped the IMDb ratings loading card from flashing briefly every time you open the Episodes tab, even when ratings were already cached"
   ]
 }
