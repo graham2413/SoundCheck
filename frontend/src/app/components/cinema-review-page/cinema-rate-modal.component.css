@@ -124,6 +124,11 @@
   justify-content: center;
   flex-shrink: 0;
   font-size: 0.9rem;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .rate-modal-ring {

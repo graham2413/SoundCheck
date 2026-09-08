@@ -142,8 +142,12 @@ export class CinemaRateModalComponent implements OnInit, OnDestroy {
     this.isEditingRatingNumber = true;
     this.ratingInputValue = this.formattedRating;
     setTimeout(() => {
-      this.ratingInputEl?.nativeElement.focus();
-      this.ratingInputEl?.nativeElement.select();
+      const input = this.ratingInputEl?.nativeElement;
+      if (!input) return;
+      input.focus();
+      // Place the cursor at the end instead of selecting/highlighting the value.
+      const len = input.value.length;
+      input.setSelectionRange(len, len);
     });
   }
 
