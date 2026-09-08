@@ -1,10 +1,6 @@
 ﻿{
-  "New features": [
-    "Tap any episode in a show's episode list to open a full episode page - its own photo, summary, ratings, and reviews, with buttons to mark it watched or rate it",
-    "Redesigned the Create/Edit Review screen with a cleaner rating dial, spoiler warning toggle, and a review box that now fills the screen",
-    "The Rate button now correctly shows \"Edit\" and reopens your existing rating/review pre-filled once you've already reviewed something"
-  ],
   "Performance & stability": [
-    "Modernized the review sort dropdown to match the rest of the app's style"
+    "Fixed the rating +/- buttons on the review screen highlighting text on the page when pressed and held",
+    "Tapping the rating number now properly opens your keyboard for typing instead of just highlighting the value"
   ]
 }
