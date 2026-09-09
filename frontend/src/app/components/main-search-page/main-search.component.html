@@ -94,9 +94,9 @@
 
 <div *ngIf="activeDiscoverTab === 'mainSearch'">
   <!-- Heading -->
-  <div class="max-w-5xl mx-auto px-3 flex items-start justify-between gap-3">
+  <div class="max-w-5xl mx-auto px-4 flex items-start justify-between gap-3">
     <div class="md:flex-1 md:text-center">
-      <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mt-3 pl-3 md:pl-0">
+      <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mt-3 md:pl-0">
         Explore
         <span
           (click)="toggleSearchType()"
@@ -113,7 +113,7 @@
           <i class="fas fa-right-left text-base md:text-lg" style="color: #0F5EE4"></i>
         </button>
       </h1>
-      <p class="mt-1 md:mb-4 text-sm max-[400px]:text-xs md:text-xl text-gray-300 pl-3 md:pl-0">
+      <p class="mt-1 md:mb-4 text-sm max-[400px]:text-xs md:text-xl text-gray-300 md:pl-0">
         {{
           searchType === 'music'
             ? 'Find your next favorite track'
@@ -135,7 +135,7 @@
   <!-- Search Bar -->
   <div
     #searchBar
-    class="relative mt-3 md:mt-1 w-full max-w-3xl mx-auto px-2"
+    class="relative mt-3 md:mt-1 w-full max-w-3xl mx-auto px-3"
   >
     <button
       *ngIf="searchType === 'music'"
@@ -182,7 +182,6 @@
       #searchInput
       type="search"
       [disabled]="isLoading"
-      autofocus
       [(ngModel)]="query"
       (keydown.enter)="searchType === 'music' ? onSearch(selectedSearchTab, false) : onSearch('songs')"
       placeholder="{{
@@ -202,9 +201,9 @@
   <!-- Recent Searches -->
   <div
     *ngIf="recentSearches.length > 0 && !searchAttempted"
-    class="w-full max-w-3xl mx-auto px-2 mt-3"
+    class="w-full max-w-3xl mx-auto px-3 mt-3"
   >
-    <div class="flex items-center justify-between mb-2 pl-2 pr-6">
+    <div class="flex items-center justify-between mb-2 pl-2 pr-2">
       <span class="text-white text-base md:text-lg font-bold">Recent searches</span>
       <button
         (click)="clearRecentSearches()"
@@ -258,10 +257,10 @@
       </div>
     </div>
     <div *ngIf="searchType === 'cinema'" class="flex justify-start md:justify-center mt-3">
-      <div class="relative flex items-center p-1 rounded-full border border-gray-700 bg-gray-900/50 w-fit">
+      <div class="relative flex items-center p-0.5 rounded-full border border-gray-700 bg-gray-900/50 w-fit">
       <div
-        class="absolute top-1 bottom-1 left-1 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
-        style="width: calc((100% - 0.5rem) / 2)"
+        class="absolute top-0.5 bottom-0.5 left-0.5 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
+        style="width: calc((100% - 0.25rem) / 2)"
         [ngStyle]="{ transform: 'translateX(' + (cinemaMarqueeMode === 'tv' ? 100 : 0) + '%)' }"
       ></div>
       <button
@@ -1117,12 +1116,12 @@
   <div class="bg-[#020814] text-white min-h-screen pt-4 pb-24 px-2">
     <div class="md:max-w-[1000px] md:mx-auto">
       <div
-        class="relative flex items-center max-w-xs mx-auto mb-5 mt-2 p-1 rounded-full border border-gray-700 bg-gray-900/50"
+        class="relative flex items-center max-w-xs mx-auto mb-5 mt-2 p-0.5 rounded-full border border-gray-700 bg-gray-900/50"
       >
         <!-- Sliding Highlight -->
         <div
-          class="absolute top-1 bottom-1 left-1 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
-          style="width: calc((100% - 0.5rem) / 2)"
+          class="absolute top-0.5 bottom-0.5 left-0.5 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
+          style="width: calc((100% - 0.25rem) / 2)"
           [ngStyle]="{ transform: 'translateX(' + feedTabIndex * 100 + '%)' }"
         ></div>
 

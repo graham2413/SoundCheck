@@ -1,34 +1,34 @@
 <div class="bg-[#020814] text-white min-h-screen pt-[1rem] md:pt-[6rem] pb-[6rem] px-2">
   <div class="max-w-3xl mx-auto">
-    <div class="relative flex items-center justify-center mb-1">
-      <h1 class="text-3xl font-extrabold tracking-tight text-center">
+    <div class="relative flex items-center justify-between ">
+      <h1 class="text-3xl font-extrabold tracking-tight text-left pl-2">
         Calendar
       </h1>
       <button
         (click)="refresh()"
         [disabled]="isLoading || isRefreshing"
         title="Refresh"
-        class="absolute right-0 flex items-center justify-center h-12 w-12 rounded-full text-gray-400 hover:text-white transition disabled:opacity-50"
+        class="flex items-center justify-center h-12 w-12 rounded-full border border-gray-500 text-gray-300 hover:text-white hover:border-gray-400 transition disabled:opacity-50"
       >
-        <i class="fas fa-sync-alt text-xl" [class.fa-spin]="isRefreshing"></i>
+        <i class="fas fa-arrows-rotate text-xl" [class.fa-spin]="isRefreshing"></i>
       </button>
     </div>
-    <p class="text-center text-gray-400 text-base md:text-xl mb-6">
-      Upcoming episodes and releases for what you're tracking.
+    <p class="text-left text-gray-400 text-base md:text-xl mb-6 pl-2">
+      {{ subtitleLabel || (range === 'upcoming' ? 'Upcoming episodes and releases for what you\'re tracking.' : 'Recently released episodes and movies from what you\'re tracking.') }}
     </p>
 
     <!-- Upcoming / Past toggle -->
-    <div class="relative flex items-center max-w-xs mx-auto mb-6 p-1 rounded-full border border-gray-700 bg-gray-900/50">
+    <div class="relative flex items-center w-[100%] sm:max-w-xs mx-auto mb-3 p-0.5 rounded-full border border-gray-700 bg-gray-900/50">
       <div
-        class="absolute top-1 bottom-1 left-1 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
-        style="width: calc((100% - 0.5rem) / 2)"
+        class="absolute top-0.5 bottom-0.5 left-0.5 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
+        style="width: calc((100% - 0.25rem) / 2)"
         [ngStyle]="{ transform: 'translateX(' + rangeTabIndex * 100 + '%)' }"
       ></div>
       <button
         type="button"
         (click)="setRange('upcoming')"
         [ngClass]="range === 'upcoming' ? 'text-white' : 'text-gray-300'"
-        class="relative z-10 flex-1 whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-colors"
+        class="relative z-10 flex-1 whitespace-nowrap px-4 py-1.5 rounded-full font-semibold transition-colors"
       >
         Upcoming
       </button>
@@ -36,9 +36,37 @@
         type="button"
         (click)="setRange('past')"
         [ngClass]="range === 'past' ? 'text-white' : 'text-gray-300'"
-        class="relative z-10 flex-1 whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-colors"
+        class="relative z-10 flex-1 whitespace-nowrap px-4 py-1.5 rounded-full font-semibold transition-colors"
       >
         Past
+      </button>
+    </div>
+
+    <!-- Media type filter -->
+    <div class="flex items-center justify-center gap-2 mb-4 mt-4">
+      <button
+        type="button"
+        (click)="setMediaTypeFilter('all')"
+        [ngClass]="mediaTypeFilter === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
+        class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
+      >
+        All
+      </button>
+      <button
+        type="button"
+        (click)="setMediaTypeFilter('tv')"
+        [ngClass]="mediaTypeFilter === 'tv' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
+        class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
+      >
+        TV Shows
+      </button>
+      <button
+        type="button"
+        (click)="setMediaTypeFilter('movie')"
+        [ngClass]="mediaTypeFilter === 'movie' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
+        class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
+      >
+        Movies
       </button>
     </div>
 
@@ -48,66 +76,107 @@
       <p class="cinema-loader-text">Loading calendar...</p>
     </div>
 
-    <!-- Entries -->
-    <div *ngIf="!isLoading && entries.length > 0" @listAnim class="flex flex-col gap-3">
-      <div
-        @entryAnim
-        *ngFor="let entry of entries; let i = index"
-        (click)="openEntry(entry)"
-        class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
-        style="background-color: #101621; border-color: #212530"
-      >
-        <div class="relative aspect-[2/3] h-32 md:h-40 flex-shrink-0">
-          <!-- Loader -->
-          <div
-            *ngIf="!imageLoaded[i]"
-            class="absolute inset-0 flex items-center justify-center rounded-l-lg bg-gray-900"
-          >
-            <div
-              class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
-            ></div>
+    <!-- Entries - grouped by month, each header showing the TRUE total for
+         that month (see groupedEntries/monthGroups), not just how many of
+         it have paged in so far. -->
+    <div
+      *ngIf="!isLoading && entries.length > 0"
+      @listAnim
+      class="flex flex-col gap-3"
+      infiniteScroll
+      [infiniteScrollDistance]="2"
+      [infiniteScrollThrottle]="150"
+      (scrolled)="loadMore()"
+    >
+      <ng-container *ngFor="let group of groupedEntries; trackBy: trackByGroupKey">
+        <div class="calendar-month-header calendar-header-fade-in">
+          <span class="calendar-month-label">{{ group.label }}</span>
+          <span class="calendar-month-count">{{ group.count }} release{{ group.count === 1 ? '' : 's' }}</span>
+        </div>
+
+        <ng-container *ngFor="let dayGroup of group.dayGroups; trackBy: trackByDayLabel">
+          <div class="calendar-day-header calendar-header-fade-in ml-2">
+            <span class="calendar-day-label">{{ dayGroup.label }}</span>
+            <span class="calendar-day-count">{{ dayGroup.count }} release{{ dayGroup.count === 1 ? '' : 's' }}</span>
           </div>
 
-          <img
-            [src]="
-              entry.cover ||
-              'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-            "
-            (load)="imageLoaded[i] = true"
-            (error)="imageLoaded[i] = true"
-            [class.invisible]="!imageLoaded[i]"
-            alt="{{ entry.title }}"
-            class="h-full w-full object-cover rounded-l-lg"
-          />
-        </div>
-
-        <div class="flex flex-col justify-center flex-1 min-w-0 py-3 pr-3">
-          <span
-            class="block text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
-            [title]="entry.title"
+          <div
+            @entryAnim
+            *ngFor="let entry of dayGroup.items; trackBy: trackByEntryId"
+            (click)="openEntry(entry)"
+            class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border ml-2"
+            style="background-color: #101621; border-color: #212530"
           >
-            {{ entry.title }}
-          </span>
+            <div class="relative aspect-[2/3] h-32 md:h-40 flex-shrink-0">
+              <!-- Loader -->
+              <div
+                *ngIf="!imageLoaded[entry._id]"
+                class="absolute inset-0 flex items-center justify-center rounded-l-lg bg-gray-900"
+              >
+                <div
+                  class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                ></div>
+              </div>
 
-          <p
-            *ngIf="entry.mediaType === 'tv'"
-            class="text-gray-400 text-sm mt-1 truncate overflow-hidden whitespace-nowrap"
-          >
-            S{{ entry.seasonNumber }}E{{ entry.episodeNumber }}
-            <span *ngIf="entry.episodeName">&nbsp;&middot; {{ entry.episodeName }}</span>
-          </p>
-          <p *ngIf="entry.mediaType === 'movie'" class="text-gray-400 text-sm mt-1">
-            {{ entry.isRerelease ? 'Returning to Theaters' : 'New release' }}
-          </p>
+              <img
+                [src]="
+                  entry.cover ||
+                  'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                "
+                loading="lazy"
+                (load)="imageLoaded[entry._id] = true"
+                (error)="imageLoaded[entry._id] = true"
+                [class.invisible]="!imageLoaded[entry._id]"
+                alt="{{ entry.title }}"
+                class="h-full w-full object-cover rounded-l-lg"
+              />
+            </div>
 
-          <p class="text-[#0F5EE4] text-sm mt-1 font-semibold">
-            {{ getCountdownLabel(entry.airDate) }}
-          </p>
-        </div>
+            <div class="flex flex-col justify-center flex-1 min-w-0 py-3 pr-3">
+              <span
+                class="block text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
+                [title]="entry.title"
+              >
+                {{ entry.title }}
+              </span>
 
-        <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
+              <p
+                *ngIf="entry.mediaType === 'tv'"
+                class="text-gray-400 text-sm mt-1 truncate overflow-hidden whitespace-nowrap"
+              >
+                S{{ entry.seasonNumber }}E{{ entry.episodeNumber }}
+                <span *ngIf="entry.episodeName">&nbsp;&middot; {{ entry.episodeName }}</span>
+              </p>
+              <p *ngIf="entry.mediaType === 'movie'" class="text-gray-400 text-sm mt-1">
+                {{ entry.isRerelease ? 'Returning to Theaters' : 'New release' }}
+              </p>
+
+              <p class="text-gray-400 text-sm mt-1">
+                <i class="far fa-calendar"></i>
+                {{ formatFullDate(entry.airDate) }}
+              </p>
+
+              <span
+                class="calendar-type-badge mt-1.5"
+                [ngClass]="entry.mediaType === 'movie' ? 'calendar-type-badge-movie' : 'calendar-type-badge-tv'"
+              >
+                <i class="fas" [ngClass]="entry.mediaType === 'movie' ? 'fa-video' : 'fa-tv'"></i>
+                {{ entry.mediaType === 'movie' ? 'Movie' : 'TV Show' }}
+              </span>
+            </div>
+
+            <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
+          </div>
+        </ng-container>
+      </ng-container>
+
+
+      <!-- Loading-more indicator - next page fetched via infiniteScroll above -->
+      <div *ngIf="isLoadingMore" class="flex justify-center py-4">
+        <div class="cinema-loader-ring"></div>
       </div>
     </div>
+
 
     <!-- Empty State -->
     <div

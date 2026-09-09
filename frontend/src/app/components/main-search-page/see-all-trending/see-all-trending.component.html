@@ -12,10 +12,10 @@
     </div>
 
     <div *ngIf="kind === 'cinema'" class="flex justify-center mt-3">
-      <div class="relative flex items-center p-1 rounded-full border border-gray-700 bg-gray-900/50 w-fit">
+      <div class="relative flex items-center p-0.5 rounded-full border border-gray-700 bg-gray-900/50 w-fit">
       <div
-        class="absolute top-1 bottom-1 left-1 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
-        style="width: calc((100% - 0.5rem) / 2)"
+        class="absolute top-0.5 bottom-0.5 left-0.5 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
+        style="width: calc((100% - 0.25rem) / 2)"
         [ngStyle]="{ transform: 'translateX(' + (cinemaMode === 'tv' ? 100 : 0) + '%)' }"
       ></div>
       <button
@@ -107,6 +107,7 @@
           />
         </div>
         <div class="grid-card-info-panel">
+          <p class="grid-card-title truncate">{{ item.title }}</p>
           <p class="grid-card-date truncate">{{ releaseMonthYear(item) }}</p>
           <p *ngIf="item.genres?.length" class="grid-card-genre truncate">
             {{ item.genres?.join(', ') }}

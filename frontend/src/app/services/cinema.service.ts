@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
-import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor, CinemaSeasonEpisodesResponse, EpisodeImdbRatingsResponse, EpisodeReviewsResponse } from '../models/responses/cinema-response';
+import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CalendarSubtitle, CalendarMonthGroup, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor, CinemaSeasonEpisodesResponse, EpisodeImdbRatingsResponse, EpisodeReviewsResponse } from '../models/responses/cinema-response';
 
 export interface WatchlistCursor {
   cursorValue: string;
@@ -197,12 +197,35 @@ export class CinemaService {
 
   // Upcoming (default) or past episodes/releases for the current user's
   // tracked shows/movies. TMDb lookups are cached for 24h server-side; pass
-  // forceRefresh to bypass.
-  getCalendar(forceRefresh = false, range: 'upcoming' | 'past' = 'upcoming'): Observable<{ success: boolean; data: CalendarEntry[] }> {
-    let params: Record<string, string> = { range };
+  // forceRefresh to bypass. Paginated (offset/limit, not cursorDate/cursorId -
+  // see cinemaController.js's getCalendar for why) since the full list can be
+  // large and every item's cover image/animation rendering all at once was
+  // what made a big calendar feel sluggish on mobile.
+  getCalendar(
+    forceRefresh = false,
+    range: 'upcoming' | 'past' = 'upcoming',
+    offset = 0,
+    limit = 20,
+    mediaType: 'all' | 'movie' | 'tv' = 'all'
+  ): Observable<{
+    success: boolean;
+    data: CalendarEntry[];
+    hasMore: boolean;
+    total: number;
+    subtitle: CalendarSubtitle;
+    monthGroups: CalendarMonthGroup[];
+  }> {
+    let params: Record<string, string> = { range, offset: String(offset), limit: String(limit), mediaType };
     if (forceRefresh) params = { ...params, refresh: 'true' };
 
-    return this.http.get<{ success: boolean; data: CalendarEntry[] }>(`${this.apiUrl}/calendar`, {
+    return this.http.get<{
+      success: boolean;
+      data: CalendarEntry[];
+      hasMore: boolean;
+      total: number;
+      subtitle: CalendarSubtitle;
+      monthGroups: CalendarMonthGroup[];
+    }>(`${this.apiUrl}/calendar`, {
       headers: this.authHeaders(),
       params,
     });

@@ -109,8 +109,22 @@ export class CinemaPersonDetailComponent implements OnInit, OnChanges, OnDestroy
     return this.activeTab === 'acting' ? this.detail.acting : this.detail.directed;
   }
 
+  // "Sep 3, 2026" - matches the full-date format used on the marquee/See
+  // All grid/Similar row cards, for consistency across all cinema card views.
   formattedYear(releaseDate: string | null): string {
-    return releaseDate ? releaseDate.slice(0, 4) : 'TBA';
+    if (!releaseDate) return 'TBA';
+    return this.parseLocalDate(releaseDate).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+
+  // Avoids UTC midnight shifting the date back a day in negative-offset
+  // timezones (matches cinema-review-page.component.ts/tv-episode-badge.ts).
+  private parseLocalDate(dateStr: string): Date {
+    const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number);
+    return new Date(year, month - 1, day);
   }
 
   // Same badge logic/priority/icons as everywhere else (see shared/cinema-status-badge.ts).

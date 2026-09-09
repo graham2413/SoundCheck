@@ -1,1 +1,98 @@
 /* Intentionally minimal - layout is handled via Tailwind utility classes in the template. */
+
+/* Plain CSS animation (not an Angular animation trigger) for the month/day
+   headers - using @entryAnim like the cards broke the whole staggered group
+   (a known Angular animations fragility: adding more elements to the
+   query('@entryAnim')+animateChild() orchestration caused ALL of them,
+   including the previously-working cards, to get stuck at their initial
+   :enter style permanently). A plain CSS keyframe sidesteps that entirely -
+   it isn't blocked by/coupled to the Angular @listAnim/@entryAnim triggers. */
+.calendar-header-fade-in {
+  animation: calendarHeaderFadeIn 300ms ease-out;
+}
+
+@keyframes calendarHeaderFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Full-bleed - spans the true viewport edge-to-edge regardless of the
+   page's own px-2 padding/max-w-3xl centered column (classic full-bleed
+   trick: 100vw + pulling back to center via negative margins). */
+.calendar-month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #161f45;
+  padding: 0.6rem .8rem;
+  margin-top: 0.5rem;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+.calendar-month-label {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.calendar-month-count {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+/* Day sub-header within a month ("Today"/"In 14 days"/etc) - plain text,
+   no filled background, unlike the bolder month header above it. */
+.calendar-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.2rem 0;
+}
+
+.calendar-day-label {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.calendar-day-count {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.calendar-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.calendar-type-badge-movie {
+  background: rgba(217, 119, 6, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.6);
+  color: #fbbf24;
+}
+
+.calendar-type-badge-tv {
+  background: rgba(15, 94, 228, 0.15);
+  border: 1px solid rgba(15, 94, 228, 0.6);
+  color: #7aa5f0;
+}

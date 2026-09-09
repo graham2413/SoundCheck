@@ -603,15 +603,21 @@
   padding: 0.4rem 0.55rem 0.5rem;
 }
 
-.cinema-card-date {
+.cinema-card-title {
   color: #fff;
   font-size: 0.95rem;
   font-weight: 600;
 }
 
+.cinema-card-date {
+  color: #9ca3af;
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+}
+
 .cinema-card-genre {
   color: #3b82f6;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   margin-top: 0.15rem;
 }
 

@@ -1,5 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import {
+  AfterViewChecked,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  SimpleChanges,
+  ViewChild,
+} from '@angular/core';
 import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { CinemaService } from '../../services/cinema.service';
@@ -19,7 +29,7 @@ import { CinemaRateModalComponent } from './cinema-rate-modal.component';
   templateUrl: './cinema-episode-detail.component.html',
   styleUrls: ['./cinema-episode-detail.component.css'],
 })
-export class CinemaEpisodeDetailComponent implements OnChanges {
+export class CinemaEpisodeDetailComponent implements OnChanges, AfterViewChecked {
   @Input() tmdbId: string | null = null;
   @Input() showTitle = '';
   @Input() showCover: string | null = null;
@@ -32,6 +42,47 @@ export class CinemaEpisodeDetailComponent implements OnChanges {
   @Output() episodeUpdated = new EventEmitter<CinemaSeasonEpisode>();
 
   isTogglingWatched = false;
+
+  // Fullscreen poster viewer - single image only (no gallery/swipe needed,
+  // unlike the main detail page's poster+gallery viewer), so just a plain
+  // open/close overlay.
+  isPosterFullScreen = false;
+
+  openPosterFullScreen(): void {
+    if (this.posterUrl) this.isPosterFullScreen = true;
+  }
+
+  closePosterFullScreen(): void {
+    this.isPosterFullScreen = false;
+  }
+
+  // "Read more" should only appear once the overview text actually overflows
+  // its 3-line clamp - same measured (not guessed) approach as the main
+  // detail page's description and cinema-person-detail's bio.
+  @ViewChild('overviewEl') overviewEl?: ElementRef<HTMLElement>;
+  isOverviewExpanded = false;
+  isOverviewOverflowing = false;
+  private overviewMeasured = false;
+
+  ngAfterViewChecked(): void {
+    if (this.overviewMeasured || !this.episode?.overview || !this.overviewEl) return;
+    const el = this.overviewEl.nativeElement;
+    if (el.clientHeight === 0) return;
+    this.isOverviewOverflowing = el.scrollHeight > el.clientHeight + 1;
+    this.overviewMeasured = true;
+  }
+
+  // Reviewer avatar load state, keyed by review index (episode reviews have
+  // no _id to key by) - same loader-overlay pattern as the main detail page.
+  private avatarLoaded: { [key: number]: boolean } = {};
+
+  markAvatarLoaded(index: number): void {
+    this.avatarLoaded[index] = true;
+  }
+
+  isAvatarLoaded(index: number): boolean {
+    return this.avatarLoaded[index] === true;
+  }
 
   reviews: EpisodeReviewEntry[] = [];
   loadingReviews = false;
@@ -58,6 +109,14 @@ export class CinemaEpisodeDetailComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['episode']) {
       this.isTogglingWatched = false;
+    }
+    // Different episode (not just an in-place myReview patch) - re-measure
+    // the overview clamp and reset the avatar-loaded state for the new list.
+    if (changes['episode'] && changes['episode'].previousValue?.episodeNumber !== this.episode?.episodeNumber) {
+      this.isOverviewExpanded = false;
+      this.isOverviewOverflowing = false;
+      this.overviewMeasured = false;
+      this.avatarLoaded = {};
     }
     // Season/episode identity change (not just an in-place myReview patch) -
     // reload this episode's community reviews.
@@ -121,6 +180,13 @@ export class CinemaEpisodeDetailComponent implements OnChanges {
     const date = this.parseLocalDate(this.episode.airDate);
     if (Number.isNaN(date.getTime())) return null;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // Same full-number (not abbreviated) format as the main detail page's IMDb
+  // vote count - data was already coming through on imdbRating.numVotes,
+  // just never rendered on this page.
+  get formattedImdbVoteCount(): string | null {
+    return this.imdbRating?.numVotes != null ? this.imdbRating.numVotes.toLocaleString('en-US') : null;
   }
 
   // Avoids UTC midnight shifting the date back a day in negative-offset

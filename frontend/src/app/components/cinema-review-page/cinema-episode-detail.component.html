@@ -14,7 +14,7 @@
 
   <!-- Poster (season, vertical) + title block -->
   <div class="flex items-start gap-4 px-4 pt-5">
-    <div class="episode-poster-frame">
+    <div class="episode-poster-frame" [class.cursor-pointer]="posterUrl" (click)="openPosterFullScreen()">
       <img *ngIf="posterUrl" [src]="posterUrl" [alt]="episode.name" class="episode-poster-img" />
       <div *ngIf="!posterUrl" class="episode-poster-placeholder">
         <i class="fas fa-clapperboard"></i>
@@ -37,42 +37,50 @@
   <!-- Ratings -->
   <div class="episode-ratings-card mx-4 mt-4">
     <div class="flex items-center justify-around">
-      <div class="flex flex-col items-center">
-        <div class="episode-rating-ring">
-          <svg viewBox="0 0 100 100">
-            <circle class="ring-track" cx="50" cy="50" r="45"></circle>
-            <circle
-              class="ring-progress ring-progress-blue"
-              cx="50"
-              cy="50"
-              r="45"
-              [style.strokeDasharray]="ringCircumference"
-              [style.strokeDashoffset]="myRatingDashoffset"
-            ></circle>
-          </svg>
-          <span class="episode-rating-ring-value">{{ myRating != null ? myRating.toFixed(1) : '—' }}</span>
+      <div class="flex items-center gap-3">
+        <img src="assets/scLogo.png" alt="Cinewave" class="rating-logo" />
+
+        <div class="flex flex-col items-center">
+          <div class="episode-rating-ring">
+            <svg viewBox="0 0 100 100">
+              <circle class="ring-track" cx="50" cy="50" r="45"></circle>
+              <circle
+                class="ring-progress ring-progress-blue"
+                cx="50"
+                cy="50"
+                r="45"
+                [style.strokeDasharray]="ringCircumference"
+                [style.strokeDashoffset]="myRatingDashoffset"
+              ></circle>
+            </svg>
+            <span class="episode-rating-ring-value">{{ myRating != null ? myRating.toFixed(1) : '—' }}</span>
+          </div>
+          <span class="episode-rating-caption">My Rating</span>
         </div>
-        <span class="episode-rating-caption">My Rating</span>
       </div>
 
       <div class="episode-ratings-divider"></div>
 
-      <div class="flex flex-col items-center">
-        <div class="episode-rating-ring">
-          <svg viewBox="0 0 100 100">
-            <circle class="ring-track" cx="50" cy="50" r="45"></circle>
-            <circle
-              class="ring-progress ring-progress-yellow"
-              cx="50"
-              cy="50"
-              r="45"
-              [style.strokeDasharray]="ringCircumference"
-              [style.strokeDashoffset]="imdbRatingDashoffset"
-            ></circle>
-          </svg>
-          <span class="episode-rating-ring-value">{{ imdbRating?.averageRating != null ? imdbRating!.averageRating!.toFixed(1) : '—' }}</span>
+      <div class="flex items-center gap-3">
+        <img src="assets/imdb-logo.svg" alt="IMDb" class="imdb-logo" />
+
+        <div class="flex flex-col items-center">
+          <div class="episode-rating-ring">
+            <svg viewBox="0 0 100 100">
+              <circle class="ring-track" cx="50" cy="50" r="45"></circle>
+              <circle
+                class="ring-progress ring-progress-yellow"
+                cx="50"
+                cy="50"
+                r="45"
+                [style.strokeDasharray]="ringCircumference"
+                [style.strokeDashoffset]="imdbRatingDashoffset"
+              ></circle>
+            </svg>
+            <span class="episode-rating-ring-value">{{ imdbRating?.averageRating != null ? imdbRating!.averageRating!.toFixed(1) : '—' }}</span>
+          </div>
+          <span class="episode-rating-caption">{{ formattedImdbVoteCount ? formattedImdbVoteCount + ' ratings' : 'IMDb' }}</span>
         </div>
-        <span class="episode-rating-caption">IMDb</span>
       </div>
     </div>
   </div>
@@ -91,9 +99,11 @@
         class="fas flex-shrink-0"
         [class.fa-spinner]="isTogglingWatched"
         [class.fa-spin]="isTogglingWatched"
-        [class.fa-check]="!isTogglingWatched"
+        [class.fa-eye]="!isTogglingWatched && !isWatched"
+        [class.fa-check]="!isTogglingWatched && isWatched"
       ></i>
-      <span class="action-btn-label">{{ isWatched ? 'Watched' : 'Mark Watched' }}</span>
+      <span class="action-btn-label hidden sm:inline">{{ isWatched ? 'Watched' : 'Mark Watched' }}</span>
+      <span class="action-btn-label sm:hidden">{{ isWatched ? 'Watched' : 'Mark' }}</span>
     </button>
     <button type="button" class="action-btn action-btn-outline" (click)="openRateModal()">
       <i class="far fa-star flex-shrink-0"></i>
@@ -101,24 +111,68 @@
     </button>
   </div>
 
-  <!-- Overview -->
+  <!-- Overview - no heading, matches the main detail page's description
+       block (plain text directly, no "Overview" label above it). -->
   <div class="px-4 mt-5" *ngIf="episode.overview">
-    <h3 class="text-white font-bold text-lg mb-2">Overview</h3>
-    <p class="text-gray-300 text-sm leading-relaxed">{{ episode.overview }}</p>
+    <p
+      #overviewEl
+      class="text-gray-300 text-sm leading-relaxed"
+      [class.line-clamp-3]="!isOverviewExpanded"
+    >
+      {{ episode.overview }}
+    </p>
+    <button
+      *ngIf="isOverviewOverflowing"
+      type="button"
+      class="read-more-btn"
+      (click)="isOverviewExpanded = !isOverviewExpanded"
+    >
+      {{ isOverviewExpanded ? 'Read less' : 'Read more' }}
+      <i class="fas" [class.fa-chevron-down]="!isOverviewExpanded" [class.fa-chevron-up]="isOverviewExpanded"></i>
+    </button>
   </div>
 
-  <!-- Reviews -->
-  <div class="px-4 mt-5">
-    <h3 class="text-white font-bold text-lg mb-2">Reviews</h3>
-    <p class="episode-reviews-empty" *ngIf="!loadingReviews && reviews.length === 0">No reviews yet for this episode.</p>
+  <!-- Reviews - single centered tab (episodes only ever have this one section,
+       unlike the main detail page's Overview/Episodes/Reviews/Trailer/Similar
+       strip) styled the same way for visual consistency. -->
+  <div class="tabs-row px-4 mt-4">
+    <button type="button" class="tab-btn tab-btn-active">Reviews</button>
+  </div>
 
-    <div class="episode-review-card" *ngFor="let review of reviews">
+  <div class="px-4 mt-4">
+    <!-- Empty state - matches the main detail page's Reviews tab empty state. -->
+    <div class="reviews-empty" *ngIf="!loadingReviews && reviews.length === 0">
+      <i class="far fa-comment-dots reviews-empty-icon"></i>
+      <h3 class="reviews-empty-title">No reviews yet</h3>
+      <p class="reviews-empty-subtitle">
+        Be the first to share your thoughts on {{ episode.name || 'Episode ' + episode.episodeNumber }}.
+      </p>
+      <button type="button" class="action-btn action-btn-primary reviews-empty-btn" (click)="openRateModal()">
+        Write the First Review
+      </button>
+    </div>
+
+    <h3 class="reviews-header" *ngIf="reviews.length > 0">Reviews ({{ reviews.length }})</h3>
+
+    <div class="review-card" *ngFor="let review of reviews; let i = index">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <img [src]="profilePictureUrl(review.user.profilePicture)" alt="" class="episode-review-avatar" />
-          <span class="episode-review-username">{{ review.user.username }}</span>
+          <div class="review-avatar-frame">
+            <div class="review-avatar-loader" *ngIf="!isAvatarLoaded(i)">
+              <div class="review-avatar-spinner"></div>
+            </div>
+            <img
+              [src]="profilePictureUrl(review.user.profilePicture)"
+              (load)="markAvatarLoaded(i)"
+              (error)="markAvatarLoaded(i)"
+              [class.invisible]="!isAvatarLoaded(i)"
+              alt=""
+              class="review-avatar"
+            />
+          </div>
+          <span class="review-username">{{ review.user.username }}</span>
         </div>
-        <span class="episode-review-date" *ngIf="review.reviewedAt">{{ review.reviewedAt | date : 'MMM d, y' }}</span>
+        <span class="review-date" *ngIf="review.reviewedAt">{{ review.reviewedAt | date : 'MMM d, y' }}</span>
       </div>
 
       <div class="flex items-center gap-2 mt-2">
@@ -128,10 +182,25 @@
             <i class="fas fa-star star-filled" [style.width.%]="starFillPercent(i, review.decimalRating)"></i>
           </span>
         </span>
-        <span class="episode-review-score">{{ review.decimalRating }} / 10</span>
+        <span class="review-score">{{ review.decimalRating }} / 10</span>
       </div>
 
-      <p class="episode-review-text" *ngIf="review.reviewText">{{ review.reviewText }}</p>
+      <p class="review-text" *ngIf="review.reviewText">{{ review.reviewText }}</p>
     </div>
   </div>
+
+  <!-- Fullscreen poster viewer - single image, no gallery/swipe (see
+       isPosterFullScreen in the component). -->
+  <div class="poster-fullscreen-overlay" *ngIf="isPosterFullScreen" (click)="closePosterFullScreen()">
+    <button
+      type="button"
+      class="w-11 h-11 rounded-full bg-black/60 text-white flex items-center justify-center absolute top-4 left-4 z-10"
+      aria-label="Close"
+      (click)="closePosterFullScreen()"
+    >
+      <i class="fas fa-times"></i>
+    </button>
+    <img [src]="posterUrl" [alt]="episode.name" class="poster-fullscreen-img" (click)="$event.stopPropagation()" />
+  </div>
 </div>
+

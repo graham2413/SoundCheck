@@ -110,6 +110,21 @@ export interface CalendarEntry {
   isUnrefinedImport: boolean;
 }
 
+// Cascading "N upcoming/recent releases {this week|next week|...}" subtitle -
+// period tells the frontend which qualifier text to append (blank for
+// 'all'). Direction flips for past (last-week instead of next-week, etc) -
+// see buildCalendarSubtitle in cinemaController.js.
+export interface CalendarSubtitle {
+  count: number;
+  period: 'this-week' | 'next-week' | 'last-week' | 'this-month' | 'this-year' | 'all';
+}
+
+export interface CalendarMonthGroup {
+  key: string; // "YYYY-MM"
+  label: string; // "November 2024"
+  count: number; // true total for this month, independent of how much has paged in
+}
+
 export interface ImdbStatsResponse {
   success: boolean;
   data: ImdbStats;

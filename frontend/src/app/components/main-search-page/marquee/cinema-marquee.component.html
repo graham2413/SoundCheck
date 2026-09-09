@@ -30,6 +30,7 @@
           </div>
 
           <div class="cinema-card-info">
+            <p class="cinema-card-title truncate">{{ item.title }}</p>
             <p class="cinema-card-date">{{ releaseMonthYear(item) }}</p>
             <p *ngIf="item.genres?.length" class="cinema-card-genre truncate" [title]="item.genres?.join(', ')">
               {{ item.genres?.join(', ') }}

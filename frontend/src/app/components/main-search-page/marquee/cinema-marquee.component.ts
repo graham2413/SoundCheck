@@ -140,11 +140,22 @@ export class CinemaMarqueeComponent implements OnInit, OnChanges {
     return item.releaseDate ? new Date(item.releaseDate).getFullYear().toString() : 'TBA';
   }
 
-  // "Sep 2026" - shown below the card (not overlaid on the poster).
+  // "Sep 3, 2026" - shown below the card (not overlaid on the poster).
   releaseMonthYear(item: CinemaSearchResult): string {
     if (item.mediaType === 'tv' && item.releaseYearRange) return item.releaseYearRange;
     if (!item.releaseDate) return 'TBA';
-    return new Date(item.releaseDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    return this.parseLocalDate(item.releaseDate).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+
+  // Avoids UTC midnight shifting the date back a day in negative-offset
+  // timezones (matches cinema-review-page.component.ts/tv-episode-badge.ts).
+  private parseLocalDate(dateStr: string): Date {
+    const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number);
+    return new Date(year, month - 1, day);
   }
 
   // Same kind/priority/icon logic as everywhere else (see cinema-status-

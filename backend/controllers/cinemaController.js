@@ -93,6 +93,28 @@ exports.getUsDigitalRelease = getUsDigitalRelease;
 const getLocalDateString = (timeZone) =>
   new Intl.DateTimeFormat("en-CA", { timeZone }).format(new Date());
 
+// Plain Y/M/D calendar math for the "N upcoming releases {this week|this
+// month|...}" cascade and month-group headers below - operates on
+// "YYYY-MM-DD" strings only (never a raw `new Date(dateString)` parse, which
+// would shift by a day in negative-UTC-offset timezones, per the same
+// gotcha documented on the frontend's parseLocalDate helpers).
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+const parseYmd = (dateStr) => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return { y, m, d };
+};
+const toYmdStr = (y, m, d) => `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const addDaysStr = (dateStr, days) => {
+  const { y, m, d } = parseYmd(dateStr);
+  const dt = new Date(y, m - 1, d + days);
+  return toYmdStr(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+};
+const endOfMonthStr = (y, m) => toYmdStr(y, m, new Date(y, m, 0).getDate());
+const endOfYearStr = (y) => toYmdStr(y, 12, 31);
+
 // GET /api/cinema/search?query=... (Protected)
 // Searches movies/shows via TMDb's /search/multi, filtered down to just
 // movie/tv results (no "person" entries) and mapped to a clean shape.
@@ -298,12 +320,86 @@ async function invalidateCalendarCache(userId) {
   ]).catch(() => {});
 }
 
+// Builds the calendar page's dynamic subtitle ("N upcoming releases this
+// week" etc, cascading through progressively wider windows) and the
+// per-month release counts the UI's month-group headers need - computed
+// over the full (already date-filtered/sorted, mediaType-filtered) entry
+// list, NOT just whichever page is being returned, so both stay accurate
+// even before every item in a given window/month has actually been paged in.
+// Cascade: this week -> last/next week -> this month -> this year -> total.
+// Direction flips for 'past' (last week/this month-so-far/this year-so-far
+// instead of next week/rest-of-month/rest-of-year). Checking wider windows
+// costs nothing extra (same in-memory array, no additional TMDb/Mongo
+// calls), so there's no reason not to cascade all the way to a year.
+function buildCalendarSubtitle(entries, range, todayStr) {
+  const { y, m } = parseYmd(todayStr);
+  const isUpcoming = range !== "past";
+
+  const windows = isUpcoming
+    ? [
+        { period: "this-week", start: todayStr, end: addDaysStr(todayStr, 6) },
+        { period: "next-week", start: addDaysStr(todayStr, 7), end: addDaysStr(todayStr, 13) },
+        { period: "this-month", start: todayStr, end: endOfMonthStr(y, m) },
+        { period: "this-year", start: todayStr, end: endOfYearStr(y) },
+      ]
+    : [
+        { period: "this-week", start: addDaysStr(todayStr, -6), end: todayStr },
+        { period: "last-week", start: addDaysStr(todayStr, -13), end: addDaysStr(todayStr, -7) },
+        { period: "this-month", start: toYmdStr(y, m, 1), end: todayStr },
+        { period: "this-year", start: toYmdStr(y, 1, 1), end: todayStr },
+      ];
+
+  for (const w of windows) {
+    const count = entries.filter((e) => e.airDate >= w.start && e.airDate <= w.end).length;
+    if (count > 0) return { count, period: w.period };
+  }
+
+  return { count: entries.length, period: "all" };
+}
+
+function buildCalendarMonthGroups(entries) {
+  const counts = new Map();
+  for (const e of entries) {
+    const key = e.airDate.slice(0, 7); // "YYYY-MM"
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return Array.from(counts.entries()).map(([key, count]) => {
+    const [y, m] = key.split("-").map(Number);
+    return { key, label: `${MONTH_NAMES[m - 1]} ${y}`, count };
+  });
+}
+
 exports.getCalendar = async (req, res) => {
   try {
     const forceRefresh = req.query.refresh === "true";
     const range = req.query.range === "past" ? "past" : "upcoming";
+    const mediaTypeFilter = ["tv", "movie"].includes(req.query.mediaType) ? req.query.mediaType : "all";
     const cacheKey = `calendar:${req.user._id}:${range}`;
     const todayStr = getLocalDateString(CALENDAR_CACHE_TIMEZONE);
+
+    // Offset/limit (not the cursorDate/cursorId pattern used by getWatchlist)
+    // because the sort field here (episode air date / release date) isn't a
+    // stored Mongo field - it only exists after live TMDb calls resolve for
+    // every tracked item, so the full list has to be computed+sorted before
+    // any pagination can happen at all. That full list is already cached for
+    // the day below, so slicing it per-page is cheap - this only limits how
+    // much of it any single response actually sends/renders.
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+    // The outer cache always stores the full, unfiltered (both media types)
+    // list - mediaType filtering happens here, per-request, on whichever
+    // array (cached or freshly computed) is in hand, so a filter change
+    // never needs its own separate cache entry/TMDb refetch.
+    const buildPage = (calendar) => {
+      const filtered = mediaTypeFilter === "all" ? calendar : calendar.filter((e) => e.mediaType === mediaTypeFilter);
+      return {
+        data: filtered.slice(offset, offset + limit),
+        hasMore: offset + limit < filtered.length,
+        total: filtered.length,
+        subtitle: buildCalendarSubtitle(filtered, range, todayStr),
+        monthGroups: buildCalendarMonthGroups(filtered),
+      };
+    };
 
     if (!forceRefresh) {
       const cached = await redis.get(cacheKey);
@@ -312,7 +408,7 @@ exports.getCalendar = async (req, res) => {
         // One fresh call per calendar day, not a rolling 24h window - stale
         // as soon as the date rolls over, even if it's only been a minute
         if (parsed.cachedDate === todayStr) {
-          return res.status(200).json({ success: true, data: parsed.data });
+          return res.status(200).json({ success: true, ...buildPage(parsed.data) });
         }
       }
     }
@@ -431,7 +527,7 @@ exports.getCalendar = async (req, res) => {
       await redis.set(cacheKey, JSON.stringify({ cachedDate: todayStr, data: calendar }), "EX", CALENDAR_RESPONSE_CACHE_TTL);
     }
 
-    res.status(200).json({ success: true, data: calendar });
+    res.status(200).json({ success: true, ...buildPage(calendar) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }

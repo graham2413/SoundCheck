@@ -634,7 +634,11 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
 
   similarReleaseDate(item: CinemaPersonCredit): string {
     if (!item.releaseDate) return 'TBA';
-    return new Date(item.releaseDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    return this.parseLocalDate(item.releaseDate).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   }
 
   get ringCircumference(): number {
