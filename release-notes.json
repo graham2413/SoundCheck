@@ -1,12 +1,5 @@
 ﻿{
   "New features": [
-    "Emmy wins and nominations now show up for TV shows on the Awards page (movies still show Oscars), plus the original awards summary text",
-    "Full episode air dates/countdowns are now consistent between the Calendar and the show's own Episodes list"
-  ],
-  "Performance & stability": [
-    "Fixed a rare mix-up where opening certain shows/movies could briefly display the wrong title's info",
-    "Calendar loads are more reliable when a lot of items update at once",
-    "Fixed the rating +/- buttons on the review screen highlighting text on the page when pressed and held",
-    "Tapping the rating number now properly opens your keyboard for typing instead of just highlighting the value"
+    "You can now swipe left/right to browse full-screen movie/show images on phones and tablets, instead of only using arrow buttons"
   ]
 }
