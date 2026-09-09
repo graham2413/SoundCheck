@@ -1,5 +1,10 @@
 ﻿{
   "New features": [
-    "You can now swipe left/right to browse full-screen movie/show images on phones and tablets, instead of only using arrow buttons"
+    "Redesigned Calendar: releases are now grouped by month and day with real-time counts, a new All/TV Shows/Movies filter, and a smarter \"Next 7 days\" style summary at the top",
+    "Movie and show posters, marquees, and cast pages now show a consistent title, full release date, and genre layout"
+  ],
+  "Performance & stability": [
+    "Calendar now loads in smaller batches as you scroll instead of all at once, so it feels snappier",
+    "Fixed several toggle buttons (Upcoming/Past, Movies/Shows, etc.) that looked slightly out of alignment"
   ]
 }
