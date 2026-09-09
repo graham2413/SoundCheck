@@ -106,13 +106,19 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   // Fullscreen image viewer state - poster + gallery images treated as one
   // navigable list so the next/previous buttons work across both. Rendered
   // as a 3-slide (prev/current/next) track so navigating slides continuously
-  // (like a native photo viewer) instead of an instant image swap. Button-only
-  // navigation (no touch swipe) - see animateToSlide/settleAfterSwipe.
+  // (like a native photo viewer) instead of an instant image swap.
+  // Touch/coarse-pointer devices swipe (see onFullScreenPointer* below) and
+  // the left/right buttons are hidden there via CSS (see .poster-fullscreen-nav's
+  // (hover: none) media query) - mouse/trackpad users still get the buttons.
   private fullScreenImages: string[] = [];
   private fullScreenIndex = 0;
-  isSwiping = false; // disables the CSS transition only during the instant-reset step after a slide completes
+  isSwiping = false; // disables the CSS transition only during the instant-reset step after a slide completes, and live while actively dragging
   dragOffsetPx = 0;
   private static readonly SWIPE_TRANSITION_MS = 250;
+  private static readonly SWIPE_THRESHOLD_PX = 60;
+  private isDragging = false;
+  private activePointerId: number | null = null;
+  private dragStartX = 0;
 
   @ViewChild('descriptionEl') descriptionEl?: ElementRef<HTMLElement>;
   @ViewChild('galleryRow') galleryRow?: ElementRef<HTMLElement>;
@@ -271,6 +277,53 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
 
   animatePrevFullScreenImage(): void {
     this.animateToSlide(false);
+  }
+
+  // Touch/mouse drag-to-swipe - only one active pointer drives the drag;
+  // if a second finger comes down mid-drag (a pinch-zoom attempt) the drag
+  // is abandoned instead of racing it, so native pinch-zoom can take over.
+  onFullScreenPointerDown(event: PointerEvent): void {
+    if (!this.hasMultipleFullScreenImages || this.isSettlingSwipe) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (this.isDragging) {
+      this.cancelFullScreenDrag();
+      return;
+    }
+    this.isDragging = true;
+    this.activePointerId = event.pointerId;
+    this.dragStartX = event.clientX;
+    this.isSwiping = true; // no transition while actively dragging, follows the finger 1:1
+  }
+
+  onFullScreenPointerMove(event: PointerEvent): void {
+    if (!this.isDragging || event.pointerId !== this.activePointerId) return;
+    this.dragOffsetPx = event.clientX - this.dragStartX;
+  }
+
+  onFullScreenPointerUp(event: PointerEvent): void {
+    if (!this.isDragging || event.pointerId !== this.activePointerId) return;
+    const offset = this.dragOffsetPx;
+    this.isDragging = false;
+    this.activePointerId = null;
+    this.isSwiping = false; // re-enable the transition for the settle/snap-back below
+
+    if (Math.abs(offset) > CinemaReviewPageComponent.SWIPE_THRESHOLD_PX) {
+      this.animateToSlide(offset < 0);
+    } else {
+      this.dragOffsetPx = 0; // didn't drag far enough - snap back to center
+    }
+  }
+
+  onFullScreenPointerCancel(): void {
+    this.cancelFullScreenDrag();
+  }
+
+  private cancelFullScreenDrag(): void {
+    if (!this.isDragging) return;
+    this.isDragging = false;
+    this.activePointerId = null;
+    this.isSwiping = false;
+    this.dragOffsetPx = 0;
   }
 
   private animateToSlide(goingNext: boolean): void {

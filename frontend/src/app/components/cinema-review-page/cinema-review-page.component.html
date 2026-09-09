@@ -517,9 +517,11 @@
   </div>
 
   <!-- Fullscreen image viewer (poster or gallery image) - a 3-slide
-       (prev/current/next) track, navigated only via the left/right buttons
-       (not touch swipe - that was prone to gesture conflicts with pinch-zoom
-       and page scroll on mobile). -->
+       (prev/current/next) track. Touch/coarse-pointer devices swipe to
+       navigate (see onFullScreenPointer* handlers on the track); the
+       left/right buttons are hidden there via CSS and only shown for
+       mouse/trackpad users (see .poster-fullscreen-nav's (hover: none)
+       media query). -->
   <div class="poster-fullscreen-overlay" *ngIf="fullScreenImageUrl" (click)="closeFullScreenImage()">
     <button type="button" class="icon-circle-btn poster-fullscreen-close" aria-label="Close" (click)="closeFullScreenImage()">
       <i class="fas fa-times"></i>
@@ -539,6 +541,10 @@
       class="poster-fullscreen-track"
       [class.no-transition]="isSwiping"
       [style.transform]="trackTransform"
+      (pointerdown)="onFullScreenPointerDown($event)"
+      (pointermove)="onFullScreenPointerMove($event)"
+      (pointerup)="onFullScreenPointerUp($event)"
+      (pointercancel)="onFullScreenPointerCancel()"
     >
       <img
         *ngFor="let img of fullScreenSlides; trackBy: trackByFullScreenUrl"

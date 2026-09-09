@@ -148,6 +148,16 @@
   right: 1rem;
 }
 
+/* Touch/coarse-pointer devices (phones/tablets) swipe to navigate instead -
+   see onFullScreenPointer* in the component - so the buttons are just
+   visual clutter there. Kept for mouse/trackpad users, who have no swipe
+   gesture available. */
+@media (hover: none) and (pointer: coarse) {
+  .poster-fullscreen-nav {
+    display: none;
+  }
+}
+
 @keyframes posterSpin {
   to {
     transform: rotate(360deg);
