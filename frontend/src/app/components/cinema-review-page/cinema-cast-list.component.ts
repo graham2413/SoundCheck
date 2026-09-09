@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CinemaPersonDetailComponent } from './cinema-person-detail.component';
 import { CinemaPopularActorsComponent } from './cinema-popular-actors.component';
 import { CinemaPersonCredit } from '../../models/responses/cinema-response';
@@ -24,7 +25,7 @@ type SortOption = 'order' | 'name' | 'popularity';
 @Component({
   selector: 'app-cinema-cast-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, CinemaPersonDetailComponent, CinemaPopularActorsComponent],
+  imports: [CommonModule, FormsModule, InfiniteScrollDirective, CinemaPersonDetailComponent, CinemaPopularActorsComponent],
   templateUrl: './cinema-cast-list.component.html',
   styleUrl: './cinema-cast-list.component.css',
 })
@@ -55,6 +56,24 @@ export class CinemaCastListComponent implements OnChanges {
   private _searchQuery = '';
   private _sortBy: SortOption = 'order';
   filteredSortedCast: CastMember[] = [];
+
+  // Renders only a window of filteredSortedCast at a time (revealed via
+  // infiniteScroll in the template) - some TV shows' aggregate_credits can
+  // have 300-500+ people, and rendering/loading every row's image at once
+  // was the same "everything at once" jank already fixed on the Calendar page.
+  private static readonly PAGE_SIZE = 30;
+  private visibleCount = CinemaCastListComponent.PAGE_SIZE;
+  visibleCast: CastMember[] = [];
+
+  get hasMoreVisible(): boolean {
+    return this.visibleCount < this.filteredSortedCast.length;
+  }
+
+  loadMoreVisibleCast(): void {
+    if (!this.hasMoreVisible) return;
+    this.visibleCount += CinemaCastListComponent.PAGE_SIZE;
+    this.visibleCast = this.filteredSortedCast.slice(0, this.visibleCount);
+  }
 
   get searchQuery(): string {
     return this._searchQuery;
@@ -91,6 +110,10 @@ export class CinemaCastListComponent implements OnChanges {
       sorted.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
     this.filteredSortedCast = sorted;
+    // Reset back to the first page - a new search/sort/cast shouldn't leave
+    // the view scrolled deep into a window that no longer makes sense.
+    this.visibleCount = CinemaCastListComponent.PAGE_SIZE;
+    this.visibleCast = this.filteredSortedCast.slice(0, this.visibleCount);
   }
 
   setSortBy(option: SortOption): void {

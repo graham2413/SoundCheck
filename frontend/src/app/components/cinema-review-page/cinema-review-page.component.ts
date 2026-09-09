@@ -145,6 +145,22 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   closeFullScreenImage(): void {
     this.fullScreenImages = [];
     this.setBackgroundScrollLocked(false);
+    this.resetNativePinchZoom();
+  }
+
+  // Pinch-zooming the image viewer (allowed via `touch-action: pinch-zoom`
+  // in the CSS) zooms the browser's actual visual viewport, not just the
+  // image - so without this, closing the viewer left the whole underlying
+  // page zoomed in too. Momentarily forcing maximum-scale=1 makes mobile
+  // browsers snap the page back to scale 1, then the original viewport meta
+  // (allowing user pinch-zoom elsewhere) is restored right after.
+  private resetNativePinchZoom(): void {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) return;
+    const original = viewport.getAttribute('content');
+    if (!original) return;
+    viewport.setAttribute('content', `${original}, maximum-scale=1.0`);
+    setTimeout(() => viewport.setAttribute('content', original));
   }
 
   // The overlay itself is position:fixed and never scrolls, but the modal

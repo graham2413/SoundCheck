@@ -54,6 +54,20 @@ export class CinemaEpisodeDetailComponent implements OnChanges, AfterViewChecked
 
   closePosterFullScreen(): void {
     this.isPosterFullScreen = false;
+    this.resetNativePinchZoom();
+  }
+
+  // Pinch-zooming the fullscreen poster zooms the browser's actual visual
+  // viewport, not just the image - without this, closing the viewer left the
+  // whole underlying page zoomed in too (see cinema-review-page.component.ts
+  // for the same fix on its poster/gallery viewer).
+  private resetNativePinchZoom(): void {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) return;
+    const original = viewport.getAttribute('content');
+    if (!original) return;
+    viewport.setAttribute('content', `${original}, maximum-scale=1.0`);
+    setTimeout(() => viewport.setAttribute('content', original));
   }
 
   // "Read more" should only appear once the overview text actually overflows

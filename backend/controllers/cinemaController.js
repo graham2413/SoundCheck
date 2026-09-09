@@ -1356,26 +1356,21 @@ exports.getCinemaPersonDetail = async (req, res) => {
   try {
     const { personId } = req.params;
 
-    const [details, movieGenreMap, tvGenreMap] = await Promise.all([
-      getTmdbPersonDetails(personId),
-      getGenreMap("movie"),
-      getGenreMap("tv"),
-    ]);
+    const details = await getTmdbPersonDetails(personId);
     if (!details) {
       return res.status(404).json({ success: false, message: "Person not found" });
     }
 
-    const toCredit = (c) => {
-      const genreMap = c.media_type === "tv" ? tvGenreMap : movieGenreMap;
-      return {
-        tmdbId: String(c.id),
-        mediaType: c.media_type,
-        title: c.title || c.name,
-        cover: c.poster_path ? `${TMDB_IMAGE_BASE}${c.poster_path}` : null,
-        releaseDate: c.release_date || c.first_air_date || null,
-        genres: (c.genre_ids || []).map((id) => genreMap[id]).filter(Boolean),
-      };
-    };
+    const toCredit = (c) => ({
+      tmdbId: String(c.id),
+      mediaType: c.media_type,
+      title: c.title || c.name,
+      cover: c.poster_path ? `${TMDB_IMAGE_BASE}${c.poster_path}` : null,
+      releaseDate: c.release_date || c.first_air_date || null,
+      // TV combined_credits nests character under roles[] instead of a flat
+      // field (mirrors trimCast in callTmdb.js) - only roles[0] is ever shown.
+      character: c.character || c.roles?.[0]?.character || null,
+    });
 
     // A person can appear more than once in combined_credits.cast for the
     // same title (e.g. multiple TV credit entries per season) - dedupe by

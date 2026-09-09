@@ -15,6 +15,32 @@
   animation: bounce-twice 3s ease-in-out infinite;
 }
 
+/* Pulsing ring around the Music/Cinema switch button's circular border */
+@keyframes switch-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(15, 94, 228, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(15, 94, 228, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(15, 94, 228, 0);
+  }
+}
+
+.search-type-switch-btn {
+  animation: switch-pulse 2s ease-out infinite;
+}
+
+/* Font Awesome Free only ships fa-music/fa-film as solid glyphs (no outline
+   "regular" style in the free tier) - fake an outline look by hiding the
+   fill and drawing only the glyph's stroke instead. Firefox doesn't support
+   -webkit-text-stroke and falls back to a solid-filled icon. */
+.fa-icon-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px #0F5EE4;
+}
+
 .see-all-btn {
   display: inline-flex;
   align-items: center;

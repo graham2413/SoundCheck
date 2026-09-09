@@ -17,6 +17,14 @@ import { CinemaPersonDetail, CinemaPersonCredit } from 'src/app/models/responses
 import { getCinemaStatusBadge, CinemaBadgeVm } from 'src/app/shared/cinema-status-badge';
 import { CinemaBadgeComponent } from 'src/app/shared/cinema-badge/cinema-badge.component';
 
+// Slide transition duration (ms) - kept in sync with the CSS transition-duration
+// on .person-sheet/.person-backdrop in the stylesheet. Close is deferred by this
+// long so the slide-down finishes playing before the parent's *ngIf removes us -
+// Angular's :leave animations don't reliably fire when a component is torn down
+// by an ancestor's structural directive, so a plain CSS transition + setTimeout
+// is used instead.
+const CLOSE_ANIMATION_MS = 220;
+
 // Bottom-sheet popup (not full-screen) shown when tapping a cast member row -
 // bio + a horizontally-scrollable filmography (Acting/Directed toggle, full
 // list sorted newest-first, no cap) + social/IMDb links. Fetched on-demand
@@ -44,6 +52,10 @@ export class CinemaPersonDetailComponent implements OnInit, OnChanges, OnDestroy
   detail: CinemaPersonDetail | null = null;
   isLoading = false;
   activeTab: 'acting' | 'directed' = 'acting';
+  // Drives the slide-up-in/slide-down-out CSS transition (see .css file) -
+  // starts false so the sheet renders off-screen, flips true a tick after
+  // init so the transition actually plays instead of snapping straight in.
+  isVisible = false;
   isBioExpanded = false;
   // Only true once the bio is actually measured to overflow its 3-line clamp -
   // without this, "Show more" showed for every bio regardless of length,
@@ -60,10 +72,21 @@ export class CinemaPersonDetailComponent implements OnInit, OnChanges, OnDestroy
   // internal overflow-y-auto area.
   ngOnInit(): void {
     document.body.style.overflow = 'hidden';
+    // Deferred so the sheet first paints in its off-screen position, then
+    // transitions in - flipping isVisible in the same tick as ngOnInit would
+    // skip straight to the end state with no visible slide.
+    setTimeout(() => (this.isVisible = true));
   }
 
   ngOnDestroy(): void {
     document.body.style.overflow = '';
+  }
+
+  // Plays the slide-down-out transition, then waits for it to finish before
+  // actually asking the parent to remove this component - see CLOSE_ANIMATION_MS.
+  requestClose(): void {
+    this.isVisible = false;
+    setTimeout(() => this.close.emit(), CLOSE_ANIMATION_MS);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -95,13 +118,18 @@ export class CinemaPersonDetailComponent implements OnInit, OnChanges, OnDestroy
   // Runs after every render, but only actually measures once per bio (guarded
   // by bioMeasured) and only once the element has real layout (clientHeight
   // > 0) - comparing scrollHeight to clientHeight while still 3-line-clamped
-  // is what tells us whether there's actually hidden text to expand.
+  // is what tells us whether there's actually hidden text to expand. The
+  // update is deferred to a macrotask so setting bioOverflows here doesn't
+  // trip ExpressionChangedAfterItHasBeenCheckedError in the same CD cycle
+  // that just finished checking the view.
   ngAfterViewChecked(): void {
     if (this.bioMeasured || !this.detail?.biography || !this.bioTextEl) return;
     const el = this.bioTextEl.nativeElement;
     if (el.clientHeight === 0) return;
-    this.bioOverflows = el.scrollHeight > el.clientHeight + 1;
     this.bioMeasured = true;
+    setTimeout(() => {
+      this.bioOverflows = el.scrollHeight > el.clientHeight + 1;
+    });
   }
 
   get credits(): CinemaPersonCredit[] {

@@ -51,10 +51,19 @@
     {{ filteredSortedCast.length }} cast member{{ filteredSortedCast.length === 1 ? '' : 's' }}
   </p>
 
-  <div class="flex flex-col px-4 mt-3">
+  <div
+    class="flex flex-col px-4 mt-3"
+    infiniteScroll
+    [scrollWindow]="false"
+    [infiniteScrollContainer]="'.fixed.inset-0.z-50.overflow-y-auto'"
+    [fromRoot]="true"
+    [infiniteScrollDistance]="2"
+    [infiniteScrollThrottle]="150"
+    (scrolled)="loadMoreVisibleCast()"
+  >
     <div
       class="flex items-center gap-3 py-3 border-b border-gray-800 last:border-b-0 cursor-pointer"
-      *ngFor="let member of filteredSortedCast"
+      *ngFor="let member of visibleCast"
       (click)="selectedMember = member"
     >
       <div class="aspect-[2/3] w-14 flex-shrink-0">
@@ -62,6 +71,7 @@
           *ngIf="member.profilePath"
           [src]="member.profilePath"
           [alt]="member.name"
+          loading="lazy"
           class="h-full w-full object-cover rounded-lg"
         />
         <div
@@ -82,7 +92,7 @@
         class="flex flex-col items-center justify-center px-3 py-2 rounded-lg bg-gray-800 flex-shrink-0"
       >
         <span class="text-[#3B82F6] font-bold text-lg leading-none">{{ member.popularity | number : '1.1-1' }}</span>
-        <span class="text-gray-500 text-[10px] mt-0.5">Rating</span>
+        <span class="text-gray-500 text-[10px] mt-0.5">Popularity</span>
       </button>
     </div>
   </div>

@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   Component,
   ElementRef,
   HostListener,
@@ -83,12 +84,20 @@ type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
     ])
   ]
 })
-export class MainSearchComponent implements OnInit, OnDestroy {
+export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
   @ViewChild('dropdownContainer') dropdownContainer!: ElementRef;
   @ViewChild('filterButton') filterButton!: ElementRef;
+
+  // Used to vertically center the mobile Music/Cinema switch button between
+  // the discover tabs bar's underline and the search bar - see
+  // recomputeSwitchButtonPosition(). Optional since they're only present
+  // while activeDiscoverTab === 'mainSearch'.
+  @ViewChild('discoverTabsBar') discoverTabsBar?: ElementRef<HTMLDivElement>;
+  @ViewChild('switchBtn') switchBtn?: ElementRef<HTMLButtonElement>;
+  switchButtonTopPx: number | null = null;
 
   query: string = '';
   lastSearchedQuery: string = '';
@@ -661,6 +670,38 @@ export class MainSearchComponent implements OnInit, OnDestroy {
     this.results = { songs: [], albums: [], artists: [] };
     this.filteredResults = { songs: [], albums: [], artists: [] };
     this.loadRecentSearches();
+    // Subtitle text length differs between modes, which can shift the search
+    // bar's position - recompute after the new layout has painted.
+    setTimeout(() => this.recomputeSwitchButtonPosition());
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => this.recomputeSwitchButtonPosition());
+  }
+
+  @HostListener('window:resize')
+  onWindowResizeRecomputeSwitchButton(): void {
+    this.recomputeSwitchButtonPosition();
+  }
+
+  // Vertically centers the mobile switch button between the bottom of the
+  // discover tabs bar's underline and the top of the search bar, positioning
+  // it absolutely relative to its own offsetParent (the heading row).
+  recomputeSwitchButtonPosition(): void {
+    const tabsBar = this.discoverTabsBar?.nativeElement;
+    const searchBarEl = this.searchBar?.nativeElement;
+    const btn = this.switchBtn?.nativeElement;
+    if (!tabsBar || !searchBarEl || !btn) return;
+
+    const tabsBottom = tabsBar.getBoundingClientRect().bottom;
+    const searchBarTop = searchBarEl.getBoundingClientRect().top;
+    const midpointViewportY = (tabsBottom + searchBarTop) / 2;
+
+    const offsetParent = btn.offsetParent as HTMLElement | null;
+    const parentTop = offsetParent ? offsetParent.getBoundingClientRect().top : 0;
+    const btnHeight = btn.offsetHeight;
+
+    this.switchButtonTopPx = midpointViewportY - parentTop - btnHeight / 2;
   }
 
   clearSearchQuery(): void {

@@ -39,7 +39,7 @@
         <span *ngIf="runtimeLabel">{{ runtimeLabel }}</span>
       </p>
       <p class="text-gray-400 text-sm mt-1" *ngIf="isUpcoming && formattedReleaseDate">
-        Releases {{ formattedReleaseDate }}
+        {{ formattedReleaseDate }}
         <span *ngIf="runtimeLabel">&nbsp;&middot;&nbsp;{{ runtimeLabel }}</span>
       </p>
       <p class="text-gray-400 text-sm mt-1" *ngIf="!releaseDate">

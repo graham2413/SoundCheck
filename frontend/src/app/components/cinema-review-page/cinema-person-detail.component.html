@@ -1,12 +1,21 @@
-<div class="fixed inset-0 z-40 bg-black/60" (click)="close.emit()"></div>
+<div
+  class="fixed inset-0 z-40 bg-black/60 transition-opacity duration-200 ease-out"
+  [class.opacity-100]="isVisible"
+  [class.opacity-0]="!isVisible"
+  (click)="requestClose()"
+></div>
 
-<div class="fixed bottom-0 left-0 right-0 z-50 max-h-[95vh] overflow-y-auto rounded-t-2xl bg-[#0b1120] pb-4">
+<div
+  class="fixed bottom-0 left-0 right-0 z-50 max-h-[95vh] overflow-y-auto rounded-t-2xl bg-[#0b1120] pb-4 transition-transform duration-[250ms] ease-out"
+  [class.translate-y-0]="isVisible"
+  [class.translate-y-full]="!isVisible"
+>
   <div class="w-10 h-1 rounded-full bg-gray-600 mx-auto mt-2"></div>
 
   <button
     type="button"
     aria-label="Close"
-    (click)="close.emit()"
+    (click)="requestClose()"
     class="absolute right-4 top-4 w-8 h-8 rounded-full bg-gray-800 text-gray-300 flex items-center justify-center"
   >
     <i class="fas fa-times"></i>
@@ -33,13 +42,16 @@
     </div>
   </div>
 
-  <div class="px-4 mt-4" *ngIf="isLoading">
-    <div class="flex justify-center py-6">
+  <!-- Shared min-height reserves roughly the space the loaded content will
+       occupy, so the sheet doesn't visibly jump taller once data arrives -
+       it opens already close to its final size. -->
+  <div class="px-4 mt-4 min-h-[60vh]">
+    <div class="flex flex-col items-center justify-center gap-3 h-[60vh]" *ngIf="isLoading">
       <div class="cinema-loader-ring"></div>
+      <p class="text-gray-400 text-sm">Loading details on {{ fallbackName }}…</p>
     </div>
-  </div>
 
-  <div class="px-4 mt-3" *ngIf="detail">
+    <ng-container *ngIf="detail">
     <p
       #bioText
       class="text-gray-300 text-sm leading-relaxed"
@@ -109,10 +121,10 @@
 
         <div class="cinema-card-info">
           <p class="text-white text-xs font-semibold truncate">{{ credit.title }}</p>
-          <p class="cinema-card-date">{{ formattedYear(credit.releaseDate) }}</p>
-          <p *ngIf="credit.genres?.length" class="cinema-card-genre truncate" [title]="credit.genres?.join(', ')">
-            {{ credit.genres?.join(', ') }}
+          <p *ngIf="credit.character" class="cinema-card-character truncate" [title]="credit.character">
+            {{ credit.character }}
           </p>
+          <p class="cinema-card-date">{{ formattedYear(credit.releaseDate) }}</p>
         </div>
       </div>
     </div>
@@ -152,5 +164,7 @@
         <i class="fas fa-external-link-alt text-sm text-gray-500"></i>
       </a>
     </div>
+    </ng-container>
   </div>
 </div>
+

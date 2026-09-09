@@ -72,18 +72,35 @@ export class NavbarComponent implements OnInit {
 
   isMobileNavShrunk: boolean = false;
   private lastScrollY: number = 0;
+  // Tracks cumulative distance scrolled in the current unbroken downward
+  // run (reset whenever the user scrolls up or is back near the top) - so
+  // shrinking triggers off total distance traveled, not a single scroll
+  // event's speed/delta. A slow, steady scroll now shrinks the nav just as
+  // reliably as a fast flick once this distance is crossed.
+  private downScrollStartY: number | null = null;
+  private static readonly SHRINK_TRIGGER_DISTANCE_PX = 10;
 
   @HostListener('window:scroll')
   onWindowScroll(): void {
     const currentY = window.scrollY;
     const delta = currentY - this.lastScrollY;
 
-    if (currentY < 50) {
+    // Only force-expand at the true top (0) - the old 50px dead zone meant
+    // starting a scroll from the very top needed to pass 50px PLUS the
+    // trigger distance before anything happened, making it feel laggy
+    // specifically from the top even though the rest of the page reacted
+    // immediately once past that zone.
+    if (currentY <= 0) {
       this.isMobileNavShrunk = false;
-    } else if (delta > 5) {
-      this.isMobileNavShrunk = true;
-    } else if (delta < -5) {
+      this.downScrollStartY = null;
+    } else if (delta > 0) {
+      if (this.downScrollStartY == null) this.downScrollStartY = this.lastScrollY;
+      if (currentY - this.downScrollStartY > NavbarComponent.SHRINK_TRIGGER_DISTANCE_PX) {
+        this.isMobileNavShrunk = true;
+      }
+    } else if (delta < 0) {
       this.isMobileNavShrunk = false;
+      this.downScrollStartY = null;
     }
 
     this.lastScrollY = currentY;

@@ -266,7 +266,11 @@ export interface CinemaPersonCredit {
   title: string;
   cover: string | null;
   releaseDate: string | null;
+  // genres: populated by the "Similar" tab (getCinemaDetail); character:
+  // populated by the filmography popup (getCinemaPersonDetail) - this type
+  // is shared by both, and each field is only ever present on its own source.
   genres?: string[];
+  character?: string | null;
 }
 
 // Payload from GET /api/cinema/person/:personId - powers the cast list's
