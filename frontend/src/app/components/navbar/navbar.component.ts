@@ -151,6 +151,10 @@ export class NavbarComponent implements OnInit {
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         this.setTabFromPath(event.urlAfterRedirects);
+        // Silently re-fetch on every route change so the friend requests
+        // badge (and rest of userProfile$) stays current without needing a
+        // full page reload.
+        this.userService.getAuthenticatedUserProfile().subscribe();
       });
   }
 

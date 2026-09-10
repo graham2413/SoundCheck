@@ -13,6 +13,18 @@ html, body {
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
+/* Softens the otherwise-abrupt pop-in of *ngIf-mounted screens (loaders,
+   overlays, etc.), since each swap is a fresh DOM mount. Global (not
+   component-scoped) so any component can reuse it. */
+@keyframes fadeInSoft {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade-in-soft {
+  animation: fadeInSoft 300ms ease-out;
+}
+
+
 .modal,
 .modal.fade .modal-dialog,
 .modal-backdrop {

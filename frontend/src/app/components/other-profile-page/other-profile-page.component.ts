@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { CommonModule } from '@angular/common';
@@ -122,17 +122,7 @@ export class ViewProfilePageComponent implements OnInit {
   hasMoreWatchlist: boolean = true;
   private watchlistCursor: { cursorValue: string; cursorId: string } | null = null;
   isProfileReady: boolean = false;
-  gradientPresets = [
-    { name: 'Indigo to Purple', value: 'from-indigo-600 to-purple-500' },
-    { name: 'Blue to Cyan', value: 'from-blue-500 to-cyan-500' },
-    { name: 'Pink to Red', value: 'from-pink-500 to-red-500' },
-    { name: 'Green to Lime', value: 'from-green-500 to-lime-500' },
-    { name: 'Yellow to Orange', value: 'from-yellow-400 to-orange-500' },
-  ];
-
-  currentGradient = '';
-  tempSelectedGradient = '';
-  isGradientModalOpen = false;
+  showProfileMenu = false;
   showTypeDropdown = false;
   selectedType: 'All' | 'Song' | 'Album' | 'Artist' = 'All';
   recordTypes: ('Song' | 'Album' | 'Artist')[] = ['Song', 'Album', 'Artist'];
@@ -150,7 +140,8 @@ export class ViewProfilePageComponent implements OnInit {
     private modal: NgbModal,
     private appComponent: AppComponent,
     private reviewService: ReviewService,
-    private cinemaService: CinemaService
+    private cinemaService: CinemaService,
+    private eRef: ElementRef
   ) {}
 
   ngOnInit(): void {
@@ -1098,8 +1089,7 @@ export class ViewProfilePageComponent implements OnInit {
     });
 
     modalRef.componentInstance.rate.subscribe((updatedRecord: CinemaItem) => {
-      modalRef.close();
-      this.openCinemaRatingModal(updatedRecord, cinemaList, index);
+      this.openCinemaRatingModal(updatedRecord, cinemaList, index, modalRef);
     });
 
     return modalRef;
@@ -1113,7 +1103,8 @@ export class ViewProfilePageComponent implements OnInit {
   private openCinemaRatingModal(
     record: CinemaItem,
     cinemaList: CinemaItem[],
-    index: number
+    index: number,
+    detailsModalRef?: NgbModalRef
   ): NgbModalRef {
     const modalOptions: NgbModalOptions = {
       backdrop: 'static',
@@ -1155,6 +1146,7 @@ export class ViewProfilePageComponent implements OnInit {
         record.isWatchlist = false;
         record.isWatched = true;
         record.isUnrefinedImport = false;
+        detailsModalRef?.componentInstance.refreshAfterRating();
 
         if (!this.otherUser?.cinemaReviews) return;
         const i = this.otherUser.cinemaReviews.findIndex((r) => r._id === record._id);
@@ -1375,6 +1367,18 @@ export class ViewProfilePageComponent implements OnInit {
     return this.buildFullRecord({ ...raw, id: parseInt(raw.id, 10) });
   }
 
+  toggleProfileMenu(event: Event): void {
+    event.stopPropagation();
+    this.showProfileMenu = !this.showProfileMenu;
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeProfileMenuOnOutsideClick(event: Event): void {
+    if (!this.eRef.nativeElement.contains(event.target)) {
+      this.showProfileMenu = false;
+    }
+  }
+
   goBack(): void {
     this.appComponent.navigationDirection = 'back';
 
@@ -1403,66 +1407,12 @@ export class ViewProfilePageComponent implements OnInit {
     }
   }
 
-  openGradientModal() {
-    this.tempSelectedGradient = this.currentGradient;
-    this.isGradientModalOpen = true;
-  }
-
-  closeGradientModal() {
-    this.isGradientModalOpen = false;
-  }
-
-  selectGradient(gradient: string) {
-    this.tempSelectedGradient = gradient;
-  }
-
-  saveGradient() {
-    if (!this.tempSelectedGradient) {
-      this.isGradientModalOpen = false;
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('gradient', this.tempSelectedGradient);
-
-    this.userService.updateUserProfile(formData).subscribe({
-      next: (updatedUser) => {
-        this.loggedInUser = {
-          ...this.loggedInUser,
-          gradient: updatedUser.gradient,
-        };
-        this.userService.setUserProfile(this.loggedInUser);
-        this.currentGradient = updatedUser.gradient || '';
-        this.toastr.success('Profile background updated!', 'Success');
-        this.isGradientModalOpen = false;
-      },
-      error: (err) => {
-        console.error('Failed to update gradient:', err);
-        this.toastr.error(
-          err.error?.message || 'Failed to update background.',
-          'Error'
-        );
-        this.isGradientModalOpen = false;
-      },
-    });
-  }
-
   markImageLoaded(i: number, context: string): void {
     this.imageLoadState[`${context}-${i}`] = true;
   }
 
   isImageLoaded(i: number, context: string): boolean {
     return this.imageLoadState[`${context}-${i}`] === true;
-  }
-
-  getGradientClass(): string {
-    const gradient =
-      typeof this.otherUser?.gradient === 'string' &&
-      this.otherUser.gradient.trim() !== ''
-        ? this.otherUser.gradient
-        : 'from-indigo-600 to-purple-500';
-
-    return `bg-gradient-to-l ${gradient}`;
   }
 
   toggleLike(review: Review) {

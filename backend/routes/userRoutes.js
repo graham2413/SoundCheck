@@ -46,4 +46,7 @@ router.post("/friends/unfriend/:friendId", authenticateUser, userController.unfr
 // Search for Users to Add (Protected)
 router.get("/friends/search", authenticateUser, userController.searchUsers);
 
+// Suggested users for the Friends page (Protected)
+router.get("/friends/suggested", authenticateUser, userController.getSuggestedUsers);
+
 module.exports = router;

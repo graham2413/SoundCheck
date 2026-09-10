@@ -109,6 +109,7 @@ exports.getAuthenticatedUserProfile = async (req, res) => {
           _id: request._id,
           username: request.username,
           profilePicture: request.profilePicture,
+          requestedAt: user.friendRequestTimestamps?.[request._id.toString()] || null,
         })),
       },
     };
@@ -271,7 +272,10 @@ exports.sendFriendRequest = async (req, res) => {
 
     await User.updateOne(
       { _id: toUserId },
-      { $addToSet: { friendRequestsReceived: userId } }
+      {
+        $addToSet: { friendRequestsReceived: userId },
+        $set: { [`friendRequestTimestamps.${userId}`]: new Date() },
+      }
     );
 
     res.json({ message: "Friend request sent successfully." });
@@ -320,6 +324,7 @@ exports.acceptFriendRequest = async (req, res) => {
     fromUser.friendRequestsSent = fromUser.friendRequestsSent.filter(
       (id) => id.toString() !== userId.toString()
     );
+    user.friendRequestTimestamps?.delete(fromUserId.toString());
 
     // Add to friends list
     user.friends.push(fromUserId);
@@ -366,6 +371,7 @@ exports.declineFriendRequest = async (req, res) => {
     fromUser.friendRequestsSent = fromUser.friendRequestsSent.filter(
       (id) => !id.equals(userId)
     );
+    user.friendRequestTimestamps?.delete(fromUserId.toString());
 
     await user.save();
     await fromUser.save();
@@ -413,6 +419,8 @@ exports.unfriendUser = async (req, res) => {
     friend.friendRequestsSent = friend.friendRequestsSent.filter(
       (id) => id.toString() !== userId
     );
+    user.friendRequestTimestamps?.delete(friendId.toString());
+    friend.friendRequestTimestamps?.delete(userId.toString());
 
     await user.save();
     await friend.save();
@@ -442,6 +450,37 @@ exports.searchUsers = async (req, res) => {
     res.status(200).json(users);
   } catch (error) {
     console.error("Error searching for users:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// "Suggested for You" on the Friends page - a few random users, excluding
+// the logged-in user, existing friends, and anyone with a pending request
+// either direction. Simple $sample-based placeholder (no real recommendation
+// logic yet - e.g. mutual friends/shared taste) until that's built out.
+const SUGGESTED_USERS_SAMPLE_SIZE = 5;
+exports.getSuggestedUsers = async (req, res) => {
+  try {
+    const me = await User.findById(req.user._id).select(
+      "friends friendRequestsSent friendRequestsReceived"
+    );
+
+    const excludeIds = [
+      req.user._id,
+      ...(me?.friends || []),
+      ...(me?.friendRequestsSent || []),
+      ...(me?.friendRequestsReceived || []),
+    ];
+
+    const users = await User.aggregate([
+      { $match: { _id: { $nin: excludeIds } } },
+      { $sample: { size: SUGGESTED_USERS_SAMPLE_SIZE } },
+      { $project: { username: 1, email: 1, profilePicture: 1 } },
+    ]);
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching suggested users:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -12,7 +12,9 @@ const userSchema = new Schema({
     // Friends & Friend Requests
     friends: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
     friendRequestsReceived: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
-    friendRequestsSent: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },    
+    friendRequestsSent: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
+    // When each pending friendRequestsReceived entry was sent, keyed by sender user id
+    friendRequestTimestamps: { type: Map, of: Date, default: {} },
 
     // Spotify/ Spotify Authentication
     spotifyAccessToken: { type: String },

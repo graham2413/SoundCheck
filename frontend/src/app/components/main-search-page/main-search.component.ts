@@ -1049,8 +1049,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     modalRef.componentInstance.currentIndex = index;
 
     modalRef.componentInstance.rate.subscribe((updatedRecord: CinemaItem) => {
-      modalRef.close();
-      this.openCinemaRatingModal(updatedRecord, recordList, index);
+      this.openCinemaRatingModal(updatedRecord, recordList, index, modalRef);
     });
 
     return modalRef;
@@ -1063,7 +1062,8 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   private openCinemaRatingModal(
     record: CinemaItem,
     recordList: CinemaItem[],
-    index: number
+    index: number,
+    detailsModalRef?: NgbModalRef
   ): NgbModalRef {
     const modalOptions: NgbModalOptions = {
       backdrop: 'static',
@@ -1098,6 +1098,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
         record.isWatchlist = false;
         record.isWatched = true;
         record.isUnrefinedImport = false;
+        detailsModalRef?.componentInstance.refreshAfterRating();
       },
       () => {}
     );

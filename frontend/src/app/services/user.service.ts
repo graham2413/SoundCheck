@@ -119,6 +119,18 @@ export class UserService {
       return this.http.get<User[]>(`${this.apiUrl}/friends/search?q=${query}`, { headers });
     }
 
+    getSuggestedUsers(): Observable<User[]> {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        console.error("No authentication token found");
+        return new Observable();
+      }
+      const headers = { Authorization: `Bearer ${token}` };
+
+      return this.http.get<User[]>(`${this.apiUrl}/friends/suggested`, { headers });
+    }
+
     sendFriendRequest(toUserId: string): Observable<{ message: string }> {
       const token = localStorage.getItem('token');
     

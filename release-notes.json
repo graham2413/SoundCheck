@@ -1,12 +1,12 @@
 ﻿{
   "New features": [
-    "Cast lists now load smoothly in batches as you scroll instead of rendering hundreds of names at once",
-    "Tapping a cast member now opens a smooth slide-up detail card, and actor filmographies show the character they played",
-    "The Music/Cinema switch button on the search page got a fresh redesigned look"
+    "Redesigned profile pages with a cleaner header, centered avatar/name, and a menu for Import Trakt",
+    "Friend requests now show a card with a relative timestamp, and tapping one opens that person's profile",
+    "Search pages now show a results count and a centered loading spinner while searching"
   ],
   "Performance & stability": [
-    "Fixed the actor detail popup jumping in height while loading",
-    "Fixed pinch-zooming a poster or image on mobile leaving the whole page zoomed in afterward",
-    "Fixed the navbar shrinking inconsistently while scrolling"
+    "Fixed saved passwords not showing up when logging in",
+    "The friend requests badge in the navigation now updates automatically as you move around the app",
+    "Movie/show detail popups now update in place after rating instead of needing to be reopened"
   ]
 }

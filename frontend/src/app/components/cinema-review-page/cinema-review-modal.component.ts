@@ -282,6 +282,16 @@ export class CinemaReviewModalComponent implements OnInit {
     this.loadReviews();
   }
 
+  // Called by whoever opened this modal, once the Rate/Edit modal (opened on
+  // top of this one via `rate.emit` - see openers in main-search/calendar-page/
+  // other-profile-page) resolves - so this modal reflects the new rating in
+  // place instead of having been closed and needing to be reopened.
+  refreshAfterRating(): void {
+    this.isWatched = true;
+    this.isWatchlist = false;
+    this.loadReviews();
+  }
+
   onToggleReviewLike(review: CinemaReview): void {
     this.reviewService.toggleLike(review._id, 'cinema').subscribe({
       next: ({ likes, likedByUser }) => {

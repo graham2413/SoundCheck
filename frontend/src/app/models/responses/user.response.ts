@@ -22,6 +22,8 @@ export interface User {
   // Only present in the response when the requester is the gated admin account
   lastLoggedIn?: string | null;
   recentSearches?: { music: string[]; cinema: string[] };
+  // Only present on entries within friendInfo.friendRequestsReceived
+  requestedAt?: string | null;
 }
 
 export interface FriendInfo {

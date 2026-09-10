@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
-import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CalendarEntry, CalendarSubtitle, CalendarMonthGroup } from 'src/app/models/responses/cinema-response';
@@ -314,8 +314,7 @@ export class CalendarPageComponent implements OnInit {
     modalRef.componentInstance.currentIndex = 0;
 
     modalRef.componentInstance.rate.subscribe((updatedRecord: CinemaItem) => {
-      modalRef.close();
-      this.openRatingModal(updatedRecord);
+      this.openRatingModal(updatedRecord, modalRef);
     });
 
     // Rating/watchlist changes can move an entry between the Upcoming/Past
@@ -324,7 +323,7 @@ export class CalendarPageComponent implements OnInit {
     modalRef.componentInstance.watchlistToggled?.subscribe(() => this.loadCalendar());
   }
 
-  private openRatingModal(record: CinemaItem): void {
+  private openRatingModal(record: CinemaItem, detailsModalRef?: NgbModalRef): void {
     const modalOptions: NgbModalOptions = {
       backdrop: 'static',
       keyboard: true,
@@ -349,7 +348,10 @@ export class CalendarPageComponent implements OnInit {
     // tabs (or off the calendar entirely), so just reload from the server
     // instead of trying to patch the local list in place.
     modalRef.result.then(
-      () => this.loadCalendar(),
+      () => {
+        this.loadCalendar();
+        detailsModalRef?.componentInstance.refreshAfterRating();
+      },
       () => {}
     );
   }

@@ -8,12 +8,9 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { User } from 'src/app/models/responses/user.response';
 import { UserService } from 'src/app/services/user.service';
-import { ConfirmationModalComponent } from './confirmation-modal/confirmation-modal.component';
-import { Friend } from 'src/app/models/responses/friend-response';
 import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 
@@ -46,21 +43,19 @@ import { animate, animateChild, query, stagger, style, transition, trigger } fro
     ]
 })
 export class FriendsComponent implements OnInit {
-  activeTab: string = 'myFriends';
   searchQuery: string = '';
   lastSearchedQuery: string = '';
-  @ViewChild('searchBar') searchBar!: ElementRef<HTMLDivElement>;
-
-  @ViewChild('friendsSection') friendsSection!: ElementRef;
-  @ViewChild('addFriendsSection') addFriendsSection!: ElementRef;
-  @ViewChild('friendRequestsSection') friendRequestsSection!: ElementRef;
+  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
   usersToAdd: User[] = [];
   addFriendsSearchInitiated = false;
   addFriendsSearchLoading = false;
-  friendActionLoading = false;
-  removingFriendId: string | null = null;
   retrievingFriendInfo = false;
+
+  // "Find Friends" page state.
+  suggestedUsers: User[] = [];
+  suggestedUsersLoading = false;
+  showFriendRequestsOverlay = false;
 
   userProfile: User = {
     _id: '',
@@ -83,62 +78,41 @@ export class FriendsComponent implements OnInit {
   declineLoadingMap: { [userId: string]: boolean } = {};
   acceptLoadingMap: { [userId: string]: boolean } = {};
   addFriendLoadingMap: { [userId: string]: boolean } = {};
-  section: string | null = null;
   imageLoadState: { [key: string]: boolean } = {};
 
   constructor(
     private userService: UserService,
     private toastrService: ToastrService,
-    private changeDetectorRef: ChangeDetectorRef,
-    private modal: NgbModal
+    private changeDetectorRef: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     window.scrollTo({ top: 0, behavior: 'auto' });
 
-    this.section = history.state.section || null;
-
-    if (this.section) {
-      this.setActiveTab(this.section);
-    }
-
     this.getFriendData();
+    this.loadSuggestedUsers();
   }
 
-  setActiveTab(tab: string) {
-    this.activeTab = tab;
-    this.searchQuery = '';
-    this.lastSearchedQuery = '';
-    this.imageLoadState = {};
-    this.addFriendsSearchInitiated = false;
-    this.usersToAdd = [];
-
-    setTimeout(() => {
-      this.scrollToTop();
-    }, 0);
-    this.getFriendData();
-  }
-
-  scrollToTop() {
-    let targetElement: ElementRef | undefined;
-
-    if (this.activeTab === 'myFriends') {
-      targetElement = this.friendsSection;
-    } else if (this.activeTab === 'addFriends') {
-      targetElement = this.addFriendsSection;
-    } else if (this.activeTab === 'friendRequests') {
-      targetElement = this.friendRequestsSection;
-    }
-
-    if (targetElement) {
-      const yOffset = -140;
-      const y =
-        targetElement.nativeElement.getBoundingClientRect().top +
-        window.scrollY +
-        yOffset;
-
-      window.scrollTo({ top: y, behavior: 'smooth' });
-    }
+  // "Suggested for You" - a few random users (excluding existing friends/
+  // pending requests, handled server-side) to seed the new Find Friends
+  // page. Flags mapped the same way searchUsers() maps usersToAdd, so the
+  // Add button below can reuse the exact same state/logic.
+  loadSuggestedUsers(): void {
+    this.suggestedUsersLoading = true;
+    this.userService.getSuggestedUsers().subscribe({
+      next: (users: User[]) => {
+        this.suggestedUsers = users.map((user: User) => ({
+          ...user,
+          isFriend: this.userProfile?.friendInfo?.friends?.some((friend) => friend._id === user._id),
+          hasPendingRequestSent: this.userProfile?.friendInfo?.friendRequestsSent?.some((request) => request._id === user._id),
+          hasPendingRequestReceived: this.userProfile?.friendInfo?.friendRequestsReceived?.some((request) => request._id === user._id),
+        }));
+        this.suggestedUsersLoading = false;
+      },
+      error: () => {
+        this.suggestedUsersLoading = false;
+      },
+    });
   }
 
   markImageLoaded(i: number, context: string): void {
@@ -160,32 +134,14 @@ export class FriendsComponent implements OnInit {
     );
   }
 
-  getSearchPlaceholder() {
-    switch (this.activeTab) {
-      case 'addFriends':
-        return 'Search users to add...';
-      case 'myFriends':
-        return 'Search your friends...';
-      case 'friendRequests':
-        return 'Search friend requests...';
-      default:
-        return 'Search...';
-    }
-  }
-
   clearSearchQuery(): void {
     this.searchQuery = '';
     this.lastSearchedQuery = '';
-  }
-
-  filteredFriends() {
-    return this.userProfile?.friendInfo?.friends?.length
-      ? this.userProfile.friendInfo.friends.filter((friend) =>
-          friend.username
-            ?.toLowerCase()
-            .includes(this.searchQuery?.toLowerCase() || '')
-        )
-      : [];
+    this.addFriendsSearchInitiated = false;
+    this.usersToAdd = [];
+    // Deferred - the "x" button click would otherwise steal focus back to
+    // itself right after this runs, since it's still mid-click when called.
+    setTimeout(() => this.searchInput?.nativeElement.focus());
   }
 
   getFriendData() {
@@ -207,60 +163,6 @@ export class FriendsComponent implements OnInit {
           },
         };
 
-        // this.userProfile = {
-        //   _id: 'mock-user-id',
-        //   username: 'Test User',
-        //   email: 'test@example.com',
-        //   profilePicture: 'https://i.pravatar.cc/150?img=99',
-        //   googleId: 'google-mock-id',
-        //   createdAt: new Date().toISOString(),
-        //   gradient: 'bg-gradient-to-r from-green-400 to-blue-500',
-        //   friendInfo: {
-        //     friends: Array.from({ length: 10 }, (_, i) => ({
-        //       _id: `friend-${i + 1}`,
-        //       username: `Friend ${i + 1}`,
-        //       email: `friend${i + 1}@test.com`,
-        //       profilePicture: `https://i.pravatar.cc/150?img=${i + 1}`,
-        //       googleId: `google-friend-${i + 1}`,
-        //       createdAt: new Date().toISOString(),
-        //       gradient: 'bg-gradient-to-r from-blue-400 to-purple-500',
-        //       friendInfo: {
-        //         friends: [],
-        //         friendRequestsReceived: [],
-        //         friendRequestsSent: [],
-        //       },
-        //     })),
-        //     friendRequestsReceived: Array.from({ length: 10 }, (_, i) => ({
-        //       _id: `request-received-${i + 1}`,
-        //       username: `Requester ${i + 1}`,
-        //       email: `requester${i + 1}@test.com`,
-        //       profilePicture: `https://i.pravatar.cc/150?img=${i + 20}`,
-        //       googleId: `google-requester-${i + 1}`,
-        //       createdAt: new Date().toISOString(),
-        //       gradient: 'bg-gradient-to-r from-red-400 to-pink-500',
-        //       friendInfo: {
-        //         friends: [],
-        //         friendRequestsReceived: [],
-        //         friendRequestsSent: [],
-        //       },
-        //     })),
-        //     friendRequestsSent: Array.from({ length: 10 }, (_, i) => ({
-        //       _id: `request-sent-${i + 1}`,
-        //       username: `Sent To ${i + 1}`,
-        //       email: `sentto${i + 1}@test.com`,
-        //       profilePicture: `https://i.pravatar.cc/150?img=${i + 40}`,
-        //       googleId: `google-sentto-${i + 1}`,
-        //       createdAt: new Date().toISOString(),
-        //       gradient: 'bg-gradient-to-r from-yellow-400 to-orange-500',
-        //       friendInfo: {
-        //         friends: [],
-        //         friendRequestsReceived: [],
-        //         friendRequestsSent: [],
-        //       },
-        //     })),
-        //   },
-        // };
-
         setTimeout(() => {
           this.retrievingFriendInfo = false;
         }, 500);
@@ -270,7 +172,7 @@ export class FriendsComponent implements OnInit {
   }
 
   searchUsers() {
-    if (!this.searchQuery.trim() || this.activeTab === 'myFriends') return;
+    if (!this.searchQuery.trim()) return;
 
     this.lastSearchedQuery = this.searchQuery.trim();
     this.addFriendsSearchLoading = true;
@@ -320,7 +222,6 @@ export class FriendsComponent implements OnInit {
       },
     });
   }
-
   sendFriendRequest(toUser: User) {
     this.addFriendLoadingMap[toUser._id] = true;
     this.userService.sendFriendRequest(toUser._id).subscribe({
@@ -404,71 +305,6 @@ export class FriendsComponent implements OnInit {
           'Error'
         );
       },
-    });
-  }
-
-  removeFriend(friend: Friend) {
-    this.friendActionLoading = true;
-    this.removingFriendId = friend._id;
-
-    this.userService.removeFriend(friend._id).subscribe({
-      next: (_: unknown) => {
-        if (this.userProfile && this.userProfile.friendInfo.friends) {
-          this.userProfile.friendInfo.friends =
-            this.userProfile.friendInfo.friends.filter(
-              (friendItem) => friendItem._id !== friend._id
-            );
-        }
-
-        // Also clean up stale friend request entries
-        if (this.userProfile.friendInfo.friendRequestsSent) {
-          this.userProfile.friendInfo.friendRequestsSent =
-            this.userProfile.friendInfo.friendRequestsSent.filter(
-              (req) => req._id !== friend._id
-            );
-        }
-
-        if (this.userProfile.friendInfo.friendRequestsReceived) {
-          this.userProfile.friendInfo.friendRequestsReceived =
-            this.userProfile.friendInfo.friendRequestsReceived.filter(
-              (req) => req._id !== friend._id
-            );
-        }
-
-        // update the global profile
-        this.userService.setUserProfile(this.userProfile);
-        this.friendActionLoading = false;
-        this.removingFriendId = null;
-        this.toastrService.success('Removed friend', 'Success');
-      },
-      error: (error: { error?: { message?: string } }) => {
-        this.friendActionLoading = false;
-        this.removingFriendId = null;
-        this.toastrService.error(
-          error.error?.message || 'Error removing friend',
-          'Error'
-        );
-      },
-    });
-  }
-
-  openModal(friend: Friend) {
-    const modalOptions: NgbModalOptions = {
-      backdrop: false,
-      centered: true,
-    };
-
-    const modalRef = this.modal.open(ConfirmationModalComponent, modalOptions);
-    modalRef.componentInstance.title = `Unfollow friend`;
-    modalRef.componentInstance.bodyText = `Are you sure you want to unfollow ${friend.username}?`;
-
-    modalRef.componentInstance.confirm.subscribe(() => {
-      this.removeFriend(friend);
-      modalRef.close();
-    });
-
-    modalRef.componentInstance.cancel.subscribe(() => {
-      modalRef.close();
     });
   }
 }
