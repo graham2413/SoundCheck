@@ -14,7 +14,7 @@ const searchMusic = async (req, res) => {
     const cacheKey = `search:${typeKey}:${queryKey}`;
 
     // Check Redis cache
-    const cached = await redis.get(cacheKey);
+    const cached = await redis.safeGet(cacheKey);
     if (cached) return res.json(JSON.parse(cached));
 
     // Prepare response parts
@@ -177,7 +177,7 @@ const searchMusic = async (req, res) => {
             ? { artists }
             : { songs, albums, artists };
 
-    await redis.set(cacheKey, JSON.stringify(responsePayload), "EX", 3600);
+    await redis.safeSet(cacheKey, JSON.stringify(responsePayload), "EX", 3600);
     res.json(responsePayload);
   } catch (error) {
     console.error("Error in searchMusic:", error.message);
@@ -191,7 +191,7 @@ async function getAlbumGenre(albumId) {
   }
 
   const albumCacheKey = `album-genre:${albumId}`;
-  const cachedGenre = await redis.get(albumCacheKey);
+  const cachedGenre = await redis.safeGet(albumCacheKey);
   if (cachedGenre) return cachedGenre;
 
   try {
@@ -223,7 +223,7 @@ async function getAlbumGenre(albumId) {
     }
 
     // Cache the result per album for 1 day
-    await redis.set(albumCacheKey, genre, "EX", 86400);
+    await redis.safeSet(albumCacheKey, genre, "EX", 86400);
 
     return genre;
   } catch (err) {
@@ -236,7 +236,7 @@ async function getGenreFromId(genreId) {
   if (!genreId || genreId <= 0) return "Unknown";
 
   const cacheKey = `genre-id:${genreId}`;
-  const cached = await redis.get(cacheKey);
+  const cached = await redis.safeGet(cacheKey);
   if (cached) return cached;
 
   try {
@@ -245,7 +245,7 @@ async function getGenreFromId(genreId) {
     );
     const name = genreResponse.data?.name || null;
 
-    await redis.set(cacheKey, name || "Unknown", "EX", 86400); // cache even if "Unknown"
+    await redis.safeSet(cacheKey, name || "Unknown", "EX", 86400); // cache even if "Unknown"
     return name || "Unknown";
   } catch (error) {
     console.error(
@@ -253,7 +253,7 @@ async function getGenreFromId(genreId) {
       error.message
     );
     // Cache failure to avoid repeated retries
-    await redis.set(cacheKey, "Unknown", "EX", 86400);
+    await redis.safeSet(cacheKey, "Unknown", "EX", 86400);
     return "Unknown";
   }
 }
@@ -574,11 +574,11 @@ const getAndStoreArtistAlbums = async (req, res) => {
   const artistName = req.query.name;
 
   const redisKey = `artist-sync:user:${artistId}`;
-  const cached = await redis.get(redisKey);
+  const cached = await redis.safeGet(redisKey);
   if (cached) return res.status(200).json({ message: "Recently synced" });
 
   await syncArtistAlbums(artistId, artistName, true);
-  await redis.set(redisKey, "1", "EX", 60 * 60 * 6); // 6h TTL
+  await redis.safeSet(redisKey, "1", "EX", 60 * 60 * 6); // 6h TTL
 
   res.status(200).json({ message: "Synced from user action" });
 };
@@ -595,12 +595,12 @@ async function cronSyncAllArtists(batchSize = 10, delayMs = 1000) {
       return (async () => {
         const today = new Date().toISOString().slice(0, 10); // e.g., "2025-06-27"
         const redisKey = `artist-sync:cron:${id}:${today}`;
-        const cached = await redis.get(redisKey);
+        const cached = await redis.safeGet(redisKey);
         if (cached) return { id, name, status: "skipped" };
 
         try {
           await syncArtistAlbums(id, name);
-          await redis.set(redisKey, "1", "EX", 60 * 60 * 24 * 2); // outlives the date-scoped key by a day as a safety margin
+          await redis.safeSet(redisKey, "1", "EX", 60 * 60 * 24 * 2); // outlives the date-scoped key by a day as a safety margin
           return { id, name, status: "synced" };
         } catch (err) {
           console.error(

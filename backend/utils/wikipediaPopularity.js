@@ -38,7 +38,7 @@ async function getMonthlyPageviews(title) {
 // popularity passed through unchanged (caller decides how to blend/label it).
 async function getPersonWikipediaPopularity(personId, tmdbPopularityFallback = 0) {
   const cacheKey = `wiki:popularity:${personId}`;
-  const cached = await redis.get(cacheKey);
+  const cached = await redis.safeGet(cacheKey);
   if (cached) return JSON.parse(cached);
 
   let result = { views: tmdbPopularityFallback, isFallback: true };
@@ -60,7 +60,7 @@ async function getPersonWikipediaPopularity(personId, tmdbPopularityFallback = 0
     console.error(`Wikipedia popularity lookup failed for person ${personId}:`, err.message);
   }
 
-  await redis.set(cacheKey, JSON.stringify(result), "EX", VIEWS_CACHE_TTL);
+  await redis.safeSet(cacheKey, JSON.stringify(result), "EX", VIEWS_CACHE_TTL);
   return result;
 }
 

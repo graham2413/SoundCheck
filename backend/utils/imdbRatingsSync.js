@@ -31,7 +31,7 @@ function formatAge(sinceMs) {
 }
 
 async function logLastSyncedAt() {
-  const lastSyncedAt = await redis.get(LAST_SYNCED_AT_CACHE_KEY);
+  const lastSyncedAt = await redis.safeGet(LAST_SYNCED_AT_CACHE_KEY);
   if (!lastSyncedAt) {
     console.log("IMDb ratings: no successful sync recorded yet.");
     return;
@@ -47,7 +47,7 @@ async function syncImdbRatings() {
   // somehow fires more than once, or the server restarts).
   const head = await axios.head(DATASET_URL);
   const lastModified = head.headers["last-modified"];
-  const previouslySynced = await redis.get(LAST_MODIFIED_CACHE_KEY);
+  const previouslySynced = await redis.safeGet(LAST_MODIFIED_CACHE_KEY);
 
   if (previouslySynced && previouslySynced === lastModified) {
     console.log(`IMDb ratings dataset unchanged since last sync (${lastModified}) - skipping.`);
@@ -103,8 +103,8 @@ async function syncImdbRatings() {
     total += batch.length;
   }
 
-  await redis.set(LAST_MODIFIED_CACHE_KEY, lastModified);
-  await redis.set(LAST_SYNCED_AT_CACHE_KEY, String(Date.now()));
+  await redis.safeSet(LAST_MODIFIED_CACHE_KEY, lastModified);
+  await redis.safeSet(LAST_SYNCED_AT_CACHE_KEY, String(Date.now()));
 
   const totalSec = (Date.now() - jobStart) / 1000;
   console.log(`IMDb ratings sync complete - ${total} titles upserted in ${totalSec.toFixed(1)}s (${(total / totalSec).toFixed(0)} rows/sec).`);

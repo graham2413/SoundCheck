@@ -1,11 +1,29 @@
 // utils/callDeezer.js
 const axios = require("axios");
 const https = require("https");
-const crypto = require("crypto");
 const fs = require("fs");
-const redis = require("./redisClient");
 
 const PROXY_BASE = process.env.DEEZER_BASE_URL || "https://api.deezer.com";
+
+// In-process sliding-window limiter (was Redis-backed - moved in-process
+// since this only needs to hold across requests within a single Node
+// process, not across instances). Holds recent request timestamps; expired
+// ones are pruned on each check.
+const deezerRequestTimestamps = [];
+const DEEZER_WINDOW_MS = 5000;
+const DEEZER_MAX_REQUESTS = 50;
+
+function tryReserveDeezerSlot() {
+  const now = Date.now();
+  while (deezerRequestTimestamps.length && deezerRequestTimestamps[0] <= now - DEEZER_WINDOW_MS) {
+    deezerRequestTimestamps.shift();
+  }
+  if (deezerRequestTimestamps.length < DEEZER_MAX_REQUESTS) {
+    deezerRequestTimestamps.push(now);
+    return true;
+  }
+  return false;
+}
 
   // Normalize any incoming URL to use PROXY_BASE (to counter Deezer 403 issue for prod IP)
   function rewriteUrl(u) {
@@ -19,21 +37,10 @@ const PROXY_BASE = process.env.DEEZER_BASE_URL || "https://api.deezer.com";
   }
 
 async function callDeezer(url) {
-  const key = `deezer-rate-limit`;
-  const now = Math.floor(Date.now() / 1000);
   let retries = 0;
 
   while (true) {
-    await redis.zremrangebyscore(key, "-inf", now - 5);
-    const requests = await redis.zcard(key);
-
-    if (requests < 50) {
-      // Atomically add request and set expiration if needed
-      const requestId = `${now}:${crypto.randomUUID()}`;
-      await redis.multi().zadd(key, now, requestId).expire(key, 5).exec();
-
-      break;
-    }
+    if (tryReserveDeezerSlot()) break;
 
     if (retries >= 10) {
       console.error(`Max retries reached, dropping request: ${url}`);

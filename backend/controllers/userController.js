@@ -613,7 +613,7 @@ exports.removeFromArtistList = async (req, res) => {
 
         // Clear Redis cache so future follow triggers re-sync
       const redisKey = `artist-sync:user:${id}`;
-      await redis.del(redisKey);
+      await redis.safeDel(redisKey);
       console.log(`Cleared Redis sync key for artist ${id}`);
     }
 

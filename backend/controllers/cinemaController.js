@@ -239,7 +239,7 @@ exports.getCinemaTrending = async (req, res) => {
     const mediaType = req.query.mediaType === "tv" ? "tv" : "movie";
     const cacheKey = `cinema:trending-enriched:${mediaType}`;
 
-    const cached = await redis.get(cacheKey);
+    const cached = await redis.safeGet(cacheKey);
     if (cached) {
       return res.status(200).json({ success: true, data: JSON.parse(cached) });
     }
@@ -285,7 +285,7 @@ exports.getCinemaTrending = async (req, res) => {
       }
     });
 
-    await redis.set(cacheKey, JSON.stringify(results), "EX", TRENDING_ENRICHED_CACHE_TTL);
+    await redis.safeSet(cacheKey, JSON.stringify(results), "EX", TRENDING_ENRICHED_CACHE_TTL);
 
     res.status(200).json({ success: true, data: results });
   } catch (error) {
@@ -402,7 +402,7 @@ exports.getCalendar = async (req, res) => {
     };
 
     if (!forceRefresh) {
-      const cached = await redis.get(cacheKey);
+      const cached = await redis.safeGet(cacheKey);
       if (cached) {
         const parsed = JSON.parse(cached);
         // One fresh call per calendar day, not a rolling 24h window - stale
@@ -524,7 +524,7 @@ exports.getCalendar = async (req, res) => {
     // the day (see hadFetchError above). The client still gets today's best
     // effort list; the next load just tries the failed item(s) again live.
     if (!hadFetchError) {
-      await redis.set(cacheKey, JSON.stringify({ cachedDate: todayStr, data: calendar }), "EX", CALENDAR_RESPONSE_CACHE_TTL);
+      await redis.safeSet(cacheKey, JSON.stringify({ cachedDate: todayStr, data: calendar }), "EX", CALENDAR_RESPONSE_CACHE_TTL);
     }
 
     res.status(200).json({ success: true, ...buildPage(calendar) });
@@ -725,7 +725,7 @@ exports.getEpisodeImdbRatings = async (req, res) => {
 // dataset (see utils/imdbRatingsSync.js) instead, which is far fresher.
 const fetchOmdbData = async (imdbId) => {
   const cacheKey = `imdb:stats:${imdbId}`;
-  const cached = await redis.get(cacheKey);
+  const cached = await redis.safeGet(cacheKey);
   if (cached) return JSON.parse(cached);
 
   if (!process.env.OMDB_API_KEY) {
@@ -747,7 +747,7 @@ const fetchOmdbData = async (imdbId) => {
     boxOfficeUs: omdbData.BoxOffice && omdbData.BoxOffice !== "N/A" ? omdbData.BoxOffice : null,
   };
 
-  await redis.set(cacheKey, JSON.stringify(data), "EX", IMDB_STATS_CACHE_TTL);
+  await redis.safeSet(cacheKey, JSON.stringify(data), "EX", IMDB_STATS_CACHE_TTL);
   return data;
 };
 

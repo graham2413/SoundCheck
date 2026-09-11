@@ -64,17 +64,17 @@ function resolveTtlSeconds(showStatus, cacheSource) {
 
 // Atomic SET NX EX - only one caller ever wins the lock for a given show.
 async function acquireScanLock(parentTconst) {
-  const result = await redis.set(lockKey(parentTconst), "1", "EX", LOCK_TTL_SECONDS, "NX");
+  const result = await redis.safeSet(lockKey(parentTconst), "1", "EX", LOCK_TTL_SECONDS, "NX");
   return result === "OK";
 }
 
 async function releaseScanLock(parentTconst) {
-  await redis.del(lockKey(parentTconst));
+  await redis.safeDel(lockKey(parentTconst));
 }
 
 // Never extends TTL on read (no sliding TTL, per plan) - plain GET only.
 async function getCachedEpisodeMap(parentTconst) {
-  const raw = await redis.get(episodeMapKey(parentTconst));
+  const raw = await redis.safeGet(episodeMapKey(parentTconst));
   if (!raw) return null;
   try {
     return JSON.parse(raw);
@@ -109,7 +109,7 @@ async function cacheEpisodeMap(parentTconst, episodes, { showStatus = "unknown",
     `imdbEpisodeMap: caching ${parentTconst} - ${trimmed.length} episodes, ${payloadBytes}B, ttl=${ttlSeconds}s, source=${cacheSource}, status=${showStatus}`
   );
 
-  await redis.set(episodeMapKey(parentTconst), serialized, "EX", ttlSeconds);
+  await redis.safeSet(episodeMapKey(parentTconst), serialized, "EX", ttlSeconds);
   return payload;
 }
 
@@ -125,7 +125,7 @@ async function cacheEmptyResult(parentTconst) {
     cacheSource: "coldFallback",
   };
   console.log(`imdbEpisodeMap: caching EMPTY result for ${parentTconst}, ttl=${EMPTY_RESULT_TTL_SECONDS}s`);
-  await redis.set(episodeMapKey(parentTconst), JSON.stringify(payload), "EX", EMPTY_RESULT_TTL_SECONDS);
+  await redis.safeSet(episodeMapKey(parentTconst), JSON.stringify(payload), "EX", EMPTY_RESULT_TTL_SECONDS);
   return payload;
 }
 

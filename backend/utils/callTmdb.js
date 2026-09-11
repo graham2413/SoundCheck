@@ -1,13 +1,11 @@
 // utils/callTmdb.js
 const axios = require("axios");
 const https = require("https");
-const crypto = require("crypto");
 const redis = require("./redisClient");
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
-const RATE_LIMIT_KEY = "tmdb-rate-limit";
-const RATE_LIMIT_WINDOW_SECONDS = 1;
+const RATE_LIMIT_WINDOW_MS = 1000;
 const RATE_LIMIT_MAX_REQUESTS = 40;
 const QUEUE_DELAY_MS = 200;
 
@@ -20,45 +18,30 @@ const SEASON_CACHE_TTL = 86400; // 1 day - shorter than DETAILS_CACHE_TTL since 
 // Caps simultaneous connections to stay under TMDb's ~20 concurrent connections/IP limit
 const tmdbAgent = new https.Agent({ maxSockets: 20, keepAlive: true });
 
-// Runs the count-check and reservation as one atomic step on Redis (Lua
-// scripts execute indivisibly there) - a plain zcard-then-zadd from Node lets
-// concurrent callers (e.g. a calendar load firing 20+ TMDb calls via
-// Promise.all in the same tick) all read the same stale "under the limit"
-// count before any of them have actually registered, letting far more than
-// RATE_LIMIT_MAX_REQUESTS slip through in one instant.
-const RATE_LIMIT_SCRIPT = `
-local key = KEYS[1]
-local now = tonumber(ARGV[1])
-local windowMs = tonumber(ARGV[2])
-local maxRequests = tonumber(ARGV[3])
-local member = ARGV[4]
+// In-process sliding-window limiter (was Redis-backed via a Lua script -
+// moved in-process since this only needs to hold across requests within a
+// single Node process, not across instances). Holds recent request
+// timestamps; expired ones are pruned on each check. A plain array check
+// here (unlike a naive read-then-write) is safe without extra locking since
+// Node is single-threaded - no other call can interleave mid-check.
+const tmdbRequestTimestamps = [];
 
-redis.call('ZREMRANGEBYSCORE', key, '-inf', now - windowMs)
-local count = redis.call('ZCARD', key)
-if count < maxRequests then
-  redis.call('ZADD', key, now, member)
-  redis.call('PEXPIRE', key, windowMs)
-  return 1
-end
-return 0
-`;
+function tryReserveTmdbSlot() {
+  const now = Date.now();
+  while (tmdbRequestTimestamps.length && tmdbRequestTimestamps[0] <= now - RATE_LIMIT_WINDOW_MS) {
+    tmdbRequestTimestamps.shift();
+  }
+  if (tmdbRequestTimestamps.length < RATE_LIMIT_MAX_REQUESTS) {
+    tmdbRequestTimestamps.push(now);
+    return true;
+  }
+  return false;
+}
 
 // Sliding window limiter (mirrors callDeezer.js) - delays instead of throwing 429
 async function waitForRateLimitSlot() {
   while (true) {
-    const now = Date.now();
-    const member = `${now}:${crypto.randomUUID()}`;
-    const allowed = await redis.eval(
-      RATE_LIMIT_SCRIPT,
-      1,
-      RATE_LIMIT_KEY,
-      now,
-      RATE_LIMIT_WINDOW_SECONDS * 1000,
-      RATE_LIMIT_MAX_REQUESTS,
-      member
-    );
-
-    if (allowed === 1) return;
+    if (tryReserveTmdbSlot()) return;
 
     await new Promise((resolve) => setTimeout(resolve, QUEUE_DELAY_MS));
   }
@@ -211,7 +194,7 @@ async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = fals
   // got cached first silently serve its data for the other's requests too.
   const cacheKey = `tmdb:details:v8:${mediaType}:${tmdbId}`;
   if (!forceRefresh) {
-    const cached = await redis.get(cacheKey);
+    const cached = await redis.safeGet(cacheKey);
     if (cached) return JSON.parse(cached);
   }
 
@@ -235,7 +218,7 @@ async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = fals
   // the same shape on a cache hit or a fresh fetch.
   const trimmed = response.data ? trimTmdbDetails(response.data) : null;
   if (trimmed) {
-    await redis.set(cacheKey, JSON.stringify(trimmed), "EX", DETAILS_CACHE_TTL);
+    await redis.safeSet(cacheKey, JSON.stringify(trimmed), "EX", DETAILS_CACHE_TTL);
   }
 
   return trimmed;
@@ -251,7 +234,7 @@ async function getTmdbDetailsForCalendar(tmdbId, mediaType, forceRefresh = false
   const cacheKey = `tmdb:calendar-details:${mediaType}:${tmdbId}`;
 
   if (!forceRefresh) {
-    const cached = await redis.get(cacheKey);
+    const cached = await redis.safeGet(cacheKey);
     if (cached) return JSON.parse(cached);
   }
 
@@ -267,7 +250,7 @@ async function getTmdbDetailsForCalendar(tmdbId, mediaType, forceRefresh = false
     // watchlist backfilled at once) don't all expire in the same instant and
     // stampede TMDb with a burst of simultaneous live calls on the next load.
     const jitter = CALENDAR_DETAILS_CACHE_TTL * (0.9 + Math.random() * 0.2);
-    await redis.set(cacheKey, JSON.stringify(response.data), "EX", Math.round(jitter));
+    await redis.safeSet(cacheKey, JSON.stringify(response.data), "EX", Math.round(jitter));
   } else {
     // callTmdb never throws itself (it exhausts retries and resolves with
     // `{ data: null }`) - throw here instead of returning null so a genuine
@@ -289,7 +272,7 @@ async function getTmdbDetailsForCalendar(tmdbId, mediaType, forceRefresh = false
 const SEARCH_PAGES = 2;
 async function searchTmdb(query) {
   const cacheKey = `tmdb:search:${query}`;
-  const cached = await redis.get(cacheKey);
+  const cached = await redis.safeGet(cacheKey);
   if (cached) return JSON.parse(cached);
 
   const pages = await Promise.all(
@@ -310,7 +293,7 @@ async function searchTmdb(query) {
   }
 
   const data = { results };
-  await redis.set(cacheKey, JSON.stringify(data), "EX", SEARCH_CACHE_TTL);
+  await redis.safeSet(cacheKey, JSON.stringify(data), "EX", SEARCH_CACHE_TTL);
 
   return data;
 }
@@ -319,7 +302,7 @@ async function searchTmdb(query) {
 // (instead of hardcoded) so newly-added TMDb genres show up automatically.
 async function getGenreMap(mediaType) {
   const cacheKey = `tmdb:genres:${mediaType}`;
-  const cached = await redis.get(cacheKey);
+  const cached = await redis.safeGet(cacheKey);
   if (cached) return JSON.parse(cached);
 
   const response = await callTmdb(`/genre/${mediaType}/list`);
@@ -328,7 +311,7 @@ async function getGenreMap(mediaType) {
     map[g.id] = g.name;
   });
 
-  await redis.set(cacheKey, JSON.stringify(map), "EX", GENRE_CACHE_TTL);
+  await redis.safeSet(cacheKey, JSON.stringify(map), "EX", GENRE_CACHE_TTL);
   return map;
 }
 
@@ -337,7 +320,7 @@ async function getGenreMap(mediaType) {
 // tap-to-expand detail popup.
 async function getTmdbPersonDetails(personId) {
   const cacheKey = `tmdb:person:${personId}`;
-  const cached = await redis.get(cacheKey);
+  const cached = await redis.safeGet(cacheKey);
   if (cached) return JSON.parse(cached);
 
   const response = await callTmdb(`/person/${personId}`, {
@@ -345,7 +328,7 @@ async function getTmdbPersonDetails(personId) {
   });
 
   if (response.data) {
-    await redis.set(cacheKey, JSON.stringify(response.data), "EX", DETAILS_CACHE_TTL);
+    await redis.safeSet(cacheKey, JSON.stringify(response.data), "EX", DETAILS_CACHE_TTL);
   }
 
   return response.data;
@@ -358,7 +341,7 @@ async function getTmdbPersonDetails(personId) {
 const POPULAR_PEOPLE_CACHE_TTL = 43200; // 12h - popularity shifts day to day, not minute to minute
 async function getTmdbPopularActors() {
   const cacheKey = "tmdb:popular-actors";
-  const cached = await redis.get(cacheKey);
+  const cached = await redis.safeGet(cacheKey);
   if (cached) return JSON.parse(cached);
 
   const actors = [];
@@ -369,7 +352,7 @@ async function getTmdbPopularActors() {
     actors.push(...results.filter((p) => p.known_for_department === "Acting"));
   }
 
-  await redis.set(cacheKey, JSON.stringify(actors), "EX", POPULAR_PEOPLE_CACHE_TTL);
+  await redis.safeSet(cacheKey, JSON.stringify(actors), "EX", POPULAR_PEOPLE_CACHE_TTL);
   return actors;
 }
 
@@ -380,12 +363,12 @@ async function getTmdbPopularActors() {
 const EXTERNAL_IDS_CACHE_TTL = 2592000; // 30 days
 async function getTmdbExternalIds(personId) {
   const cacheKey = `tmdb:person-external-ids:${personId}`;
-  const cached = await redis.get(cacheKey);
+  const cached = await redis.safeGet(cacheKey);
   if (cached) return JSON.parse(cached);
 
   const response = await callTmdb(`/person/${personId}/external_ids`);
   if (response.data) {
-    await redis.set(cacheKey, JSON.stringify(response.data), "EX", EXTERNAL_IDS_CACHE_TTL);
+    await redis.safeSet(cacheKey, JSON.stringify(response.data), "EX", EXTERNAL_IDS_CACHE_TTL);
   }
 
   return response.data;
@@ -402,7 +385,7 @@ async function getTmdbExternalIds(personId) {
 const TRENDING_CACHE_TTL = 86400; // 24h - trending/week updates continuously server-side, not tied to a fixed weekly release cycle like Spotify
 async function getTmdbTrending(mediaType) {
   const cacheKey = `tmdb:trending:${mediaType}`;
-  const cached = await redis.get(cacheKey);
+  const cached = await redis.safeGet(cacheKey);
   if (cached) return JSON.parse(cached);
 
   const seen = new Set();
@@ -419,7 +402,7 @@ async function getTmdbTrending(mediaType) {
     }
   }
 
-  await redis.set(cacheKey, JSON.stringify(results), "EX", TRENDING_CACHE_TTL);
+  await redis.safeSet(cacheKey, JSON.stringify(results), "EX", TRENDING_CACHE_TTL);
   return results;
 }
 
@@ -432,7 +415,7 @@ async function getTmdbSeasonDetails(tvId, seasonNumber) {
   // v3: added season-level posterPath - bumped so entries cached before that
   // are refetched instead of served without it until their old TTL expires.
   const cacheKey = `tmdb:season:v3:${tvId}:${seasonNumber}`;
-  const cached = await redis.get(cacheKey);
+  const cached = await redis.safeGet(cacheKey);
   if (cached) return JSON.parse(cached);
 
   const response = await callTmdb(`/tv/${tvId}/season/${seasonNumber}`);
@@ -452,7 +435,7 @@ async function getTmdbSeasonDetails(tvId, seasonNumber) {
     })),
   };
 
-  await redis.set(cacheKey, JSON.stringify(trimmed), "EX", SEASON_CACHE_TTL);
+  await redis.safeSet(cacheKey, JSON.stringify(trimmed), "EX", SEASON_CACHE_TTL);
   return trimmed;
 }
 
