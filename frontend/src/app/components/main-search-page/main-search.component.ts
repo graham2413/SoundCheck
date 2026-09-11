@@ -103,7 +103,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   lastSearchedQuery: string = '';
   recentSearches: string[] = [];
   recentSearchesExpanded = false;
-  private readonly RECENT_SEARCHES_LIMIT = 5;
+  private readonly RECENT_SEARCHES_LIMIT = 12;
   isLoading: boolean = false;
   activeTab: 'all' | 'songs' | 'albums' | 'artists' = 'all';
   // Only shows up to 5 results per tab until expanded - reset on every new search.
@@ -387,7 +387,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
       if (width >= 768) {
         offsetPadding = 170;
       } else {
-        offsetPadding = 75; // Less padding for mobile screens
+        offsetPadding = 65; // Less padding for mobile screens
       }
 
       const offset = elementTop - offsetPadding;
@@ -471,7 +471,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
       const searchBarEl = this.searchBar.nativeElement;
       const elementTop =
         searchBarEl.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPadding = window.innerWidth >= 768 ? 170 : 75;
+      const offsetPadding = window.innerWidth >= 768 ? 170 : 65;
       window.scrollTo({
         top: elementTop - offsetPadding,
         behavior: 'smooth',

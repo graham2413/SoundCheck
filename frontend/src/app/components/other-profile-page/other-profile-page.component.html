@@ -19,6 +19,7 @@
   <div class="relative px-4">
     <!-- Back Button -->
     <button
+      *ngIf="otherUser._id !== loggedInUser._id"
       (click)="goBack()"
       class="absolute top-4 left-4 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center z-10"
     >
@@ -259,14 +260,23 @@
           }}</span>
           <span class="text-gray-400 text-sm">Artists</span>
         </div>
-        <div
-          class="flex flex-col items-center cursor-pointer"
-          *ngIf="canViewWatchlist"
-          (click)="openWatchlist()"
-        >
-          <span class="text-lg font-semibold">{{ watchlistTotalCount }}</span>
-          <span class="text-gray-400 text-sm">Watchlist</span>
-        </div>
+<div
+  class="flex flex-col items-center cursor-pointer"
+  *ngIf="canViewWatchlist"
+  (click)="openWatchlist()"
+>
+  <span class="text-lg font-semibold min-h-[28px] flex items-center">
+    <ng-container *ngIf="!isLoadingWatchlist; else watchlistCountLoading">
+      {{ watchlistTotalCount }}
+    </ng-container>
+
+    <ng-template #watchlistCountLoading>
+      <span class="inline-block h-5 w-8 rounded-md bg-slate-600/40 animate-pulse"></span>
+    </ng-template>
+  </span>
+
+  <span class="text-gray-400 text-sm">Watchlist</span>
+</div>
       </div>
     </div>
 
