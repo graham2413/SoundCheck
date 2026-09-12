@@ -9,6 +9,7 @@
       (mouseleave)="setPointerOver(false)"
       (touchstart)="setPointerOver(true)"
       (touchend)="setPointerOver(false)"
+      (touchcancel)="setPointerOver(false)"
     >
       <ng-container *ngFor="let album of loopedAlbums; let i = index; trackBy: trackByIndex">
         <div

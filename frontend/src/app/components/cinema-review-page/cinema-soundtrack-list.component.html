@@ -1,0 +1,94 @@
+<div class="cinema-soundtrack-page pb-10">
+  <!-- Header -->
+  <div class="relative flex items-center px-4 pt-4">
+    <button
+      type="button"
+      aria-label="Back"
+      (click)="back.emit()"
+      class="w-12 h-12 rounded-full border border-gray-500/40 bg-transparent text-gray-200 flex items-center justify-center text-lg flex-shrink-0 hover:bg-gray-800 transition"
+    >
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <h1 class="absolute left-1/2 -translate-x-1/2 text-white font-bold text-3xl">Soundtrack</h1>
+  </div>
+
+  <!-- Loading -->
+  <div class="cinema-loader-overlay" *ngIf="isLoading">
+    <div class="cinema-loader-ring"></div>
+    <p class="cinema-loader-text">Loading soundtrack…</p>
+  </div>
+
+  <ng-container *ngIf="!isLoading">
+    <!-- Track list -->
+    <div class="px-4 pt-5" *ngIf="tracks.length">
+      <!-- Source badge - opens the real Spotify playlist when we have one -->
+      <a
+        *ngIf="playlistUrl; else sourceBadgeStatic"
+        [href]="playlistUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        (click)="$event.stopPropagation()"
+        class="soundtrack-source-badge"
+        [class.soundtrack-source-badge-spotify]="source === 'soundtrackdb'"
+      >
+        <i [class]="sourceIcon"></i>
+        <span>{{ sourceLabel }}</span>
+        <i class="fas fa-arrow-up-right-from-square soundtrack-source-badge-link-icon"></i>
+      </a>
+      <ng-template #sourceBadgeStatic>
+        <div class="soundtrack-source-badge" [class.soundtrack-source-badge-spotify]="source === 'soundtrackdb'">
+          <i [class]="sourceIcon"></i>
+          <span>{{ sourceLabel }}</span>
+        </div>
+      </ng-template>
+
+      <!-- Stats banner - same full-bleed style as the calendar page's month header -->
+      <div class="soundtrack-stats-banner">
+        <span>
+          <!-- Font Awesome's real "music" glyph, outlined (fill:none + stroke)
+               instead of solid - there's no regular/outline variant of this
+               one in the free set at all. -->
+          <svg viewBox="-16 -16 544 544" fill="none" stroke="currentColor" stroke-width="26" stroke-linejoin="round" class="soundtrack-stats-icon">
+            <path d="M499.1 6.3c8.1 6 12.9 15.6 12.9 25.7l0 72 0 264c0 44.2-43 80-96 80s-96-35.8-96-80s43-80 96-80c11.2 0 22 1.6 32 4.6L448 147 192 223.8 192 432c0 44.2-43 80-96 80s-96-35.8-96-80s43-80 96-80c11.2 0 22 1.6 32 4.6L128 200l0-72c0-14.1 9.3-26.6 22.8-30.7l320-96c9.7-2.9 20.2-1.1 28.3 5z" />
+          </svg>
+          {{ tracks.length }} TRACK{{ tracks.length === 1 ? '' : 'S' }}
+        </span>
+        <span *ngIf="totalDurationLabel"><i class="far fa-clock"></i> {{ totalDurationLabel }}</span>
+      </div>
+
+      <div
+        *ngFor="let track of tracks; let i = index"
+        class="soundtrack-row"
+        [class.soundtrack-row-disabled]="resolvingTrackIndex != null && resolvingTrackIndex !== i"
+        (click)="onTrackClick(track, i)"
+      >
+        <img *ngIf="cover" [src]="cover" [alt]="title" class="soundtrack-row-art" />
+        <div *ngIf="!cover" class="soundtrack-row-art soundtrack-row-art-placeholder">
+          <i class="fas fa-music"></i>
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <p class="soundtrack-row-title">{{ track.title }}</p>
+          <p class="soundtrack-row-artist" *ngIf="track.artist">{{ track.artist }}</p>
+        </div>
+
+        <i class="fas fa-spinner fa-spin soundtrack-row-chevron" *ngIf="resolvingTrackIndex === i"></i>
+        <i class="fas fa-chevron-right soundtrack-row-chevron" *ngIf="resolvingTrackIndex !== i"></i>
+      </div>
+
+      <div class="soundtrack-info-card mt-5">
+        <i class="fas fa-circle-info soundtrack-info-icon"></i>
+        <p class="soundtrack-fine-print">{{ sourceFinePrint }}</p>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="soundtrack-empty-card mx-4 mt-5" *ngIf="!tracks.length">
+      <i class="fas fa-music soundtrack-empty-icon"></i>
+      <p class="soundtrack-empty-title">No Official Soundtrack Found</p>
+      <p class="soundtrack-empty-subtitle">
+        This title doesn't have an officially released soundtrack or score album on record.
+      </p>
+    </div>
+  </ng-container>
+</div>

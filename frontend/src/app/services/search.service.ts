@@ -24,6 +24,14 @@ export class SearchService {
     return this.http.get<Song>(`${this.apiUrl}/track/${trackId}`);
   }
 
+  // Resolves a bare title+artist (no Deezer ID) to a real Deezer track -
+  // used by the soundtrack feature's click-through, never for a whole list.
+  resolveTrack(title: string, artist?: string | null): Observable<Song> {
+    let params = new HttpParams().set('title', title);
+    if (artist) params = params.set('artist', artist);
+    return this.http.get<Song>(`${this.apiUrl}/resolve-track`, { params });
+  }
+
   getAlbumDetails(albumId: number): Observable<Album> {
     return this.http.get<Album>(`${this.apiUrl}/album/${albumId}`);
   }

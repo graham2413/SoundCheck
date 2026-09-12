@@ -308,6 +308,89 @@ const getTrackDetails = async (req, res) => {
   }
 };
 
+// Strips parenthetical/bracketed suffixes ("(feat. X)", "[Remastered 2011]")
+// and normalizes case/whitespace so cache keys and match comparisons aren't
+// thrown off by cosmetic differences between a provider's title string and
+// Deezer's.
+function normalizeForMatch(value) {
+  return (value || "")
+    .toLowerCase()
+    .replace(/[\(\[][^)\]]*[\)\]]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+// Resolves a bare title+artist string (e.g. from a soundtrack provider that
+// has no Deezer ID of its own) to a real Deezer track - the one place new
+// Deezer *search* traffic gets introduced for the soundtrack feature, and
+// only ever called once per song per cache window, on click (see
+// cinema-soundtrack-list's click handler), never for an entire list at once.
+const RESOLVE_CACHE_TTL = 14 * 24 * 60 * 60; // 2 weeks - matches the soundtrack list's own cache TTL
+
+async function resolveTrack(req, res) {
+  try {
+    const { title, artist } = req.query;
+    if (!title) {
+      return res.status(400).json({ message: "title is required" });
+    }
+
+    // v2: dropped Deezer's advanced track:/artist: search operators, which
+    // were verified to return zero results even for an exact match - bumped
+    // so a stale "not found" cached by that broken v1 logic doesn't shadow
+    // the real result for its whole 2-week TTL.
+    const cacheKey = `deezer:resolve:v2:${normalizeForMatch(title)}::${normalizeForMatch(artist)}`;
+    const cached = await redis.safeGet(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return res.status(parsed ? 200 : 404).json(parsed || { message: "Track not found on Deezer" });
+    }
+
+    // Deezer's advanced track:"..."/artist:"..." search operators were tried
+    // here first and directly verified (against Deezer's real API, not a
+    // caching/rate-limit artifact) to return zero results even for an exact,
+    // correctly-spelled title+artist pair - so this is a plain free-text
+    // query, same as the rest of the app's existing search already uses.
+    const plainQuery = artist ? `${title} ${artist}` : title;
+    const searchRes = await fetchWithRetry(() =>
+      callDeezer(`https://api.deezer.com/search?q=${encodeURIComponent(plainQuery)}&limit=5`)
+    );
+    const results = searchRes.data?.data || [];
+
+    // Prefer a result whose artist also matches (a plain query can rank a
+    // same-named song by someone else first); otherwise take Deezer's
+    // top-ranked result.
+    const normalizedArtist = normalizeForMatch(artist);
+    const best =
+      (normalizedArtist && results.find((r) => normalizeForMatch(r?.artist?.name) === normalizedArtist)) ||
+      results[0] ||
+      null;
+
+    if (!best) {
+      await redis.safeSet(cacheKey, JSON.stringify(null), "EX", RESOLVE_CACHE_TTL);
+      return res.status(404).json({ message: "Track not found on Deezer" });
+    }
+
+    const genre = best.album?.id ? await getAlbumGenre(best.album.id) : "Unknown";
+    const song = {
+      id: best.id,
+      title: best.title,
+      artist: best.artist?.name,
+      album: best.album?.title,
+      cover: best.album?.cover,
+      preview: best.preview,
+      isExplicit: best.explicit_lyrics,
+      genre,
+      type: "Song",
+    };
+
+    await redis.safeSet(cacheKey, JSON.stringify(song), "EX", RESOLVE_CACHE_TTL);
+    return res.status(200).json(song);
+  } catch (error) {
+    console.error("Error in resolveTrack:", error.message);
+    return res.status(500).json({ message: "Failed to resolve track" });
+  }
+}
+
 const getAlbumDetails = async (req, res) => {
   try {
     const { albumId } = req.params;
@@ -796,6 +879,7 @@ module.exports = {
   getAlbumGenre,
   getGenreFromId,
   getTrackDetails,
+  resolveTrack,
   getAlbumDetails,
   getArtistTopTracks,
   callDeezer,

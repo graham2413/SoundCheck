@@ -472,6 +472,12 @@
   text-align: center;
 }
 
+.detail-row-music-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
 .detail-row-value {
   display: flex;
   align-items: center;

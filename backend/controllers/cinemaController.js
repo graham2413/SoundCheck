@@ -3,6 +3,7 @@ const redis = require("../utils/redisClient");
 const { fetchWithRetry } = require("../utils/fetchWithRetry");
 const { getTmdbDetails, getTmdbDetailsForCalendar, searchTmdb, getGenreMap, getTmdbPersonDetails, getTmdbPopularActors, getTmdbTrending, getTmdbSeasonDetails } = require("../utils/callTmdb");
 const { getLocalImdbRating } = require("../utils/imdbRatingsSync");
+const { getSoundtrack: getCombinedSoundtrack } = require("../utils/soundtrackProvider");
 const {
   getCachedEpisodeMap,
   cacheEpisodeMap,
@@ -564,6 +565,33 @@ exports.getImdbStats = async (req, res) => {
         boxOfficeUs: omdbData?.boxOfficeUs ?? null,
       },
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// Real soundtrack tracks (title + artist) - tries SoundtrackDB's Spotify
+// playlist first, falls back to MusicBrainz's officially-released soundtrack/
+// score albums. See utils/soundtrackProvider.js for the full explanation/
+// limitations of both. Series-level only for TV; there's no per-episode
+// equivalent to fall back to.
+exports.getCinemaSoundtrack = async (req, res) => {
+  try {
+    const { imdbId } = req.params;
+    const { releaseDate, title, year, mediaType } = req.query;
+
+    if (!imdbId || !/^tt\d+$/.test(imdbId)) {
+      return res.status(400).json({ success: false, message: "Invalid imdbId" });
+    }
+
+    const { available, tracks, source, playlistUrl } = await getCombinedSoundtrack(imdbId, {
+      title,
+      year,
+      mediaType,
+      releaseDate,
+    });
+
+    res.status(200).json({ success: true, data: { imdbId, available, tracks, source, playlistUrl } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }

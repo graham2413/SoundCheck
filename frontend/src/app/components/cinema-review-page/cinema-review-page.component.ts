@@ -90,6 +90,7 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   @Output() markWatched = new EventEmitter<void>();
   @Output() viewCast = new EventEmitter<void>();
   @Output() viewAwards = new EventEmitter<void>();
+  @Output() viewSoundtrack = new EventEmitter<void>();
   @Output() seeAllProviders = new EventEmitter<void>();
   @Output() similarItemClick = new EventEmitter<CinemaPersonCredit>();
 

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getTrackDetails, getAlbumDetails, searchMusic, getArtistTopTracks, getAndStoreArtistAlbums, getReleasesByArtistIds, getDeezerArtistReleases, getSmartLink } = require("../controllers/mainSearchController");
+const { getTrackDetails, resolveTrack, getAlbumDetails, searchMusic, getArtistTopTracks, getAndStoreArtistAlbums, getReleasesByArtistIds, getDeezerArtistReleases, getSmartLink } = require("../controllers/mainSearchController");
 const authenticateUser = require("../middleware/authMiddleware");
 
 // Main search route
@@ -8,6 +8,11 @@ router.get("/", searchMusic);
 
 // Search Track route
 router.get("/track/:trackId", getTrackDetails);
+
+// Resolve a bare title+artist (e.g. from the soundtrack feature) to a real
+// Deezer track - cached by normalized title+artist, see resolveTrack. No
+// auth, matching the other read-only Deezer lookups in this file.
+router.get("/resolve-track", resolveTrack);
 
 // Search Album route
 router.get("/album/:albumId", getAlbumDetails);

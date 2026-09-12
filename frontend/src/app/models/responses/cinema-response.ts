@@ -144,6 +144,31 @@ export interface CinemaWatchProvider {
   logoUrl: string | null;
 }
 
+// GET /api/cinema/soundtrack/:imdbId - real soundtrack tracks, tried in order:
+// SoundtrackDB (a title's Spotify playlist, unpacked via Spotify's own API)
+// then MusicBrainz (officially-released soundtrack/score albums). `artist` is
+// null for tracks where the source only has a composer/collective credit it
+// couldn't cleanly resolve to a name. Series-level only for TV - no season/
+// episode fields.
+export interface CinemaSoundtrackTrack {
+  title: string;
+  artist: string | null;
+  durationMs: number | null;
+}
+
+export interface CinemaSoundtrackResponse {
+  success: boolean;
+  data: {
+    imdbId: string;
+    available: boolean;
+    tracks: CinemaSoundtrackTrack[];
+    source: 'soundtrackdb' | 'musicbrainz' | null;
+    // Only ever set for the 'soundtrackdb' source - the real Spotify
+    // playlist this track list came from, so the UI can link out to it.
+    playlistUrl: string | null;
+  };
+}
+
 // Consolidated payload from GET /api/cinema/detail/:mediaType/:tmdbId - powers
 // the cinema-review-page component (TMDb metadata/credits/providers + OMDb ratings/awards).
 export interface CinemaDetail {

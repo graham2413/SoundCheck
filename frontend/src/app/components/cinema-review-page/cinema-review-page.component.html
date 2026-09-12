@@ -225,6 +225,22 @@
       </span>
     </div>
 
+    <div class="detail-row detail-row-link" (click)="viewSoundtrack.emit()">
+      <div class="detail-row-label">
+        <!-- Font Awesome's real "music" glyph, outlined (fill:none + stroke)
+             instead of solid - there's no regular/outline variant of this
+             one in the free set at all. -->
+        <svg viewBox="-16 -16 544 544" fill="none" stroke="currentColor" stroke-width="26" stroke-linejoin="round" class="detail-row-music-icon">
+          <path d="M499.1 6.3c8.1 6 12.9 15.6 12.9 25.7l0 72 0 264c0 44.2-43 80-96 80s-96-35.8-96-80s43-80 96-80c11.2 0 22 1.6 32 4.6L448 147 192 223.8 192 432c0 44.2-43 80-96 80s-96-35.8-96-80s43-80 96-80c11.2 0 22 1.6 32 4.6L128 200l0-72c0-14.1 9.3-26.6 22.8-30.7l320-96c9.7-2.9 20.2-1.1 28.3 5z" />
+        </svg>
+        Soundtrack
+      </div>
+      <span class="detail-row-value">
+        View full soundtrack
+        <i class="fas fa-chevron-right"></i>
+      </span>
+    </div>
+
     <div class="detail-row" [class.detail-row-link]="awardsSummary" (click)="awardsSummary && viewAwards.emit()">
       <div class="detail-row-label">
         <i class="far fa-star"></i>

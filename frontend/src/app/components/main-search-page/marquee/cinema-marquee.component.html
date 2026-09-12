@@ -8,6 +8,7 @@
       (mouseleave)="setPointerOver(false)"
       (touchstart)="setPointerOver(true)"
       (touchend)="setPointerOver(false)"
+      (touchcancel)="setPointerOver(false)"
     >
       <ng-container *ngFor="let item of loopedItems; let i = index; trackBy: trackByIndex">
         <div class="cinema-card-wrapper" @itemAnim (click)="onCardClick(item, i)">

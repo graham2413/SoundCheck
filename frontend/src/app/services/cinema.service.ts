@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
-import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CalendarSubtitle, CalendarMonthGroup, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor, CinemaSeasonEpisodesResponse, EpisodeImdbRatingsResponse, EpisodeReviewsResponse } from '../models/responses/cinema-response';
+import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CalendarSubtitle, CalendarMonthGroup, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor, CinemaSeasonEpisodesResponse, EpisodeImdbRatingsResponse, EpisodeReviewsResponse, CinemaSoundtrackResponse } from '../models/responses/cinema-response';
 
 export interface WatchlistCursor {
   cursorValue: string;
@@ -53,6 +53,28 @@ export class CinemaService {
   getCinemaDetail(mediaType: 'movie' | 'tv', tmdbId: string): Observable<CinemaDetailResponse> {
     return this.http.get<CinemaDetailResponse>(`${this.apiUrl}/detail/${mediaType}/${tmdbId}`, {
       headers: this.authHeaders(),
+    });
+  }
+
+  // Real soundtrack tracks (SoundtrackDB's Spotify playlist first, MusicBrainz
+  // fallback, Redis-cached on the backend - series-level only for TV).
+  // `title`/`year`/`mediaType` drive the SoundtrackDB lookup (it's a title
+  // search, not IMDb-keyed); `releaseDate` only affects the backend's cache
+  // TTL (shorter for a recently-released title whose SoundtrackDB entry may
+  // still be settling).
+  getSoundtrack(
+    imdbId: string,
+    opts: { title?: string; year?: number | null; mediaType?: 'movie' | 'tv'; releaseDate?: string | null } = {}
+  ): Observable<CinemaSoundtrackResponse> {
+    const params: Record<string, string> = {};
+    if (opts.title) params['title'] = opts.title;
+    if (opts.year) params['year'] = String(opts.year);
+    if (opts.mediaType) params['mediaType'] = opts.mediaType;
+    if (opts.releaseDate) params['releaseDate'] = opts.releaseDate;
+
+    return this.http.get<CinemaSoundtrackResponse>(`${this.apiUrl}/soundtrack/${imdbId}`, {
+      headers: this.authHeaders(),
+      params,
     });
   }
 

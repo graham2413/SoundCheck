@@ -7,10 +7,13 @@ import { CinemaCastListComponent } from './cinema-cast-list.component';
 import { CinemaAllReviewsComponent } from './cinema-all-reviews.component';
 import { CinemaAwardsPageComponent } from './cinema-awards-page.component';
 import { CinemaEpisodeDetailComponent } from './cinema-episode-detail.component';
+import { CinemaSoundtrackListComponent } from './cinema-soundtrack-list.component';
+import { ReviewPageComponent } from '../review-page/review-page.component';
 import { CinemaService } from '../../services/cinema.service';
 import { ReviewService } from '../../services/review.service';
 import { UserService } from '../../services/user.service';
-import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeasonEpisode, EpisodeImdbRating } from '../../models/responses/cinema-response';
+import { SearchService } from '../../services/search.service';
+import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeasonEpisode, CinemaSoundtrackTrack, EpisodeImdbRating } from '../../models/responses/cinema-response';
 
 // Modal wrapper around the presentational CinemaReviewPageComponent - fetches
 // the full detail payload (TMDb + OMDb) for the given record and exposes the
@@ -20,7 +23,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
 @Component({
   selector: 'app-cinema-review-modal',
   standalone: true,
-  imports: [CommonModule, CinemaReviewPageComponent, CinemaCastListComponent, CinemaAllReviewsComponent, CinemaAwardsPageComponent, CinemaEpisodeDetailComponent],
+  imports: [CommonModule, CinemaReviewPageComponent, CinemaCastListComponent, CinemaAllReviewsComponent, CinemaAwardsPageComponent, CinemaEpisodeDetailComponent, CinemaSoundtrackListComponent],
   template: `
     <div #scrollContainer class="fixed inset-0 z-50 overflow-y-auto bg-[#020814]">
       <div class="cinema-loader-overlay" *ngIf="!detail">
@@ -29,7 +32,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
       </div>
 
       <app-cinema-review-page
-        *ngIf="detail && !showFullCast && !showAllReviews && !showAwards && !showEpisodeDetail"
+        *ngIf="detail && !showFullCast && !showAllReviews && !showAwards && !showEpisodeDetail && !showSoundtrack"
         [title]="detail.title"
         [cover]="detail.cover"
         [mediaType]="detail.mediaType"
@@ -77,6 +80,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
         (markWatched)="onMarkWatched()"
         (viewCast)="switchToCast()"
         (viewAwards)="switchToAwards()"
+        (viewSoundtrack)="switchToSoundtrack()"
         (reviewFilterChange)="reviewFilter = $event"
         (reviewSortChange)="onReviewSortChange($event)"
         (toggleReviewLike)="onToggleReviewLike($event)"
@@ -135,6 +139,19 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
         (back)="switchToReview()"
         (episodeUpdated)="onEpisodeUpdated($event)"
       ></app-cinema-episode-detail>
+
+      <app-cinema-soundtrack-list
+        *ngIf="detail && showSoundtrack"
+        [title]="detail.title"
+        [cover]="detail.cover"
+        [tracks]="soundtrackTracks || []"
+        [isLoading]="isLoadingSoundtrack"
+        [source]="soundtrackSource"
+        [playlistUrl]="soundtrackPlaylistUrl"
+        [resolvingTrackIndex]="resolvingSoundtrackTrackIndex"
+        (back)="switchToReview()"
+        (trackClick)="onSoundtrackTrackClick($event)"
+      ></app-cinema-soundtrack-list>
     </div>
   `,
 })
@@ -161,6 +178,16 @@ export class CinemaReviewModalComponent implements OnInit {
   showAllReviews = false;
   showAwards = false;
   showEpisodeDetail = false;
+  showSoundtrack = false;
+  // null = not yet fetched (lazy - only fetched the first time the user
+  // actually opens the Soundtrack tab), [] = fetched, nothing available.
+  soundtrackTracks: CinemaSoundtrackTrack[] | null = null;
+  soundtrackSource: 'soundtrackdb' | 'musicbrainz' | null = null;
+  soundtrackPlaylistUrl: string | null = null;
+  isLoadingSoundtrack = false;
+  // Index of the one soundtrack row currently being resolved to a Deezer
+  // track (null = none in flight) - only one at a time, on tap.
+  resolvingSoundtrackTrackIndex: number | null = null;
   selectedEpisode: CinemaSeasonEpisode | null = null;
   selectedEpisodeSeasonNumber = 1;
   selectedEpisodeSeasonPosterUrl: string | null = null;
@@ -180,6 +207,7 @@ export class CinemaReviewModalComponent implements OnInit {
     private cinemaService: CinemaService,
     private reviewService: ReviewService,
     private userService: UserService,
+    private searchService: SearchService,
     private toastr: ToastrService
   ) {}
 
@@ -336,7 +364,72 @@ export class CinemaReviewModalComponent implements OnInit {
     this.showAllReviews = false;
     this.showAwards = false;
     this.showEpisodeDetail = false;
+    this.showSoundtrack = false;
     this.resetScroll();
+  }
+
+  // Lazy - only actually calls the backend the first time this tab is
+  // opened (soundtrackTracks stays populated afterward, so flipping tabs
+  // back and forth doesn't re-fetch). Series-level only for TV; imdbId is
+  // whatever getCinemaDetail already resolved for this title.
+  switchToSoundtrack(): void {
+    this.showSoundtrack = true;
+    this.resetScroll();
+
+    if (this.soundtrackTracks !== null) return; // already fetched this session
+    if (!this.detail?.imdbId) {
+      this.soundtrackTracks = [];
+      return;
+    }
+
+    this.isLoadingSoundtrack = true;
+    this.cinemaService
+      .getSoundtrack(this.detail.imdbId, {
+        title: this.detail.title,
+        year: this.detail.year,
+        mediaType: this.detail.mediaType,
+        releaseDate: this.detail.releaseDate,
+      })
+      .subscribe({
+        next: ({ data }) => {
+          this.soundtrackTracks = data.tracks;
+          this.soundtrackSource = data.source;
+          this.soundtrackPlaylistUrl = data.playlistUrl;
+          this.isLoadingSoundtrack = false;
+        },
+        error: () => {
+          this.soundtrackTracks = [];
+          this.isLoadingSoundtrack = false;
+          this.toastr.error('Failed to load soundtrack.', 'Error');
+        },
+      });
+  }
+
+  // The one place this whole feature calls Deezer - resolves a single
+  // title+artist to a real track ONLY on tap, never for the whole list, then
+  // opens the existing song review modal exactly like main-search/other-
+  // profile-page already do for any other song.
+  onSoundtrackTrackClick(payload: { track: CinemaSoundtrackTrack; index: number }): void {
+    this.resolvingSoundtrackTrackIndex = payload.index;
+
+    this.searchService.resolveTrack(payload.track.title, payload.track.artist ?? undefined).subscribe({
+      next: (song) => {
+        this.resolvingSoundtrackTrackIndex = null;
+
+        const modalOptions: NgbModalOptions = {
+          backdrop: 'static',
+          keyboard: true,
+          centered: true,
+          scrollable: false,
+        };
+        const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+        modalRef.componentInstance.record = song;
+      },
+      error: () => {
+        this.resolvingSoundtrackTrackIndex = null;
+        this.toastr.error("Couldn't find this track on Deezer.", 'Not Found');
+      },
+    });
   }
 
   onEpisodeSelected(payload: {

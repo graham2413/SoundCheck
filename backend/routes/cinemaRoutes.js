@@ -4,6 +4,7 @@ const multer = require("multer");
 const authenticateUser = require("../middleware/authMiddleware");
 const {
   getImdbStats,
+  getCinemaSoundtrack,
   getEpisodeImdbRatings,
   getCinemaDetail,
   getCinemaPersonDetail,
@@ -31,6 +32,10 @@ const traktUpload = multer({ storage: multer.memoryStorage() });
 
 // Live IMDb community stats (cached in Redis, not persisted in Mongo)
 router.get("/imdb-stats/:imdbId", getImdbStats);
+
+// Officially-released soundtrack/score tracks, free via MusicBrainz - series-
+// level only for TV (Protected). See utils/callMusicBrainz.js for details.
+router.get("/soundtrack/:imdbId", authenticateUser, getCinemaSoundtrack);
 
 // Per-episode IMDb ratings for a TV show, by its IMDb ID (Protected) - see
 // utils/imdbEpisodeMap.js for the on-demand scan + Redis cache architecture.
