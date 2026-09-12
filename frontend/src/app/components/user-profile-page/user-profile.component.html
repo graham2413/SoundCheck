@@ -1,11 +1,22 @@
 <div
-  class="flex flex-col items-center min-h-screen text-white md:pt-[4.5rem] pb-5 md:pb-0"
+  class="relative flex flex-col items-center min-h-screen text-white md:pt-[4.5rem] pb-5 md:pb-0"
 >
+  <button
+    type="button"
+    (click)="viewPublicProfile()"
+    aria-label="Go back"
+    class="absolute top-4 left-4 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center z-10 hover:bg-gray-800 transition"
+  >
+    <i class="fas fa-chevron-left text-gray-200 text-lg"></i>
+  </button>
+
   <div class="w-full p-4 pt-0 mb-[3.5rem] sm:mb-0">
     <!-- Profile Section -->
     <div
-      class="flex flex-row md:flex-col items-center justify-center gap-6 mt-2"
+      class="flex flex-col items-center justify-center gap-4 mt-7"
     >
+      <h1 class="text-xl md:text-2xl font-semibold text-center">Edit Profile</h1>
+
       <!-- Profile Picture Upload -->
       <div class="relative shrink-0">
         <label class="relative cursor-pointer block">
@@ -15,7 +26,7 @@
             class="hidden"
           />
           <div
-            class="relative w-[8rem] h-[8rem] sm:w-40 sm:h-40 imageFix rounded-full"
+            class="relative w-[8rem] h-[8rem] sm:w-28 sm:h-28 imageFix rounded-full mt-5"
           >
             <!-- Loader -->
             <div
@@ -37,7 +48,7 @@
             />
           </div>
           <div
-            class="absolute bottom-2 right-[2rem] iconPlacementFix transform translate-x-1/2 translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-full shadow-md hover:bg-gray-600 transition flex items-center justify-center"
+            class="absolute bottom-2 right-[2rem] iconPlacementFix transform translate-x-1/2 translate-y-1/2 bg-[#0F5EE4] text-white px-2 py-1 rounded-full shadow-md hover:bg-gray-600 transition flex items-center justify-center"
           >
             <i class="fas fa-camera iconSizeFix text-white text-sm"></i>
           </div>
@@ -45,24 +56,25 @@
       </div>
       <!-- Buttons -->
       <div
-        class="flex flex-col gap-3 w-full sm:items-center sm:justify-center md:flex-row md:gap-6"
+        class="flex flex-col items-center gap-3 w-full mt-3"
       >
-        <button
-          (click)="viewPublicProfile()"
-          class="w-[12rem] buttons px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-lg font-medium rounded-full transition flex items-center justify-center gap-2 mx-auto md:mx-0"
-        >
-          <i class="fas fa-user text-white"></i>
-          View Profile
-        </button>
+        <div class="flex w-full max-w-[24rem] gap-3">
+          <button
+            (click)="viewPublicProfile()"
+            class="min-w-0 flex-1 buttons px-2 py-2 bg-gray-800 hover:bg-gray-600 text-white text-lg font-medium rounded-xl transition flex items-center justify-center gap-2"
+          >
+            <i class="fas fa-user text-white"></i>
+            View Profile
+          </button>
 
-        <button
-          (click)="logout()"
-          class="w-[12rem] buttons px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-lg font-medium rounded-full transition flex items-center justify-center gap-2 mx-auto md:mx-0"
-        >
-          <i class="fas fa-sign-out-alt"></i>
-          Logout
-        </button>
-        <p *ngIf="appVersion" class="text-xs text-white text-center md:text-left mt-1">App Version: {{ appVersion }}</p>
+          <button
+            (click)="logout()"
+            class="min-w-0 flex-1 buttons px-2 py-2 bg-red-600 hover:bg-red-500 text-white text-lg font-medium rounded-xl transition flex items-center justify-center gap-2"
+          >
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+          </button>
+        </div>
         <button
           (click)="checkForUpdatesManually()"
           [disabled]="isCheckingForUpdate"
@@ -71,6 +83,8 @@
           <i class="fas fa-sync-alt" [class.fa-spin]="isCheckingForUpdate"></i>
           {{ isCheckingForUpdate ? 'Checking...' : 'Check for Updates' }}
         </button>
+                <p *ngIf="appVersion" class="text-xs text-white text-center md:text-left mt-1">App Version: {{ appVersion }}</p>
+
       </div>
     </div>
 

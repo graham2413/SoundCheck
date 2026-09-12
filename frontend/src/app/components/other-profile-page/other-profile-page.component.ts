@@ -122,6 +122,8 @@ export class ViewProfilePageComponent implements OnInit {
   hasMoreWatchlist: boolean = true;
   private watchlistCursor: { cursorValue: string; cursorId: string } | null = null;
   isProfileReady: boolean = false;
+  private isProfileDetailsLoaded = false;
+  private isWatchlistCountLoaded = false;
   showProfileMenu = false;
   showTypeDropdown = false;
   selectedType: 'All' | 'Song' | 'Album' | 'Artist' = 'All';
@@ -150,6 +152,8 @@ export class ViewProfilePageComponent implements OnInit {
       this.imageLoadState['profile--1'] = false;
       this.otherUser = null;
       this.isProfileReady = false;
+      this.isProfileDetailsLoaded = false;
+      this.isWatchlistCountLoaded = false;
       window.scrollTo(0, 0);
 
       this.userService.userProfile$.subscribe((profile) => {
@@ -255,16 +259,19 @@ export class ViewProfilePageComponent implements OnInit {
           this.reviewsByType = { songs: 0, albums: 0, artists: 0 };
         }
 
-        // Ready as soon as the profile itself is in - the watchlist fetches
-        // separately (own collection/endpoint) and has its own loading spinner,
-        // so it shouldn't hold up the rest of the page behind an extra round trip
-        this.isProfileReady = true;
+        this.isProfileDetailsLoaded = true;
+        this.updateProfileReadyState();
       },
       error: () => {
         this.toastr.error('Error retrieving User Profile', 'Error');
-        this.isProfileReady = true;
+        this.isProfileDetailsLoaded = true;
+        this.updateProfileReadyState();
       },
     });
+  }
+
+  private updateProfileReadyState(): void {
+    this.isProfileReady = this.isProfileDetailsLoaded && this.isWatchlistCountLoaded;
   }
 
   calculateReviewsByType(reviews: Review[]): {
@@ -849,10 +856,14 @@ export class ViewProfilePageComponent implements OnInit {
   loadWatchlistIfVisible(): void {
     if (!this.otherUserId) {
       this.watchlistItems = [];
+      this.isWatchlistCountLoaded = true;
+      this.updateProfileReadyState();
       return;
     }
 
     this.isLoadingWatchlist = true;
+    this.isWatchlistCountLoaded = false;
+    this.isProfileReady = false;
     this.watchlistCursor = null;
     this.hasMoreWatchlist = true;
     this.cinemaService.getWatchlist(this.otherUserId, null, this.buildWatchlistApiFilters()).subscribe({
@@ -864,12 +875,16 @@ export class ViewProfilePageComponent implements OnInit {
         this.watchlistCursor = response.nextCursor;
         this.hasMoreWatchlist = !!response.nextCursor;
         this.isLoadingWatchlist = false;
+        this.isWatchlistCountLoaded = true;
+        this.updateProfileReadyState();
       },
       error: () => {
         // Includes the expected 403 when the target's watchlist is private
         this.watchlistItems = [];
         this.hasMoreWatchlist = false;
         this.isLoadingWatchlist = false;
+        this.isWatchlistCountLoaded = true;
+        this.updateProfileReadyState();
       },
     });
   }

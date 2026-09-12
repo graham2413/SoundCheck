@@ -5,6 +5,7 @@ import {
   EventEmitter,
   Input,
   OnChanges,
+  OnDestroy,
   OnInit,
   Output,
   SimpleChanges,
@@ -44,7 +45,7 @@ import { CinemaBadgeComponent } from '../../../shared/cinema-badge/cinema-badge.
     ]),
   ],
 })
-export class CinemaMarqueeComponent implements OnInit, OnChanges {
+export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
   @Input() mode: 'movie' | 'tv' = 'movie';
   @Output() cardClick = new EventEmitter<{
     item: CinemaSearchResult;
@@ -53,9 +54,13 @@ export class CinemaMarqueeComponent implements OnInit, OnChanges {
   }>();
 
   items: CinemaSearchResult[] = [];
+  loopedItems: CinemaSearchResult[] = [];
   skeletonArray = Array(10);
   isMarqueeLoading = true;
   marqueeImageLoaded: boolean[] = [];
+  isAutoScrolling = false;
+  private animationFrameId: number | null = null;
+  private isPointerOver = false;
 
   private readonly CACHE_TTL_MS = 24 * 60 * 60 * 1000; // matches the backend's 24h Redis cache
 
@@ -72,7 +77,19 @@ export class CinemaMarqueeComponent implements OnInit, OnChanges {
   }
 
   onCardClick(item: CinemaSearchResult, index: number): void {
-    this.cardClick.emit({ item, list: this.items, index });
+    const originalIndex = index % this.items.length;
+    this.cardClick.emit({ item: this.items[originalIndex], list: this.items, index: originalIndex });
+  }
+
+  onImageLoaded(index: number): void {
+    this.marqueeImageLoaded[index % this.items.length] = true;
+    if (this.marqueeImageLoaded.every(Boolean)) {
+      this.startAutoScroll();
+    }
+  }
+
+  setPointerOver(isPointerOver: boolean): void {
+    this.isPointerOver = isPointerOver;
   }
 
   trackByIndex(index: number): number {
@@ -87,6 +104,7 @@ export class CinemaMarqueeComponent implements OnInit, OnChanges {
   }
 
   private async loadForMode(): Promise<void> {
+    this.stopAutoScroll();
     this.isMarqueeLoading = true;
     let baseItems: CinemaSearchResult[] = [];
 
@@ -126,6 +144,7 @@ export class CinemaMarqueeComponent implements OnInit, OnChanges {
 
   private setMarqueeWindow(fullItemList: CinemaSearchResult[]): void {
     this.items = fullItemList;
+    this.loopedItems = [...this.items, ...this.items];
     this.marqueeImageLoaded = new Array(this.items.length).fill(false);
     this.isMarqueeLoading = false;
     // OnPush won't always repaint on its own once this resolves async (e.g.
@@ -133,6 +152,42 @@ export class CinemaMarqueeComponent implements OnInit, OnChanges {
     // its own change detection cycle) - force it so the view doesn't get
     // stuck showing the skeleton loader forever despite the data arriving.
     this.cdRef.markForCheck();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoScroll();
+  }
+
+  private startAutoScroll(): void {
+    if (this.isAutoScrolling || this.items.length === 0) return;
+
+    this.isAutoScrolling = true;
+    const scroll = (): void => {
+      const track = document.querySelector<HTMLElement>('app-cinema-marquee .marquee-track');
+      if (!track) {
+        this.isAutoScrolling = false;
+        return;
+      }
+
+      if (!this.isPointerOver) {
+        track.scrollLeft += 0.5;
+        if (track.scrollLeft >= track.scrollWidth / 2) {
+          track.scrollLeft = 0;
+        }
+      }
+
+      this.animationFrameId = requestAnimationFrame(scroll);
+    };
+
+    this.animationFrameId = requestAnimationFrame(scroll);
+  }
+
+  private stopAutoScroll(): void {
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    this.isAutoScrolling = false;
   }
 
   releaseYear(item: CinemaSearchResult): string {

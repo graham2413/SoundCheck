@@ -3,7 +3,7 @@
   <div class="flex-shrink-0 sticky top-0 z-10 bg-[#020814] border-b border-gray-800 px-4 pt-4 pb-3">
     <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3">
       <button type="button" class="icon-circle-btn" aria-label="Back" (click)="back.emit()">
-        <i class="fas fa-arrow-left"></i>
+        <i class="fas fa-chevron-left"></i>
       </button>
       <h1 class="text-white font-bold text-xl text-center">
         {{ kind === 'music' ? 'Trending Music' : 'Trending ' + (cinemaMode === 'movie' ? 'Movies' : 'Shows') }}

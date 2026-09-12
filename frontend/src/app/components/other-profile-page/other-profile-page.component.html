@@ -21,7 +21,8 @@
     <button
       *ngIf="otherUser._id !== loggedInUser._id"
       (click)="goBack()"
-      class="absolute top-4 left-4 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center z-10"
+      aria-label="Go back"
+      class="absolute top-4 left-4 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center z-10 hover:bg-gray-800 transition"
     >
       <i class="fas fa-chevron-left text-gray-200 text-lg"></i>
     </button>
@@ -331,17 +332,18 @@
               type="button"
               (click)="closePanel()"
               title="Back"
-              class="w-10 h-10 rounded-full border border-gray-600 text-gray-200 flex items-center justify-center flex-shrink-0"
+              class="w-12 h-12 rounded-full border border-gray-500/40 bg-transparent text-gray-200 flex items-center justify-center flex-shrink-0 hover:bg-gray-800 transition"
             >
-              <i class="fas fa-arrow-left"></i>
+              <i class="fas fa-chevron-left text-lg"></i>
             </button>
             <button
               type="button"
               (click)="openWatchlistFilterOverlay()"
               title="Sort & Filter"
-              class="w-10 h-10 rounded-full border border-gray-600 text-gray-200 hover:text-white hover:border-[#0F5EE4] flex items-center justify-center transition flex-shrink-0"
+              class=" text-gray-300 w-[8rem] h-[3rem] rounded-full border border-gray-700 text-gray-200 hover:text-white hover:border-[#0F5EE4] flex items-center justify-center transition flex-shrink-0"
             >
               <i class="fas fa-sliders-h"></i>
+              <div class="text-sm font-semibold pl-2">Filter & Sort</div>
             </button>
           </div>
 

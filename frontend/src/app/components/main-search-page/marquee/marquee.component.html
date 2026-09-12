@@ -1,8 +1,16 @@
 <div class="bg-[#020814] text-white pb-[6rem] md:pb-8 md:pt-[0.5rem]">
   <!-- Marquee Container -->
   <div class="marquee-container">
-    <div class="marquee-track" *ngIf="!isMarqueeLoading; else loading" @fadeSlideIn>
-      <ng-container *ngFor="let album of albums; let i = index; trackBy: trackByIndex">
+    <div
+      class="marquee-track"
+      *ngIf="!isMarqueeLoading; else loading"
+      @fadeSlideIn
+      (mouseenter)="setPointerOver(true)"
+      (mouseleave)="setPointerOver(false)"
+      (touchstart)="setPointerOver(true)"
+      (touchend)="setPointerOver(false)"
+    >
+      <ng-container *ngFor="let album of loopedAlbums; let i = index; trackBy: trackByIndex">
         <div
           class="album-card relative w-[9.5rem] md:w-[13.5rem] h-[9.5rem] md:h-[13.5rem] rounded-lg overflow-hidden"
           @itemAnim
@@ -26,9 +34,9 @@
             "
             [alt]="album.title"
             decoding="async"
-            (load)="marqueeImageLoaded[i] = true"
-            (error)="marqueeImageLoaded[i] = true"
-            [class.invisible]="!marqueeImageLoaded[i]"
+            (load)="onImageLoaded(i)"
+            (error)="onImageLoaded(i)"
+            [class.invisible]="!marqueeImageLoaded[i % albums.length]"
             class="w-full h-full object-cover"
           />
 
