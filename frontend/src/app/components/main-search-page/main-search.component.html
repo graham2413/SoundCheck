@@ -841,19 +841,19 @@
 
 <!-- Popular Section -->
 <div *ngIf="activeDiscoverTab === 'popular'">
-  <div class="bg-[#020814] text-white min-h-screen pt-[1rem] pb-[6rem] px-1">
+  <div class="bg-[#020814] text-white min-h-screen pt-[.5rem] pb-[6rem] px-1">
     <div class="md:max-w-[1000px] md:mx-auto">
       <!-- Loaded Content -->
       <div>
         <!-- Type Selector -->
         <div
-          class="relative flex bg-gray-800 rounded-full p-1 w-fit mx-auto mb-2 mt-2"
+          class="relative flex items-center max-w-xs mx-auto mb-2 mt-2 p-0.5 rounded-full border border-gray-700 bg-gray-900/50"
         >
           <!-- Sliding Highlight -->
           <div
-            class="absolute top-0 left-0 h-full bg-[#0F5EE4] rounded-full transition-all duration-300"
+            class="absolute top-0.5 bottom-0.5 left-0.5 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
             [ngStyle]="{
-              width: 100 / popularTypes.length + '%',
+              width: 'calc((100% - 0.25rem) / ' + popularTypes.length + ')',
               transform: 'translateX(' + getPopularTypeIndex() * 100 + '%)'
             }"
           ></div>
@@ -863,7 +863,7 @@
             <button
               [disabled]="isDiscoverContentLoading"
               (click)="setPopularType(type)"
-              class="relative z-10 w-[6.5rem] md:w-[8rem] py-2 text-base md:text-xl rounded-full transition text-center"
+              class="relative z-10 flex-1 whitespace-nowrap px-4 py-2 text-lg md:text-lg rounded-full transition-colors text-center"
               [ngClass]="{
                 'text-white font-semibold': activePopularType === type,
                 'text-gray-300': activePopularType !== type
@@ -876,32 +876,7 @@
 
         <!-- Ranked List -->
         <div class="pl-[.2rem] pr-2 py-4">
-          <!-- Headers -->
-          <div
-            class="flex items-center mb-3 border-t-[.1rem] border-b-[.1rem] border-gray-600 py-2 sticky top-[3.5rem] md:top-[9.5rem] z-20 bg-[#020814]"
-          >
-            <!-- Rank Header -->
-            <div
-              class="text-lg md:text-2xl font-semibold text-gray-400 w-6 mr-2 text-center"
-            >
-              #
-            </div>
 
-            <!-- Album Cover Placeholder -->
-            <div class="w-16 sm:w-20 md:w-[7rem]"></div>
-
-            <!-- Info Header -->
-            <div class="ml-4 flex-1 overflow-hidden">
-              <p class="text-lg md:text-2xl font-semibold text-gray-400">
-                {{ activePopularType === "Artist" ? "Name" : "Title" }}
-              </p>
-            </div>
-
-            <!-- Rating Header -->
-            <div class="text-lg md:text-2xl font-semibold text-gray-400 pl-2">
-              <i class="fas fa-star text-yellow-500"></i> / 10
-            </div>
-          </div>
 
           <!-- Loading Indicator -->
           <ng-template #loadingSpinner>
@@ -925,18 +900,16 @@
             <div
               @itemAnim
               *ngFor="let record of popularRecords; let i = index"
-              class="flex items-center mb-3 last:mb-0"
+              class="pl-2 flex items-center mb-3 last:mb-0"
               (click)="openModal(record, popularRecords, i)"
             >
-              <!-- Rank -->
-              <div class="text-3xl text-[#F1F1F1] w-6 mr-2 text-center">
-                {{ i + 1 }}.
-              </div>
-
               <!-- Album/Artist Cover -->
               <div
-                class="relative w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] flex-shrink-0"
+                class="relative w-[6.25rem] h-[6.25rem] sm:w-[7.5rem] sm:h-[7.5rem] md:w-[10rem] md:h-[10rem] flex-shrink-0"
               >
+                <!-- Rank Ribbon -->
+                <span class="popular-rank-ribbon"><span>#{{ i + 1 }}</span></span>
+
                 <!-- Loader -->
                 <div
                   *ngIf="!popularImageLoaded[getPopularKey()][i]"
@@ -960,14 +933,14 @@
                   (load)="popularImageLoaded[getPopularKey()][i] = true"
                   [class.invisible]="!popularImageLoaded[getPopularKey()][i]"
                   alt="Media"
-                  class="w-16 h-16 sm:w-20 sm:h-20 md:w-[7rem] md:h-[7rem] object-cover rounded border border-gray-600"
+                  class="w-[6.25rem] h-[6.25rem] sm:w-[7.5rem] sm:h-[7.5rem] md:w-[10rem] md:h-[10rem] object-cover rounded border border-gray-600"
                 />
               </div>
 
               <!-- Info -->
               <div class="ml-4 flex-1 overflow-hidden">
                 <p
-                  class="text-lg md:text-2xl font-semibold truncate whitespace-nowrap"
+                  class="text-xl md:text-2xl font-semibold truncate whitespace-nowrap"
                 >
                   {{ record.title || record.name }}
                 </p>
@@ -981,7 +954,7 @@
                   >
                     E
                   </span>
-                  <span class="md:text-lg">{{ record.artist }}</span>
+                  <span class="text-base md:text-lg">{{ record.artist }}</span>
                 </p>
               </div>
 
@@ -990,50 +963,27 @@
                   class="relative w-[3.5rem] h-[3.5rem] sm:w-[4.5rem] sm:h-[4.5rem] md:w-[5.5rem] md:h-[5.5rem] flex items-center justify-center"
                 >
                   <svg
-                    viewBox="0 0 42 42"
-                    class="circular-chart absolute w-full h-full"
+                    viewBox="0 0 100 100"
+                    class="popular-rating-ring absolute w-full h-full"
                   >
-                    <defs>
-                      <linearGradient
-                        id="ratingGradient"
-                        x1="0%"
-                        y1="0%"
-                        x2="100%"
-                        y2="0%"
-                      >
-                        <stop
-                          offset="0%"
-                          style="stop-color: #facc15; stop-opacity: 1"
-                        />
-                        <stop
-                          offset="100%"
-                          style="stop-color: #f59e0b; stop-opacity: 1"
-                        />
-                      </linearGradient>
-                    </defs>
-
                     <circle
-                      class="circle-bg"
-                      cx="21"
-                      cy="21"
-                      r="18"
-                      stroke-width="4"
-                      transform="rotate(-90 21 21)"
+                      class="popular-ring-track"
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      transform="rotate(-90 50 50)"
                       [attr.style]="
                         record.avgRating === 0 ? 'stroke-opacity: 0;' : ''
                       "
                     />
 
                     <circle
-                      class="circle"
-                      cx="21"
-                      cy="21"
-                      r="18"
-                      stroke="url(#ratingGradient)"
-                      stroke-width="4"
-                      stroke-dasharray="113.1"
-                      stroke-linecap="butt"
-                      transform="rotate(-90 21 21)"
+                      class="popular-ring-progress"
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      stroke-dasharray="282.7"
+                      transform="rotate(-90 50 50)"
                       [attr.stroke-dashoffset]="ratingDashOffsets[record.id]"
                       [attr.style]="
                         record.avgRating === 0 ? 'stroke-opacity: 0;' : ''
@@ -1070,18 +1020,22 @@
       <div
         class="relative flex items-center max-w-xs mx-auto mb-5 mt-2 p-0.5 rounded-full border border-gray-700 bg-gray-900/50"
       >
-        <!-- Sliding Highlight -->
+        <!-- Sliding Highlight - Release Tracker gets a touch more room than
+             Feed when it's the active side, and vice versa. -->
         <div
-          class="absolute top-0.5 bottom-0.5 left-0.5 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
-          style="width: calc((100% - 0.25rem) / 2)"
-          [ngStyle]="{ transform: 'translateX(' + feedTabIndex * 100 + '%)' }"
+          class="absolute top-0.5 bottom-0.5 rounded-full bg-[#0F5EE4] transition-[left,right] duration-300 ease-out"
+          [ngStyle]="
+            activeFeedType === 'Artists'
+              ? { right: '0.125rem', left: 'auto', width: 'calc(50% + 0.8rem)' }
+              : { left: '0.125rem', right: 'auto', width: 'calc(50% - 0.8rem)' }
+          "
         ></div>
 
         <!-- Buttons -->
         <ng-container *ngFor="let feedType of activityFeedTypes">
           <button
             (click)="setFeedType(feedType)"
-            class="relative z-10 flex-1 whitespace-nowrap px-4 py-2 text-base md:text-lg rounded-full transition-colors text-center"
+            class="relative z-10 flex-1 whitespace-nowrap px-4 py-2 text-lg rounded-full transition-colors text-center"
             [ngClass]="{
               'text-white font-semibold': activeFeedType === feedType,
               'text-gray-300': activeFeedType !== feedType
@@ -1410,7 +1364,7 @@
                 </p>
 
                 <p
-                  class="text-sm md:text-lg text-gray-400 mt-2 truncate overflow-hidden whitespace-nowrap"
+                  class="text-sm md:text-lg text-gray-300 mt-2 truncate overflow-hidden whitespace-nowrap"
                   title="{{ release.artistName }}"
                 >
                   <span
@@ -1422,7 +1376,7 @@
                   </span>
                   {{ release.artistName }}
                 </p>
-                <div class="text-xs md:text-base text-gray-500 mt-2">
+                <div class="text-xs md:text-base text-[#3b82f6] mt-2">
                   {{ getReleaseLabel(release.releaseDate) }}
                 </div>
               </div>

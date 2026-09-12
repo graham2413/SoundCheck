@@ -155,10 +155,6 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
   activeFeedType: 'Friends' | 'Artists' = 'Friends';
 
-  get feedTabIndex(): number {
-    return this.activeFeedType === 'Artists' ? 1 : 0;
-  }
-
   readonly activityFeedTypes: Array<'Friends' | 'Artists'> = [
     'Friends',
     'Artists',
@@ -905,7 +901,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
 
         // Step 1: Start with hidden state
         this.popularRecords.forEach((record) => {
-          this.ratingDashOffsets[record.id] = 113.1;
+          this.ratingDashOffsets[record.id] = 282.7;
         });
 
         // Step 2: Let Angular render that first state
@@ -1359,7 +1355,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   calculateDashOffset(rating: number): number {
-    const maxCircumference = 2 * Math.PI * 18; // 18 = r
+    const maxCircumference = 2 * Math.PI * 45; // 45 = r (matches the popular-ring-progress circle)
     const percent = Math.min(Math.max(rating, 0), 10) / 10;
     return +(maxCircumference * (1 - percent)).toFixed(1);
   }

@@ -1,18 +1,24 @@
 <div class="see-all-trending h-screen flex flex-col bg-[#020814]">
   <!-- Sticky header -->
-  <div class="flex-shrink-0 sticky top-0 z-10 bg-[#020814] border-b border-gray-800 px-4 pt-4 pb-3">
+  <div class="flex-shrink-0 sticky top-0 z-10 bg-[#020814] px-4 pt-4 py-3">
     <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3">
       <button type="button" class="icon-circle-btn" aria-label="Back" (click)="back.emit()">
         <i class="fas fa-chevron-left"></i>
       </button>
-      <h1 class="text-white font-bold text-xl text-center">
-        {{ kind === 'music' ? 'Trending Music' : 'Trending ' + (cinemaMode === 'movie' ? 'Movies' : 'Shows') }}
-      </h1>
-      <span class="icon-circle-btn invisible" aria-hidden="true"></span>
+      <h1 class="text-white font-bold text-[1.8rem] text-center">
+Trending Now      </h1>
+      <button
+        type="button"
+        class="icon-circle-btn"
+        aria-label="Filter"
+        (click)="openFilterOverlay()"
+      >
+        <i class="fas fa-filter"></i>
+      </button>
     </div>
 
-    <div *ngIf="kind === 'cinema'" class="flex justify-center mt-3">
-      <div class="relative flex items-center p-0.5 rounded-full border border-gray-700 bg-gray-900/50 w-fit">
+    <div *ngIf="kind === 'cinema'" class="flex justify-center mt-3 pt-5">
+      <div class="relative flex items-center p-0.5 rounded-full border border-gray-700 bg-gray-900/50 w-[95%]">
       <div
         class="absolute top-0.5 bottom-0.5 left-0.5 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
         style="width: calc((100% - 0.25rem) / 2)"
@@ -22,7 +28,7 @@
         type="button"
         (click)="setCinemaMode('movie')"
         [ngClass]="cinemaMode === 'movie' ? 'text-white' : 'text-gray-300'"
-        class="relative z-10 whitespace-nowrap px-3 py-1 rounded-full text-xs font-semibold transition-colors"
+        class="relative z-10 flex-1 whitespace-nowrap px-3 py-2 rounded-full text-base font-semibold transition-colors"
       >
         Movies
       </button>
@@ -30,7 +36,7 @@
         type="button"
         (click)="setCinemaMode('tv')"
         [ngClass]="cinemaMode === 'tv' ? 'text-white' : 'text-gray-300'"
-        class="relative z-10 whitespace-nowrap px-3 py-1 rounded-full text-xs font-semibold transition-colors"
+        class="relative z-10 flex-1 whitespace-nowrap px-3 py-2 rounded-full text-base font-semibold transition-colors"
       >
         Shows
       </button>
@@ -39,10 +45,10 @@
   </div>
 
   <!-- Grid body -->
-  <div class="flex-1 overflow-y-auto px-2 py-4">
+  <div #scrollBody class="flex-1 overflow-y-auto px-2 py-4">
     <div
       *ngIf="isLoading"
-      class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3"
+      class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3"
     >
       <div *ngFor="let _ of [1,2,3,4,5,6,7,8,9]" class="skeleton-card">
         <div class="skeleton-img"></div>
@@ -57,12 +63,12 @@
     >
       <div
         @itemAnim
-        *ngFor="let album of albums; let i = index"
+        *ngFor="let album of filteredAlbums; let i = index"
         (click)="onMusicCardClick(i)"
         class="grid-card cursor-pointer"
       >
         <div class="relative">
-          <span class="rank-ribbon"><span>#{{ i + 1 }}</span></span>
+          <span class="rank-ribbon"><span>#{{ musicTrendingRank(album) }}</span></span>
           <div *ngIf="!albumImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">
             <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
           </div>
@@ -84,16 +90,16 @@
     <div
       @fadeSlideIn
       *ngIf="!isLoading && kind === 'cinema'"
-      class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-3 gap-y-5"
+      class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-x-3 gap-y-5 px-1"
     >
       <div
         @itemAnim
-        *ngFor="let item of cinemaItems; let i = index"
+        *ngFor="let item of filteredCinemaItems; let i = index"
         (click)="onCinemaCardClick(i)"
         class="grid-card-outer cursor-pointer rounded-lg overflow-hidden"
       >
         <div class="relative">
-          <span class="rank-ribbon"><span>#{{ i + 1 }}</span></span>
+          <span class="rank-ribbon"><span>#{{ trendingRank(item) }}</span></span>
           <div *ngIf="!cinemaImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">
             <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
           </div>
@@ -118,10 +124,25 @@
     </div>
 
     <div
-      *ngIf="!isLoading && ((kind === 'music' && albums.length === 0) || (kind === 'cinema' && cinemaItems.length === 0))"
+      *ngIf="!isLoading && ((kind === 'music' && filteredAlbums.length === 0) || (kind === 'cinema' && filteredCinemaItems.length === 0))"
       class="text-center text-gray-400 mt-10"
     >
-      Nothing trending right now.
+      {{
+        (kind === 'cinema' ? cinemaItems.length : albums.length) > 0
+          ? 'No items match your filters.'
+          : 'Nothing trending right now.'
+      }}
     </div>
   </div>
+
+  <app-cinema-watchlist-filter
+    *ngIf="showFilterOverlay"
+    mode="trending"
+    [showReleaseStatus]="kind === 'cinema'"
+    [filters]="filterOverlayFilters"
+    [defaultFilters]="filterOverlayDefaults"
+    [genres]="filterOverlayGenres"
+    (apply)="onApplyFilters($event)"
+    (closed)="showFilterOverlay = false"
+  ></app-cinema-watchlist-filter>
 </div>

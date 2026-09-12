@@ -901,7 +901,9 @@ export class ViewProfilePageComponent implements OnInit {
       provider: f.provider || undefined,
       hasReleaseDate: f.hasReleaseDateOnly || undefined,
       hasRating: f.hasRatingOnly || undefined,
-      sortBy: f.sortBy,
+      // 'trendingRank' is only ever selected in the Trending Now page's
+      // 'trending' mode, never here (watchlist mode has no such sort option).
+      sortBy: f.sortBy === 'trendingRank' ? 'dateAdded' : f.sortBy,
       sortOrder: f.sortOrder,
       search: this.watchlistSearchQuery,
     };

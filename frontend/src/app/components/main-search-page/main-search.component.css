@@ -71,14 +71,46 @@ input[type="search"]::-webkit-search-cancel-button {
   }
 }
 
-.circle-bg {
+/* Cinewave-style rating ring (matches the cinema detail page's rating
+   circle) used on the Popular section's ranked list rows. */
+.popular-ring-track {
   fill: none;
-  stroke: #2a2a2a;
-  stroke-width: 4;
+  stroke: rgba(148, 163, 184, 0.2);
+  stroke-width: 8;
 }
 
-.circle {
+.popular-ring-progress {
   fill: none;
-  stroke-width: 4;
+  stroke: #0f5ee4;
+  stroke-width: 8;
+  stroke-linecap: round;
   transition: stroke-dashoffset 0.6s ease-in-out, stroke-opacity 0.3s ease;
+}
+
+/* Same diagonal corner banner as the Trending Now grid. */
+.popular-rank-ribbon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4.6rem;
+  height: 4.6rem;
+  overflow: hidden;
+  z-index: 2;
+  pointer-events: none;
+  border-top-left-radius: 0.25rem;
+}
+
+.popular-rank-ribbon span {
+  position: absolute;
+  top: 0.5rem;
+  left: -1.55rem;
+  width: 6.5rem;
+  padding: 0.2rem 0;
+  transform: rotate(-45deg);
+  background: #0f5ee4;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }

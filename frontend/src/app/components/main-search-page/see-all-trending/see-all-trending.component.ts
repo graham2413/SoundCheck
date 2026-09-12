@@ -1,12 +1,40 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { SpotifyService } from 'src/app/services/spotify.service';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { AlbumImage } from '../../../models/responses/album-images-response';
 import { CinemaSearchResult } from '../../../models/responses/cinema-response';
-import { getCinemaStatusBadge, withShortBadgeLabel, CinemaBadgeVm } from '../../../shared/cinema-status-badge';
+import { getCinemaStatusBadge, CinemaBadgeVm } from '../../../shared/cinema-status-badge';
 import { CinemaBadgeComponent } from '../../../shared/cinema-badge/cinema-badge.component';
+import {
+  CinemaWatchlistFilterComponent,
+  CinemaWatchlistFilterState,
+} from '../../cinema-watchlist-filter/cinema-watchlist-filter.component';
+
+// Default filter state for this page's Sort & Filter overlay - "Trending
+// Rank" (the order the trending endpoint already returns) instead of the
+// watchlist's "Date Added" default, since these items were never added to
+// anything. Fields the overlay hides in 'trending' mode (status, mediaType,
+// provider, hasRatingOnly, groupByReleaseStatus) stay at inert defaults.
+const DEFAULT_TRENDING_FILTERS: CinemaWatchlistFilterState = {
+  status: 'all',
+  mediaType: 'all',
+  releaseStatus: 'all',
+  genre: '',
+  provider: '',
+  sortBy: 'trendingRank',
+  sortOrder: 'desc',
+  hasReleaseDateOnly: false,
+  hasRatingOnly: false,
+  groupByReleaseStatus: false,
+};
+
+// Same idea, reused for the music grid's Sort & Filter overlay - genre and
+// sort are the only fields that apply (no release-status/provider/rating
+// concept for a trending album), so releaseStatus/provider/etc just stay
+// at their inert 'all'/'' defaults and the overlay hides those sections.
+const DEFAULT_MUSIC_TRENDING_FILTERS: CinemaWatchlistFilterState = { ...DEFAULT_TRENDING_FILTERS };
 
 export type SeeAllTrendingKind = 'music' | 'cinema';
 
@@ -17,7 +45,7 @@ export type SeeAllTrendingKind = 'music' | 'cinema';
 @Component({
   selector: 'app-see-all-trending',
   standalone: true,
-  imports: [CommonModule, CinemaBadgeComponent],
+  imports: [CommonModule, CinemaBadgeComponent, CinemaWatchlistFilterComponent],
   templateUrl: './see-all-trending.component.html',
   styleUrls: ['./see-all-trending.component.css'],
   animations: [
@@ -40,6 +68,8 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
   @Input() kind: SeeAllTrendingKind = 'music';
   @Input() initialCinemaMode: 'movie' | 'tv' = 'movie';
 
+  @ViewChild('scrollBody') scrollBody?: ElementRef<HTMLElement>;
+
   @Output() back = new EventEmitter<void>();
   @Output() musicCardClick = new EventEmitter<{ album: AlbumImage; list: AlbumImage[]; index: number }>();
   @Output() cinemaCardClick = new EventEmitter<{ item: CinemaSearchResult; list: CinemaSearchResult[]; index: number }>();
@@ -50,6 +80,12 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
   cinemaMode: 'movie' | 'tv' = 'movie';
   albumImageLoaded: boolean[] = [];
   cinemaImageLoaded: boolean[] = [];
+
+  readonly defaultTrendingFilters = DEFAULT_TRENDING_FILTERS;
+  readonly defaultMusicFilters = DEFAULT_MUSIC_TRENDING_FILTERS;
+  showFilterOverlay = false;
+  trendingFilters: CinemaWatchlistFilterState = { ...DEFAULT_TRENDING_FILTERS };
+  musicFilters: CinemaWatchlistFilterState = { ...DEFAULT_MUSIC_TRENDING_FILTERS };
 
   constructor(
     private spotifyService: SpotifyService,
@@ -70,6 +106,8 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
   setCinemaMode(mode: 'movie' | 'tv'): void {
     if (this.cinemaMode === mode) return;
     this.cinemaMode = mode;
+    this.trendingFilters = { ...DEFAULT_TRENDING_FILTERS };
+    this.scrollBody?.nativeElement.scrollTo({ top: 0 });
     this.loadData();
   }
 
@@ -103,7 +141,59 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
   }
 
   onMusicCardClick(index: number): void {
-    this.musicCardClick.emit({ album: this.albums[index], list: this.albums, index });
+    const list = this.filteredAlbums;
+    this.musicCardClick.emit({ album: list[index], list, index });
+  }
+
+  // Same rationale as trendingRank() below - the ribbon shows the album's
+  // original trending position, unaffected by the user's filter/sort.
+  musicTrendingRank(album: AlbumImage): number {
+    return this.albums.indexOf(album) + 1;
+  }
+
+  get availableMusicGenres(): string[] {
+    const genres = new Set<string>();
+    this.albums.forEach((album) => {
+      if (album.genre) genres.add(album.genre);
+    });
+    return Array.from(genres).sort();
+  }
+
+  get filteredAlbums(): AlbumImage[] {
+    const f = this.musicFilters;
+    let items = this.albums;
+
+    if (f.genre) {
+      items = items.filter((album) => album.genre === f.genre);
+    }
+    if (f.hasReleaseDateOnly) {
+      items = items.filter((album) => !!album.releaseDate);
+    }
+
+    if (f.sortBy === 'title') {
+      items = [...items].sort((a, b) => a.title.localeCompare(b.title));
+      if (f.sortOrder === 'desc') items.reverse();
+    } else if (f.sortBy === 'releaseDate') {
+      items = [...items].sort((a, b) => (a.releaseDate || '').localeCompare(b.releaseDate || ''));
+      if (f.sortOrder === 'desc') items.reverse();
+    }
+    // 'trendingRank' - leave in the endpoint's original order.
+
+    return items;
+  }
+
+  // Single set of bindings for the one <app-cinema-watchlist-filter> in the
+  // template, routed to whichever list (cinema or music) is currently shown.
+  get filterOverlayFilters(): CinemaWatchlistFilterState {
+    return this.kind === 'cinema' ? this.trendingFilters : this.musicFilters;
+  }
+
+  get filterOverlayDefaults(): CinemaWatchlistFilterState {
+    return this.kind === 'cinema' ? this.defaultTrendingFilters : this.defaultMusicFilters;
+  }
+
+  get filterOverlayGenres(): string[] {
+    return this.kind === 'cinema' ? this.availableGenres : this.availableMusicGenres;
   }
 
   // Same upscale the marquee applies (see marquee.component.ts) - stored
@@ -114,8 +204,89 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
     return imageUrl;
   }
 
+  // The rank ribbon always reflects the item's position in the original
+  // trending order, not its position after the user's filter/sort - the
+  // sort only reorders which items are shown, not what "trending rank"
+  // they actually earned.
+  trendingRank(item: CinemaSearchResult): number {
+    return this.cinemaItems.indexOf(item) + 1;
+  }
+
   onCinemaCardClick(index: number): void {
-    this.cinemaCardClick.emit({ item: this.cinemaItems[index], list: this.cinemaItems, index });
+    const list = this.filteredCinemaItems;
+    this.cinemaCardClick.emit({ item: list[index], list, index });
+  }
+
+  // All trending items are already loaded up front (no pagination on this
+  // page), so filtering/sorting happens client-side rather than round-
+  // tripping to the server like the watchlist's query-param filters do.
+  get availableGenres(): string[] {
+    const genres = new Set<string>();
+    this.cinemaItems.forEach((item) => (item.genres ?? []).forEach((g) => genres.add(g)));
+    return Array.from(genres).sort();
+  }
+
+  get filteredCinemaItems(): CinemaSearchResult[] {
+    const f = this.trendingFilters;
+    let items = this.cinemaItems;
+
+    if (f.genre) {
+      items = items.filter((item) => (item.genres ?? []).includes(f.genre));
+    }
+    if (f.hasReleaseDateOnly) {
+      items = items.filter((item) => !!item.releaseDate);
+    }
+    const releaseStatus = f.releaseStatus;
+    if (releaseStatus !== 'all') {
+      items = items.filter((item) => this.matchesReleaseStatus(item, releaseStatus));
+    }
+
+    if (f.sortBy === 'title') {
+      items = [...items].sort((a, b) => a.title.localeCompare(b.title));
+      if (f.sortOrder === 'desc') items.reverse();
+    } else if (f.sortBy === 'releaseDate') {
+      items = [...items].sort((a, b) => (a.releaseDate || '').localeCompare(b.releaseDate || ''));
+      if (f.sortOrder === 'desc') items.reverse();
+    }
+    // 'trendingRank' - leave in the endpoint's original order.
+
+    return items;
+  }
+
+  // Reuses the same badge classification already computed for the card's
+  // status ribbon, so "In Theaters"/"Coming Soon"/etc mean the same thing
+  // here as what the user sees on screen. "Available" is the absence of any
+  // of those badges (an ordinary already-out title).
+  private matchesReleaseStatus(
+    item: CinemaSearchResult,
+    releaseStatus: Exclude<CinemaWatchlistFilterState['releaseStatus'], 'all'>
+  ): boolean {
+    const kind = this.cinemaBadge(item)?.kind ?? null;
+    switch (releaseStatus) {
+      case 'in_theaters':
+        return kind === 'in-theaters';
+      case 'coming_soon':
+        return kind === 'coming-soon';
+      case 'new_episodes':
+        return kind === 'new-episode';
+      case 'back_in_theaters':
+        return kind === 'back-in-theaters';
+      case 'available':
+        return kind === null;
+    }
+  }
+
+  openFilterOverlay(): void {
+    this.showFilterOverlay = true;
+  }
+
+  onApplyFilters(filters: CinemaWatchlistFilterState): void {
+    if (this.kind === 'cinema') {
+      this.trendingFilters = filters;
+    } else {
+      this.musicFilters = filters;
+    }
+    this.showFilterOverlay = false;
   }
 
   releaseMonthYear(item: CinemaSearchResult): string {
@@ -135,9 +306,8 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
     return new Date(year, month - 1, day);
   }
 
-  // Same badge logic/priority/icons as everywhere else (see shared/cinema-status-badge.ts),
-  // with shortened labels since these grid cards are narrower than the detail page.
+  // Same badge logic/priority/icons/labels as everywhere else (see shared/cinema-status-badge.ts).
   cinemaBadge(item: CinemaSearchResult): CinemaBadgeVm | null {
-    return withShortBadgeLabel(getCinemaStatusBadge(item));
+    return getCinemaStatusBadge(item);
   }
 }

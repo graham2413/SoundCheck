@@ -8,7 +8,7 @@ export interface CinemaWatchlistFilterState {
   releaseStatus: 'all' | 'available' | 'in_theaters' | 'coming_soon' | 'new_episodes' | 'back_in_theaters';
   genre: string; // '' = All Genres
   provider: string; // '' = All Providers
-  sortBy: 'dateAdded' | 'releaseDate' | 'title';
+  sortBy: 'dateAdded' | 'trendingRank' | 'releaseDate' | 'title';
   sortOrder: 'asc' | 'desc';
   hasReleaseDateOnly: boolean;
   hasRatingOnly: boolean;
@@ -40,9 +40,19 @@ export const DEFAULT_WATCHLIST_FILTERS: CinemaWatchlistFilterState = {
   styleUrl: './cinema-watchlist-filter.component.css',
 })
 export class CinemaWatchlistFilterComponent implements OnChanges, OnInit {
+  // 'trending' hides the watchlist-only sections/toggles (Availability,
+  // "My Rated Items", "Group by Release Status") that depend on per-user
+  // data the trending endpoints don't return, and swaps the "Date Added"
+  // sort (meaningless for trending) for "Trending Rank".
+  @Input() mode: 'watchlist' | 'trending' = 'watchlist';
+  // Release Status (In Theaters/Coming Soon/etc) only makes sense for
+  // cinema - the music trending page reuses this same overlay but has no
+  // such concept, so it turns this section off.
+  @Input() showReleaseStatus = true;
   @Input() filters: CinemaWatchlistFilterState = { ...DEFAULT_WATCHLIST_FILTERS };
   @Input() genres: string[] = [];
   @Input() providers: string[] = [];
+  @Input() defaultFilters: CinemaWatchlistFilterState = { ...DEFAULT_WATCHLIST_FILTERS };
 
   @Output() apply = new EventEmitter<CinemaWatchlistFilterState>();
   @Output() closed = new EventEmitter<void>();
@@ -69,7 +79,7 @@ export class CinemaWatchlistFilterComponent implements OnChanges, OnInit {
   // positioned list) instead, so the open list matches the app's dark theme.
   openDropdown: 'sort' | 'genre' | 'provider' | null = null;
 
-  readonly sortOptions: { value: string; label: string }[] = [
+  readonly watchlistSortOptions: { value: string; label: string }[] = [
     { value: 'dateAdded-desc', label: 'Date Added - Newest First' },
     { value: 'dateAdded-asc', label: 'Date Added - Oldest First' },
     { value: 'releaseDate-desc', label: 'Release Date - Newest First' },
@@ -77,6 +87,18 @@ export class CinemaWatchlistFilterComponent implements OnChanges, OnInit {
     { value: 'title-asc', label: 'Title - A-Z' },
     { value: 'title-desc', label: 'Title - Z-A' },
   ];
+
+  readonly trendingSortOptions: { value: string; label: string }[] = [
+    { value: 'trendingRank-desc', label: 'Trending Rank (Default)' },
+    { value: 'releaseDate-desc', label: 'Release Date - Newest First' },
+    { value: 'releaseDate-asc', label: 'Release Date - Oldest First' },
+    { value: 'title-asc', label: 'Title - A-Z' },
+    { value: 'title-desc', label: 'Title - Z-A' },
+  ];
+
+  get sortOptions(): { value: string; label: string }[] {
+    return this.mode === 'trending' ? this.trendingSortOptions : this.watchlistSortOptions;
+  }
 
   get sortLabel(): string {
     return this.sortOptions.find((o) => o.value === this.sortCombinedValue)?.label || '';
@@ -148,7 +170,7 @@ export class CinemaWatchlistFilterComponent implements OnChanges, OnInit {
   }
 
   reset(): void {
-    this.draft = { ...DEFAULT_WATCHLIST_FILTERS };
+    this.draft = { ...this.defaultFilters };
   }
 
   applyFilters(): void {
