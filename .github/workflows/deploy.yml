@@ -6,6 +6,8 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy.yml'
+permissions:
+  contents: write # needed to push the deploy-<run_number> tag used for release notes
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,7 +16,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        fetch-depth: 30 # need real commit history (not just the merge commit) to build release notes below
+        fetch-depth: 0 # full history + tags, so release notes can diff against the last deploy tag
 
     - name: Set up Node.js
       uses: actions/setup-node@v3
@@ -78,3 +80,11 @@ jobs:
         aws cloudfront create-invalidation \
           --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
           --paths "/index.html" "/ngsw.json" "/ngsw-worker.js" "/manifest.webmanifest" "/version.json"
+
+    - name: Tag this deploy
+      # Marks exactly which commit this deploy shipped, so the next run's
+      # release notes (scripts/build-version-json.js) can diff against it
+      # instead of guessing with a fixed commit count.
+      run: |
+        git tag "deploy-${{ github.run_number }}"
+        git push origin "deploy-${{ github.run_number }}"
