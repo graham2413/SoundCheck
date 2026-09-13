@@ -44,6 +44,7 @@ export class MarqueeComponent implements OnDestroy, OnInit {
   marqueeImageLoaded: boolean[] = [];
   isAutoScrolling = false;
   private animationFrameId: number | null = null;
+  private scrollPosition = 0;
 
   constructor(private spotifyService: SpotifyService, private cdRef: ChangeDetectorRef) {}
 
@@ -137,6 +138,7 @@ export class MarqueeComponent implements OnDestroy, OnInit {
     if (this.isAutoScrolling || this.albums.length === 0) return;
 
     this.isAutoScrolling = true;
+    this.scrollPosition = 0;
     const scroll = (): void => {
       const track = document.querySelector<HTMLElement>('app-marquee .marquee-track');
       if (!track) {
@@ -144,10 +146,11 @@ export class MarqueeComponent implements OnDestroy, OnInit {
         return;
       }
 
-      track.scrollLeft += 0.5;
-      if (track.scrollLeft >= track.scrollWidth / 2) {
-        track.scrollLeft = 0;
+      this.scrollPosition += 0.5;
+      if (this.scrollPosition >= track.scrollWidth / 2) {
+        this.scrollPosition = 0;
       }
+      track.scrollLeft = this.scrollPosition;
 
       this.animationFrameId = requestAnimationFrame(scroll);
     };
