@@ -4,8 +4,6 @@
       class="marquee-track"
       *ngIf="!isMarqueeLoading; else loading"
       @fadeSlideIn
-      (pointerenter)="setPointerOver($event)"
-      (pointerleave)="setPointerOver($event)"
     >
       <ng-container *ngFor="let item of loopedItems; let i = index; trackBy: trackByIndex">
         <div class="cinema-card-wrapper" @itemAnim (click)="onCardClick(item, i)">

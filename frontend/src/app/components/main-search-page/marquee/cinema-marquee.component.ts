@@ -60,7 +60,6 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
   marqueeImageLoaded: boolean[] = [];
   isAutoScrolling = false;
   private animationFrameId: number | null = null;
-  private isPointerOver = false;
 
   private readonly CACHE_TTL_MS = 24 * 60 * 60 * 1000; // matches the backend's 24h Redis cache
 
@@ -86,14 +85,6 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
     if (this.marqueeImageLoaded.every(Boolean)) {
       this.startAutoScroll();
     }
-  }
-
-  // Only a real mouse should pause auto-scroll on hover - touch (and pen)
-  // fire pointerenter/pointerleave too, but pausing on those would freeze
-  // the marquee after the first tap since mobile has no matching "leave".
-  setPointerOver(event: PointerEvent): void {
-    if (event.pointerType !== 'mouse') return;
-    this.isPointerOver = event.type === 'pointerenter';
   }
 
   trackByIndex(index: number): number {
@@ -173,11 +164,9 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
         return;
       }
 
-      if (!this.isPointerOver) {
-        track.scrollLeft += 0.5;
-        if (track.scrollLeft >= track.scrollWidth / 2) {
-          track.scrollLeft = 0;
-        }
+      track.scrollLeft += 0.5;
+      if (track.scrollLeft >= track.scrollWidth / 2) {
+        track.scrollLeft = 0;
       }
 
       this.animationFrameId = requestAnimationFrame(scroll);

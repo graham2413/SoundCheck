@@ -5,8 +5,6 @@
       class="marquee-track"
       *ngIf="!isMarqueeLoading; else loading"
       @fadeSlideIn
-      (pointerenter)="setPointerOver($event)"
-      (pointerleave)="setPointerOver($event)"
     >
       <ng-container *ngFor="let album of loopedAlbums; let i = index; trackBy: trackByIndex">
         <div

@@ -236,7 +236,7 @@
       *ngIf="recentSearches.length > 2"
       type="button"
       (click)="toggleRecentSearchesExpanded()"
-      class="w-full text-center mt-3 py-2 rounded-full border border-gray-700 text-[#0F5EE4] font-semibold hover:bg-gray-800/50 transition"
+      class="w-full text-center mt-3 py-2 rounded-full border border-gray-700 text-[#0F5EE4] font-semibold transition"
     >
       <i class="fas" [ngClass]="recentSearchesExpanded ? 'fa-minus' : 'fa-plus'"></i>
       {{ recentSearchesExpanded ? 'Show less' : 'Show more' }}

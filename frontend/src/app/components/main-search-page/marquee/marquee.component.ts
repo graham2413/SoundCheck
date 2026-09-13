@@ -44,7 +44,6 @@ export class MarqueeComponent implements OnDestroy, OnInit {
   marqueeImageLoaded: boolean[] = [];
   isAutoScrolling = false;
   private animationFrameId: number | null = null;
-  private isPointerOver = false;
 
   constructor(private spotifyService: SpotifyService, private cdRef: ChangeDetectorRef) {}
 
@@ -83,14 +82,6 @@ export class MarqueeComponent implements OnDestroy, OnInit {
     if (this.marqueeImageLoaded.every(Boolean)) {
       this.startAutoScroll();
     }
-  }
-
-  // Only a real mouse should pause auto-scroll on hover - touch (and pen)
-  // fire pointerenter/pointerleave too, but pausing on those would freeze
-  // the marquee after the first tap since mobile has no matching "leave".
-  setPointerOver(event: PointerEvent): void {
-    if (event.pointerType !== 'mouse') return;
-    this.isPointerOver = event.type === 'pointerenter';
   }
 
   trackByIndex(index: number): number {
@@ -153,11 +144,9 @@ export class MarqueeComponent implements OnDestroy, OnInit {
         return;
       }
 
-      if (!this.isPointerOver) {
-        track.scrollLeft += 0.5;
-        if (track.scrollLeft >= track.scrollWidth / 2) {
-          track.scrollLeft = 0;
-        }
+      track.scrollLeft += 0.5;
+      if (track.scrollLeft >= track.scrollWidth / 2) {
+        track.scrollLeft = 0;
       }
 
       this.animationFrameId = requestAnimationFrame(scroll);
