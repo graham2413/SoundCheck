@@ -2,19 +2,33 @@
   background: #020814;
   color: white;
   position: relative;
+  overflow: hidden;
 }
 
 .marquee-track {
   display: flex;
   gap: 0.75rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  width: max-content;
   padding: 1rem 0.75rem;
+  animation: marquee-scroll 45s linear infinite;
 }
 
-.marquee-track::-webkit-scrollbar {
-  display: none;
+/* The track contains two identical album sets. Moving exactly half its
+   width makes the second set replace the first with no visible jump. CSS
+   transforms are composited consistently by mobile Safari, unlike repeated
+   fractional scrollLeft writes. */
+@keyframes marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.marquee-track-loading {
+  width: 100%;
+  animation: none;
 }
 
 .album-card {
