@@ -1,5 +1,32 @@
 /* Intentionally minimal - layout is handled via Tailwind utility classes in the template. */
 
+/* Pulsing ring around the Music/Cinema switch button's circular border -
+   same rule as main-search.component.css's switch button (styles are view-
+   encapsulated per-component, so it's duplicated here rather than shared). */
+@keyframes switch-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(15, 94, 228, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(15, 94, 228, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(15, 94, 228, 0);
+  }
+}
+
+.search-type-switch-btn {
+  animation: switch-pulse 2s ease-out infinite;
+}
+
+/* Font Awesome Free only ships fa-music as a solid glyph (no outline
+   "regular" style in the free tier) - fake an outline look by hiding the
+   fill and drawing only the glyph's stroke instead. */
+.fa-icon-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px #0F5EE4;
+}
+
 /* Plain CSS animation (not an Angular animation trigger) for the month/day
    headers - using @entryAnim like the cards broke the whole staggered group
    (a known Angular animations fragility: adding more elements to the
@@ -95,4 +122,20 @@
   background: rgba(15, 94, 228, 0.15);
   border: 1px solid rgba(15, 94, 228, 0.6);
   color: #7aa5f0;
+}
+
+.calendar-type-badge-album {
+  --calendar-album-gold: #f2bd45;
+  background: rgba(217, 119, 6, 0.15);
+  border: 1px solid rgba(242, 189, 69, 0.6);
+  color: var(--calendar-album-gold);
+}
+
+.calendar-album-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  object-fit: contain;
+  flex-shrink: 0;
+  /* Recolor the supplied black album mark to match the badge text. */
+  filter: brightness(0) saturate(100%) invert(80%) sepia(66%) saturate(700%) hue-rotate(353deg) brightness(99%) contrast(92%);
 }

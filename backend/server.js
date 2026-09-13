@@ -33,6 +33,7 @@ const { cronSyncAllArtists } = require('./controllers/mainSearchController');
 const { syncImdbRatings, logLastSyncedAt } = require('./utils/imdbRatingsSync');
 const { prewarmTrackedShowEpisodeMaps } = require('./utils/imdbEpisodeMap');
 const { cronRefreshCinemaMetadata, getLocalDayOfWeek } = require('./controllers/cinemaController');
+const { scanCinemaReleaseNotifications, scanMusicReleaseNotifications, sendWeeklySummaries } = require('./utils/notificationJobs');
 
 const userRoutes = require("./routes/userRoutes");
 const mainSearchRoutes = require("./routes/mainSearchRoutes");
@@ -171,8 +172,18 @@ cron.schedule('0 4 * * *', async () => {
   const fullRecheck = getLocalDayOfWeek('America/Chicago') === 'Sun';
   console.log(`🎬 Starting cinema metadata refresh at 4 AM (local) - ${fullRecheck ? 'full recheck' : 'unsettled titles only'}`);
   await cronRefreshCinemaMetadata({ fullRecheck }).catch((err) => console.error('Cinema metadata refresh failed:', err));
+  await scanCinemaReleaseNotifications().catch((err) => console.error('Cinema notification scan failed:', err));
+  await scanMusicReleaseNotifications().catch((err) => console.error('Music notification scan failed:', err));
 }, {
   timezone: 'America/Chicago'
+});
+
+// Check hourly so each user receives the summary at their configured local
+// day/hour. The unique notification key prevents duplicates on reruns.
+cron.schedule('0 * * * *', async () => {
+  await sendWeeklySummaries().catch((err) => console.error('Weekly notification summary failed:', err));
+}, {
+  timezone: 'UTC'
 });
 
 // Bounded prewarm (see utils/imdbEpisodeMap.js) so opening Episodes for a

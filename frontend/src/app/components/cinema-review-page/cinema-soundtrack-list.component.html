@@ -56,24 +56,27 @@
         <span *ngIf="totalDurationLabel"><i class="far fa-clock"></i> {{ totalDurationLabel }}</span>
       </div>
 
-      <div
-        *ngFor="let track of tracks; let i = index"
-        class="soundtrack-row"
-        [class.soundtrack-row-disabled]="resolvingTrackIndex != null && resolvingTrackIndex !== i"
-        (click)="onTrackClick(track, i)"
-      >
-        <img *ngIf="cover" [src]="cover" [alt]="title" class="soundtrack-row-art" />
-        <div *ngIf="!cover" class="soundtrack-row-art soundtrack-row-art-placeholder">
-          <i class="fas fa-music"></i>
-        </div>
+      <div @fadeSlideIn>
+        <div
+          *ngFor="let track of tracks; let i = index"
+          @itemAnim
+          class="soundtrack-row"
+          [class.soundtrack-row-disabled]="resolvingTrackIndex != null && resolvingTrackIndex !== i"
+          (click)="onTrackClick(track, i)"
+        >
+          <img *ngIf="cover" [src]="cover" [alt]="title" class="soundtrack-row-art" />
+          <div *ngIf="!cover" class="soundtrack-row-art soundtrack-row-art-placeholder">
+            <i class="fas fa-music"></i>
+          </div>
 
-        <div class="min-w-0 flex-1">
-          <p class="soundtrack-row-title">{{ track.title }}</p>
-          <p class="soundtrack-row-artist" *ngIf="track.artist">{{ track.artist }}</p>
-        </div>
+          <div class="min-w-0 flex-1">
+            <p class="soundtrack-row-title">{{ track.title }}</p>
+            <p class="soundtrack-row-artist" *ngIf="track.artist">{{ track.artist }}</p>
+          </div>
 
-        <i class="fas fa-spinner fa-spin soundtrack-row-chevron" *ngIf="resolvingTrackIndex === i"></i>
-        <i class="fas fa-chevron-right soundtrack-row-chevron" *ngIf="resolvingTrackIndex !== i"></i>
+          <i class="fas fa-spinner fa-spin soundtrack-row-chevron" *ngIf="resolvingTrackIndex === i"></i>
+          <i class="fas fa-chevron-right soundtrack-row-chevron" *ngIf="resolvingTrackIndex !== i"></i>
+        </div>
       </div>
 
       <div class="soundtrack-info-card mt-5">

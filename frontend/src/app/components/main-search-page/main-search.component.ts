@@ -40,6 +40,7 @@ import { animate, animateChild, query, stagger, style, transition, trigger } fro
 import { MarqueeComponent } from './marquee/marquee.component';
 import { CinemaMarqueeComponent } from './marquee/cinema-marquee.component';
 import { SeeAllTrendingComponent } from './see-all-trending/see-all-trending.component';
+import { FilmCameraIconComponent } from 'src/app/shared/film-camera-icon/film-camera-icon.component';
 
 type ActivityRecord = Review['albumSongOrArtist'];
 type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
@@ -57,6 +58,7 @@ type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
     CinemaMarqueeComponent,
     SeeAllTrendingComponent,
     CinemaBadgeComponent,
+    FilmCameraIconComponent,
   ],
   animations: [
     trigger('fadeSlideIn', [

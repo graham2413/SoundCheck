@@ -37,6 +37,17 @@ const userSchema = new Schema({
       cinema: { type: [String], default: [] },
     },
 
+    notificationPreferences: {
+      immediateMusic: { type: Boolean, default: true },
+      immediateMovies: { type: Boolean, default: true },
+      immediateTvEpisodes: { type: Boolean, default: true },
+      immediateTvSeasons: { type: Boolean, default: true },
+      weeklySummary: { type: Boolean, default: false },
+      weeklySummaryDay: { type: Number, min: 0, max: 6, default: 1 },
+      weeklySummaryHour: { type: Number, min: 0, max: 23, default: 9 },
+      timezone: { type: String, default: "America/Chicago" },
+    },
+
     // Profile created date
     createdAt: { type: Date, default: Date.now },
 

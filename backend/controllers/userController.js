@@ -4,6 +4,8 @@ const bcrypt = require("bcryptjs");
 const Review = require("../models/Review");
 const CinemaItem = require("../models/CinemaItem");
 const Release = require('../models/Release');
+const PushSubscription = require('../models/PushSubscription');
+const Notification = require('../models/Notification');
 const redis = require('../utils/redisClient');
 
 exports.getUserProfile = async (req, res) => {
@@ -510,6 +512,14 @@ exports.deleteUserProfile = async (req, res) => {
 
     // Delete user's reviews
     await Review.deleteMany({ user: userId });
+
+    // Delete notification data owned by the account.
+    if (require("mongoose").isValidObjectId(userId)) {
+      await Promise.all([
+        PushSubscription.deleteOne({ user: userId }),
+        Notification.deleteMany({ user: userId }),
+      ]);
+    }
 
     // Delete user from database
     await User.findByIdAndDelete(userId);

@@ -171,8 +171,14 @@
 
 .poster-img {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  height: auto;
+  display: block;
+}
+
+/* Keep a stable box while the poster loads, then let the border follow the
+   image's natural ratio instead of letterboxing it inside a forced 2:3 box. */
+.poster-frame-loaded {
+  height: auto;
 }
 
 .poster-placeholder {

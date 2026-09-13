@@ -110,7 +110,8 @@
           class="search-type-switch-btn hidden md:inline-flex align-middle ml-2 w-10 h-10 md:w-12 md:h-12 rounded-full transition items-center justify-center"
           style="background: #020814; border: 1px solid rgba(15,94,228,0.4)"
         >
-          <i class="fas fa-icon-outline text-lg md:text-2xl" [ngClass]="searchType === 'music' ? 'fa-film' : 'fa-music'"></i>
+          <app-film-camera-icon *ngIf="searchType === 'music'; else musicIconDesktop" class="text-[#0F5EE4] block w-5 h-5 md:w-7 md:h-7"></app-film-camera-icon>
+          <ng-template #musicIconDesktop><i class="fas fa-icon-outline text-lg md:text-2xl fa-music"></i></ng-template>
         </button>
       </h1>
       <p class="mt-1 md:mb-4 text-sm max-[400px]:text-xs md:text-xl text-gray-300 md:pl-0">
@@ -130,7 +131,8 @@
       [style.top.px]="switchButtonTopPx"
       style="background: #020814; border: 1px solid rgba(15,94,228,0.4)"
     >
-      <i class="fas fa-icon-outline text-3xl" [ngClass]="searchType === 'music' ? 'fa-film' : 'fa-music'"></i>
+      <app-film-camera-icon *ngIf="searchType === 'music'; else musicIconMobile" class="text-[#0F5EE4] block w-8 h-8"></app-film-camera-icon>
+      <ng-template #musicIconMobile><i class="fas fa-icon-outline text-3xl fa-music"></i></ng-template>
     </button>
   </div>
 

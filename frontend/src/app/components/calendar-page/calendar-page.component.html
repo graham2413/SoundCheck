@@ -1,8 +1,9 @@
 <div class="bg-[#020814] text-white min-h-screen pt-[1rem] md:pt-[6rem] pb-[6rem] px-2">
   <div class="max-w-3xl mx-auto">
     <div class="relative flex items-center justify-between ">
-      <h1 class="text-3xl font-extrabold tracking-tight text-left pl-2">
-        {{ pageTitle }}
+      <h1 class="text-3xl font-extrabold tracking-tight text-left pl-2" [attr.aria-label]="pageTitle">
+        <span class="text-white">{{ kind === 'music' ? 'Music' : 'Cinema' }}</span>
+        <span style="color: #0F5EE4"> Calendar</span>
       </h1>
       <div class="flex items-center gap-2">
         <button
@@ -17,9 +18,11 @@
           (click)="setKind(kind === 'cinema' ? 'music' : 'cinema')"
           [disabled]="isLoading"
           [title]="kind === 'cinema' ? 'Switch to Music Calendar' : 'Switch to Cinema Calendar'"
-          class="flex items-center justify-center h-12 w-12 rounded-full border border-gray-500 text-gray-300 hover:text-white hover:border-gray-400 transition disabled:opacity-50"
+          class="search-type-switch-btn flex items-center justify-center h-12 w-12 rounded-full transition disabled:opacity-50"
+          style="background: #020814; border: 1px solid rgba(15,94,228,0.4)"
         >
-          <i class="fas" [ngClass]="kind === 'cinema' ? 'fa-music' : 'fa-film'"></i>
+          <i *ngIf="kind === 'cinema'" class="fas fa-icon-outline text-2xl fa-music"></i>
+          <app-film-camera-icon *ngIf="kind !== 'cinema'" class="text-[#0F5EE4] block w-7 h-7"></app-film-camera-icon>
         </button>
       </div>
     </div>
@@ -190,8 +193,15 @@
                 <i class="fas" [ngClass]="entry.mediaType === 'movie' ? 'fa-video' : 'fa-tv'"></i>
                 {{ entry.mediaType === 'movie' ? 'Movie' : 'TV Show' }}
               </span>
-              <span *ngIf="isMusicEntry(entry)" class="calendar-type-badge mt-1.5 calendar-type-badge-tv">
-                <i class="fas fa-record-vinyl"></i>
+              <span
+                *ngIf="isMusicEntry(entry)"
+                class="calendar-type-badge mt-1.5"
+                [ngClass]="entry.recordType === 'album' ? 'calendar-type-badge-album' : 'calendar-type-badge-tv'"
+              >
+                <img *ngIf="entry.recordType === 'album'; else musicReleaseIcon" src="assets/album.png" alt="" class="calendar-album-icon" />
+                <ng-template #musicReleaseIcon>
+                  <i class="fas fa-compact-disc"></i>
+                </ng-template>
                 {{ musicTypeLabel(entry) }}
               </span>
             </div>

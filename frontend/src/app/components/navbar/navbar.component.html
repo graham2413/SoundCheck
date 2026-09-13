@@ -15,7 +15,7 @@
       routerLink="/"
       class="cursor-pointer text-2xl font-extrabold tracking-tight bg-gradient-to-b from-gray-100 via-gray-300 to-gray-500 bg-clip-text text-transparent drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]"
     >
-      Cinewave
+      <span class="text-white">Cine</span><span style="color: #0F5EE4">wave</span>
     </span>
   </div>
 
@@ -106,6 +106,15 @@
 </a>
 
 <a
+  (click)="closeProfileMenu(); goToNotifications()"
+  class="group flex items-center px-4 py-3 text-base hover:text-white transition-all duration-200 cursor-pointer"
+>
+  <i class="fas fa-bell w-5 text-center text-gray-100 opacity-50 group-hover:text-white group-hover:opacity-100"></i>
+  <span class="ml-3 text-gray-100 opacity-50 group-hover:text-white group-hover:opacity-100">Notifications</span>
+  <span *ngIf="notificationCount" class="ml-auto rounded-full bg-[#0F5EE4] px-2 py-0.5 text-xs text-white">{{ notificationCount }}</span>
+</a>
+
+<a
   routerLink="/friends"
   (click)="closeProfileMenu()"
   class="group flex items-center px-4 py-3 text-base hover:text-white transition-all duration-200"
@@ -139,6 +148,10 @@
     </div>
   </div>
 
+  <button (click)="goToNotifications()" aria-label="Notifications" class="relative text-white md:hidden mr-4">
+    <i class="fas fa-bell text-2xl"></i>
+    <span *ngIf="notificationCount" class="absolute -top-2 -right-2 min-w-[1.2rem] h-[1.2rem] rounded-full bg-[#0F5EE4] text-[0.7rem] font-bold flex items-center justify-center">{{ notificationCount }}</span>
+  </button>
   <button (click)="toggleMenu()" class="md:hidden">
     <svg
       class="h-8 w-8 text-white"
@@ -192,6 +205,14 @@
       class="flex items-center gap-3 text-4xl font-semibold text-gray-300 hover:text-white transition"
     >
       <i class="fas fa-calendar-alt"></i> Calendar
+    </a>
+
+    <a
+      (click)="toggleMenu(); goToNotifications()"
+      class="flex items-center gap-3 text-4xl font-semibold text-gray-300 hover:text-white transition cursor-pointer"
+    >
+      <i class="fas fa-bell"></i> Notifications
+      <span *ngIf="notificationCount" class="rounded-full bg-[#0F5EE4] px-3 py-1 text-base text-white">{{ notificationCount }}</span>
     </a>
 
     <a

@@ -8,6 +8,7 @@ import { filter } from 'rxjs';
 import { User } from 'src/app/models/responses/user.response';
 import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
+import { NotificationService } from 'src/app/services/notification.service';
 
 @Component({
   selector: 'app-navbar',
@@ -69,6 +70,7 @@ export class NavbarComponent implements OnInit {
 
   isProfileLoading: boolean = false;
   activeTab: string = 'home';
+  notificationCount = 0;
 
   isMobileNavShrunk: boolean = false;
   private lastScrollY: number = 0;
@@ -120,11 +122,13 @@ export class NavbarComponent implements OnInit {
     private toastr: ToastrService,
     private userService: UserService,
     private eRef: ElementRef,
-    private router: Router
+    private router: Router,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
     this.isProfileLoading = true;
+    this.loadNotificationCount();
 
     // Subscribe to profile updates
     this.userService.userProfile$.subscribe((profile) => {
@@ -151,11 +155,18 @@ export class NavbarComponent implements OnInit {
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         this.setTabFromPath(event.urlAfterRedirects);
+        this.loadNotificationCount();
         // Silently re-fetch on every route change so the friend requests
         // badge (and rest of userProfile$) stays current without needing a
         // full page reload.
         this.userService.getAuthenticatedUserProfile().subscribe();
       });
+  }
+
+  private loadNotificationCount(): void {
+    this.notificationService.getNotifications().subscribe({
+      next: ({ notifications }) => (this.notificationCount = notifications.length),
+    });
   }
 
   // Helper function to avoid duplication
@@ -210,6 +221,16 @@ export class NavbarComponent implements OnInit {
     if (!this.eRef.nativeElement.contains(event.target)) {
       this.isProfileMenuOpen = false;
     }
+  }
+
+  // Notifications live inline on the profile page as a fullscreen panel
+  // rather than their own route, so this navigates there and passes state
+  // telling that page to open the panel once it loads.
+  goToNotifications(): void {
+    const userId = this.userProfile?._id;
+    this.router.navigateByUrl(userId ? `/profile/${userId}` : '/profile', {
+      state: { openPanel: 'notifications' },
+    });
   }
 
   getTransformedImageUrl(fullUrl: string): string {

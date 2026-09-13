@@ -3,6 +3,7 @@ const router = express.Router();
 const userController = require("../controllers/userController");
 const authenticateUser = require("../middleware/authMiddleware");
 const { upload } = require("../config/cloudinaryConfig");
+const notificationController = require("../controllers/notificationController");
 
 // Get authenticated user's profile (Protected Route)
 router.get("/profile", authenticateUser, userController.getAuthenticatedUserProfile);
@@ -25,6 +26,15 @@ router.post('/list/remove', authenticateUser, userController.removeFromArtistLis
 router.post('/recent-searches', authenticateUser, userController.addRecentSearch);
 router.post('/recent-searches/remove', authenticateUser, userController.removeRecentSearch);
 router.post('/recent-searches/clear', authenticateUser, userController.clearRecentSearches);
+
+// Push subscriptions and notification to-do list
+router.get("/notifications", authenticateUser, notificationController.getNotifications);
+router.delete("/notifications", authenticateUser, notificationController.deleteAllNotifications);
+router.delete("/notifications/:id", authenticateUser, notificationController.deleteNotification);
+router.put("/notifications/subscription", authenticateUser, notificationController.savePushSubscription);
+router.delete("/notifications/subscription", authenticateUser, notificationController.deletePushSubscription);
+router.get("/notifications/preferences", authenticateUser, notificationController.getNotificationPreferences);
+router.put("/notifications/preferences", authenticateUser, notificationController.updateNotificationPreferences);
 
 
 /*

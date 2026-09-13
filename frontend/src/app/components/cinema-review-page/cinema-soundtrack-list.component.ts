@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CinemaSoundtrackTrack } from '../../models/responses/cinema-response';
 
@@ -15,6 +16,19 @@ type SoundtrackSource = 'soundtrackdb' | 'musicbrainz' | null;
   imports: [CommonModule],
   templateUrl: './cinema-soundtrack-list.component.html',
   styleUrl: './cinema-soundtrack-list.component.css',
+  animations: [
+    trigger('fadeSlideIn', [
+      transition(':enter', [
+        query('@itemAnim', [stagger(50, animateChild())], { optional: true }),
+      ]),
+    ]),
+    trigger('itemAnim', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateX(-20px)' }),
+        animate('300ms ease-out', style({ opacity: 1, transform: 'translateX(0)' })),
+      ]),
+    ]),
+  ],
 })
 export class CinemaSoundtrackListComponent {
   @Input() title = '';

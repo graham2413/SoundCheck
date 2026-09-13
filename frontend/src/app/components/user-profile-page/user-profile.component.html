@@ -88,6 +88,52 @@
       </div>
     </div>
 
+    <section class="w-full max-w-[800px] mx-auto mt-6 border-t border-gray-600 pt-4">
+      <h2 class="text-gray-300 text-base md:text-lg font-semibold mb-3">Notifications</h2>
+      <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+          <p class="text-white font-medium">Push notifications</p>
+          <p class="text-gray-400 text-sm">Receive release alerts on this device.</p>
+        </div>
+        <button
+          type="button"
+          (click)="pushEnabled ? disableNotifications() : enableNotifications()"
+          [disabled]="isUpdatingNotifications"
+          class="px-4 py-2 rounded-full text-sm font-semibold text-white bg-[#0F5EE4] disabled:opacity-60"
+        >
+          {{ isUpdatingNotifications ? 'Updating...' : pushEnabled ? 'Disable' : 'Enable' }}
+        </button>
+      </div>
+      <label class="flex items-center justify-between text-gray-300 py-2">
+        <span>New music releases</span>
+        <input type="checkbox" [checked]="notificationPreferences.immediateMusic" (change)="updateNotificationPreference('immediateMusic', $any($event.target).checked)" />
+      </label>
+      <label class="flex items-center justify-between text-gray-300 py-2">
+        <span>Weekly summary</span>
+        <input type="checkbox" [checked]="notificationPreferences.weeklySummary" (change)="updateNotificationPreference('weeklySummary', $any($event.target).checked)" />
+      </label>
+      <div class="mt-5 border-t border-gray-700 pt-4" *ngIf="notifications.length">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-white font-medium">Release to-do list</h3>
+          <button type="button" class="text-sm text-red-300 hover:text-red-200" (click)="deleteAllNotifications()">Clear all</button>
+        </div>
+        <div *ngFor="let notification of notifications" class="flex items-center gap-3 py-3 border-b border-gray-800">
+          <div class="min-w-0 flex-1">
+            <p class="text-white font-medium truncate">{{ notification.title }}</p>
+            <p class="text-gray-400 text-sm truncate">{{ notification.message }}</p>
+            <ng-container *ngIf="notification.details as details">
+              <p *ngIf="details.movies?.length" class="text-gray-500 text-xs mt-1">Movies: {{ (details.movies || []).join(', ') }}</p>
+              <p *ngIf="details.tv?.length" class="text-gray-500 text-xs mt-1">TV: {{ (details.tv || []).join(', ') }}</p>
+              <p *ngIf="details.music?.length" class="text-gray-500 text-xs mt-1">Music: {{ (details.music || []).join(', ') }}</p>
+            </ng-container>
+          </div>
+          <button type="button" class="text-gray-400 hover:text-white" [attr.aria-label]="'Delete ' + notification.title" (click)="deleteNotification(notification)">
+            <i class="fas fa-check"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- Profile Form -->
     <form class="relative mt-6 md:mt-4 space-y-4">
       <!-- Display Name -->
@@ -257,7 +303,7 @@
 
       <!-- Watchlist Privacy -->
       <div
-        class="flex items-center justify-between border-b border-gray-600 pb-5 mb-5"
+        class="flex items-center justify-between pb-5 mb-5"
         style="max-width: 20rem; margin-left: auto; margin-right: auto"
       >
         <span class="text-white font-medium">Public Watchlist</span>
@@ -277,6 +323,37 @@
             }"
             class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
           ></span>
+        </button>
+      </div>
+
+      <!-- Import Trakt Export -->
+      <div
+        class="flex items-center justify-between border-b border-gray-600 pb-5 mb-5"
+        style="max-width: 20rem; margin-left: auto; margin-right: auto"
+      >
+        <div>
+          <p class="text-white font-medium">Import Trakt</p>
+          <p class="text-gray-400 text-sm">Import your Trakt watchlist export.</p>
+        </div>
+        <input
+          #traktExportInput
+          type="file"
+          accept=".zip"
+          class="hidden"
+          (change)="onTraktExportSelected($event)"
+        />
+        <button
+          type="button"
+          (click)="traktExportInput.click()"
+          [disabled]="isImportingTraktExport"
+          class="px-4 py-2 rounded-full text-sm font-semibold text-white bg-[#0F5EE4] disabled:opacity-60 flex items-center gap-2"
+        >
+          <ng-container *ngIf="!isImportingTraktExport; else importingIcon">
+            <i class="fas fa-file-zipper"></i> Import
+          </ng-container>
+          <ng-template #importingIcon>
+            <i class="fas fa-spinner fa-spin"></i> Importing...
+          </ng-template>
         </button>
       </div>
 

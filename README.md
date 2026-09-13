@@ -54,6 +54,22 @@
 Backend Hosted on **Render** and 
 Frontend hosted on **AWS Cloudfront**
 
+## Push Notifications
+
+The PWA supports opt-in Web Push notifications for music and cinema releases.
+For production delivery, generate one VAPID key pair and configure these
+backend environment variables without committing the private key:
+
+```text
+VAPID_SUBJECT=mailto:admin@example.com
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+```
+
+Set the matching public key in both frontend environment files as
+`vapidPublicKey`. iPhone users must install the PWA from Safari to the Home
+Screen before enabling notifications.
+
 ---
 
 ## 🌟 Author

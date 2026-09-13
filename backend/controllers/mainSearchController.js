@@ -10,6 +10,7 @@ const {
 } = require("../utils/calendarHelpers");
 const Release = require("../models/Release");
 const User = require("../models/User");
+const { notifyUsersForNewMusicRelease } = require("../utils/pushNotifications");
 
 const MUSIC_CALENDAR_CACHE_TTL = 86400; // 24h safety-net - actual invalidation is calendar-day based
 
@@ -688,6 +689,10 @@ async function syncArtistAlbums(artistId, artistName, fullSync = false) {
     await Release.insertMany(docsToInsert);
     console.log(
       `Inserted ${newAlbums.length} albums for ${artistName} (${artistId})`
+    );
+
+    await Promise.allSettled(
+      docsToInsert.map((release) => notifyUsersForNewMusicRelease(release))
     );
   } catch (err) {
     console.error(

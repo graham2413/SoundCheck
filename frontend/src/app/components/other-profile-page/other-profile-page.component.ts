@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { CommonModule } from '@angular/common';
@@ -31,6 +31,7 @@ import {
   CinemaWatchlistFilterState,
   DEFAULT_WATCHLIST_FILTERS,
 } from '../cinema-watchlist-filter/cinema-watchlist-filter.component';
+import { AppNotification, NotificationService } from 'src/app/services/notification.service';
 
 type ModalRecord = Album | Song | Artist | BaseRecord;
 @Component({
@@ -65,7 +66,10 @@ export class ViewProfilePageComponent implements OnInit {
 
   isLoadingFriendAction: boolean = false;
   isImageModalOpen: boolean = false;
-  showPanel: 'reviews' | 'friends' | 'artists' | 'watchlist' | null = null;
+  showPanel: 'reviews' | 'friends' | 'artists' | 'watchlist' | 'notifications' | null = null;
+  notifications: AppNotification[] = [];
+  isLoadingNotifications: boolean = false;
+  isDeletingAllNotifications: boolean = false;
   reviewMode: 'music' | 'cinema' = 'music';
   reviewsByType = { songs: 0, albums: 0, artists: 0 };
   averageRating = 0;
@@ -100,7 +104,6 @@ export class ViewProfilePageComponent implements OnInit {
     },
   ];
   decliningFriendRequest: boolean = false;
-  isImportingTraktExport: boolean = false;
   watchlistItems: CinemaItem[] = [];
   watchlistTotalCount: number = 0;
   // Count of items matching the current filters (panel header uses this;
@@ -124,7 +127,6 @@ export class ViewProfilePageComponent implements OnInit {
   isProfileReady: boolean = false;
   private isProfileDetailsLoaded = false;
   private isWatchlistCountLoaded = false;
-  showProfileMenu = false;
   showTypeDropdown = false;
   selectedType: 'All' | 'Song' | 'Album' | 'Artist' = 'All';
   recordTypes: ('Song' | 'Album' | 'Artist')[] = ['Song', 'Album', 'Artist'];
@@ -143,10 +145,17 @@ export class ViewProfilePageComponent implements OnInit {
     private appComponent: AppComponent,
     private reviewService: ReviewService,
     private cinemaService: CinemaService,
-    private eRef: ElementRef
+    private notificationService: NotificationService
   ) {}
 
+  // Lets other pages (e.g. the navbar's Notifications link) deep-link into
+  // this page's fullscreen Notifications panel via router state, since
+  // notifications no longer have their own route.
+  private pendingOpenPanel: 'notifications' | null = null;
+
   ngOnInit(): void {
+    this.pendingOpenPanel = history.state?.openPanel === 'notifications' ? 'notifications' : null;
+
     this.route.params.subscribe((params) => {
       this.otherUserId = params['userId'];
       this.imageLoadState['profile--1'] = false;
@@ -261,6 +270,11 @@ export class ViewProfilePageComponent implements OnInit {
 
         this.isProfileDetailsLoaded = true;
         this.updateProfileReadyState();
+
+        if (this.pendingOpenPanel === 'notifications' && this.isOwnProfile) {
+          this.openNotifications();
+        }
+        this.pendingOpenPanel = null;
       },
       error: () => {
         this.toastr.error('Error retrieving User Profile', 'Error');
@@ -1334,41 +1348,6 @@ export class ViewProfilePageComponent implements OnInit {
     }
   }
 
-  onTraktExportSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = ''; // allow re-selecting the same file later
-
-    if (!file) return;
-
-    this.isImportingTraktExport = true;
-    this.cinemaService.importTraktExport(file).subscribe({
-      next: (response) => {
-        const { imported, skipped, duplicates, total } = response.data;
-        const uniqueTotal = total - duplicates;
-        this.toastr.success(
-          `Imported ${imported}/${uniqueTotal} rows` +
-            (duplicates ? ` (${duplicates} duplicate${duplicates > 1 ? 's' : ''} removed)` : '') +
-            (skipped ? ` (${skipped} skipped)` : '') +
-            '.',
-          'Trakt Import',
-          { timeOut: 4500 }
-        );
-        this.isImportingTraktExport = false;
-        this.loadWatchlistIfVisible();
-        this.fetchUserDetails();
-      },
-      error: (error) => {
-        this.toastr.error(
-          error.error?.message || 'Failed to import Trakt export.',
-          'Trakt Import',
-          { timeOut: 4500 }
-        );
-        this.isImportingTraktExport = false;
-      },
-    });
-  }
-
   get reviewList(): ModalRecord[] {
     return (
       this.otherUser?.reviews?.map((a) =>
@@ -1384,16 +1363,45 @@ export class ViewProfilePageComponent implements OnInit {
     return this.buildFullRecord({ ...raw, id: parseInt(raw.id, 10) });
   }
 
-  toggleProfileMenu(event: Event): void {
-    event.stopPropagation();
-    this.showProfileMenu = !this.showProfileMenu;
+  openNotifications(): void {
+    this.showPanel = 'notifications';
+    document.body.style.overflow = 'hidden';
+    this.loadNotifications();
   }
 
-  @HostListener('document:click', ['$event'])
-  closeProfileMenuOnOutsideClick(event: Event): void {
-    if (!this.eRef.nativeElement.contains(event.target)) {
-      this.showProfileMenu = false;
-    }
+  loadNotifications(): void {
+    this.isLoadingNotifications = true;
+    this.notificationService.getNotifications().subscribe({
+      next: ({ notifications }) => {
+        this.notifications = notifications;
+        this.isLoadingNotifications = false;
+      },
+      error: () => (this.isLoadingNotifications = false),
+    });
+  }
+
+  openNotificationItem(notification: AppNotification): void {
+    this.closePanel();
+    this.router.navigateByUrl(notification.targetUrl);
+  }
+
+  deleteNotification(notification: AppNotification): void {
+    this.notificationService.deleteNotification(notification._id).subscribe({
+      next: () =>
+        (this.notifications = this.notifications.filter((item) => item._id !== notification._id)),
+    });
+  }
+
+  deleteAllNotifications(): void {
+    if (this.isDeletingAllNotifications) return;
+    this.isDeletingAllNotifications = true;
+    this.notificationService.deleteAllNotifications().subscribe({
+      next: () => {
+        this.notifications = [];
+        this.isDeletingAllNotifications = false;
+      },
+      error: () => (this.isDeletingAllNotifications = false),
+    });
   }
 
   goBack(): void {

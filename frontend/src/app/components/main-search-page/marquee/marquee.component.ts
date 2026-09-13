@@ -85,8 +85,12 @@ export class MarqueeComponent implements OnDestroy, OnInit {
     }
   }
 
-  setPointerOver(isPointerOver: boolean): void {
-    this.isPointerOver = isPointerOver;
+  // Only a real mouse should pause auto-scroll on hover - touch (and pen)
+  // fire pointerenter/pointerleave too, but pausing on those would freeze
+  // the marquee after the first tap since mobile has no matching "leave".
+  setPointerOver(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse') return;
+    this.isPointerOver = event.type === 'pointerenter';
   }
 
   trackByIndex(index: number): number {

@@ -8,7 +8,12 @@
 
   <!-- Poster + Title block -->
   <div class="flex items-start gap-4 px-4 pt-5">
-    <div class="poster-frame" [class.cursor-pointer]="cover" (click)="openFullScreenImage(cover)">
+    <div
+      class="poster-frame"
+      [class.poster-frame-loaded]="posterLoaded"
+      [class.cursor-pointer]="cover"
+      (click)="openFullScreenImage(cover)"
+    >
       <div class="poster-loader" *ngIf="cover && !posterLoaded">
         <div class="poster-loader-spinner"></div>
       </div>

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
@@ -13,6 +14,7 @@ import { SearchService } from 'src/app/services/search.service';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
 import { CinemaRateModalComponent } from '../cinema-review-page/cinema-rate-modal.component';
 import { ReviewPageComponent } from '../review-page/review-page.component';
+import { FilmCameraIconComponent } from 'src/app/shared/film-camera-icon/film-camera-icon.component';
 
 // Both entry shapes share _id/airDate/cover/title (everything the shared
 // month/day grouping and the row shell need) - `kind` alone decides which
@@ -25,7 +27,7 @@ type CombinedEntry = CalendarEntry | MusicCalendarEntry;
   templateUrl: './calendar-page.component.html',
   styleUrls: ['./calendar-page.component.css'],
   standalone: true,
-  imports: [CommonModule, InfiniteScrollDirective],
+  imports: [CommonModule, InfiniteScrollDirective, FilmCameraIconComponent],
   animations: [
     // Container - staggers each row's own @entryAnim as they enter, so the
     // list reveals top-down instead of popping in all at once.
@@ -189,10 +191,16 @@ export class CalendarPageComponent implements OnInit {
     private cinemaService: CinemaService,
     private searchService: SearchService,
     private toastr: ToastrService,
-    private modal: NgbModal
+    private modal: NgbModal,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    const query = this.route.snapshot.queryParamMap;
+    const requestedKind = query.get('kind');
+    const requestedRange = query.get('range');
+    if (requestedKind === 'music' || requestedKind === 'cinema') this.kind = requestedKind;
+    if (requestedRange === 'past' || requestedRange === 'upcoming') this.range = requestedRange;
     this.loadCalendar();
   }
 
@@ -278,6 +286,7 @@ export class CalendarPageComponent implements OnInit {
   setKind(kind: CalendarKind): void {
     if (this.kind === kind || this.isLoading) return;
     this.kind = kind;
+    this.range = kind === 'music' ? 'past' : 'upcoming';
     this.loadCalendar();
   }
 

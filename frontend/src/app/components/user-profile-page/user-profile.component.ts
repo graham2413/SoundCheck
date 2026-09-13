@@ -7,6 +7,8 @@ import { User } from 'src/app/models/responses/user.response';
 import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
 import { UpdateService } from 'src/app/services/update.service';
+import { AppNotification, NotificationPreferences, NotificationService } from 'src/app/services/notification.service';
+import { CinemaService } from 'src/app/services/cinema.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -50,10 +52,24 @@ export class ProfileComponent implements OnInit {
   isSaving: boolean = false;
   isDeleting: boolean = false;
   cinemaWatchlistIsPublic: boolean = false;
+  isImportingTraktExport: boolean = false;
 
   preferredApp: string | null = null;
   appVersion: string = '';
   isCheckingForUpdate: boolean = false;
+  pushEnabled = false;
+  isUpdatingNotifications = false;
+  notifications: AppNotification[] = [];
+  notificationPreferences: NotificationPreferences = {
+    immediateMusic: true,
+    immediateMovies: true,
+    immediateTvEpisodes: true,
+    immediateTvSeasons: true,
+    weeklySummary: false,
+    weeklySummaryDay: 1,
+    weeklySummaryHour: 9,
+    timezone: 'America/Chicago',
+  };
 availablePlatforms: string[] = [
   'spotify',
   'appleMusic',
@@ -94,11 +110,17 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
     private toastr: ToastrService,
     private router: Router,
     private authService: AuthService,
-    private updateService: UpdateService
+    private updateService: UpdateService,
+    private notificationService: NotificationService,
+    private cinemaService: CinemaService
   ) {}
 
   ngOnInit(): void {
     this.preferredApp = localStorage.getItem('preferredMusicApp');
+    this.notificationService.getPreferences().subscribe({
+      next: ({ preferences }) => (this.notificationPreferences = preferences),
+    });
+    this.loadNotifications();
 
     fetch('/version.json', { cache: 'no-store' })
       .then((res) => res.json())
@@ -138,6 +160,55 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
   this.preferredApp = app;
   localStorage.setItem('preferredMusicApp', app);
 }
+
+  enableNotifications(): void {
+    if (this.isUpdatingNotifications) return;
+    this.isUpdatingNotifications = true;
+    this.notificationService.enablePush().subscribe((enabled) => {
+      this.pushEnabled = enabled;
+      this.isUpdatingNotifications = false;
+      this.toastr[enabled ? 'success' : 'error'](
+        enabled ? 'Notifications enabled.' : 'Notifications could not be enabled. Install the PWA and allow notifications first.',
+        enabled ? 'Success' : 'Notifications'
+      );
+    });
+  }
+
+  disableNotifications(): void {
+    if (this.isUpdatingNotifications) return;
+    this.isUpdatingNotifications = true;
+    this.notificationService.disablePush().subscribe({
+      next: () => {
+        this.pushEnabled = false;
+        this.isUpdatingNotifications = false;
+        this.toastr.success('Notifications disabled.', 'Success');
+      },
+      error: () => (this.isUpdatingNotifications = false),
+    });
+  }
+
+  updateNotificationPreference(field: keyof NotificationPreferences, value: boolean): void {
+    this.notificationPreferences = { ...this.notificationPreferences, [field]: value };
+    this.notificationService.updatePreferences({ [field]: value }).subscribe();
+  }
+
+  loadNotifications(): void {
+    this.notificationService.getNotifications().subscribe({
+      next: ({ notifications }) => (this.notifications = notifications),
+    });
+  }
+
+  deleteNotification(notification: AppNotification): void {
+    this.notificationService.deleteNotification(notification._id).subscribe({
+      next: () => (this.notifications = this.notifications.filter((item) => item._id !== notification._id)),
+    });
+  }
+
+  deleteAllNotifications(): void {
+    this.notificationService.deleteAllNotifications().subscribe({
+      next: () => (this.notifications = []),
+    });
+  }
 
 shadeColor(color: string, percent: number) {
   let R = parseInt(color.substring(1, 3), 16);
@@ -294,5 +365,38 @@ closeTooltip() {
 
   viewPublicProfile() {
     this.router.navigate([`/profile/${this.userProfile._id}`]);
+  }
+
+  onTraktExportSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // allow re-selecting the same file later
+
+    if (!file) return;
+
+    this.isImportingTraktExport = true;
+    this.cinemaService.importTraktExport(file).subscribe({
+      next: (response) => {
+        const { imported, skipped, duplicates, total } = response.data;
+        const uniqueTotal = total - duplicates;
+        this.toastr.success(
+          `Imported ${imported}/${uniqueTotal} rows` +
+            (duplicates ? ` (${duplicates} duplicate${duplicates > 1 ? 's' : ''} removed)` : '') +
+            (skipped ? ` (${skipped} skipped)` : '') +
+            '.',
+          'Trakt Import',
+          { timeOut: 4500 }
+        );
+        this.isImportingTraktExport = false;
+      },
+      error: (error) => {
+        this.toastr.error(
+          error.error?.message || 'Failed to import Trakt export.',
+          'Trakt Import',
+          { timeOut: 4500 }
+        );
+        this.isImportingTraktExport = false;
+      },
+    });
   }
 }
