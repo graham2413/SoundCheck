@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { SpotifyService } from 'src/app/services/spotify.service';
 
-// Static horizontally-scrollable strip (native overflow-x scroll, like the
-// person-detail page's filmography row) - no longer auto-scrolling/looping,
-// so there's no windowing or rAF animation to manage here anymore.
+// Auto-scrolling duplicated strip. The loop is driven by a transform rather
+// than scrollLeft so it remains reliable on mobile Safari.
 @Component({
   selector: 'app-marquee',
   standalone: true,
@@ -30,7 +29,7 @@ import { SpotifyService } from 'src/app/services/spotify.service';
     ]),
   ],
 })
-export class MarqueeComponent implements OnInit {
+export class MarqueeComponent implements OnDestroy, OnInit {
   @Output() cardClick = new EventEmitter<{
     album: any;
     list: any[];
@@ -42,6 +41,9 @@ export class MarqueeComponent implements OnInit {
   skeletonArray = Array(10);
   isMarqueeLoading = true;
   marqueeImageLoaded: boolean[] = [];
+  private animationFrameId: number | null = null;
+  private position = 0;
+  private lastFrameTime = 0;
 
   constructor(private spotifyService: SpotifyService, private cdRef: ChangeDetectorRef) {}
 
@@ -120,6 +122,33 @@ export class MarqueeComponent implements OnInit {
     // it so the view doesn't get stuck showing the skeleton loader forever
     // despite the data arriving (see cinema-marquee.component.ts).
     this.cdRef.markForCheck();
+    requestAnimationFrame(() => this.startAutoScroll());
+  }
+
+  ngOnDestroy(): void {
+    if (this.animationFrameId !== null) cancelAnimationFrame(this.animationFrameId);
+  }
+
+  private startAutoScroll(): void {
+    if (this.animationFrameId !== null) return;
+    const animateTrack = (timestamp: number): void => {
+      const track = document.querySelector<HTMLElement>('app-marquee .marquee-track:not(.marquee-track-loading)');
+      if (!track) {
+        this.animationFrameId = null;
+        return;
+      }
+
+      if (!this.lastFrameTime) this.lastFrameTime = timestamp;
+      const elapsed = Math.min(timestamp - this.lastFrameTime, 100);
+      this.lastFrameTime = timestamp;
+      const loopWidth = track.scrollWidth / 2;
+      if (loopWidth > 0) {
+        this.position = (this.position + (elapsed * 0.03)) % loopWidth;
+        track.style.transform = `translate3d(${-this.position}px, 0, 0)`;
+      }
+      this.animationFrameId = requestAnimationFrame(animateTrack);
+    };
+    this.animationFrameId = requestAnimationFrame(animateTrack);
   }
 
   getLastFridayNoon(): number {
