@@ -60,6 +60,8 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
   marqueeImageLoaded: boolean[] = [];
   isAutoScrolling = false;
   private animationFrameId: number | null = null;
+  private position = 0;
+  private lastFrameTime = 0;
 
   private readonly CACHE_TTL_MS = 24 * 60 * 60 * 1000; // matches the backend's 24h Redis cache
 
@@ -147,6 +149,7 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
     // its own change detection cycle) - force it so the view doesn't get
     // stuck showing the skeleton loader forever despite the data arriving.
     this.cdRef.markForCheck();
+    requestAnimationFrame(() => this.startAutoScroll());
   }
 
   ngOnDestroy(): void {
@@ -157,22 +160,29 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
     if (this.isAutoScrolling || this.items.length === 0) return;
 
     this.isAutoScrolling = true;
-    const scroll = (): void => {
-      const track = document.querySelector<HTMLElement>('app-cinema-marquee .marquee-track');
+    this.position = 0;
+    this.lastFrameTime = 0;
+    const scroll = (timestamp: number): void => {
+      const track = document.querySelector<HTMLElement>('app-cinema-marquee .marquee-track:not(.marquee-track-loading)');
       if (!track) {
         this.isAutoScrolling = false;
+        this.animationFrameId = null;
         return;
       }
 
-      track.scrollLeft += 0.5;
-      if (track.scrollLeft >= track.scrollWidth / 2) {
-        track.scrollLeft = 0;
+      if (!this.lastFrameTime) this.lastFrameTime = timestamp;
+      const elapsed = Math.min(timestamp - this.lastFrameTime, 100);
+      this.lastFrameTime = timestamp;
+      const loopWidth = track.scrollWidth / 2;
+      if (loopWidth > 0) {
+        this.position = (this.position + elapsed * 0.03) % loopWidth;
+        track.style.transform = `translate3d(${-this.position}px, 0, 0)`;
       }
 
-      this.animationFrameId = requestAnimationFrame(scroll);
+      this.animationFrameId = requestAnimationFrame((nextTimestamp) => scroll(nextTimestamp));
     };
 
-    this.animationFrameId = requestAnimationFrame(scroll);
+    this.animationFrameId = requestAnimationFrame((timestamp) => scroll(timestamp));
   }
 
   private stopAutoScroll(): void {

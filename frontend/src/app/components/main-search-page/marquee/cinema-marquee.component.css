@@ -2,19 +2,19 @@
   background: #020814;
   color: white;
   position: relative;
+  overflow: hidden;
 }
 
 .marquee-track {
   display: flex;
   gap: 0.75rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  width: max-content;
   padding: 1rem 0.75rem;
+  will-change: transform;
 }
 
-.marquee-track::-webkit-scrollbar {
-  display: none;
+.marquee-track-loading {
+  width: 100%;
 }
 
 .cinema-card-wrapper {
