@@ -5,7 +5,7 @@ import { environment } from 'src/environments/environments';
 import { Album } from '../models/responses/album-response';
 import { Song } from '../models/responses/song-response';
 import { SearchResponse } from '../models/responses/search-response';
-import { GetReleasesResponse } from '../models/responses/release-response';
+import { GetReleasesResponse, MusicCalendarResponse } from '../models/responses/release-response';
 
 @Injectable({
   providedIn: 'root'
@@ -97,5 +97,16 @@ getSmartLink(deezerUrl: string): Observable<any> {
   return this.http.get<any>(`${this.apiUrl}/smartlink`, { params });
 }
 
+// Music calendar - upcoming/past releases for the current user's followed
+// artists, same shape/pagination as CinemaService.getCalendar.
+getMusicCalendar(forceRefresh = false, range: 'upcoming' | 'past' = 'upcoming', offset = 0, limit = 20): Observable<MusicCalendarResponse> {
+  const token = localStorage.getItem('token');
+  const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+
+  let params: Record<string, string> = { range, offset: String(offset), limit: String(limit) };
+  if (forceRefresh) params = { ...params, refresh: 'true' };
+
+  return this.http.get<MusicCalendarResponse>(`${this.apiUrl}/music-calendar`, { headers, params });
+}
 
 }

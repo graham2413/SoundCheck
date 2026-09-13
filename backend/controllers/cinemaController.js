@@ -5,6 +5,12 @@ const { getTmdbDetails, getTmdbDetailsForCalendar, searchTmdb, getGenreMap, getT
 const { getLocalImdbRating } = require("../utils/imdbRatingsSync");
 const { getSoundtrack: getCombinedSoundtrack } = require("../utils/soundtrackProvider");
 const {
+  CALENDAR_CACHE_TIMEZONE,
+  getLocalDateString,
+  buildCalendarSubtitle,
+  buildCalendarMonthGroups,
+} = require("../utils/calendarHelpers");
+const {
   getCachedEpisodeMap,
   cacheEpisodeMap,
   cacheEmptyResult,
@@ -25,7 +31,6 @@ const IMDB_STATS_CACHE_TTL = 86400; // 24h
 const CALENDAR_RESPONSE_CACHE_TTL = 86400; // 24h safety-net TTL - actual invalidation is calendar-day based, see getLocalDateString
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/original"; // matches backfillCinemaCovers.js
 exports.TMDB_IMAGE_BASE = TMDB_IMAGE_BASE;
-const CALENDAR_CACHE_TIMEZONE = "America/Chicago"; // matches server.js cron timezone
 
 // TMDb's top-level release_date is often an earliest-worldwide/festival date,
 // not the US theatrical date shown on IMDb - prefer the actual US entry from
@@ -88,33 +93,6 @@ const getUsDigitalRelease = (movieDetails) => {
 exports.getUsDigitalRelease = getUsDigitalRelease;
 
 
-
-// Today's date (YYYY-MM-DD) in a fixed local timezone, so "a new day" lines up
-// with the user's expected midnight instead of the server's UTC midnight
-const getLocalDateString = (timeZone) =>
-  new Intl.DateTimeFormat("en-CA", { timeZone }).format(new Date());
-
-// Plain Y/M/D calendar math for the "N upcoming releases {this week|this
-// month|...}" cascade and month-group headers below - operates on
-// "YYYY-MM-DD" strings only (never a raw `new Date(dateString)` parse, which
-// would shift by a day in negative-UTC-offset timezones, per the same
-// gotcha documented on the frontend's parseLocalDate helpers).
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-const parseYmd = (dateStr) => {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return { y, m, d };
-};
-const toYmdStr = (y, m, d) => `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-const addDaysStr = (dateStr, days) => {
-  const { y, m, d } = parseYmd(dateStr);
-  const dt = new Date(y, m - 1, d + days);
-  return toYmdStr(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
-};
-const endOfMonthStr = (y, m) => toYmdStr(y, m, new Date(y, m, 0).getDate());
-const endOfYearStr = (y) => toYmdStr(y, 12, 31);
 
 // GET /api/cinema/search?query=... (Protected)
 // Searches movies/shows via TMDb's /search/multi, filtered down to just
@@ -319,55 +297,6 @@ async function invalidateCalendarCache(userId) {
     redis.del(`calendar:${userId}:upcoming`),
     redis.del(`calendar:${userId}:past`),
   ]).catch(() => {});
-}
-
-// Builds the calendar page's dynamic subtitle ("N upcoming releases this
-// week" etc, cascading through progressively wider windows) and the
-// per-month release counts the UI's month-group headers need - computed
-// over the full (already date-filtered/sorted, mediaType-filtered) entry
-// list, NOT just whichever page is being returned, so both stay accurate
-// even before every item in a given window/month has actually been paged in.
-// Cascade: this week -> last/next week -> this month -> this year -> total.
-// Direction flips for 'past' (last week/this month-so-far/this year-so-far
-// instead of next week/rest-of-month/rest-of-year). Checking wider windows
-// costs nothing extra (same in-memory array, no additional TMDb/Mongo
-// calls), so there's no reason not to cascade all the way to a year.
-function buildCalendarSubtitle(entries, range, todayStr) {
-  const { y, m } = parseYmd(todayStr);
-  const isUpcoming = range !== "past";
-
-  const windows = isUpcoming
-    ? [
-        { period: "this-week", start: todayStr, end: addDaysStr(todayStr, 6) },
-        { period: "next-week", start: addDaysStr(todayStr, 7), end: addDaysStr(todayStr, 13) },
-        { period: "this-month", start: todayStr, end: endOfMonthStr(y, m) },
-        { period: "this-year", start: todayStr, end: endOfYearStr(y) },
-      ]
-    : [
-        { period: "this-week", start: addDaysStr(todayStr, -6), end: todayStr },
-        { period: "last-week", start: addDaysStr(todayStr, -13), end: addDaysStr(todayStr, -7) },
-        { period: "this-month", start: toYmdStr(y, m, 1), end: todayStr },
-        { period: "this-year", start: toYmdStr(y, 1, 1), end: todayStr },
-      ];
-
-  for (const w of windows) {
-    const count = entries.filter((e) => e.airDate >= w.start && e.airDate <= w.end).length;
-    if (count > 0) return { count, period: w.period };
-  }
-
-  return { count: entries.length, period: "all" };
-}
-
-function buildCalendarMonthGroups(entries) {
-  const counts = new Map();
-  for (const e of entries) {
-    const key = e.airDate.slice(0, 7); // "YYYY-MM"
-    counts.set(key, (counts.get(key) || 0) + 1);
-  }
-  return Array.from(counts.entries()).map(([key, count]) => {
-    const [y, m] = key.split("-").map(Number);
-    return { key, label: `${MONTH_NAMES[m - 1]} ${y}`, count };
-  });
 }
 
 exports.getCalendar = async (req, res) => {

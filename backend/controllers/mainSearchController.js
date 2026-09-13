@@ -1,8 +1,17 @@
 const redis = require("../utils/redisClient");
 const { callDeezer } = require("../utils/callDeezer");
 const { fetchWithRetry } = require("../utils/fetchWithRetry");
+const { findArtistId, getUpcomingAlbums } = require("../utils/callSpotify");
+const {
+  CALENDAR_CACHE_TIMEZONE,
+  getLocalDateString,
+  buildCalendarSubtitle,
+  buildCalendarMonthGroups,
+} = require("../utils/calendarHelpers");
 const Release = require("../models/Release");
 const User = require("../models/User");
+
+const MUSIC_CALENDAR_CACHE_TTL = 86400; // 24h safety-net - actual invalidation is calendar-day based
 
 const searchMusic = async (req, res) => {
   try {
@@ -49,11 +58,7 @@ const searchMusic = async (req, res) => {
         const uniqueAlbumIds = [
           ...new Set(songsRaw.map((item) => item?.album?.id).filter(Boolean)),
         ];
-        const albumGenresMap = new Map(
-          await Promise.all(
-            uniqueAlbumIds.map(async (id) => [id, await getAlbumGenre(id)])
-          )
-        );
+        const albumGenresMap = await getAlbumGenresBatch(uniqueAlbumIds);
 
         songs = songsRaw.map((item) => ({
           id: item?.id,
@@ -70,18 +75,16 @@ const searchMusic = async (req, res) => {
       // ALBUMS
       if (albumsResult.status === "fulfilled") {
         const albumsRaw = albumsResult.value.data?.data || [];
-        const albumGenres = await Promise.all(
-          albumsRaw.map((album) =>
-            album?.id ? getAlbumGenre(album.id) : "Unknown"
-          )
+        const albumGenresMap = await getAlbumGenresBatch(
+          albumsRaw.map((album) => album?.id).filter(Boolean)
         );
 
-        albums = albumsRaw.map((album, index) => ({
+        albums = albumsRaw.map((album) => ({
           id: album?.id,
           title: album?.title,
           artist: album?.artist?.name || "Unknown",
           cover: album?.cover,
-          genre: albumGenres[index],
+          genre: albumGenresMap.get(album?.id) || "Unknown",
           isExplicit: album?.explicit_lyrics,
         }));
       }
@@ -108,11 +111,7 @@ const searchMusic = async (req, res) => {
         const uniqueAlbumIds = [
           ...new Set(songsRaw.map((item) => item?.album?.id).filter(Boolean)),
         ];
-        const albumGenresMap = new Map(
-          await Promise.all(
-            uniqueAlbumIds.map(async (id) => [id, await getAlbumGenre(id)])
-          )
-        );
+        const albumGenresMap = await getAlbumGenresBatch(uniqueAlbumIds);
 
         songs = songsRaw.map((item) => ({
           id: item?.id,
@@ -134,18 +133,16 @@ const searchMusic = async (req, res) => {
           )
         );
         const albumsRaw = albumsRes.data?.data || [];
-        const albumGenres = await Promise.all(
-          albumsRaw.map((album) =>
-            album?.id ? getAlbumGenre(album.id) : "Unknown"
-          )
+        const albumGenresMap = await getAlbumGenresBatch(
+          albumsRaw.map((album) => album?.id).filter(Boolean)
         );
 
-        albums = albumsRaw.map((album, index) => ({
+        albums = albumsRaw.map((album) => ({
           id: album?.id,
           title: album?.title,
           artist: album?.artist?.name || "Unknown",
           cover: album?.cover,
-          genre: albumGenres[index],
+          genre: albumGenresMap.get(album?.id) || "Unknown",
           isExplicit: album?.explicit_lyrics,
         }));
       }
@@ -185,15 +182,11 @@ const searchMusic = async (req, res) => {
   }
 };
 
-async function getAlbumGenre(albumId) {
-  if (!albumId || typeof albumId !== "number" || isNaN(albumId)) {
-    return "Unknown";
-  }
-
+// Fetches genre fresh from Deezer (no cache read) - shared by the
+// single-album and batched lookup paths so there's one place that
+// knows how to derive a genre from Deezer's album payload.
+async function fetchAlbumGenreFresh(albumId) {
   const albumCacheKey = `album-genre:${albumId}`;
-  const cachedGenre = await redis.safeGet(albumCacheKey);
-  if (cachedGenre) return cachedGenre;
-
   try {
     const albumDetails = await fetchWithRetry(() =>
       callDeezer(`https://api.deezer.com/album/${albumId}`)
@@ -230,6 +223,53 @@ async function getAlbumGenre(albumId) {
     console.error(`Failed to fetch genre for album ${albumId}:`, err.message);
     return "Unknown";
   }
+}
+
+async function getAlbumGenre(albumId) {
+  if (!albumId || typeof albumId !== "number" || isNaN(albumId)) {
+    return "Unknown";
+  }
+
+  const albumCacheKey = `album-genre:${albumId}`;
+  const cachedGenre = await redis.safeGet(albumCacheKey);
+  if (cachedGenre) return cachedGenre;
+
+  return fetchAlbumGenreFresh(albumId);
+}
+
+// Batched lookup for a set of album IDs - one MGET covers every cache
+// read instead of one GET per album, which is what search-as-you-type
+// was generating on every distinct query (each with its own set of
+// album IDs to resolve). Only genuine cache misses fall back to
+// per-album Deezer fetches.
+async function getAlbumGenresBatch(albumIds) {
+  const validIds = [...new Set(albumIds)].filter(
+    (id) => id && typeof id === "number" && !isNaN(id)
+  );
+  if (!validIds.length) return new Map();
+
+  const keys = validIds.map((id) => `album-genre:${id}`);
+  const cachedValues = await redis.safeMget(keys);
+
+  const genreMap = new Map();
+  const missingIds = [];
+  validIds.forEach((id, index) => {
+    const cached = cachedValues[index];
+    if (cached) {
+      genreMap.set(id, cached);
+    } else {
+      missingIds.push(id);
+    }
+  });
+
+  if (missingIds.length) {
+    const fetched = await Promise.all(
+      missingIds.map(async (id) => [id, await fetchAlbumGenreFresh(id)])
+    );
+    fetched.forEach(([id, genre]) => genreMap.set(id, genre));
+  }
+
+  return genreMap;
 }
 
 async function getGenreFromId(genreId) {
@@ -334,11 +374,10 @@ async function resolveTrack(req, res) {
       return res.status(400).json({ message: "title is required" });
     }
 
-    // v2: dropped Deezer's advanced track:/artist: search operators, which
-    // were verified to return zero results even for an exact match - bumped
-    // so a stale "not found" cached by that broken v1 logic doesn't shadow
-    // the real result for its whole 2-week TTL.
-    const cacheKey = `deezer:resolve:v2:${normalizeForMatch(title)}::${normalizeForMatch(artist)}`;
+    // v3: cover URLs weren't upgraded to Deezer's `?size=xl` (were serving
+    // a small default thumbnail) - bumped so already-cached low-res results
+    // don't shadow the fixed ones for the rest of their TTL.
+    const cacheKey = `deezer:resolve:v3:${normalizeForMatch(title)}::${normalizeForMatch(artist)}`;
     const cached = await redis.safeGet(cacheKey);
     if (cached) {
       const parsed = JSON.parse(cached);
@@ -371,12 +410,19 @@ async function resolveTrack(req, res) {
     }
 
     const genre = best.album?.id ? await getAlbumGenre(best.album.id) : "Unknown";
+    // Deezer's plain `cover` field is a small default-size thumbnail - every
+    // other consumer of a Deezer cover in this app upgrades it with
+    // `?size=xl` (see e.g. getHighQualityImage/highQualityCover across the
+    // frontend); done here instead so every caller of this endpoint gets a
+    // real high-res image without having to remember to do it themselves.
+    const rawCover = best.album?.cover;
+    const cover = rawCover && rawCover.includes("api.deezer.com") ? `${rawCover}?size=xl` : rawCover;
     const song = {
       id: best.id,
       title: best.title,
       artist: best.artist?.name,
       album: best.album?.title,
-      cover: best.album?.cover,
+      cover,
       preview: best.preview,
       isExplicit: best.explicit_lyrics,
       genre,
@@ -600,6 +646,9 @@ async function syncArtistAlbums(artistId, artistName, fullSync = false) {
       if (releaseDate.getTime() !== new Date(existing.releaseDate).getTime()) {
         updatedFields.releaseDate = releaseDate;
       }
+      if (album.record_type && album.record_type !== existing.recordType) {
+        updatedFields.recordType = album.record_type;
+      }
 
       if (Object.keys(updatedFields).length > 0) {
         updates.push({
@@ -633,6 +682,7 @@ async function syncArtistAlbums(artistId, artistName, fullSync = false) {
       releaseDate: album.release_date
         ? new Date(album.release_date)
         : DEFAULT_RELEASE_DATE,
+      recordType: album.record_type || null,
     }));
 
     await Release.insertMany(docsToInsert);
@@ -785,6 +835,126 @@ const getReleasesByArtistIds = async (req, res) => {
   }
 };
 
+// GET /api/search/music-calendar (Protected) - the music equivalent of
+// cinemaController.js's getCalendar, same response shape (data/hasMore/
+// total/subtitle/monthGroups), reusing the exact same subtitle-cascade/
+// month-group logic via utils/calendarHelpers.js.
+//
+// Past releases come from the locally-synced Release collection (Deezer's
+// catalog - accurate for what's already out). Upcoming releases come from
+// Spotify instead: Deezer's own catalog rarely carries a real pre-release
+// date (labels typically don't list an album there until at/near street
+// date), while Spotify commonly has pre-save pages live with a real future
+// release_date weeks/months out - see utils/callSpotify.js's
+// findArtistId/getUpcomingAlbums for the artist-name-based bridge and its
+// accepted fuzzy-match tradeoff.
+const getMusicCalendar = async (req, res) => {
+  try {
+    const forceRefresh = req.query.refresh === "true";
+    const range = req.query.range === "past" ? "past" : "upcoming";
+    const cacheKey = `musicCalendar:${req.user._id}:${range}`;
+    const todayStr = getLocalDateString(CALENDAR_CACHE_TIMEZONE);
+
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+
+    const buildPage = (calendar) => ({
+      data: calendar.slice(offset, offset + limit),
+      hasMore: offset + limit < calendar.length,
+      total: calendar.length,
+      subtitle: buildCalendarSubtitle(calendar, range, todayStr),
+      monthGroups: buildCalendarMonthGroups(calendar),
+    });
+
+    if (!forceRefresh) {
+      const cached = await redis.safeGet(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.cachedDate === todayStr) {
+          return res.status(200).json({ success: true, ...buildPage(parsed.data) });
+        }
+      }
+    }
+
+    // req.user.artistList (this user's own follows) - NOT getFollowedArtistList,
+    // which is the cron job's global cross-user list and would leak every
+    // user's followed artists into this one's calendar.
+    const followedArtists = req.user.artistList || [];
+    const artistIds = followedArtists.map((a) => a.id);
+    const artistNameById = new Map(followedArtists.map((a) => [a.id, a.name]));
+
+    let calendar;
+
+    if (range === "past") {
+      const releases = await Release.find({
+        artistId: { $in: artistIds },
+        releaseDate: { $lt: new Date(todayStr) },
+      })
+        .sort({ releaseDate: -1 })
+        .lean();
+
+      calendar = releases.map((r) => ({
+        _id: r._id.toString(),
+        albumId: r.albumId,
+        artistId: r.artistId,
+        artistName: r.artistName,
+        title: r.title,
+        cover: r.cover,
+        airDate: r.releaseDate.toISOString().slice(0, 10),
+        isExplicit: r.isExplicit,
+        // null for rows synced before this field existed - the frontend
+        // falls back to a generic "Release" label rather than guessing.
+        recordType: r.recordType || null,
+      }));
+    } else {
+      // One Spotify artist-id resolution + one albums fetch per followed
+      // artist (both independently Redis-cached in callSpotify.js, so only
+      // the FIRST load within each cache window actually calls Spotify).
+      // Chunked (not one big Promise.all) so a user following hundreds of
+      // artists can't burst hundreds of concurrent Spotify requests at once
+      // on a cold cache - bounded concurrency instead, same spirit as
+      // cronSyncAllArtists' batchSize.
+      const UPCOMING_FETCH_BATCH_SIZE = 10;
+      const UPCOMING_FETCH_BATCH_DELAY_MS = 250;
+
+      const perArtist = [];
+      for (let i = 0; i < followedArtists.length; i += UPCOMING_FETCH_BATCH_SIZE) {
+        const batch = followedArtists.slice(i, i + UPCOMING_FETCH_BATCH_SIZE);
+        const batchResults = await Promise.all(
+          batch.map(async (artist) => {
+            const spotifyId = await findArtistId(artist.name).catch(() => null);
+            if (!spotifyId) return [];
+            const albums = await getUpcomingAlbums(spotifyId).catch(() => []);
+            return albums.map((a) => ({
+              _id: `spotify-${a.albumId}`,
+              albumId: a.albumId,
+              artistId: artist.id,
+              artistName: artistNameById.get(artist.id) || artist.name,
+              title: a.title,
+              cover: a.cover,
+              airDate: a.releaseDate,
+              isExplicit: false,
+              recordType: a.recordType || null,
+            }));
+          })
+        );
+        perArtist.push(...batchResults);
+
+        if (i + UPCOMING_FETCH_BATCH_SIZE < followedArtists.length) {
+          await new Promise((resolve) => setTimeout(resolve, UPCOMING_FETCH_BATCH_DELAY_MS));
+        }
+      }
+
+      calendar = perArtist.flat().sort((a, b) => a.airDate.localeCompare(b.airDate));
+    }
+
+    await redis.safeSet(cacheKey, JSON.stringify({ cachedDate: todayStr, data: calendar }), "EX", MUSIC_CALENDAR_CACHE_TTL);
+    res.status(200).json({ success: true, ...buildPage(calendar) });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
 // Fetch all Deezer artist releases (fully sorted, all pages)
 const getDeezerArtistReleases = async (req, res) => {
   const { artistId } = req.params;
@@ -886,6 +1056,7 @@ module.exports = {
   getAndStoreArtistAlbums,
   cronSyncAllArtists,
   getReleasesByArtistIds,
+  getMusicCalendar,
   getDeezerArtistReleases,
   getSmartLink
 };

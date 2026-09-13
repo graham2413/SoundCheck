@@ -28,10 +28,6 @@ import { Review } from 'src/app/models/responses/review-responses';
 import { PopularRecord } from 'src/app/models/responses/popular-record-response';
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/models/responses/user.response';
-import {
-  GetReleasesResponse,
-  Release,
-} from 'src/app/models/responses/release-response';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { CinemaItem, CinemaSearchResult } from 'src/app/models/responses/cinema-response';
@@ -153,22 +149,23 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     'Album',
     'Artist',
   ];
-  activeFeedType: 'Friends' | 'Artists' = 'Friends';
+  // Was 'Friends' | 'Artists' (Feed vs Release Tracker) - Release Tracker
+  // moved to the Calendar page's new Music mode, so this pill now just
+  // filters the Feed tab's activity by content type instead. 'Music' reuses
+  // the exact same friend-activity data/logic the old 'Friends' option had;
+  // 'Cinema' is a placeholder until cinema reviews are added to this feed.
+  activeFeedType: 'Music' | 'Cinema' = 'Music';
 
-  readonly activityFeedTypes: Array<'Friends' | 'Artists'> = [
-    'Friends',
-    'Artists',
+  readonly activityFeedTypes: Array<'Music' | 'Cinema'> = [
+    'Music',
+    'Cinema',
   ];
-  isDiscoverContentLoading: boolean = false;
 
-  // Display-only rename ("Friends" -> "Feed", "Artists" -> "Release Tracker") -
-  // keeps the internal 'Friends' | 'Artists' type/logic untouched to avoid a wider refactor
-  getFeedTypeLabel(feedType: 'Friends' | 'Artists'): string {
-    if (feedType === 'Artists') return 'Release Tracker';
-    if (feedType === 'Friends') return 'Feed';
-    return feedType;
+  get feedTypeIndex(): number {
+    return this.activeFeedType === 'Cinema' ? 1 : 0;
   }
-  isFetchingArtistFeed: boolean = false;
+
+  isDiscoverContentLoading: boolean = false;
   activityFeed: Review[] = [];
   section: string | null = null;
   userProfile: User = {
@@ -189,9 +186,6 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     },
   } as User;
 
-  artistFeed: Release[] = [];
-  artistFeedCursor: { cursorDate: string; cursorId: string } | null = null;
-  hasMoreArtistFeed: boolean = true;
   feedPageLimit: number = 20;
 
   activityFeedCursor: { cursorDate: string; cursorId: string } | null = null;
@@ -213,7 +207,6 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   activityImageLoaded: { [key: string]: boolean } = {};
-  artistImageLoaded: { [index: number]: boolean } = {};
 
   likedByCurrentUser?: boolean;
   animateHeart: { [reviewId: string]: boolean } = {};
@@ -227,7 +220,6 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     private reviewService: ReviewService,
     private router: Router,
     private userService: UserService,
-    private timeAgoPipe: TimeAgoPipe,
     private cinemaService: CinemaService,
     private searchStateService: MainSearchStateService
   ) {}
@@ -772,9 +764,8 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (tab === 'recentActivity') {
       this.hasMoreActivityFeed = true;
-      this.artistImageLoaded = {};
       this.activityImageLoaded = {};
-      this.activeFeedType = 'Friends';
+      this.activeFeedType = 'Music';
 
       // Force feed refresh to retrigger image loading
       const cachedFeed = [...this.activityFeed];
@@ -793,104 +784,19 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadPopularReviews(type);
   }
 
-  setFeedType(type: 'Friends' | 'Artists') {
+  // Filters the Feed tab by content type - 'Cinema' has no data source yet
+  // (placeholder until cinema reviews are added to this feed), 'Music'
+  // reuses the same friend-activity feed the old 'Friends' option loaded.
+  setFeedType(type: 'Music' | 'Cinema') {
     this.activeFeedType = type;
-    this.isFetchingArtistFeed = false;
     this.isFetchingActivityFeed = false;
-    if (type === 'Artists') {
-      this.artistFeed = [];
-      this.activityImageLoaded = {};
-      this.artistFeedCursor = null;
-      this.hasMoreArtistFeed = true;
-      this.loadArtistsFeed();
-    }
-    if (type === 'Friends') {
+    if (type === 'Music') {
       this.activityFeed = [];
       this.activityImageLoaded = {};
       this.activityFeedCursor = null;
       this.hasMoreActivityFeed = true;
       this.loadActivityFeed();
     }
-  }
-
-  loadArtistsFeed() {
-    this.isFetchingArtistFeed = true;
-    if (
-      !this.userProfile ||
-      !this.userProfile.artistList ||
-      this.userProfile.artistList.length === 0
-    ) {
-      this.userService.getAuthenticatedUserProfile().subscribe((profile) => {
-        if (profile && profile.artistList && profile.artistList.length > 0) {
-          this.userProfile = profile;
-          this.loadArtistsFeed(); // retry after user profile is populated
-        } else {
-          this.isFetchingArtistFeed = false;
-          this.artistFeed = [];
-          this.hasMoreArtistFeed = false;
-        }
-      });
-      return;
-    }
-
-    const artistIds = this.userProfile.artistList
-      .map((artist) => artist.id)
-      .filter(Boolean);
-
-    if (artistIds.length === 0) {
-      this.isFetchingArtistFeed = false;
-      this.artistFeed = [];
-      this.hasMoreArtistFeed = false;
-      return;
-    }
-
-    this.getArtistFeed(artistIds, undefined, undefined);
-  }
-
-  loadMoreArtistsFeed() {
-    if (!this.hasMoreArtistFeed || !this.artistFeedCursor) return;
-
-    const artistIds = this.userProfile.artistList
-      ?.map((a) => a.id)
-      .filter(Boolean);
-    if (!artistIds?.length) return;
-
-    this.isFetchingArtistFeed = true;
-
-    const { cursorDate, cursorId } = this.artistFeedCursor;
-
-    this.getArtistFeed(artistIds, cursorDate, cursorId);
-  }
-
-  getArtistFeed(artistIds: string[], cursorDate?: string, cursorId?: string) {
-    this.searchService
-      .getReleasesByArtistIds(
-        artistIds,
-        this.feedPageLimit,
-        cursorDate,
-        cursorId
-      )
-      .subscribe({
-        next: (res: GetReleasesResponse) => {
-          const newReleases = (res?.releases || []).map((release) => ({
-            ...release,
-            cover: this.getHighQualityImage(release.cover),
-          }));
-
-          this.artistFeed = cursorDate
-            ? [...this.artistFeed, ...newReleases] // pagination
-            : newReleases; // initial load
-          this.artistFeedCursor = res.nextCursor || null;
-          this.hasMoreArtistFeed = !!res.nextCursor;
-          this.isFetchingArtistFeed = false;
-        },
-        error: (err) => {
-          this.toastr.error('Failed to load artists feed:', err.message || err);
-          this.artistFeed = [];
-          this.isFetchingArtistFeed = false;
-          this.hasMoreArtistFeed = false;
-        },
-      });
   }
 
   loadPopularReviews(type: 'Song' | 'Album' | 'Artist') {
@@ -988,19 +894,6 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     this.expandedReviews[reviewId] = !this.expandedReviews[reviewId];
   }
 
-  transformReleaseToModalRecord(release: Release): PopularRecord {
-    return {
-      id: Number(release.albumId),
-      type: 'Album',
-      title: release.title,
-      artist: release.artistName,
-      cover: release.cover,
-      isExplicit: release.isExplicit,
-      releaseDate: release.releaseDate,
-      avgRating: 0,
-      reviewCount: 0,
-    };
-  }
 
   openCinemaSearchResult(item: CinemaSearchResult): NgbModalRef {
     // Untracked stub - no CinemaItem exists yet for this search result, so
@@ -1289,31 +1182,6 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   // Same badge logic/priority/icons as everywhere else (see shared/cinema-status-badge.ts).
   cinemaBadge(item: CinemaSearchResult): CinemaBadgeVm | null {
     return getCinemaStatusBadge(item);
-  }
-
-  getReleaseLabel(releaseDate: string | Date): string {
-    const date = new Date(releaseDate);
-    const now = new Date();
-
-    const diff = date.getTime() - now.getTime();
-    const days = Math.round(diff / (1000 * 60 * 60 * 24));
-
-    if (diff > 0) {
-      // Future release
-      if (days <= 7) {
-        return `Releases in ${days} day${days !== 1 ? 's' : ''}`;
-      } else {
-        return `Coming ${date.toLocaleDateString(undefined, {
-          month: 'short',
-          day: 'numeric',
-          year:
-            date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-        })}`;
-      }
-    } else {
-      // Past release
-      return `Released ${this.timeAgoPipe.transform(releaseDate)}`;
-    }
   }
 
   toggleLike(review: Review) {

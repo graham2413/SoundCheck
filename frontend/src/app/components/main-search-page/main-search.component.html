@@ -85,7 +85,7 @@
           }"
           class="text-lg md:text-xl"
         >
-          Activity
+          Feed
         </span>
       </button>
     </div>
@@ -1020,15 +1020,11 @@
       <div
         class="relative flex items-center max-w-xs mx-auto mb-5 mt-2 p-0.5 rounded-full border border-gray-700 bg-gray-900/50"
       >
-        <!-- Sliding Highlight - Release Tracker gets a touch more room than
-             Feed when it's the active side, and vice versa. -->
+        <!-- Sliding Highlight -->
         <div
-          class="absolute top-0.5 bottom-0.5 rounded-full bg-[#0F5EE4] transition-[left,right] duration-300 ease-out"
-          [ngStyle]="
-            activeFeedType === 'Artists'
-              ? { right: '0.125rem', left: 'auto', width: 'calc(50% + 0.8rem)' }
-              : { left: '0.125rem', right: 'auto', width: 'calc(50% - 0.8rem)' }
-          "
+          class="absolute top-0.5 bottom-0.5 left-0.5 rounded-full bg-[#0F5EE4] transition-transform duration-300 ease-out"
+          style="width: calc((100% - 0.25rem) / 2)"
+          [ngStyle]="{ transform: 'translateX(' + feedTypeIndex * 100 + '%)' }"
         ></div>
 
         <!-- Buttons -->
@@ -1041,14 +1037,14 @@
               'text-gray-300': activeFeedType !== feedType
             }"
           >
-            {{ getFeedTypeLabel(feedType) }}
+            {{ feedType }}
           </button>
         </ng-container>
       </div>
       <div class="w-full border-b border-gray-700 mb-4"></div>
 
       <!-- Activity Feed Loaded -->
-      <div *ngIf="activeFeedType == 'Friends'">
+      <div *ngIf="activeFeedType == 'Music'">
         <div
           @fadeSlideIn
           *ngIf="activityFeed.length > 0; else noActivity"
@@ -1305,111 +1301,12 @@
         </div>
       </ng-template>
 
-      <!-- Artist Activities Feed -->
-      <div *ngIf="activeFeedType === 'Artists'">
-        <div
-          @fadeSlideIn
-          *ngIf="!isLoading && artistFeed.length > 0"
-          infiniteScroll
-          [infiniteScrollDistance]="2"
-          [infiniteScrollThrottle]="150"
-          (scrolled)="loadMoreArtistsFeed()"
-          class="space-y-3"
-        >
-          <div
-            @itemAnim
-            *ngFor="let release of artistFeed; let i = index"
-            class="flex items-start p-2 rounded-lg w-full overflow-hidden"
-            (click)="
-              openModal(
-                transformReleaseToModalRecord(release),
-                artistFeed.map(transformReleaseToModalRecord),
-                i
-              )
-            "
-          >
-            <div class="relative h-20 w-20 md:h-32 md:w-32 flex-shrink-0">
-              <!-- Loader -->
-              <div
-                *ngIf="!artistImageLoaded[i]"
-                class="absolute inset-0 flex items-center justify-center rounded-md border border-gray-800 bg-gray-900"
-              >
-                <div
-                  class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
-                ></div>
-              </div>
-
-              <!-- Image -->
-              <img
-                [src]="
-                  release.cover ||
-                  'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
-                "
-                (load)="artistImageLoaded[i] = true"
-                (error)="artistImageLoaded[i] = true"
-                [class.invisible]="!artistImageLoaded[i]"
-                alt="Cover"
-                class="h-20 w-20 md:h-32 md:w-32 rounded-md object-cover shadow-md border border-gray-800"
-              />
-            </div>
-
-            <div class="flex-1 text-white max-w-full overflow-hidden">
-              <!-- Text Container -->
-              <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
-                <p
-                  class="text-lg md:text-2xl font-semibold text-white leading-tight truncate overflow-hidden whitespace-nowrap max-w-full"
-                  title="{{ release.title }}"
-                >
-                  {{ release.title }}
-                </p>
-
-                <p
-                  class="text-sm md:text-lg text-gray-300 mt-2 truncate overflow-hidden whitespace-nowrap"
-                  title="{{ release.artistName }}"
-                >
-                  <span
-                    *ngIf="release?.isExplicit"
-                    class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] font-bold w-[1.1rem] h-[1.1rem] md:text-[15px] md:w-5 md:h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
-                    title="Explicit"
-                  >
-                    E
-                  </span>
-                  {{ release.artistName }}
-                </p>
-                <div class="text-xs md:text-base text-[#3b82f6] mt-2">
-                  {{ getReleaseLabel(release.releaseDate) }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- End-of-feed message -->
-          <div
-            *ngIf="!hasMoreArtistFeed"
-            class="text-center text-base md:text-xl text-gray-400 mt-[2rem]"
-          >
-            You have reached the end of your feed.
-          </div>
-        </div>
-        <!-- No Artists Followed -->
-        <div
-          *ngIf="!isFetchingArtistFeed && artistFeed.length === 0"
-          class="text-center text-gray-400 mt-8 text-lg md:text-xl italic bg-gray-800 p-4 rounded-lg"
-        >
-          Not following any artists
-        </div>
-        <!-- Loading spinner -->
-        <div
-          *ngIf="isFetchingArtistFeed && hasMoreArtistFeed"
-          class="flex flex-col items-center justify-center py-6"
-        >
-          <div
-            class="animate-spin rounded-full h-10 w-10 border-t-4 border-blue-500 border-opacity-50"
-          ></div>
-          <p class="mt-4 text-gray-400 text-lg md:text-2xl">
-            Loading Artists Feed...
-          </p>
-        </div>
+      <!-- Cinema Activity Feed - placeholder until cinema reviews are added here -->
+      <div
+        *ngIf="activeFeedType === 'Cinema'"
+        class="text-center text-gray-400 mt-8 text-lg md:text-xl italic bg-gray-800 p-4 rounded-lg"
+      >
+        Cinema activity is coming soon.
       </div>
     </div>
   </div>

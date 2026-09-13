@@ -43,6 +43,7 @@ if (process.env.NODE_ENV === 'test') {
     safeGet: async () => null,
     safeSet: async () => null,
     safeDel: async () => null,
+    safeMget: async (keys) => keys.map(() => null),
   };
 } else {
   const redis = new Redis(redisOptions);
@@ -76,6 +77,20 @@ if (process.env.NODE_ENV === 'test') {
     } catch (err) {
       console.error(`Redis DEL failed for key(s) "${args.join(', ')}":`, err.message);
       return null;
+    }
+  };
+
+  // Batched read - one MGET is billed as a single command under
+  // Upstash's per-command pricing, unlike pipelining N GETs (still N
+  // billed commands). Use this whenever a caller needs several keys
+  // it already knows up front instead of looping safeGet.
+  redis.safeMget = async (keys) => {
+    if (!keys.length) return [];
+    try {
+      return await redis.mget(keys);
+    } catch (err) {
+      console.error(`Redis MGET failed for ${keys.length} key(s):`, err.message);
+      return keys.map(() => null);
     }
   };
 

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getTrackDetails, resolveTrack, getAlbumDetails, searchMusic, getArtistTopTracks, getAndStoreArtistAlbums, getReleasesByArtistIds, getDeezerArtistReleases, getSmartLink } = require("../controllers/mainSearchController");
+const { getTrackDetails, resolveTrack, getAlbumDetails, searchMusic, getArtistTopTracks, getAndStoreArtistAlbums, getReleasesByArtistIds, getMusicCalendar, getDeezerArtistReleases, getSmartLink } = require("../controllers/mainSearchController");
 const authenticateUser = require("../middleware/authMiddleware");
 
 // Main search route
@@ -25,6 +25,10 @@ router.post("/artist/:id/sync", authenticateUser, getAndStoreArtistAlbums);
 
 // Search for releases by artist IDs
 router.post("/artist/releases", getReleasesByArtistIds);
+
+// Music calendar (Protected) - upcoming/past releases for the current
+// user's followed artists, same shape as the cinema calendar.
+router.get("/music-calendar", authenticateUser, getMusicCalendar);
 
 // Get Deezer artist releases
 router.get('/artists/:artistId/releases', getDeezerArtistReleases);

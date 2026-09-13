@@ -9,6 +9,10 @@ const Release = new mongoose.Schema({
   cover: { type: String, required: true },
   releaseDate: { type: Date, required: true, index: true },
   isExplicit: { type: Boolean, default: false },
+  // Deezer's own classification ("album" | "single" | "ep" | "compile") -
+  // absent on rows synced before this field existed; those show a generic
+  // label client-side rather than a guessed/wrong one. See syncArtistAlbums.
+  recordType: { type: String, default: null },
 }, {
   timestamps: true
 });

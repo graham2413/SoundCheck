@@ -1,14 +1,24 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CalendarEntry, CalendarSubtitle, CalendarMonthGroup } from 'src/app/models/responses/cinema-response';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
+import { MusicCalendarEntry } from 'src/app/models/responses/release-response';
 import { CinemaService } from 'src/app/services/cinema.service';
+import { SearchService } from 'src/app/services/search.service';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
 import { CinemaRateModalComponent } from '../cinema-review-page/cinema-rate-modal.component';
+import { ReviewPageComponent } from '../review-page/review-page.component';
+
+// Both entry shapes share _id/airDate/cover/title (everything the shared
+// month/day grouping and the row shell need) - `kind` alone decides which
+// per-row detail block renders and what a click on it does.
+type CalendarKind = 'cinema' | 'music';
+type CombinedEntry = CalendarEntry | MusicCalendarEntry;
 
 @Component({
   selector: 'app-calendar',
@@ -33,7 +43,8 @@ import { CinemaRateModalComponent } from '../cinema-review-page/cinema-rate-moda
   ],
 })
 export class CalendarPageComponent implements OnInit {
-  entries: CalendarEntry[] = [];
+  kind: CalendarKind = 'cinema';
+  entries: CombinedEntry[] = [];
   isLoading = true;
   isRefreshing = false;
   imageLoaded: { [id: string]: boolean } = {};
@@ -41,6 +52,36 @@ export class CalendarPageComponent implements OnInit {
   mediaTypeFilter: 'all' | 'movie' | 'tv' = 'all';
   subtitle: CalendarSubtitle | null = null;
   monthGroups: CalendarMonthGroup[] = [];
+
+  get pageTitle(): string {
+    return this.kind === 'music' ? 'Music Calendar' : 'Cinema Calendar';
+  }
+
+  // Type guard so the template can branch per-row rendering/click behavior
+  // without either entry shape needing a redundant explicit "kind" field of
+  // its own from the backend.
+  isMusicEntry(entry: CombinedEntry): entry is MusicCalendarEntry {
+    return this.kind === 'music';
+  }
+
+  // Deezer/Spotify's own record_type/album_type ("album"/"single"/"ep"/
+  // "compile"/"compilation") - null for past rows synced before this field
+  // was captured, so those show a generic label instead of a guessed one.
+  musicTypeLabel(entry: MusicCalendarEntry): string {
+    switch (entry.recordType) {
+      case 'single':
+        return 'Single';
+      case 'ep':
+        return 'EP';
+      case 'compile':
+      case 'compilation':
+        return 'Compilation';
+      case 'album':
+        return 'Album';
+      default:
+        return 'Release';
+    }
+  }
 
   // Pagination - the full list can be large (a big watchlist), and
   // rendering/animating/loading every entry's image at once was what made
@@ -86,10 +127,10 @@ export class CalendarPageComponent implements OnInit {
     key: string;
     label: string;
     count: number;
-    dayGroups: { label: string; count: number; items: CalendarEntry[] }[];
+    dayGroups: { label: string; count: number; items: CombinedEntry[] }[];
   }[] {
     const order: string[] = [];
-    const byKey = new Map<string, CalendarEntry[]>();
+    const byKey = new Map<string, CombinedEntry[]>();
     for (const entry of this.entries) {
       const key = entry.airDate.slice(0, 7);
       if (!byKey.has(key)) {
@@ -110,9 +151,9 @@ export class CalendarPageComponent implements OnInit {
   // currently loaded, not a true independent total, since days are a much
   // finer granularity than the 20-item page size and a real mismatch here
   // would be rare/momentary (resolves itself once the next page loads).
-  private groupByDay(items: CalendarEntry[]): { label: string; count: number; items: CalendarEntry[] }[] {
+  private groupByDay(items: CombinedEntry[]): { label: string; count: number; items: CombinedEntry[] }[] {
     const order: string[] = [];
-    const byLabel = new Map<string, CalendarEntry[]>();
+    const byLabel = new Map<string, CombinedEntry[]>();
     for (const entry of items) {
       const label = this.getDayGroupLabel(entry.airDate);
       if (!byLabel.has(label)) {
@@ -136,7 +177,7 @@ export class CalendarPageComponent implements OnInit {
     return group.key;
   }
 
-  trackByEntryId(_index: number, entry: CalendarEntry): string {
+  trackByEntryId(_index: number, entry: CombinedEntry): string {
     return entry._id;
   }
 
@@ -146,12 +187,35 @@ export class CalendarPageComponent implements OnInit {
 
   constructor(
     private cinemaService: CinemaService,
+    private searchService: SearchService,
     private toastr: ToastrService,
     private modal: NgbModal
   ) {}
 
   ngOnInit(): void {
     this.loadCalendar();
+  }
+
+  // Single branch point between the two backends - everything else
+  // (pagination, subtitle/month-group state, loading flags) is identical
+  // either way since both endpoints share the exact same response shape.
+  // Explicit return type + cast: TS can't unify Observable<A>|Observable<B>
+  // into a single callable .subscribe() overload set on its own.
+  private fetchPage(
+    forceRefresh: boolean,
+    offset: number
+  ): Observable<{ data: CombinedEntry[]; hasMore: boolean; total: number; subtitle: CalendarSubtitle; monthGroups: CalendarMonthGroup[] }> {
+    const obs$ =
+      this.kind === 'music'
+        ? this.searchService.getMusicCalendar(forceRefresh, this.range, offset, CalendarPageComponent.PAGE_SIZE)
+        : this.cinemaService.getCalendar(forceRefresh, this.range, offset, CalendarPageComponent.PAGE_SIZE, this.mediaTypeFilter);
+    return obs$ as unknown as Observable<{
+      data: CombinedEntry[];
+      hasMore: boolean;
+      total: number;
+      subtitle: CalendarSubtitle;
+      monthGroups: CalendarMonthGroup[];
+    }>;
   }
 
   private loadCalendar(): void {
@@ -161,22 +225,20 @@ export class CalendarPageComponent implements OnInit {
     this.offset = 0;
     this.hasMore = false;
 
-    this.cinemaService
-      .getCalendar(false, this.range, 0, CalendarPageComponent.PAGE_SIZE, this.mediaTypeFilter)
-      .subscribe({
-        next: ({ data, hasMore, subtitle, monthGroups }) => {
-          this.entries = data;
-          this.hasMore = hasMore;
-          this.offset = data.length;
-          this.subtitle = subtitle;
-          this.monthGroups = monthGroups;
-          this.isLoading = false;
-        },
-        error: () => {
-          this.toastr.error('Error occurred while loading your calendar.', 'Error');
-          this.isLoading = false;
-        },
-      });
+    this.fetchPage(false, 0).subscribe({
+      next: ({ data, hasMore, subtitle, monthGroups }) => {
+        this.entries = data;
+        this.hasMore = hasMore;
+        this.offset = data.length;
+        this.subtitle = subtitle;
+        this.monthGroups = monthGroups;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.toastr.error('Error occurred while loading your calendar.', 'Error');
+        this.isLoading = false;
+      },
+    });
   }
 
   // Fired by infiniteScroll on the entries list - appends the next page
@@ -185,22 +247,20 @@ export class CalendarPageComponent implements OnInit {
     if (this.isLoading || this.isLoadingMore || !this.hasMore) return;
     this.isLoadingMore = true;
 
-    this.cinemaService
-      .getCalendar(false, this.range, this.offset, CalendarPageComponent.PAGE_SIZE, this.mediaTypeFilter)
-      .subscribe({
-        next: ({ data, hasMore, subtitle, monthGroups }) => {
-          this.entries = [...this.entries, ...data];
-          this.hasMore = hasMore;
-          this.offset += data.length;
-          this.subtitle = subtitle;
-          this.monthGroups = monthGroups;
-          this.isLoadingMore = false;
-        },
-        error: () => {
-          this.toastr.error('Error occurred while loading more of your calendar.', 'Error');
-          this.isLoadingMore = false;
-        },
-      });
+    this.fetchPage(false, this.offset).subscribe({
+      next: ({ data, hasMore, subtitle, monthGroups }) => {
+        this.entries = [...this.entries, ...data];
+        this.hasMore = hasMore;
+        this.offset += data.length;
+        this.subtitle = subtitle;
+        this.monthGroups = monthGroups;
+        this.isLoadingMore = false;
+      },
+      error: () => {
+        this.toastr.error('Error occurred while loading more of your calendar.', 'Error');
+        this.isLoadingMore = false;
+      },
+    });
   }
 
   setRange(range: 'upcoming' | 'past'): void {
@@ -215,6 +275,12 @@ export class CalendarPageComponent implements OnInit {
     this.loadCalendar();
   }
 
+  setKind(kind: CalendarKind): void {
+    if (this.kind === kind || this.isLoading) return;
+    this.kind = kind;
+    this.loadCalendar();
+  }
+
   refresh(): void {
     if (this.isRefreshing) return;
     this.isRefreshing = true;
@@ -224,25 +290,23 @@ export class CalendarPageComponent implements OnInit {
     this.offset = 0;
     this.hasMore = false;
 
-    this.cinemaService
-      .getCalendar(true, this.range, 0, CalendarPageComponent.PAGE_SIZE, this.mediaTypeFilter)
-      .subscribe({
-        next: ({ data, hasMore, subtitle, monthGroups }) => {
-          this.entries = data;
-          this.hasMore = hasMore;
-          this.offset = data.length;
-          this.subtitle = subtitle;
-          this.monthGroups = monthGroups;
-          this.isRefreshing = false;
-          this.isLoading = false;
-          this.toastr.success('Calendar refreshed.', 'Success');
-        },
-        error: () => {
-          this.toastr.error('Error occurred while refreshing your calendar.', 'Error');
-          this.isRefreshing = false;
-          this.isLoading = false;
-        },
-      });
+    this.fetchPage(true, 0).subscribe({
+      next: ({ data, hasMore, subtitle, monthGroups }) => {
+        this.entries = data;
+        this.hasMore = hasMore;
+        this.offset = data.length;
+        this.subtitle = subtitle;
+        this.monthGroups = monthGroups;
+        this.isRefreshing = false;
+        this.isLoading = false;
+        this.toastr.success('Calendar refreshed.', 'Success');
+      },
+      error: () => {
+        this.toastr.error('Error occurred while refreshing your calendar.', 'Error');
+        this.isRefreshing = false;
+        this.isLoading = false;
+      },
+    });
   }
 
   // "Today" / "Tomorrow" / "Yesterday" / "In N days" / "N days ago" - used
@@ -283,7 +347,45 @@ export class CalendarPageComponent implements OnInit {
     return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  openEntry(entry: CalendarEntry): void {
+  openEntry(entry: CombinedEntry): void {
+    if (this.isMusicEntry(entry)) {
+      this.openMusicEntry(entry);
+      return;
+    }
+    this.openCinemaEntry(entry as CalendarEntry);
+  }
+
+  // Opens the release as an Album, the same way the (now-removed) Release
+  // Tracker feed used to (see transformReleaseToModalRecord in
+  // main-search.component.ts) - existing review/song-review flow, no changes
+  // needed there.
+  private openMusicEntry(entry: MusicCalendarEntry): void {
+    const modalOptions: NgbModalOptions = {
+      backdrop: 'static',
+      keyboard: true,
+      centered: true,
+      scrollable: false,
+    };
+
+    const record = {
+      id: Number(entry.albumId),
+      type: 'Album' as const,
+      title: entry.title,
+      artist: entry.artistName,
+      cover: entry.cover,
+      isExplicit: entry.isExplicit,
+      releaseDate: entry.airDate,
+      avgRating: 0,
+      reviewCount: 0,
+    };
+
+    const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
+    modalRef.componentInstance.record = record;
+    modalRef.componentInstance.recordList = [record];
+    modalRef.componentInstance.currentIndex = 0;
+  }
+
+  private openCinemaEntry(entry: CalendarEntry): void {
     const modalOptions: NgbModalOptions = {
       backdrop: 'static',
       keyboard: true,
