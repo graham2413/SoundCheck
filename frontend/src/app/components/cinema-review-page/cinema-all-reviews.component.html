@@ -6,7 +6,7 @@
         <i class="fas fa-chevron-left"></i>
       </button>
       <h1 class="absolute left-1/2 -translate-x-1/2 text-white font-bold text-xl">
-        Reviews ({{ filteredReviews.length }})
+        Reviews ({{ reviewFilter === 'all' ? (appReviewCount ?? filteredReviews.length) : filteredReviews.length }})
       </h1>
     </div>
 
@@ -55,7 +55,7 @@
         [class.review-filter-pill-active]="reviewFilter === 'all'"
         (click)="onReviewFilterChange('all')"
       >
-        All ({{ reviews.length }})
+        All ({{ appReviewCount ?? reviews.length }})
       </button>
       <button
         type="button"
@@ -73,8 +73,16 @@
     </div>
   </div>
 
-  <!-- Only this list scrolls -->
-  <div class="flex-1 overflow-y-auto px-4 pb-8 mt-4">
+  <!-- Only this list scrolls - it's its own scroll container (not window), so
+       scrollWindow is off and infiniteScroll listens on this element itself. -->
+  <div
+    class="flex-1 overflow-y-auto px-4 pb-8 mt-4"
+    infiniteScroll
+    [scrollWindow]="false"
+    [infiniteScrollDistance]="2"
+    [infiniteScrollThrottle]="150"
+    (scrolled)="reviewFilter === 'all' && loadMoreReviews.emit()"
+  >
     <p class="reviews-empty-subtitle" *ngIf="filteredReviews.length === 0">
       {{ reviewFilter === 'mine' ? "You haven't written a review yet." : 'No reviews yet.' }}
     </p>
@@ -116,6 +124,18 @@
         <i class="fas fa-heart" [class.review-like-active]="isReviewLiked(review)"></i>
         {{ review.likes || 0 }}
       </button>
+    </div>
+
+    <!-- Loading-more indicator - next page fetched via infiniteScroll above -->
+    <div *ngIf="isLoadingMoreReviews" class="flex flex-col items-center justify-center py-6">
+      <div class="animate-spin rounded-full h-8 w-8 border-t-4 border-blue-500 border-opacity-50"></div>
+    </div>
+
+    <div
+      *ngIf="reviewFilter === 'all' && !hasMoreReviews && !isLoadingMoreReviews && filteredReviews.length > 0"
+      class="text-center text-sm text-gray-400 py-6"
+    >
+      You've reached the end of the reviews.
     </div>
   </div>
 </div>

@@ -12,4 +12,7 @@ export interface Album {
     isExplicit: boolean;
     preview: string;
     contributors?: string[];
+    // Used for the smart-link feature's exact Spotify match - see
+    // backend/controllers/mainSearchController.js's getSmartLink.
+    upc?: string | null;
   }

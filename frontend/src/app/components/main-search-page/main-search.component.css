@@ -41,6 +41,14 @@
   -webkit-text-stroke: 1.5px #0F5EE4;
 }
 
+/* fa-music's glyph isn't centered in its own advance box (extra whitespace
+   on the right), so it sits visibly right-of-center in the circular switch
+   button next to app-film-camera-icon (a custom SVG that IS centered) -
+   nudge it left to match. */
+.fa-icon-outline.fa-music {
+  margin-left: -0.1em;
+}
+
 .see-all-btn {
   display: inline-flex;
   align-items: center;

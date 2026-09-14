@@ -1683,6 +1683,62 @@ const getTitlesToRefresh = async (fullRecheck) => {
   return groups.map((g) => g._id);
 };
 
+// Distinct (tmdbId, mediaType) pairs the calendar view actually renders -
+// movies still on a watchlist, and TV shows either watchlisted or already
+// watched (mirrors getCalendar's own item filter above) - deduped across all
+// users so a title tracked by many people only costs one TMDb call.
+const getCalendarRelevantTitles = async () => {
+  const groups = await CinemaItem.aggregate([
+    {
+      $match: {
+        tmdbId: { $exists: true, $ne: null },
+        $or: [
+          { mediaType: "movie", isWatchlist: true },
+          { mediaType: "tv", isWatchlist: true },
+          { mediaType: "tv", isWatched: true },
+        ],
+      },
+    },
+    { $group: { _id: { tmdbId: "$tmdbId", mediaType: "$mediaType" } } },
+  ]);
+
+  return groups.map((g) => g._id);
+};
+
+// Warms the shared tmdb:calendar-details cache (see getTmdbDetailsForCalendar
+// in callTmdb.js) for every calendar-relevant title, so a user's first
+// calendar load of the day mostly hits cache instead of paying for live TMDb
+// calls one-by-one. getTmdbDetailsForCalendar already no-ops on a cache hit,
+// so re-running this daily only actually fetches whatever expired since the
+// last run (12h TTL) - cheap by design, not a full re-fetch every time. Only
+// warms the shared per-title cache, not each user's own assembled
+// calendar:{userId}:{range} cache - see notification/cinema controller notes
+// on why a full per-user prewarm isn't worth it.
+async function prewarmCalendarDetailsCache({ batchSize = 20, delayMs = 500 } = {}) {
+  const titles = await getCalendarRelevantTitles();
+  let warmed = 0;
+  let failed = 0;
+
+  for (let i = 0; i < titles.length; i += batchSize) {
+    const batch = titles.slice(i, i + batchSize);
+
+    const results = await Promise.allSettled(
+      batch.map(({ tmdbId, mediaType }) => getTmdbDetailsForCalendar(tmdbId, mediaType))
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") warmed++;
+      else failed++;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  console.log(`Calendar cache prewarm complete. Titles: ${titles.length}, warmed: ${warmed}, failed: ${failed}`);
+  return { titlesChecked: titles.length, warmed, failed };
+}
+exports.prewarmCalendarDetailsCache = prewarmCalendarDetailsCache;
+
 // Daily cron entry point (see server.js) - refreshes genres/duration/
 // streamingPlatforms/releaseDate/hadTheatricalRelease/digitalReleaseDate/
 // releaseYearRange/imdbId for every user's tracked CinemaItems, deduped by
@@ -2127,18 +2183,47 @@ exports.getCinemaReviews = async (req, res) => {
     }
 
     const sortOrder = REVIEW_SORT_OPTIONS[sort] || REVIEW_SORT_OPTIONS.recent;
+    const baseQuery = { ...identityQuery, decimalRating: { $ne: null } };
 
-    const reviews = await CinemaItem.find({
-      ...identityQuery,
-      decimalRating: { $ne: null },
-    })
-      .populate("user", "username profilePicture")
-      .sort(sortOrder)
-      .lean();
+    // Offset/limit (not a cursor) since the active sort can be by rating or
+    // likes, not just createdAt - a single (field, _id) keyset cursor can't
+    // generalize across all three without extra bookkeeping, and per-title
+    // review counts here are small enough that skip/limit is cheap and simple.
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
 
-    const userReview =
-      reviews.find((item) => item.user?._id?.toString() === userId.toString()) || null;
-    res.status(200).json({ success: true, data: { reviews, userReview } });
+    // userReview and the aggregate rating/count are fetched independent of
+    // the current page, so they stay accurate (and the user's own review
+    // still shows in the header) no matter which page is currently loaded.
+    const [reviews, userReview, stats] = await Promise.all([
+      CinemaItem.find(baseQuery)
+        .populate("user", "username profilePicture")
+        .sort(sortOrder)
+        .skip(offset)
+        .limit(limit)
+        .lean(),
+      CinemaItem.findOne({ ...baseQuery, user: userId })
+        .populate("user", "username profilePicture")
+        .lean(),
+      CinemaItem.aggregate([
+        { $match: baseQuery },
+        { $group: { _id: null, count: { $sum: 1 }, avgRating: { $avg: "$decimalRating" } } },
+      ]),
+    ]);
+
+    const totalCount = stats[0]?.count || 0;
+    const avgRating = stats[0]?.avgRating ?? null;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        reviews,
+        userReview,
+        totalCount,
+        avgRating,
+        hasMore: offset + reviews.length < totalCount,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }
@@ -2192,6 +2277,167 @@ exports.getEpisodeReviews = async (req, res) => {
     res.status(200).json({ success: true, data: { reviews, userReview } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// GET /api/cinema/activityFeed (Protected)
+// Chronological feed of self + friends' cinema activity - mirrors music's
+// reviewController.getActivityFeed, but cinema activity lives in two
+// different shapes: top-level CinemaItem ratings, and individual TV episode
+// ratings nested in episodeReviews. Both are normalized to one shape via
+// $unionWith before sorting/paginating, so they merge into a single timeline
+// instead of two separate feeds. Episode entries have no likes/likedBy of
+// their own (episodeReviewSchema doesn't track them), so `likes` is always 0
+// there - the frontend hides the like button for entryType 'episode'.
+exports.getCinemaActivityFeed = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { cursorDate, cursorId, limit = 20 } = req.query;
+
+    const user = await User.findById(userId).select("friends").lean();
+    if (!user || user.friends.length === 0) {
+      return res.status(200).json({ reviews: [], nextCursor: null });
+    }
+
+    const friendAndSelfIds = [...user.friends, userId];
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+
+    const activityFields = {
+      itemId: 1,
+      user: 1,
+      mediaType: 1,
+      tmdbId: 1,
+      imdbId: 1,
+      title: 1,
+      cover: 1,
+      decimalRating: 1,
+      reviewText: 1,
+      containsSpoilers: 1,
+      likes: 1,
+      likedBy: 1,
+      activityDate: 1,
+      entryType: 1,
+      seasonNumber: 1,
+      episodeNumber: 1,
+      activityKey: 1,
+    };
+
+    const episodePipeline = [
+      { $match: { user: { $in: friendAndSelfIds }, mediaType: "tv" } },
+      { $unwind: "$episodeReviews" },
+      { $match: { "episodeReviews.decimalRating": { $ne: null } } },
+      {
+        $project: {
+          // No itemId - episode entries can't use the whole-document like
+          // endpoint (episodeReviewSchema has no likes/likedBy of its own,
+          // and liking via the parent CinemaItem's _id would incorrectly
+          // affect that title's overall rating like instead).
+          itemId: { $literal: null },
+          user: 1,
+          mediaType: 1,
+          tmdbId: 1,
+          imdbId: 1,
+          title: 1,
+          cover: 1,
+          decimalRating: "$episodeReviews.decimalRating",
+          reviewText: "$episodeReviews.reviewText",
+          containsSpoilers: "$episodeReviews.containsSpoilers",
+          likes: { $literal: 0 },
+          likedBy: { $literal: [] },
+          activityDate: "$episodeReviews.reviewedAt",
+          entryType: { $literal: "episode" },
+          seasonNumber: "$episodeReviews.seasonNumber",
+          episodeNumber: "$episodeReviews.episodeNumber",
+          activityKey: {
+            $concat: [
+              { $toString: "$_id" },
+              "-s",
+              { $toString: "$episodeReviews.seasonNumber" },
+              "-e",
+              { $toString: "$episodeReviews.episodeNumber" },
+            ],
+          },
+        },
+      },
+      { $project: activityFields },
+    ];
+
+    const pipeline = [
+      { $match: { user: { $in: friendAndSelfIds }, decimalRating: { $ne: null } } },
+      {
+        $project: {
+          itemId: "$_id",
+          user: 1,
+          mediaType: 1,
+          tmdbId: 1,
+          imdbId: 1,
+          title: 1,
+          cover: 1,
+          decimalRating: 1,
+          reviewText: 1,
+          containsSpoilers: 1,
+          likes: 1,
+          likedBy: 1,
+          activityDate: "$createdAt",
+          entryType: { $literal: "top" },
+          seasonNumber: { $literal: null },
+          episodeNumber: { $literal: null },
+          activityKey: { $toString: "$_id" },
+        },
+      },
+      { $project: activityFields },
+      { $unionWith: { coll: "cinemaitems", pipeline: episodePipeline } },
+    ];
+
+    if (cursorDate && cursorId) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { activityDate: { $lt: new Date(cursorDate) } },
+            { activityDate: new Date(cursorDate), activityKey: { $lt: cursorId } },
+          ],
+        },
+      });
+    }
+
+    pipeline.push(
+      { $sort: { activityDate: -1, activityKey: -1 } },
+      { $limit: limitNum },
+      { $lookup: { from: "users", localField: "user", foreignField: "_id", as: "user" } },
+      { $unwind: "$user" },
+      {
+        $project: {
+          _id: 0,
+          itemId: 1,
+          activityKey: 1,
+          entryType: 1,
+          seasonNumber: 1,
+          episodeNumber: 1,
+          mediaType: 1,
+          tmdbId: 1,
+          imdbId: 1,
+          title: 1,
+          cover: 1,
+          decimalRating: 1,
+          reviewText: 1,
+          containsSpoilers: 1,
+          likes: 1,
+          likedBy: 1,
+          activityDate: 1,
+          user: { _id: "$user._id", username: "$user.username", profilePicture: "$user.profilePicture" },
+        },
+      }
+    );
+
+    const entries = await CinemaItem.aggregate(pipeline);
+
+    const last = entries[entries.length - 1];
+    const nextCursor = last ? { cursorDate: last.activityDate, cursorId: last.activityKey } : null;
+
+    res.status(200).json({ reviews: entries, nextCursor });
+  } catch (error) {
+    console.error("Error fetching cinema activity feed:", error);
+    res.status(500).json({ message: "Server error while fetching cinema activity feed." });
   }
 };
 

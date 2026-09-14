@@ -74,16 +74,16 @@
         >
           <div class="relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
             <div
-              *ngIf="!isImageLoaded(i, 'search')"
+              *ngIf="!isImageLoaded(user._id, 'search')"
               class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
             >
               <div class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"></div>
             </div>
             <img
               [src]="getTransformedImageUrl(user.profilePicture)"
-              (load)="markImageLoaded(i, 'search')"
-              (error)="markImageLoaded(i, 'search')"
-              [class.invisible]="!isImageLoaded(i, 'search')"
+              (load)="markImageLoaded(user._id, 'search')"
+              (error)="markImageLoaded(user._id, 'search')"
+              [class.invisible]="!isImageLoaded(user._id, 'search')"
               alt="Profile"
               class="w-full h-full object-cover rounded-full"
             />
@@ -124,8 +124,9 @@
         <div class="cinema-loader-ring"></div>
       </div>
 
-      <div *ngIf="!suggestedUsersLoading" class="mt-4 flex flex-col gap-4">
+      <div @fadeSlideIn *ngIf="!suggestedUsersLoading" class="mt-4 flex flex-col gap-4">
         <div
+          @itemAnim
           *ngFor="let user of suggestedUsers | slice:0:5; let i = index"
           [routerLink]="['/profile', user._id]"
           [state]="{ section: 'addFriends' }"
@@ -133,16 +134,16 @@
         >
           <div class="relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
             <div
-              *ngIf="!isImageLoaded(i, 'suggested')"
+              *ngIf="!isImageLoaded(user._id, 'suggested')"
               class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
             >
               <div class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"></div>
             </div>
             <img
               [src]="getTransformedImageUrl(user.profilePicture)"
-              (load)="markImageLoaded(i, 'suggested')"
-              (error)="markImageLoaded(i, 'suggested')"
-              [class.invisible]="!isImageLoaded(i, 'suggested')"
+              (load)="markImageLoaded(user._id, 'suggested')"
+              (error)="markImageLoaded(user._id, 'suggested')"
+              [class.invisible]="!isImageLoaded(user._id, 'suggested')"
               alt="Profile"
               class="w-full h-full object-cover rounded-full"
             />
@@ -209,16 +210,16 @@
       <div class="flex items-start gap-3">
         <div class="relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0">
           <div
-            *ngIf="!isImageLoaded(i, 'request')"
+            *ngIf="!isImageLoaded(request._id, 'request')"
             class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
           >
             <div class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"></div>
           </div>
           <img
             [src]="getTransformedImageUrl(request.profilePicture)"
-            (load)="markImageLoaded(i, 'request')"
-            (error)="markImageLoaded(i, 'request')"
-            [class.invisible]="!isImageLoaded(i, 'request')"
+            (load)="markImageLoaded(request._id, 'request')"
+            (error)="markImageLoaded(request._id, 'request')"
+            [class.invisible]="!isImageLoaded(request._id, 'request')"
             alt="Profile"
             class="w-full h-full object-cover rounded-full"
           />

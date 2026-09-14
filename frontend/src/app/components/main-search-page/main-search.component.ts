@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   HostListener,
@@ -30,7 +31,7 @@ import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/models/responses/user.response';
 import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CinemaService } from 'src/app/services/cinema.service';
-import { CinemaItem, CinemaSearchResult } from 'src/app/models/responses/cinema-response';
+import { CinemaItem, CinemaSearchResult, CinemaActivityEntry } from 'src/app/models/responses/cinema-response';
 import { getCinemaStatusBadge, CinemaBadgeVm } from 'src/app/shared/cinema-status-badge';
 import { CinemaBadgeComponent } from 'src/app/shared/cinema-badge/cinema-badge.component';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
@@ -44,6 +45,7 @@ import { FilmCameraIconComponent } from 'src/app/shared/film-camera-icon/film-ca
 
 type ActivityRecord = Review['albumSongOrArtist'];
 type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
+type CinemaActivityEntryVm = CinemaActivityEntry & { likedByCurrentUser: boolean };
 @Component({
   selector: 'app-main-search',
   templateUrl: './main-search.component.html',
@@ -110,7 +112,14 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   // `activeTab` so switching it doesn't change the currently shown results.
   selectedSearchTab: 'songs' | 'albums' | 'artists' = 'songs';
   activeDiscoverTab: 'mainSearch' | 'popular' | 'recentActivity' = 'mainSearch';
-  searchType: 'music' | 'cinema' = 'cinema';
+  // Remembers whichever tab was last used, across full app reloads (the
+  // in-session MainSearchStateService restore below only survives
+  // navigating away and back within the same app session, not a reload) -
+  // defaults to 'cinema' the very first time, matching this app's prior
+  // hardcoded default.
+  private static readonly LAST_SEARCH_TYPE_KEY = 'lastSearchType';
+  searchType: 'music' | 'cinema' =
+    (localStorage.getItem(MainSearchComponent.LAST_SEARCH_TYPE_KEY) as 'music' | 'cinema') || 'cinema';
   cinemaResults: CinemaSearchResult[] = [];
   cinemaActiveTab: 'all' | 'movie' | 'tv' = 'all';
   isModalOpen = false;
@@ -155,7 +164,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   // moved to the Calendar page's new Music mode, so this pill now just
   // filters the Feed tab's activity by content type instead. 'Music' reuses
   // the exact same friend-activity data/logic the old 'Friends' option had;
-  // 'Cinema' is a placeholder until cinema reviews are added to this feed.
+  // 'Cinema' is backed by its own cursor-paginated feed (cinemaActivityFeed).
   activeFeedType: 'Music' | 'Cinema' = 'Music';
 
   readonly activityFeedTypes: Array<'Music' | 'Cinema'> = [
@@ -194,6 +203,15 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   hasMoreActivityFeed: boolean = true;
   isFetchingActivityFeed: boolean = false;
 
+  // Cinema activity feed - same cursor-based load-more pattern as Music's
+  // activityFeed above, backed by GET /api/cinema/activityFeed.
+  cinemaActivityFeed: CinemaActivityEntryVm[] = [];
+  cinemaActivityFeedCursor: { cursorDate: string; cursorId: string } | null = null;
+  hasMoreCinemaActivityFeed: boolean = true;
+  isFetchingCinemaActivityFeed: boolean = false;
+  cinemaActivityImageLoaded: { [key: string]: boolean } = {};
+  animateCinemaHeart: { [key: string]: boolean } = {};
+
   albums: any[] = [];
   imageLoaded = {
     songs: {} as { [index: number]: boolean },
@@ -223,7 +241,8 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private userService: UserService,
     private cinemaService: CinemaService,
-    private searchStateService: MainSearchStateService
+    private searchStateService: MainSearchStateService,
+    private cdRef: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -243,6 +262,8 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    localStorage.setItem(MainSearchComponent.LAST_SEARCH_TYPE_KEY, this.searchType);
+
     this.searchStateService.save({
       searchType: this.searchType,
       query: this.query,
@@ -666,7 +687,14 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => this.recomputeSwitchButtonPosition());
+    // Synchronous (not the setTimeout used elsewhere) so the button's
+    // correct position is flushed to the DOM before the browser's first
+    // paint - deferring it to a later macrotask (as toggleSearchType() and
+    // the resize handler legitimately need to, since THEY react to a layout
+    // change that hasn't happened yet) meant the button briefly rendered at
+    // its wrong default position and visibly snapped down a moment later.
+    this.recomputeSwitchButtonPosition();
+    this.cdRef.detectChanges();
   }
 
   @HostListener('window:resize')
@@ -786,18 +814,25 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadPopularReviews(type);
   }
 
-  // Filters the Feed tab by content type - 'Cinema' has no data source yet
-  // (placeholder until cinema reviews are added to this feed), 'Music'
-  // reuses the same friend-activity feed the old 'Friends' option loaded.
+  // Filters the Feed tab by content type - 'Music' reuses the same friend-
+  // activity feed the old 'Friends' option loaded; 'Cinema' loads its own
+  // feed the first time it's selected, then just reuses what's cached.
   setFeedType(type: 'Music' | 'Cinema') {
     this.activeFeedType = type;
     this.isFetchingActivityFeed = false;
+    this.isFetchingCinemaActivityFeed = false;
     if (type === 'Music') {
       this.activityFeed = [];
       this.activityImageLoaded = {};
       this.activityFeedCursor = null;
       this.hasMoreActivityFeed = true;
       this.loadActivityFeed();
+    } else {
+      this.cinemaActivityFeed = [];
+      this.cinemaActivityImageLoaded = {};
+      this.cinemaActivityFeedCursor = null;
+      this.hasMoreCinemaActivityFeed = true;
+      this.loadCinemaActivityFeed();
     }
   }
 
@@ -890,6 +925,113 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.hasMoreActivityFeed && !this.isFetchingActivityFeed) {
       this.loadActivityFeed();
     }
+  }
+
+  loadCinemaActivityFeed() {
+    if (this.isFetchingCinemaActivityFeed || !this.hasMoreCinemaActivityFeed) return;
+
+    this.isFetchingCinemaActivityFeed = true;
+
+    const params: any = {
+      limit: this.feedPageLimit,
+    };
+
+    if (this.cinemaActivityFeedCursor) {
+      params.cursorDate = this.cinemaActivityFeedCursor.cursorDate;
+      params.cursorId = this.cinemaActivityFeedCursor.cursorId;
+    }
+
+    this.cinemaService.getCinemaActivityFeed(params).subscribe({
+      next: (res) => {
+        const currentUserId = this.userProfile?._id?.toString();
+
+        const newEntries: CinemaActivityEntryVm[] = (res.reviews || []).map((entry) => ({
+          ...entry,
+          likedByCurrentUser: currentUserId
+            ? (entry.likedBy || []).map((id) => id.toString()).includes(currentUserId)
+            : false,
+        }));
+
+        this.cinemaActivityFeed = [...this.cinemaActivityFeed, ...newEntries];
+
+        this.cinemaActivityFeedCursor = res.nextCursor || null;
+        this.hasMoreCinemaActivityFeed = !!res.nextCursor;
+        this.isFetchingCinemaActivityFeed = false;
+      },
+
+      error: (err) => {
+        this.toastr.error('Failed to load cinema activity feed', err.message);
+        this.isFetchingCinemaActivityFeed = false;
+      },
+    });
+  }
+
+  onScrollCinemaActivityFeed() {
+    if (this.hasMoreCinemaActivityFeed && !this.isFetchingCinemaActivityFeed) {
+      this.loadCinemaActivityFeed();
+    }
+  }
+
+  getCinemaActivityImageLoaded(i: number, type: 'cover' | 'profile'): boolean {
+    return this.cinemaActivityImageLoaded[`${i}-${type}`] === true;
+  }
+
+  setCinemaActivityImageLoaded(i: number, type: 'cover' | 'profile'): void {
+    this.cinemaActivityImageLoaded[`${i}-${type}`] = true;
+  }
+
+  // No-op for episode entries - episodeReviews subdocuments have no likes of
+  // their own (see cinemaController.getCinemaActivityFeed), so the template
+  // hides the like button for entryType 'episode' rather than calling this.
+  toggleCinemaActivityLike(entry: CinemaActivityEntryVm) {
+    if (!entry.itemId) return;
+
+    this.animateCinemaHeart[entry.activityKey] = true;
+    setTimeout(() => {
+      this.animateCinemaHeart[entry.activityKey] = false;
+    }, 300);
+
+    const originalLiked = entry.likedByCurrentUser;
+    const originalLikes = entry.likes;
+
+    entry.likedByCurrentUser = !originalLiked;
+    entry.likes += entry.likedByCurrentUser ? 1 : -1;
+
+    this.reviewService.toggleLike(entry.itemId, 'cinema').subscribe({
+      next: (res) => {
+        entry.likes = res.likes;
+        entry.likedByCurrentUser = res.likedByUser;
+      },
+      error: (err) => {
+        entry.likedByCurrentUser = originalLiked;
+        entry.likes = originalLikes;
+        console.error('Failed to toggle like:', err);
+      },
+    });
+  }
+
+  // Opens the same cinema detail modal used everywhere else - episode
+  // entries land on the show's overall detail page rather than deep-linking
+  // into that specific episode's subview (kept simple - the feed card
+  // already shows which episode was reviewed via seasonNumber/episodeNumber).
+  openCinemaActivityEntry(entry: CinemaActivityEntryVm): void {
+    const record: CinemaItem = {
+      type: 'Cinema',
+      _id: entry.itemId ?? '',
+      user: entry.user._id,
+      mediaType: entry.mediaType,
+      tmdbId: entry.tmdbId,
+      imdbId: entry.imdbId,
+      title: entry.title,
+      cover: entry.cover,
+      isWatchlist: false,
+      isWatched: true,
+      isUnrefinedImport: false,
+      traktSynced: false,
+      createdAt: entry.activityDate,
+    };
+
+    this.openCinemaDetailModal(record);
   }
 
   toggleReviewExpansion(reviewId: string) {

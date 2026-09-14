@@ -291,15 +291,14 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   isLoadingSmartUrl: boolean = true;
   showAppPickerModal: boolean = false;
   preferredApp: string | null = null;
+  // Only the platforms the smart-link feature can actually find an exact/
+  // best-effort match for (see backend/utils/callSpotify.js's
+  // findSpotifyLink and smartLinkProviders.js) - matches Edit Profile's
+  // trimmed list (user-profile.component.ts).
   availablePlatforms: string[] = [
     'spotify',
     'appleMusic',
     'youtubeMusic',
-    'deezer',
-    'amazonMusic',
-    'soundcloud',
-    'pandora',
-    'audiomack',
   ];
 
   platformStyles: Record<
@@ -316,31 +315,6 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
       label: 'YouTube Music',
       color: '#FF0000',
       icon: 'fab fa-youtube',
-    },
-    amazonMusic: {
-      label: 'Amazon Music',
-      color: '#3B4CCA',
-      icon: 'fab fa-amazon',
-    },
-    soundcloud: {
-      label: 'SoundCloud',
-      color: '#FF5500',
-      icon: 'fab fa-soundcloud',
-    },
-    deezer: {
-      label: 'Deezer',
-      color: '#9333E8',
-      imagePath: '../assets/deezer-logo.png',
-    },
-    audiomack: {
-      label: 'Audiomack',
-      color: '#FFBD00',
-      imagePath: '../assets/audiomack-logo.png',
-    },
-    pandora: {
-      label: 'Pandora',
-      color: '#3668FF',
-      imagePath: '../assets/pandora-logo.png',
     },
   };
   likedByCurrentUser?: boolean;
@@ -915,6 +889,44 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     // If preferredApp exists, do nothing: anchor href will open as expected
   }
 
+  // Song/Album only - a smart link identifies one specific track/album, which
+  // an Artist record isn't. Returns null for anything else (Artist/Cinema).
+  private buildSmartLinkParams(): {
+    type: 'track' | 'album';
+    title: string;
+    artist: string;
+    deezerUrl: string;
+    isrc?: string | null;
+    upc?: string | null;
+  } | null {
+    const id = this.musicRecord?.id;
+    if (!id) return null;
+
+    if (this.record.type === 'Album') {
+      const album = this.record as Album;
+      return {
+        type: 'album',
+        title: album.title,
+        artist: album.artist,
+        deezerUrl: `https://www.deezer.com/album/${id}`,
+        upc: album.upc,
+      };
+    }
+
+    if (this.record.type === 'Song') {
+      const song = this.record as Song;
+      return {
+        type: 'track',
+        title: song.title,
+        artist: song.artist,
+        deezerUrl: `https://www.deezer.com/track/${id}`,
+        isrc: song.isrc,
+      };
+    }
+
+    return null;
+  }
+
   setPreferredMusicApp(app: string): void {
     this.preferredApp = app;
     localStorage.setItem('preferredMusicApp', app);
@@ -930,16 +942,14 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     }
 
     // Fallback: refetch smart link only if we don't already have it
+    const params = this.buildSmartLinkParams();
+    if (!params) return;
     const id = this.musicRecord.id;
-    const deezerUrl =
-      this.record.type === 'Album'
-        ? `https://www.deezer.com/album/${id}`
-        : `https://www.deezer.com/track/${id}`;
 
     // Cancel any ongoing smartLink request before retrying
     this.smartLinkSub?.unsubscribe();
 
-    this.smartLinkSub = this.searchService.getSmartLink(deezerUrl).subscribe({
+    this.smartLinkSub = this.searchService.getSmartLink(params).subscribe({
       next: (res) => {
         // Make sure we’re still looking at the same record
         if (this.musicRecord.id !== id) return;
@@ -1031,32 +1041,35 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
           song.duration = data.duration;
           song.preview = data.preview;
           song.genre = data.genre;
+          song.isrc = data.isrc;
 
           // Fetch smart link for this song
-          // const deezerTrackUrl = `https://www.deezer.com/track/${song.id}`;
-          // this.smartLinkSub = this.searchService
-          //   .getSmartLink(deezerTrackUrl)
-          //   .subscribe({
-          //     next: (res) => {
-          //       this.smartLinkData = res;
+          const params = this.buildSmartLinkParams();
+          if (params) {
+            this.smartLinkSub = this.searchService.getSmartLink(params).subscribe({
+              next: (res) => {
+                this.smartLinkData = res;
 
-          //       const preferredApp = localStorage.getItem('preferredMusicApp');
-          //       const links = res.linksByPlatform || {};
+                const preferredApp = localStorage.getItem('preferredMusicApp');
+                const links = res.linksByPlatform || {};
 
-          //       this.smartLinkUrl =
-          //         preferredApp && links[preferredApp]?.url
-          //           ? links[preferredApp].url
-          //           : res.pageUrl || null;
-          //     },
-          //     error: (err) => {
-          //       console.error('Failed to fetch smart link for song:', err);
-          //       this.smartLinkUrl = null;
-          //       this.isLoadingSmartUrl = false;
-          //     },
-          //     complete: () => {
-          //       this.isLoadingSmartUrl = false;
-          //     },
-          //   });
+                this.smartLinkUrl =
+                  preferredApp && links[preferredApp]?.url
+                    ? links[preferredApp].url
+                    : res.pageUrl || null;
+              },
+              error: (err) => {
+                console.error('Failed to fetch smart link for song:', err);
+                this.smartLinkUrl = null;
+                this.isLoadingSmartUrl = false;
+              },
+              complete: () => {
+                this.isLoadingSmartUrl = false;
+              },
+            });
+          } else {
+            this.isLoadingSmartUrl = false;
+          }
 
           const players = [this.audioPlayerMobile, this.audioPlayerDesktop];
           players.forEach((player) => player?.stopLoading());
@@ -1108,12 +1121,12 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
           album.isExplicit = data.isExplicit;
           album.releaseDate = data.releaseDate || 'Unknown';
           album.contributors = data.contributors || [];
+          album.upc = data.upc;
 
           // Fetch smart link
-          const deezerUrl = `https://www.deezer.com/album/${album.id}`;
-          this.smartLinkSub = this.searchService
-            .getSmartLink(deezerUrl)
-            .subscribe({
+          const params = this.buildSmartLinkParams();
+          if (params) {
+            this.smartLinkSub = this.searchService.getSmartLink(params).subscribe({
               next: (res) => {
                 this.smartLinkData = res;
 
@@ -1134,6 +1147,9 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
                 this.isLoadingSmartUrl = false;
               },
             });
+          } else {
+            this.isLoadingSmartUrl = false;
+          }
 
           this.isLoadingExtraDetails = false;
         },

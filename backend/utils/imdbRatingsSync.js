@@ -5,11 +5,12 @@
 // lag real IMDb numbers unpredictably for newer/trending titles).
 //
 // Deliberately NOT stored in Redis: ~1.7M keys/fields would cost roughly
-// 150-250MB of Redis's per-key/field overhead alone (measured: this app's
-// entire Upstash free-tier cap is 256MB, and a prior unrelated leak already
-// consumed 75% of it once - see redis-daily-check memory notes). MongoDB's
-// BSON overhead per tiny document is far cheaper (~100-120MB total), and
-// Atlas usage here is currently ~0.3% of its 512MB cap, so there's ample room.
+// 150-250MB of Redis's per-key/field overhead alone - far more than this
+// app's entire Redis instance is provisioned for (a prior unrelated leak
+// already consumed a large share of it once - see redis-daily-check memory
+// notes). MongoDB's BSON overhead per tiny document is far cheaper
+// (~100-120MB total), and Atlas usage here is currently ~0.3% of its 512MB
+// cap, so there's ample room.
 const axios = require("axios");
 const zlib = require("zlib");
 const readline = require("readline");

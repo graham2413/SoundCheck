@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CinemaReview } from '../../models/responses/cinema-response';
 import { ReviewFilter, ReviewSort } from './cinema-review-page.component';
 import { CinemaSortDropdownComponent, CinemaDropdownOption } from '../../shared/cinema-sort-dropdown/cinema-sort-dropdown.component';
@@ -13,7 +14,7 @@ import { CinemaSortDropdownComponent, CinemaDropdownOption } from '../../shared/
 @Component({
   selector: 'app-cinema-all-reviews',
   standalone: true,
-  imports: [CommonModule, FormsModule, CinemaSortDropdownComponent],
+  imports: [CommonModule, FormsModule, InfiniteScrollDirective, CinemaSortDropdownComponent],
   templateUrl: './cinema-all-reviews.component.html',
   styleUrls: ['./cinema-all-reviews.component.css'],
 })
@@ -24,14 +25,20 @@ export class CinemaAllReviewsComponent implements OnInit {
   @Input() appReviewCount: number | null = null;
 
   @Input() reviews: CinemaReview[] = [];
+  @Input() userReview: CinemaReview | null = null;
   @Input() currentUserId: string | null = null;
   @Input() reviewFilter: ReviewFilter = 'all';
   @Input() reviewSort: ReviewSort = 'recent';
+  // Reviews are fetched a page at a time by the parent modal - these reflect
+  // that pagination state so the list can request more as the user scrolls.
+  @Input() hasMoreReviews = false;
+  @Input() isLoadingMoreReviews = false;
 
   @Output() back = new EventEmitter<void>();
   @Output() reviewFilterChange = new EventEmitter<ReviewFilter>();
   @Output() reviewSortChange = new EventEmitter<ReviewSort>();
   @Output() toggleReviewLike = new EventEmitter<CinemaReview>();
+  @Output() loadMoreReviews = new EventEmitter<void>();
 
   private static readonly RING_RADIUS = 45;
 
@@ -60,7 +67,11 @@ export class CinemaAllReviewsComponent implements OnInit {
 
   get filteredReviews(): CinemaReview[] {
     if (this.reviewFilter === 'mine') {
-      return this.reviews.filter((r) => r.user._id === this.currentUserId);
+      // userReview is fetched independent of pagination, and a user has at
+      // most one review per title - so it's always the complete answer here,
+      // unlike filtering the (paginated) `reviews` array, which may not have
+      // loaded the user's own review yet depending on sort/page.
+      return this.userReview ? [this.userReview] : [];
     }
     return this.reviews;
   }

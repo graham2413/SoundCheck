@@ -65,7 +65,7 @@ Trending Now      </h1>
         @itemAnim
         *ngFor="let album of filteredAlbums; let i = index"
         (click)="onMusicCardClick(i)"
-        class="grid-card cursor-pointer"
+        class="grid-card-outer cursor-pointer rounded-lg overflow-hidden"
       >
         <div class="relative">
           <span class="rank-ribbon"><span>#{{ musicTrendingRank(album) }}</span></span>
@@ -81,8 +81,19 @@ Trending Now      </h1>
             class="grid-card-img grid-card-img-square"
           />
         </div>
-        <p class="grid-card-title truncate" [title]="album.title">{{ album.title }}</p>
-        <p class="grid-card-subtitle truncate" [title]="album.artist">{{ album.artist }}</p>
+        <div class="grid-card-info-panel">
+          <p class="grid-card-title truncate" [title]="album.title">{{ album.title }}</p>
+          <p class="grid-card-date truncate" [title]="album.artist">
+            <span
+              *ngIf="album?.isExplicit"
+              class="inline-flex items-center justify-center bg-gray-600 text-white text-[9px] md:text-[12px] font-bold w-4 h-4 md:w-5 md:h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+              title="Explicit"
+            >
+              E
+            </span>
+            {{ album.artist }}
+          </p>
+        </div>
       </div>
     </div>
 

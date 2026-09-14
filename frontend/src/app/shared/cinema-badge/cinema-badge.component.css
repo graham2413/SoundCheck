@@ -12,6 +12,16 @@
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
 }
 
+.cinema-badge--sm {
+  gap: 0.22rem;
+  padding: 0.15rem 0.32rem;
+  font-size: 0.55rem;
+}
+
+.cinema-badge--sm i {
+  font-size: 0.5rem;
+}
+
 /* Overlay variant - absolutely positioned over a poster, like the marquee. */
 :host-context(.cinema-badge--overlay) .cinema-badge {
   position: absolute;

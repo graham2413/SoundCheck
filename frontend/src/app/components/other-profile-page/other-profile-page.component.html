@@ -31,11 +31,16 @@
     <button
       *ngIf="otherUser._id === loggedInUser._id"
       type="button"
-      (click)="openNotifications()"
+      (click)="goToNotifications()"
       aria-label="Notifications"
       class="absolute top-4 right-4 z-10 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center"
     >
       <i class="fas fa-bell text-gray-200 text-lg"></i>
+      <span
+        *ngIf="notificationCount"
+        class="absolute -top-2 -right-2 min-w-[1.2rem] h-[1.2rem] rounded-full bg-[#0F5EE4] text-[0.7rem] font-bold flex items-center justify-center px-1"
+        >{{ notificationCount }}</span
+      >
     </button>
 
     <!-- Avatar, Name, Joined Date, Action Button(s) -->
@@ -282,20 +287,8 @@
             <span *ngIf="showPanel === 'artists'">
               ({{ otherUser.artistList?.length || 0 }})
             </span>
-            <span *ngIf="showPanel === 'notifications'">
-              ({{ notifications.length }})
-            </span>
           </span>
         </h2>
-        <button
-          *ngIf="showPanel === 'notifications' && notifications.length"
-          type="button"
-          [disabled]="isDeletingAllNotifications"
-          (click)="deleteAllNotifications()"
-          class="absolute left-4 text-sm font-semibold text-red-300 hover:text-red-200 disabled:opacity-50"
-        >
-          Clear all
-        </button>
         <button
           (click)="closePanel()"
           class="absolute right-[2rem] text-gray-400 hover:text-white text-4xl"
@@ -328,7 +321,7 @@
             </button>
           </div>
 
-          <div class="text-center -mt-9">
+          <div class="text-center -mt-10">
             <h2 class="text-3xl font-bold text-white">Watchlist</h2>
             <p class="text-gray-400 text-sm mt-1">Movies and shows you're tracking.</p>
           </div>
@@ -496,7 +489,7 @@
                   <div class="relative w-full h-[6rem] md:h-[10rem]">
                     <!-- Loader -->
                     <div
-                      *ngIf="!isImageLoaded(i, 'review')"
+                      *ngIf="!isImageLoaded(review._id, 'review')"
                       class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded"
                     >
                       <div
@@ -513,9 +506,9 @@
                             review.albumSongOrArtist.picture ||
                             'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
                       "
-                      (load)="markImageLoaded(i, 'review')"
-                      (error)="markImageLoaded(i, 'review')"
-                      [class.invisible]="!isImageLoaded(i, 'review')"
+                      (load)="markImageLoaded(review._id, 'review')"
+                      (error)="markImageLoaded(review._id, 'review')"
+                      [class.invisible]="!isImageLoaded(review._id, 'review')"
                       alt="Album Cover"
                                             (click)="
                         openReview(
@@ -700,7 +693,7 @@
                   <div class="relative aspect-[2/3] w-full">
                     <!-- Loader -->
                     <div
-                      *ngIf="!isImageLoaded(i, 'cinemaReview')"
+                      *ngIf="!isImageLoaded(item._id, 'cinemaReview')"
                       class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-md"
                     >
                       <div
@@ -712,9 +705,9 @@
                         item.cover ||
                         'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
                       "
-                      (load)="markImageLoaded(i, 'cinemaReview')"
-                      (error)="markImageLoaded(i, 'cinemaReview')"
-                      [class.invisible]="!isImageLoaded(i, 'cinemaReview')"
+                      (load)="markImageLoaded(item._id, 'cinemaReview')"
+                      (error)="markImageLoaded(item._id, 'cinemaReview')"
+                      [class.invisible]="!isImageLoaded(item._id, 'cinemaReview')"
                       alt="{{ item.title }}"
                       class="aspect-[2/3] w-full object-cover rounded-md border-2 border-gray-500"
                     />
@@ -835,7 +828,7 @@
                     >
                       <!-- Loader -->
                       <div
-                        *ngIf="!isImageLoaded(i, 'friend')"
+                        *ngIf="!isImageLoaded(friend._id, 'friend')"
                         class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
                       >
                         <div
@@ -846,9 +839,9 @@
                       <!-- Image -->
                       <img
                         [src]="friend.profilePicture || 'assets/user.png'"
-                        (load)="markImageLoaded(i, 'friend')"
-                        (error)="markImageLoaded(i, 'friend')"
-                        [class.invisible]="!isImageLoaded(i, 'friend')"
+                        (load)="markImageLoaded(friend._id, 'friend')"
+                        (error)="markImageLoaded(friend._id, 'friend')"
+                        [class.invisible]="!isImageLoaded(friend._id, 'friend')"
                         alt="Friend"
                         class="w-full h-full object-cover rounded-full shadow-md"
                       />
@@ -907,53 +900,6 @@
             </div>
           </ng-container>
 
-          <ng-container *ngSwitchCase="'notifications'">
-            <div class="flex justify-center">
-              <div class="w-full max-w-[540px] md:max-w-[800px]">
-                <div *ngIf="isLoadingNotifications" class="text-center text-gray-400 py-8">
-                  <div class="cinema-loader-ring mx-auto"></div>
-                  <p class="mt-3">Loading notifications...</p>
-                </div>
-
-                <div
-                  *ngIf="!isLoadingNotifications && notifications.length === 0"
-                  class="text-center text-gray-400 py-8"
-                >
-                  <i class="far fa-bell-slash text-4xl mb-3 block"></i>
-                  <p>Nothing to catch up on.</p>
-                </div>
-
-                <div
-                  *ngFor="let notification of notifications"
-                  (click)="openNotificationItem(notification)"
-                  class="flex items-center gap-4 p-3 transition-all hover:bg-[#020814] cursor-pointer group hover:rounded-md"
-                >
-                  <span
-                    class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-800 text-gray-300 flex-shrink-0"
-                  >
-                    <i class="fas fa-bell"></i>
-                  </span>
-                  <div class="min-w-0 flex-1">
-                    <p class="text-white font-semibold truncate">{{ notification.title }}</p>
-                    <p class="text-gray-400 text-sm truncate">{{ notification.message }}</p>
-                    <ng-container *ngIf="notification.details as details">
-                      <p *ngIf="details.movies?.length" class="text-gray-500 text-xs mt-1">Movies: {{ (details.movies || []).join(', ') }}</p>
-                      <p *ngIf="details.tv?.length" class="text-gray-500 text-xs mt-1">TV: {{ (details.tv || []).join(', ') }}</p>
-                      <p *ngIf="details.music?.length" class="text-gray-500 text-xs mt-1">Music: {{ (details.music || []).join(', ') }}</p>
-                    </ng-container>
-                  </div>
-                  <button
-                    type="button"
-                    [attr.aria-label]="'Complete ' + notification.title"
-                    (click)="$event.stopPropagation(); deleteNotification(notification)"
-                    class="text-gray-400 hover:text-white flex-shrink-0"
-                  >
-                    <i class="fas fa-check"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </ng-container>
         </ng-container>
       </div>
     </div>

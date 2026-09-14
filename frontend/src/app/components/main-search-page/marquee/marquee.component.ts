@@ -85,6 +85,14 @@ export class MarqueeComponent implements OnDestroy, OnInit {
     return index;
   }
 
+  // loopedAlbums is `albums` duplicated end-to-end for the seamless auto-
+  // scroll loop, so the rank ribbon (matching the cinema marquee/trending
+  // grid's) wraps back to the album's real position instead of counting
+  // past albums.length.
+  trendingRank(index: number): number {
+    return (index % this.albums.length) + 1;
+  }
+
   setMarquee() {
     this.isMarqueeLoading = true;
     const storedAlbums = localStorage.getItem('albumImages');

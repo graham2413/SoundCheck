@@ -92,9 +92,27 @@ getArtistReleases(artistId: number, artistName: string): Observable<{ albums: Al
   );
 }
 
-getSmartLink(deezerUrl: string): Observable<any> {
-  const params = new HttpParams().set('url', deezerUrl);
-  return this.http.get<any>(`${this.apiUrl}/smartlink`, { params });
+// Odesli/song.link (the prior provider) deprecated public unauthenticated
+// access; Songwhip (the other option) shut down in July 2024 - this now
+// builds the link map itself, so it needs the track/album's own identifying
+// info instead of just a Deezer URL. See backend's getSmartLink.
+getSmartLink(params: {
+  type: 'track' | 'album';
+  title: string;
+  artist: string;
+  deezerUrl: string;
+  isrc?: string | null;
+  upc?: string | null;
+}): Observable<any> {
+  let httpParams = new HttpParams()
+    .set('type', params.type)
+    .set('title', params.title)
+    .set('artist', params.artist)
+    .set('deezerUrl', params.deezerUrl);
+  if (params.isrc) httpParams = httpParams.set('isrc', params.isrc);
+  if (params.upc) httpParams = httpParams.set('upc', params.upc);
+
+  return this.http.get<any>(`${this.apiUrl}/smartlink`, { params: httpParams });
 }
 
 // Music calendar - upcoming/past releases for the current user's followed

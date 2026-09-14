@@ -13,4 +13,7 @@ export interface Song {
     type: 'Song';
     isPlaying: boolean;
     wasOriginallyAlbumButTreatedAsSingle?: boolean;
+    // Used for the smart-link feature's exact Spotify match - see
+    // backend/controllers/mainSearchController.js's getSmartLink.
+    isrc?: string | null;
   }

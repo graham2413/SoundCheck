@@ -63,6 +63,14 @@
   max-width: 7rem;
 }
 
+/* Reserves the badge's row height whether or not this item actually has a
+   status badge, so cards line up at the same height instead of the ones
+   without a badge (e.g. no "Episode"/"New Season" status) coming out
+   shorter than their neighbors. */
+.badge-slot {
+  height: 1.15rem;
+}
+
 @media (min-width: 768px) {
   .cinema-card-title {
     font-size: 0.9rem;
@@ -74,11 +82,58 @@
     font-size: 0.72rem;
     max-width: 10rem;
   }
+  .badge-slot {
+    height: 1.4rem;
+  }
 }
 
 .cinema-card img {
   object-fit: cover;
   border-radius: 0.5rem;
+}
+
+/* Diagonal corner ribbon for rank (#1, #2...) - same styling as the trending
+   grid's (see-all-trending.component.css), scaled down for the marquee's
+   smaller cards. */
+.rank-ribbon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3.4rem;
+  height: 3.4rem;
+  overflow: hidden;
+  z-index: 2;
+  pointer-events: none;
+  border-top-left-radius: 0.5rem;
+}
+
+.rank-ribbon span {
+  position: absolute;
+  top: 0.35rem;
+  left: -1.15rem;
+  width: 4.8rem;
+  padding: 0.15rem 0;
+  transform: rotate(-45deg);
+  background: #0F5EE4;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+@media (min-width: 768px) {
+  .rank-ribbon {
+    width: 4.6rem;
+    height: 4.6rem;
+  }
+
+  .rank-ribbon span {
+    top: 0.5rem;
+    left: -1.55rem;
+    width: 6.5rem;
+    font-size: 0.85rem;
+  }
 }
 
 @keyframes pulse {

@@ -2,12 +2,17 @@ const Redis = require('ioredis');
 const fs = require('fs');
 
 const isProd = process.env.NODE_ENV === 'production';
+// Not every Redis provider's endpoint requires (or even supports) TLS on
+// their free/lower tiers - default to on since that's what our prior
+// provider required, but allow it to be switched off per-environment via
+// REDIS_TLS=false for providers that only offer a plain endpoint.
+const useTls = process.env.REDIS_TLS !== 'false';
 
 const redisOptions = {
   host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT,
   password: process.env.REDIS_PASSWORD,
-  tls: {},
+  tls: useTls ? {} : undefined,
   maxRetriesPerRequest: null,
   retryStrategy(times) {
     return Math.min(times * 100, 2000);
@@ -22,7 +27,7 @@ const redisOptions = {
 };
 
 // Optionally load local TLS cert in non-production
-if (!isProd) {
+if (!isProd && useTls) {
   try {
     redisOptions.tls = {
       ca: fs.existsSync('cacert.pem') ? fs.readFileSync('cacert.pem') : undefined,
@@ -51,8 +56,8 @@ if (process.env.NODE_ENV === 'test') {
   redis.on('connect', () => console.log('✅ Redis connected'));
 
   // Fail-safe wrappers - catch and log instead of throwing, so a transient
-  // Redis outage or a quota rejection (e.g. free-tier command cap) degrades
-  // to a cache-miss/no-op instead of taking down the request that called it.
+  // Redis outage or a provider quota rejection degrades to a cache-miss/
+  // no-op instead of taking down the request that called it.
   redis.safeGet = async (key) => {
     try {
       return await redis.get(key);
@@ -80,9 +85,8 @@ if (process.env.NODE_ENV === 'test') {
     }
   };
 
-  // Batched read - one MGET is billed as a single command under
-  // Upstash's per-command pricing, unlike pipelining N GETs (still N
-  // billed commands). Use this whenever a caller needs several keys
+  // Batched read - one MGET is a single round-trip/command, unlike
+  // pipelining N GETs. Use this whenever a caller needs several keys
   // it already knows up front instead of looping safeGet.
   redis.safeMget = async (keys) => {
     if (!keys.length) return [];

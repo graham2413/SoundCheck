@@ -31,7 +31,11 @@ async function sendPushForNotification(userId, notification) {
         notification: {
           title: notification.title,
           body: notification.message,
-          data: { onActionClick: { default: notification.targetUrl } },
+          // Every push opens the Notifications Center list first (never a
+          // direct deep link) - {url} bare wasn't the actual shape ngsw-worker
+          // expects (it reads onActionClick.default.{operation,url}), so this
+          // silently did nothing on click before.
+          data: { onActionClick: { default: { operation: "navigateLastFocusedOrOpen", url: "/notifications" } } },
         },
       })
     );
@@ -57,6 +61,24 @@ async function createAndSendNotification({ user, type, dedupeKey, title, message
   return notification;
 }
 
+// Deezer's recordType ("album" | "single" | "ep" | "compile") -> the word
+// used in the notification title so it reads "New song/album/EP from X"
+// instead of the generic "release" whenever we actually know which it is.
+function recordTypeLabel(recordType) {
+  switch (recordType) {
+    case "single":
+      return "song";
+    case "album":
+      return "album";
+    case "ep":
+      return "EP";
+    case "compile":
+      return "compilation";
+    default:
+      return "release";
+  }
+}
+
 async function notifyUsersForNewMusicRelease(release) {
   if (new Date(release.releaseDate) > new Date()) return;
 
@@ -73,9 +95,18 @@ async function notifyUsersForNewMusicRelease(release) {
         user: user._id,
         type: "music-release",
         dedupeKey: `music-release:${release.albumId}`,
-        title: `New release from ${release.artistName}`,
+        title: `New ${recordTypeLabel(release.recordType)} from ${release.artistName}`,
         message: release.title,
         targetUrl: "/calendar?kind=music&range=past",
+        details: {
+          albumId: release.albumId,
+          artistName: release.artistName,
+          title: release.title,
+          cover: release.cover,
+          isExplicit: release.isExplicit,
+          releaseDate: release.releaseDate,
+          recordType: release.recordType,
+        },
       })
     )
   );

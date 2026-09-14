@@ -31,7 +31,7 @@ import {
   CinemaWatchlistFilterState,
   DEFAULT_WATCHLIST_FILTERS,
 } from '../cinema-watchlist-filter/cinema-watchlist-filter.component';
-import { AppNotification, NotificationService } from 'src/app/services/notification.service';
+import { NotificationService } from 'src/app/services/notification.service';
 
 type ModalRecord = Album | Song | Artist | BaseRecord;
 @Component({
@@ -66,10 +66,8 @@ export class ViewProfilePageComponent implements OnInit {
 
   isLoadingFriendAction: boolean = false;
   isImageModalOpen: boolean = false;
-  showPanel: 'reviews' | 'friends' | 'artists' | 'watchlist' | 'notifications' | null = null;
-  notifications: AppNotification[] = [];
-  isLoadingNotifications: boolean = false;
-  isDeletingAllNotifications: boolean = false;
+  showPanel: 'reviews' | 'friends' | 'artists' | 'watchlist' | null = null;
+  notificationCount = 0;
   reviewMode: 'music' | 'cinema' = 'music';
   reviewsByType = { songs: 0, albums: 0, artists: 0 };
   averageRating = 0;
@@ -148,13 +146,9 @@ export class ViewProfilePageComponent implements OnInit {
     private notificationService: NotificationService
   ) {}
 
-  // Lets other pages (e.g. the navbar's Notifications link) deep-link into
-  // this page's fullscreen Notifications panel via router state, since
-  // notifications no longer have their own route.
-  private pendingOpenPanel: 'notifications' | null = null;
-
   ngOnInit(): void {
-    this.pendingOpenPanel = history.state?.openPanel === 'notifications' ? 'notifications' : null;
+    this.notificationService.notificationCount$.subscribe((count) => (this.notificationCount = count));
+    this.notificationService.refreshNotificationCount();
 
     this.route.params.subscribe((params) => {
       this.otherUserId = params['userId'];
@@ -165,11 +159,20 @@ export class ViewProfilePageComponent implements OnInit {
       this.isWatchlistCountLoaded = false;
       window.scrollTo(0, 0);
 
+      // userProfile$ is a shared BehaviorSubject that re-emits on every route
+      // change (the navbar silently re-fetches it to keep the friend-request
+      // badge current - see navbar.component.ts) - fetchUserDetails() resets
+      // isProfileReady and reloads everything, so without this guard every
+      // one of those re-emissions replayed the loading state on top of an
+      // already-loaded page (a visible flicker), instead of running once per
+      // profile visit like intended.
+      let hasFetchedForThisRoute = false;
       this.userService.userProfile$.subscribe((profile) => {
         this.loggedInUser = profile;
 
-        // Fetch only after loggedInUser is available
-        if (this.loggedInUser) {
+        // Fetch only once, after loggedInUser first becomes available
+        if (this.loggedInUser && !hasFetchedForThisRoute) {
+          hasFetchedForThisRoute = true;
           this.fetchUserDetails();
         }
       });
@@ -270,11 +273,6 @@ export class ViewProfilePageComponent implements OnInit {
 
         this.isProfileDetailsLoaded = true;
         this.updateProfileReadyState();
-
-        if (this.pendingOpenPanel === 'notifications' && this.isOwnProfile) {
-          this.openNotifications();
-        }
-        this.pendingOpenPanel = null;
       },
       error: () => {
         this.toastr.error('Error retrieving User Profile', 'Error');
@@ -1363,45 +1361,8 @@ export class ViewProfilePageComponent implements OnInit {
     return this.buildFullRecord({ ...raw, id: parseInt(raw.id, 10) });
   }
 
-  openNotifications(): void {
-    this.showPanel = 'notifications';
-    document.body.style.overflow = 'hidden';
-    this.loadNotifications();
-  }
-
-  loadNotifications(): void {
-    this.isLoadingNotifications = true;
-    this.notificationService.getNotifications().subscribe({
-      next: ({ notifications }) => {
-        this.notifications = notifications;
-        this.isLoadingNotifications = false;
-      },
-      error: () => (this.isLoadingNotifications = false),
-    });
-  }
-
-  openNotificationItem(notification: AppNotification): void {
-    this.closePanel();
-    this.router.navigateByUrl(notification.targetUrl);
-  }
-
-  deleteNotification(notification: AppNotification): void {
-    this.notificationService.deleteNotification(notification._id).subscribe({
-      next: () =>
-        (this.notifications = this.notifications.filter((item) => item._id !== notification._id)),
-    });
-  }
-
-  deleteAllNotifications(): void {
-    if (this.isDeletingAllNotifications) return;
-    this.isDeletingAllNotifications = true;
-    this.notificationService.deleteAllNotifications().subscribe({
-      next: () => {
-        this.notifications = [];
-        this.isDeletingAllNotifications = false;
-      },
-      error: () => (this.isDeletingAllNotifications = false),
-    });
+  goToNotifications(): void {
+    this.router.navigateByUrl('/notifications');
   }
 
   goBack(): void {
@@ -1432,12 +1393,20 @@ export class ViewProfilePageComponent implements OnInit {
     }
   }
 
-  markImageLoaded(i: number, context: string): void {
-    this.imageLoadState[`${context}-${i}`] = true;
+  // Keyed by a caller-supplied id, not array position - `review`/`cinemaReview`
+  // callers pass the item's own _id specifically because filteredMusicReviews/
+  // filteredCinemaReviews are getters that re-sort/re-filter live (sort
+  // dropdown, type/genre filters), which reshuffles what sits at any given
+  // index. Keying by index meant a slot's stale "loaded" flag from a
+  // previously-displayed item would carry over to whatever item lands there
+  // next, so the new image's spinner would just never show - intermittent,
+  // and only on slots that happened to have been marked loaded before.
+  markImageLoaded(id: string | number, context: string): void {
+    this.imageLoadState[`${context}-${id}`] = true;
   }
 
-  isImageLoaded(i: number, context: string): boolean {
-    return this.imageLoadState[`${context}-${i}`] === true;
+  isImageLoaded(id: string | number, context: string): boolean {
+    return this.imageLoadState[`${context}-${id}`] === true;
   }
 
   toggleLike(review: Review) {

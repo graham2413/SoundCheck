@@ -115,12 +115,18 @@ export class FriendsComponent implements OnInit {
     });
   }
 
-  markImageLoaded(i: number, context: string): void {
-    this.imageLoadState[`${i}-${context}`] = true;
+  // Keyed by a caller-supplied id, not array position - see the identical
+  // fix/comment on other-profile-page.component.ts's markImageLoaded. These
+  // lists (search results, suggested users, incoming requests) all reflow
+  // live - typing narrows/reorders search results, accepting/declining a
+  // request splices it out - so an index-keyed flag would carry over to
+  // whatever item lands in that slot next and its spinner would never show.
+  markImageLoaded(id: string | number, context: string): void {
+    this.imageLoadState[`${id}-${context}`] = true;
   }
 
-  isImageLoaded(i: number, context: string): boolean {
-    return this.imageLoadState[`${i}-${context}`] === true;
+  isImageLoaded(id: string | number, context: string): boolean {
+    return this.imageLoadState[`${id}-${context}`] === true;
   }
 
   getTransformedImageUrl(fullUrl: string): string {

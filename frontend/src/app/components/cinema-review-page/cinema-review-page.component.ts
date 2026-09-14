@@ -572,7 +572,11 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
 
   get filteredReviews(): CinemaReview[] {
     if (this.reviewFilter === 'mine') {
-      return this.reviews.filter((r) => r.user._id === this.currentUserId);
+      // userReview is fetched independent of pagination, and a user has at
+      // most one review per title - so it's always the complete answer here,
+      // unlike filtering the (paginated) `reviews` array, which may not have
+      // loaded the user's own review yet depending on sort/page.
+      return this.userReview ? [this.userReview] : [];
     }
     return this.reviews;
   }

@@ -93,19 +93,35 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
     return index;
   }
 
-  private cacheKey(): string {
-    // v3: bumped so old cached blobs (from before rereleaseDate was added)
-    // get treated as a miss and refetched, instead of silently missing the
-    // rerelease badge.
-    return `cinemaTrending:v3:${this.mode}`;
+  // loopedItems is `items` duplicated end-to-end for the seamless auto-scroll
+  // loop, so the rank ribbon (matching the trending grid's) wraps back to
+  // the item's real trending position instead of counting past items.length.
+  trendingRank(index: number): number {
+    return (index % this.items.length) + 1;
+  }
+
+  private cacheKey(mode: 'movie' | 'tv'): string {
+    // v4: bumped so any blob written under the pre-fix race below (a
+    // response for one mode landing after the user had already switched to
+    // the other, getting cached under the WRONG mode's key) is treated as a
+    // miss and refetched, instead of permanently showing the wrong tab's
+    // items until the 24h TTL happened to expire.
+    return `cinemaTrending:v4:${mode}`;
   }
 
   private async loadForMode(): Promise<void> {
+    // Captured once so this fetch's own cache read/write and the "did the
+    // user switch again before this resolved" check below both use the mode
+    // this call started for, not whatever this.mode has drifted to by the
+    // time the async response actually arrives.
+    const mode = this.mode;
+    const cacheKey = this.cacheKey(mode);
+
     this.stopAutoScroll();
     this.isMarqueeLoading = true;
     let baseItems: CinemaSearchResult[] = [];
 
-    const stored = localStorage.getItem(this.cacheKey());
+    const stored = localStorage.getItem(cacheKey);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -118,17 +134,23 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
     }
 
     if (baseItems.length === 0) {
-      baseItems = await this.fetchAndStoreTrending();
+      baseItems = await this.fetchAndStoreTrending(mode, cacheKey);
     }
+
+    // The user may have toggled Movies/Shows again while this request was
+    // in flight - the newer loadForMode() call for the current mode owns
+    // rendering now, so drop this now-stale response instead of clobbering
+    // it with the wrong tab's items.
+    if (mode !== this.mode) return;
 
     this.setMarqueeWindow(baseItems);
   }
 
-  private fetchAndStoreTrending(): Promise<CinemaSearchResult[]> {
+  private fetchAndStoreTrending(mode: 'movie' | 'tv', cacheKey: string): Promise<CinemaSearchResult[]> {
     return new Promise((resolve) => {
-      this.cinemaService.getTrendingCinema(this.mode).subscribe({
+      this.cinemaService.getTrendingCinema(mode).subscribe({
         next: ({ data }) => {
-          localStorage.setItem(this.cacheKey(), JSON.stringify({ items: data, cachedAt: Date.now() }));
+          localStorage.setItem(cacheKey, JSON.stringify({ items: data, cachedAt: Date.now() }));
           resolve(data);
         },
         error: (err) => {

@@ -85,6 +85,15 @@ import { UpdateService } from './services/update.service';
         ),
       ]),
     ]),
+
+    // Fades the full-screen boot loader out instead of it vanishing
+    // instantly the moment profileLoaded flips true - crossfades with the
+    // routed content underneath, which already fades in via .fade-in-soft.
+    trigger('loaderFade', [
+      transition(':leave', [
+        animate('350ms ease-in-out', style({ opacity: 0 })),
+      ]),
+    ]),
   ],
 })
 export class AppComponent implements OnInit {
@@ -207,7 +216,8 @@ export class AppComponent implements OnInit {
     const RAMP_CAP_MS = 1200; // ramp eases toward 97% over up to this long - if activateUpdate()
                               // takes longer, it just parks near-full and waits, which reads fine
     const rampStart = performance.now();
-    let settled = false;
+    let settled = false; // true once we've committed to jumping to 100%
+    let finishCalled = false; // true once finish() has been invoked (guards against duplicate calls)
 
     const tickRamp = (now: number) => {
       if (settled) return;
@@ -219,13 +229,22 @@ export class AppComponent implements OnInit {
     requestAnimationFrame(tickRamp);
 
     const finish = () => {
-      if (settled) return;
-      settled = true;
-      this.updateProgressPercent = 100;
+      if (finishCalled) return;
+      finishCalled = true;
+      // activateUpdate() often resolves almost instantly (it's just messaging
+      // the waiting SW, not downloading), which can outrace the ramp above -
+      // let the ramp keep animating until it's had its full visible run before
+      // snapping to 100%, instead of cutting it short with an instant jump.
+      const elapsed = performance.now() - rampStart;
+      const remaining = Math.max(0, RAMP_CAP_MS - elapsed);
       setTimeout(() => {
-        this.isReloadingForUpdate = true;
-        setTimeout(() => this.hardReload(), FADE_MS);
-      }, SNAP_HOLD_MS);
+        settled = true;
+        this.updateProgressPercent = 100;
+        setTimeout(() => {
+          this.isReloadingForUpdate = true;
+          setTimeout(() => this.hardReload(), FADE_MS);
+        }, SNAP_HOLD_MS);
+      }, remaining);
     };
 
     if (!this.swUpdate.isEnabled) {

@@ -35,6 +35,27 @@ function dayBounds(dateString) {
   };
 }
 
+// Identifies the item enough to reopen its own detail view straight from the
+// Notifications Center list (CinemaReviewModalComponent), instead of just
+// landing on the calendar - see cinemaItemDetails() below.
+function cinemaItemDetails(item) {
+  return {
+    _id: item._id,
+    tmdbId: item.tmdbId,
+    mediaType: item.mediaType,
+    imdbId: item.imdbId,
+    canonicalId: item.canonicalId,
+    title: item.title,
+    cover: item.cover,
+    isWatchlist: item.isWatchlist,
+    isWatched: item.isWatched,
+    decimalRating: item.decimalRating,
+    reviewText: item.reviewText,
+    containsSpoilers: item.containsSpoilers,
+    isUnrefinedImport: item.isUnrefinedImport,
+  };
+}
+
 async function scanCinemaReleaseNotifications() {
   const today = getLocalDateString(TIMEZONE);
   const { start, end } = dayBounds(today);
@@ -58,6 +79,7 @@ async function scanCinemaReleaseNotifications() {
         title: "Movie released",
         message: item.title,
         targetUrl: "/calendar?range=past",
+        details: cinemaItemDetails(item),
       });
     }
 
@@ -72,6 +94,7 @@ async function scanCinemaReleaseNotifications() {
           title: "New episode aired",
           message: item.title,
           targetUrl: "/calendar?range=past",
+          details: cinemaItemDetails(item),
         });
       }
     }
@@ -86,6 +109,7 @@ async function scanCinemaReleaseNotifications() {
           title: "New season started",
           message: item.title,
           targetUrl: "/calendar?range=past",
+          details: cinemaItemDetails(item),
         });
       }
     }

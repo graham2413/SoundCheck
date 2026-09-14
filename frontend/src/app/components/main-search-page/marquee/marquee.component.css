@@ -69,6 +69,50 @@
   border-radius: 0.5rem;
 }
 
+/* Diagonal corner ribbon for rank (#1, #2...) - same styling as the cinema
+   marquee/trending grid's (see cinema-marquee.component.css), sized for
+   this marquee's larger square cards. */
+.rank-ribbon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3.8rem;
+  height: 3.8rem;
+  overflow: hidden;
+  z-index: 3;
+  pointer-events: none;
+  border-top-left-radius: 0.5rem;
+}
+
+.rank-ribbon span {
+  position: absolute;
+  top: 0.4rem;
+  left: -1.25rem;
+  width: 5.4rem;
+  padding: 0.18rem 0;
+  transform: rotate(-45deg);
+  background: #0F5EE4;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+@media (min-width: 768px) {
+  .rank-ribbon {
+    width: 4.6rem;
+    height: 4.6rem;
+  }
+
+  .rank-ribbon span {
+    top: 0.5rem;
+    left: -1.55rem;
+    width: 6.5rem;
+    font-size: 0.85rem;
+  }
+}
+
 /* Skeleton loader animation */
 @keyframes pulse {
   0% {

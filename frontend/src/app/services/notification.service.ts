@@ -1,9 +1,38 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { SwPush } from '@angular/service-worker';
-import { Observable, from, of } from 'rxjs';
+import { BehaviorSubject, Observable, from, of } from 'rxjs';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environments';
+
+// One flexible shape covering every notification type's payload (mirrors how
+// CinemaItem itself is one big optional-field interface rather than a
+// discriminated union) - which fields are populated depends on `type`:
+// weekly-summary uses movies/tv/music; movie-release/tv-episode/tv-season use
+// the CinemaItem identity fields; music-release uses the Release fields.
+export interface AppNotificationDetails {
+  movies?: string[];
+  tv?: string[];
+  music?: string[];
+  _id?: string;
+  tmdbId?: string;
+  mediaType?: 'movie' | 'tv';
+  imdbId?: string;
+  canonicalId?: string;
+  title?: string;
+  cover?: string;
+  isWatchlist?: boolean;
+  isWatched?: boolean;
+  decimalRating?: number;
+  reviewText?: string;
+  containsSpoilers?: boolean;
+  isUnrefinedImport?: boolean;
+  albumId?: string;
+  artistName?: string;
+  isExplicit?: boolean;
+  releaseDate?: string;
+  recordType?: string | null;
+}
 
 export interface AppNotification {
   _id: string;
@@ -11,7 +40,7 @@ export interface AppNotification {
   title: string;
   message: string;
   targetUrl: string;
-  details?: { movies?: string[]; tv?: string[]; music?: string[] } | null;
+  details?: AppNotificationDetails | null;
   createdAt: string;
 }
 
@@ -30,18 +59,34 @@ export interface NotificationPreferences {
 export class NotificationService {
   private readonly apiUrl = environment.user;
 
+  // Shared "how many notifications exist" count (not read/unread - there's no
+  // such field) so the navbar bell and the profile-page bell both reflect the
+  // same number without each independently re-fetching the full list.
+  private readonly notificationCountSubject = new BehaviorSubject<number>(0);
+  readonly notificationCount$ = this.notificationCountSubject.asObservable();
+
   constructor(private http: HttpClient, private swPush: SwPush) {}
 
   getNotifications(): Observable<{ notifications: AppNotification[] }> {
     return this.http.get<{ notifications: AppNotification[] }>(`${this.apiUrl}/notifications`, { headers: this.headers() });
   }
 
+  refreshNotificationCount(): void {
+    this.getNotifications().subscribe({
+      next: ({ notifications }) => this.notificationCountSubject.next(notifications.length),
+    });
+  }
+
   deleteNotification(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/notifications/${id}`, { headers: this.headers() });
+    return this.http.delete<void>(`${this.apiUrl}/notifications/${id}`, { headers: this.headers() }).pipe(
+      tap(() => this.notificationCountSubject.next(Math.max(0, this.notificationCountSubject.value - 1)))
+    );
   }
 
   deleteAllNotifications(): Observable<{ deletedCount: number }> {
-    return this.http.delete<{ deletedCount: number }>(`${this.apiUrl}/notifications`, { headers: this.headers() });
+    return this.http.delete<{ deletedCount: number }>(`${this.apiUrl}/notifications`, { headers: this.headers() }).pipe(
+      tap(() => this.notificationCountSubject.next(0))
+    );
   }
 
   getPreferences(): Observable<{ preferences: NotificationPreferences }> {

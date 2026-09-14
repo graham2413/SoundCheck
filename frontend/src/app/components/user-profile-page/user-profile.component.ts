@@ -7,7 +7,6 @@ import { User } from 'src/app/models/responses/user.response';
 import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
 import { UpdateService } from 'src/app/services/update.service';
-import { AppNotification, NotificationPreferences, NotificationService } from 'src/app/services/notification.service';
 import { CinemaService } from 'src/app/services/cinema.service';
 
 @Component({
@@ -57,28 +56,14 @@ export class ProfileComponent implements OnInit {
   preferredApp: string | null = null;
   appVersion: string = '';
   isCheckingForUpdate: boolean = false;
-  pushEnabled = false;
-  isUpdatingNotifications = false;
-  notifications: AppNotification[] = [];
-  notificationPreferences: NotificationPreferences = {
-    immediateMusic: true,
-    immediateMovies: true,
-    immediateTvEpisodes: true,
-    immediateTvSeasons: true,
-    weeklySummary: false,
-    weeklySummaryDay: 1,
-    weeklySummaryHour: 9,
-    timezone: 'America/Chicago',
-  };
+// Only the platforms the smart-link feature can actually find an exact/
+// best-effort match for (see backend/utils/callSpotify.js's findSpotifyLink
+// and smartLinkProviders.js) - the others were removed since picking them as
+// a preferred app could never actually resolve to a real link for that app.
 availablePlatforms: string[] = [
   'spotify',
   'appleMusic',
   'youtubeMusic',
-  'deezer',
-  'amazonMusic',
-  'soundcloud',
-  'pandora',
-  'audiomack',
 ];
 
 
@@ -86,23 +71,6 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
   spotify: { label: 'Spotify', color: '#1DB954', icon: 'fab fa-spotify' },
   appleMusic: { label: 'Apple Music', color: '#FC3C44', icon: 'fab fa-apple' },
   youtubeMusic: { label: 'YouTube Music', color: '#FF0000', icon: 'fab fa-youtube' },
-  amazonMusic: { label: 'Amazon Music', color: '#3B4CCA', icon: 'fab fa-amazon' },
-  soundcloud: { label: 'SoundCloud', color: '#FF5500', icon: 'fab fa-soundcloud' },
-  deezer: {
-    label: 'Deezer',
-    color: '#9333E8',
-    imagePath: '../assets/deezer-logo.png'
-  },
-  audiomack: {
-    label: 'Audiomack',
-    color: '#FFBD00',
-    imagePath: '../assets/audiomack-logo.png'
-  },
-  pandora: {
-    label: 'Pandora',
-    color: '#3668FF',
-    imagePath: '../assets/pandora-logo.png'
-  },
 };
 
   constructor(
@@ -111,16 +79,11 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
     private router: Router,
     private authService: AuthService,
     private updateService: UpdateService,
-    private notificationService: NotificationService,
     private cinemaService: CinemaService
   ) {}
 
   ngOnInit(): void {
     this.preferredApp = localStorage.getItem('preferredMusicApp');
-    this.notificationService.getPreferences().subscribe({
-      next: ({ preferences }) => (this.notificationPreferences = preferences),
-    });
-    this.loadNotifications();
 
     fetch('/version.json', { cache: 'no-store' })
       .then((res) => res.json())
@@ -160,55 +123,6 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
   this.preferredApp = app;
   localStorage.setItem('preferredMusicApp', app);
 }
-
-  enableNotifications(): void {
-    if (this.isUpdatingNotifications) return;
-    this.isUpdatingNotifications = true;
-    this.notificationService.enablePush().subscribe((enabled) => {
-      this.pushEnabled = enabled;
-      this.isUpdatingNotifications = false;
-      this.toastr[enabled ? 'success' : 'error'](
-        enabled ? 'Notifications enabled.' : 'Notifications could not be enabled. Install the PWA and allow notifications first.',
-        enabled ? 'Success' : 'Notifications'
-      );
-    });
-  }
-
-  disableNotifications(): void {
-    if (this.isUpdatingNotifications) return;
-    this.isUpdatingNotifications = true;
-    this.notificationService.disablePush().subscribe({
-      next: () => {
-        this.pushEnabled = false;
-        this.isUpdatingNotifications = false;
-        this.toastr.success('Notifications disabled.', 'Success');
-      },
-      error: () => (this.isUpdatingNotifications = false),
-    });
-  }
-
-  updateNotificationPreference(field: keyof NotificationPreferences, value: boolean): void {
-    this.notificationPreferences = { ...this.notificationPreferences, [field]: value };
-    this.notificationService.updatePreferences({ [field]: value }).subscribe();
-  }
-
-  loadNotifications(): void {
-    this.notificationService.getNotifications().subscribe({
-      next: ({ notifications }) => (this.notifications = notifications),
-    });
-  }
-
-  deleteNotification(notification: AppNotification): void {
-    this.notificationService.deleteNotification(notification._id).subscribe({
-      next: () => (this.notifications = this.notifications.filter((item) => item._id !== notification._id)),
-    });
-  }
-
-  deleteAllNotifications(): void {
-    this.notificationService.deleteAllNotifications().subscribe({
-      next: () => (this.notifications = []),
-    });
-  }
 
 shadeColor(color: string, percent: number) {
   let R = parseInt(color.substring(1, 3), 16);

@@ -147,7 +147,7 @@
       [disabled]="isLoading"
       (click)="cycleSearchTab()"
       title="Click to switch between Songs, Albums, and Artists"
-      class="absolute inset-y-0 left-4 my-auto h-7 flex items-center rounded-full bg-[#0F5EE4] px-3 text-white text-sm md:text-base font-medium capitalize hover:bg-[#0D51CC] transition"
+      class="absolute inset-y-0 left-5 my-auto h-7 flex items-center rounded-full bg-[#0F5EE4] px-3 text-white text-sm md:text-base font-medium capitalize hover:bg-[#0D51CC] transition"
     >
       {{ selectedSearchTab }}
     </button>
@@ -1303,12 +1303,225 @@
         </div>
       </ng-template>
 
-      <!-- Cinema Activity Feed - placeholder until cinema reviews are added here -->
-      <div
-        *ngIf="activeFeedType === 'Cinema'"
-        class="text-center text-gray-400 mt-8 text-lg md:text-xl italic bg-gray-800 p-4 rounded-lg"
-      >
-        Cinema activity is coming soon.
+      <!-- Cinema Activity Feed - same cursor-paginated shape as Music above -->
+      <div *ngIf="activeFeedType === 'Cinema'">
+        <div
+          @fadeSlideIn
+          *ngIf="cinemaActivityFeed.length > 0; else noCinemaActivity"
+          infiniteScroll
+          [infiniteScrollDistance]="2"
+          [infiniteScrollThrottle]="150"
+          (scrolled)="onScrollCinemaActivityFeed()"
+        >
+          <div class="space-y-4 md:space-y-8">
+            <div
+              @itemAnim
+              *ngFor="
+                let entry of cinemaActivityFeed;
+                let i = index;
+                last as isLast
+              "
+              class="px-1 pb-4"
+              [ngClass]="{
+                'border-b border-gray-600': !isLast,
+                'mt-1': i === 0
+              }"
+            >
+              <!-- Review + Poster layout -->
+              <div class="block md:pb-[3rem]">
+                <!-- Float Right: Poster + Rating -->
+                <div
+                  class="float-right flex flex-col items-end ml-4 w-[6rem] md:w-[10rem] pb-1 relative"
+                >
+                  <!-- Media Type Icon -->
+                  <div
+                    class="absolute top-0 left-0 bg-gray-700 p-1.5 rounded-full shadow-md transform -translate-x-2 -translate-y-2 z-10"
+                  >
+                    <i
+                      class="fas text-sm md:text-xl"
+                      [ngClass]="{
+                        'fa-film text-green-400': entry.mediaType === 'movie',
+                        'fa-tv text-purple-400': entry.mediaType === 'tv'
+                      }"
+                      title="{{ entry.mediaType === 'movie' ? 'Movie' : 'TV Show' }}"
+                    ></i>
+                  </div>
+                  <div class="relative w-full h-[6rem] md:h-[10rem]">
+                    <!-- Loader -->
+                    <div
+                      *ngIf="!getCinemaActivityImageLoaded(i, 'cover')"
+                      class="absolute inset-0 flex items-center justify-center rounded border border-gray-600 bg-gray-900"
+                    >
+                      <div
+                        class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
+                      ></div>
+                    </div>
+
+                    <!-- Image -->
+                    <img
+                      [src]="
+                        entry.cover ||
+                        'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
+                      "
+                      (load)="setCinemaActivityImageLoaded(i, 'cover')"
+                      (error)="setCinemaActivityImageLoaded(i, 'cover')"
+                      [class.invisible]="!getCinemaActivityImageLoaded(i, 'cover')"
+                      (click)="openCinemaActivityEntry(entry)"
+                      alt="Poster"
+                      class="w-full h-[6rem] md:h-[10rem] rounded object-cover border border-gray-600"
+                    />
+                  </div>
+
+                  <!-- Star + Rating on one line, no wrap -->
+                  <span
+                    class="text-[1.4rem] md:text-3xl font-bold text-[#0F5EE4] mt-2 inline-flex items-center whitespace-nowrap"
+                  >
+                    <i
+                      class="fas fa-star text-yellow-500 text-xl md:text-2xl mr-1"
+                    ></i>
+                    {{ entry.decimalRating }}
+                    <span class="text-gray-400 text-[1rem] md:text-xl ml-1"
+                      >/ 10</span
+                    >
+                  </span>
+                </div>
+
+                <!-- Review block wraps beside or under poster -->
+                <div>
+                  <p
+                    class="text-[#0F5EE4] text-lg md:text-2xl font-semibold line-clamp-2"
+                  >
+                    <span (click)="openCinemaActivityEntry(entry)">{{ entry.title }}</span>
+                  </p>
+                  <p
+                    class="text-sm text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis"
+                  >
+                    <span class="md:text-xl" (click)="openCinemaActivityEntry(entry)">
+                      <ng-container *ngIf="entry.entryType === 'episode'; else topLevelLabel">
+                        Season {{ entry.seasonNumber }}, Episode {{ entry.episodeNumber }}
+                      </ng-container>
+                      <ng-template #topLevelLabel>{{ entry.mediaType === 'movie' ? 'Movie' : 'TV Show' }}</ng-template>
+                    </span>
+                  </p>
+                  <p class="text-white text-base md:text-xl mt-2">
+                    <ng-container *ngIf="entry.reviewText; else noCinemaReview">
+                      {{ entry.reviewText }}
+                    </ng-container>
+                    <ng-template #noCinemaReview>
+                      <p
+                        class="text-gray-400 italic text-base md:text-xl mt-2 font-serif"
+                      >
+                        “ No review written ”
+                      </p>
+                    </ng-template>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Bottom: Profile Info and like button-->
+              <div class="flex items-center justify-between mt-[3rem] w-full">
+                <!-- Left: profile picture + username -->
+                <div
+                  class="flex items-center gap-2 cursor-pointer"
+                  (click)="goToUserProfile(entry.user._id)"
+                >
+                  <div
+                    class="relative w-[4rem] h-[4rem] rounded-full overflow-hidden"
+                  >
+                    <!-- Loader -->
+                    <div
+                      *ngIf="!getCinemaActivityImageLoaded(i, 'profile')"
+                      class="absolute inset-0 flex items-center justify-center bg-gray-800 border border-gray-600 rounded-full"
+                    >
+                      <div
+                        class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"
+                      ></div>
+                    </div>
+
+                    <!-- Profile Picture -->
+                    <img
+                      [src]="
+                        entry.user.profilePicture
+                          ? transformCloudinaryUrl(entry.user.profilePicture)
+                          : 'assets/user.png'
+                      "
+                      (load)="setCinemaActivityImageLoaded(i, 'profile')"
+                      (error)="setCinemaActivityImageLoaded(i, 'profile')"
+                      [class.invisible]="!getCinemaActivityImageLoaded(i, 'profile')"
+                      alt="User"
+                      class="w-[4rem] h-[4rem] rounded-full object-cover"
+                    />
+                  </div>
+
+                  <div class="text-base md:text-xl text-gray-400">
+                    <p class="font-semibold text-white leading-tight">
+                      {{ entry.user.username }}
+                    </p>
+                    <p class="text-sm md:text-lg mt-1">
+                      {{ entry.activityDate | timeAgo }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Right: like button - hidden for episode entries, which
+                     have no likes of their own (see cinemaController.getCinemaActivityFeed) -->
+                <button
+                  *ngIf="entry.itemId"
+                  (click)="toggleCinemaActivityLike(entry)"
+                  class="flex items-center space-x-2 px-3 py-1 bg-gray-800 border border-gray-600 rounded-full text-white hover:bg-gray-700 transition"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    [attr.fill]="entry.likedByCurrentUser ? '#ec4899' : 'white'"
+                    viewBox="0 0 24 24"
+                    class="w-5 h-5 transition-transform duration-300 ease-out"
+                    [ngClass]="animateCinemaHeart[entry.activityKey] ? 'scale-125' : ''"
+                  >
+                    <path
+                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
+                        2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09
+                        C13.09 3.81 14.76 3 16.5 3c3.08 0 5.5 2.42 5.5 5.5
+                        0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                    />
+                  </svg>
+                  <span class="text-yellow-400 font-semibold text-lg">
+                    {{ entry.likes }}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- End-of-feed message -->
+          <div
+            *ngIf="!hasMoreCinemaActivityFeed"
+            class="text-center text-base md:text-xl text-gray-400 mt-[2rem]"
+          >
+            You have reached the end of your feed.
+          </div>
+        </div>
+
+        <!-- Modern Spinner Loader -->
+        <div
+          *ngIf="isFetchingCinemaActivityFeed"
+          class="flex flex-col items-center justify-center py-6"
+        >
+          <div
+            class="animate-spin rounded-full h-10 w-10 border-t-4 border-blue-500 border-opacity-50"
+          ></div>
+          <p class="mt-4 text-gray-400 text-lg md:text-2xl">
+            Loading Friends Feed...
+          </p>
+        </div>
+
+        <!-- No activity message -->
+        <ng-template #noCinemaActivity>
+          <div
+            *ngIf="!isFetchingCinemaActivityFeed"
+            class="text-center text-gray-400 mt-8 text-lg italic bg-gray-800 p-4 rounded-lg"
+          >
+            No activity to display yet.
+          </div>
+        </ng-template>
       </div>
     </div>
   </div>

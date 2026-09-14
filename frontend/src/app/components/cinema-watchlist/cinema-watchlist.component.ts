@@ -51,7 +51,7 @@ export class CinemaWatchlistComponent {
   @Output() itemClicked = new EventEmitter<{ item: CinemaItem; list: CinemaItem[]; index: number }>();
   @Output() loadMore = new EventEmitter<void>();
 
-  private imageLoaded: { [index: number]: boolean } = {};
+  private imageLoaded: { [id: string]: boolean } = {};
 
   onItemClick(item: CinemaItem, index: number): void {
     this.itemClicked.emit({ item, list: this.items, index });
@@ -137,12 +137,18 @@ export class CinemaWatchlistComponent {
     return getCinemaStatusBadge({ ...item, hasStreamingAvailability: !!item.streamingPlatforms?.length });
   }
 
-  markImageLoaded(i: number): void {
-    this.imageLoaded[i] = true;
+  // Keyed by the item's own _id, not array position - `items` gets replaced
+  // wholesale whenever a sort/filter/search changes (see other-profile-page's
+  // applyWatchlistFilters -> loadWatchlistIfVisible), so an index-keyed flag
+  // would carry over to whatever item lands in that slot next and its
+  // spinner would never show (same bug fixed on other-profile-page's
+  // isImageLoaded/markImageLoaded).
+  markImageLoaded(id: string): void {
+    this.imageLoaded[id] = true;
   }
 
-  isImageLoaded(i: number): boolean {
-    return this.imageLoaded[i] === true;
+  isImageLoaded(id: string): boolean {
+    return this.imageLoaded[id] === true;
   }
 
   // Small poster-sized thumbnail instead of the full-res cover, for the watchlist list.

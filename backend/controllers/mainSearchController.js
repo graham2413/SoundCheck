@@ -1,7 +1,8 @@
 const redis = require("../utils/redisClient");
 const { callDeezer } = require("../utils/callDeezer");
 const { fetchWithRetry } = require("../utils/fetchWithRetry");
-const { findArtistId, getUpcomingAlbums } = require("../utils/callSpotify");
+const { findArtistId, getUpcomingAlbums, findSpotifyLink } = require("../utils/callSpotify");
+const { findAppleMusicLink, findYoutubeMusicLink } = require("../utils/smartLinkProviders");
 const {
   CALENDAR_CACHE_TIMEZONE,
   getLocalDateString,
@@ -335,6 +336,9 @@ const getTrackDetails = async (req, res) => {
         ? trackData.contributors.map((c) => c.name)
         : [],
       genre: genre,
+      // Used for the smart-link feature's exact Spotify match (see
+      // getSmartLink) - Deezer's public track endpoint already includes it.
+      isrc: trackData.isrc || null,
     };
 
     return res.json(trackDetails);
@@ -488,6 +492,9 @@ const getAlbumDetails = async (req, res) => {
       contributors: albumData.contributors?.map((c) => c.name) || [],
       isExplicit: albumData.explicit_lyrics,
       preview: firstTrack?.preview || null,
+      // Used for the smart-link feature's exact Spotify match (see
+      // getSmartLink) - Deezer's public album endpoint already includes it.
+      upc: albumData.upc || null,
     };
 
     return res.json(albumDetails);
@@ -1011,40 +1018,61 @@ const getDeezerArtistReleases = async (req, res) => {
 };
 
 // smartLinkController.js
-const https = require("https");
-const axios = require("axios");
-const fs = require("fs");
-
-const isProd = process.env.NODE_ENV === "production";
-
-// Use relaxed SSL agent in dev (if needed)
-const agent = isProd
-  ? new https.Agent()
-  : new https.Agent({
-      rejectUnauthorized: false, // allow self-signed certs
-      ca: fs.existsSync("cacert.pem") ? fs.readFileSync("cacert.pem") : undefined,
-    });
+//
+// "Smart link" - given a track/album's identifying info, returns a per-
+// platform link map (Spotify/Apple Music/YouTube Music, plus the Deezer
+// link the caller already has) so a user can open the exact same track/
+// album in whichever app they actually use. Previously proxied Odesli's
+// song.link API; that's no longer usable (Odesli deprecated public
+// unauthenticated access - every call now gets back
+// `{"statusCode":401,"code":"PUBLIC_API_ACCESS_DEPRECATED"}`, confirmed live
+// for both track and album URLs) and Songwhip, the other option, shut down
+// for good in July 2024. See callSpotify.js's findSpotifyLink and
+// smartLinkProviders.js for how each platform's link is actually found.
+const SMART_LINK_CACHE_TTL = 30 * 24 * 60 * 60; // 30 days - a track/album's platform links are effectively permanent once it exists there
 
 const getSmartLink = async (req, res) => {
-  const { url } = req.query;
+  const { type, title, artist, deezerUrl, isrc, upc } = req.query;
 
-  if (!url) {
-    return res.status(400).json({ error: 'Missing required "url" query parameter.' });
+  if (!title || !artist || !deezerUrl) {
+    return res.status(400).json({ error: 'Missing required "title", "artist", and "deezerUrl" query parameters.' });
   }
 
-  try {
-    const response = await axios.get(
-      `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(url)}`,
-      { httpsAgent: agent }
-    );
+  const kind = type === "album" ? "album" : "track";
 
-    res.json(response.data);
+  try {
+    // v2: bumped so blobs cached under the old exact-UPC/ISRC-only Spotify
+    // lookup (no text-search fallback) get treated as a miss and refetched -
+    // otherwise a title whose UPC/ISRC differs between platforms would keep
+    // silently missing its Spotify link until the 30-day TTL happened to expire.
+    const cacheKey = `smartlink:v2:${kind}:${(isrc || upc || `${artist}:${title}`).toLowerCase()}`;
+    const cached = await redis.safeGet(cacheKey);
+    if (cached) return res.json(JSON.parse(cached));
+
+    const [spotifyUrl, appleMusicUrl, youtubeMusicUrl] = await Promise.all([
+      findSpotifyLink({ type: kind, isrc, upc, title, artist }),
+      findAppleMusicLink({ type: kind, title, artist }),
+      findYoutubeMusicLink({ title, artist }),
+    ]);
+
+    const result = {
+      linksByPlatform: {
+        deezer: { url: deezerUrl },
+        ...(spotifyUrl ? { spotify: { url: spotifyUrl } } : {}),
+        ...(appleMusicUrl ? { appleMusic: { url: appleMusicUrl } } : {}),
+        ...(youtubeMusicUrl ? { youtubeMusic: { url: youtubeMusicUrl } } : {}),
+      },
+      // Deezer's own link, always known - the universal fallback the
+      // frontend opens if the user's preferred app has no match (mirrors
+      // Odesli's old `pageUrl` role, just pointed at Deezer instead of a
+      // song.link landing page).
+      pageUrl: deezerUrl,
+    };
+
+    await redis.safeSet(cacheKey, JSON.stringify(result), "EX", SMART_LINK_CACHE_TTL);
+    res.json(result);
   } catch (error) {
-    console.error(
-      "Smart link fetch failed:",
-      error.response?.status ?? error.code ?? error.message,
-      error.response?.data ?? ""
-    );
+    console.error("Smart link lookup failed:", error.message);
     res.status(500).json({ error: "Failed to fetch smart link" });
   }
 };

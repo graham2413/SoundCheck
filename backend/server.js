@@ -32,7 +32,7 @@ const spotifyController = require("./controllers/spotifyController");
 const { cronSyncAllArtists } = require('./controllers/mainSearchController');
 const { syncImdbRatings, logLastSyncedAt } = require('./utils/imdbRatingsSync');
 const { prewarmTrackedShowEpisodeMaps } = require('./utils/imdbEpisodeMap');
-const { cronRefreshCinemaMetadata, getLocalDayOfWeek } = require('./controllers/cinemaController');
+const { cronRefreshCinemaMetadata, prewarmCalendarDetailsCache, getLocalDayOfWeek } = require('./controllers/cinemaController');
 const { scanCinemaReleaseNotifications, scanMusicReleaseNotifications, sendWeeklySummaries } = require('./utils/notificationJobs');
 
 const userRoutes = require("./routes/userRoutes");
@@ -174,6 +174,10 @@ cron.schedule('0 4 * * *', async () => {
   await cronRefreshCinemaMetadata({ fullRecheck }).catch((err) => console.error('Cinema metadata refresh failed:', err));
   await scanCinemaReleaseNotifications().catch((err) => console.error('Cinema notification scan failed:', err));
   await scanMusicReleaseNotifications().catch((err) => console.error('Music notification scan failed:', err));
+  // Piggybacks on this same job since it already touches every tracked title -
+  // warms the shared per-title calendar cache so a user's first calendar
+  // load of the day is mostly cache hits instead of live TMDb calls.
+  await prewarmCalendarDetailsCache().catch((err) => console.error('Calendar cache prewarm failed:', err));
 }, {
   timezone: 'America/Chicago'
 });

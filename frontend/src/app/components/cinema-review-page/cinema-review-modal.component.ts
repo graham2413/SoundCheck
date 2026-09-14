@@ -103,13 +103,17 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
         [appRating]="appRating"
         [appReviewCount]="appReviewCount"
         [reviews]="reviews"
+        [userReview]="userReview"
         [currentUserId]="currentUserId"
         [reviewFilter]="reviewFilter"
         [reviewSort]="reviewSort"
+        [hasMoreReviews]="hasMoreReviews"
+        [isLoadingMoreReviews]="isLoadingMoreReviews"
         (back)="switchToReview()"
         (reviewFilterChange)="reviewFilter = $event"
         (reviewSortChange)="onReviewSortChange($event)"
         (toggleReviewLike)="onToggleReviewLike($event)"
+        (loadMoreReviews)="loadMoreReviews()"
       ></app-cinema-all-reviews>
 
       <app-cinema-awards-page
@@ -201,6 +205,13 @@ export class CinemaReviewModalComponent implements OnInit {
   appRating: number | null = null;
   appReviewCount: number | null = null;
 
+  // Reviews are fetched a page at a time (mirrors calendar-page's
+  // offset/limit + hasMore pattern) - more are grabbed as the user scrolls
+  // the "See All Reviews" list rather than fetching every review up front.
+  private static readonly REVIEWS_PAGE_SIZE = 20;
+  hasMoreReviews = true;
+  isLoadingMoreReviews = false;
+
   constructor(
     public activeModal: NgbActiveModal,
     private modal: NgbModal,
@@ -273,15 +284,18 @@ export class CinemaReviewModalComponent implements OnInit {
     this.loadReviews();
   }
 
+  // Initial load (and reload on sort change) - replaces the list from page 0.
   private loadReviews(): void {
-    this.cinemaService.getCinemaReviews(this.record, this.reviewSort).subscribe({
+    this.hasMoreReviews = true;
+    this.isLoadingMoreReviews = false;
+
+    this.cinemaService.getCinemaReviews(this.record, this.reviewSort, 0, CinemaReviewModalComponent.REVIEWS_PAGE_SIZE).subscribe({
       next: ({ data }) => {
         this.reviews = data.reviews;
         this.userReview = data.userReview;
-        this.appReviewCount = data.reviews.length;
-        this.appRating = data.reviews.length
-          ? data.reviews.reduce((sum, r) => sum + (r.decimalRating || 0), 0) / data.reviews.length
-          : null;
+        this.appReviewCount = data.totalCount;
+        this.appRating = data.avgRating;
+        this.hasMoreReviews = data.hasMore;
 
         // The record this modal was opened with can be a stale/incomplete
         // copy (e.g. a search-result stub, or a list item fetched before the
@@ -303,6 +317,29 @@ export class CinemaReviewModalComponent implements OnInit {
       },
       error: () => this.toastr.error('Failed to load reviews.', 'Error'),
     });
+  }
+
+  // Fired by infiniteScroll on the "See All Reviews" list - appends the next
+  // page instead of replacing reviews, so scroll position isn't disturbed.
+  loadMoreReviews(): void {
+    if (this.isLoadingMoreReviews || !this.hasMoreReviews) return;
+    this.isLoadingMoreReviews = true;
+
+    this.cinemaService
+      .getCinemaReviews(this.record, this.reviewSort, this.reviews.length, CinemaReviewModalComponent.REVIEWS_PAGE_SIZE)
+      .subscribe({
+        next: ({ data }) => {
+          this.reviews = [...this.reviews, ...data.reviews];
+          this.appReviewCount = data.totalCount;
+          this.appRating = data.avgRating;
+          this.hasMoreReviews = data.hasMore;
+          this.isLoadingMoreReviews = false;
+        },
+        error: () => {
+          this.toastr.error('Failed to load more reviews.', 'Error');
+          this.isLoadingMoreReviews = false;
+        },
+      });
   }
 
   onReviewSortChange(sort: ReviewSort): void {

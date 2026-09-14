@@ -78,7 +78,7 @@
       <ng-container *ngIf="getThumbUrl(item.cover) as thumbUrl">
         <!-- Loader -->
         <div
-          *ngIf="!isImageLoaded(i)"
+          *ngIf="!isImageLoaded(item._id)"
           class="absolute inset-0 flex items-center justify-center rounded-l-lg bg-gray-900"
         >
           <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
@@ -86,9 +86,9 @@
         <img
           [src]="thumbUrl"
           loading="lazy"
-          (load)="markImageLoaded(i)"
-          (error)="markImageLoaded(i)"
-          [class.invisible]="!isImageLoaded(i)"
+          (load)="markImageLoaded(item._id)"
+          (error)="markImageLoaded(item._id)"
+          [class.invisible]="!isImageLoaded(item._id)"
           alt="{{ item.title }}"
           class="h-full w-full object-cover rounded-l-lg"
         />

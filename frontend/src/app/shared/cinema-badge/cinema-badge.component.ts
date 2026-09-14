@@ -12,7 +12,7 @@ import { CinemaBadgeVm } from '../cinema-status-badge';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <span *ngIf="badge" class="cinema-badge" [ngClass]="'badge-' + badge.kind">
+    <span *ngIf="badge" class="cinema-badge" [ngClass]="['badge-' + badge.kind, 'cinema-badge--' + size]">
       <i class="fas" [ngClass]="badge.icon"></i>
       {{ badge.label }}
     </span>
@@ -21,4 +21,7 @@ import { CinemaBadgeVm } from '../cinema-status-badge';
 })
 export class CinemaBadgeComponent {
   @Input() badge: CinemaBadgeVm | null = null;
+  // 'sm' shrinks the text/icon for tight spaces (e.g. the marquee's narrow
+  // cards) - default 'md' keeps every existing usage's look unchanged.
+  @Input() size: 'sm' | 'md' = 'md';
 }

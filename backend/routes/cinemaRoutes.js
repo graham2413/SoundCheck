@@ -25,6 +25,7 @@ const {
   markEpisodeWatched,
   rateEpisode,
   getEpisodeReviews,
+  getCinemaActivityFeed,
 } = require("../controllers/cinemaController");
 
 // Zip never touches disk/Cloudinary - parsed directly from the in-memory buffer
@@ -86,6 +87,9 @@ router.post("/episode/rate", authenticateUser, rateEpisode);
 
 // Everyone's reviews (rating + text) for the same movie/show (Protected)
 router.get("/reviews", authenticateUser, getCinemaReviews);
+
+// Chronological feed of self + friends' cinema activity (Protected)
+router.get("/activityFeed", authenticateUser, getCinemaActivityFeed);
 
 // Upcoming episodes/releases for tracked shows/movies (Protected)
 router.get("/calendar", authenticateUser, getCalendar);

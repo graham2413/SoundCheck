@@ -7,14 +7,6 @@
       </h1>
       <div class="flex items-center gap-2">
         <button
-          (click)="refresh()"
-          [disabled]="isLoading || isRefreshing"
-          title="Refresh"
-          class="flex items-center justify-center h-12 w-12 rounded-full border border-gray-500 text-gray-300 hover:text-white hover:border-gray-400 transition disabled:opacity-50"
-        >
-          <i class="fas fa-arrows-rotate text-xl" [class.fa-spin]="isRefreshing"></i>
-        </button>
-        <button
           (click)="setKind(kind === 'cinema' ? 'music' : 'cinema')"
           [disabled]="isLoading"
           [title]="kind === 'cinema' ? 'Switch to Music Calendar' : 'Switch to Cinema Calendar'"
@@ -60,31 +52,41 @@
       </button>
     </div>
 
-    <!-- Media type filter - cinema only -->
-    <div *ngIf="kind === 'cinema'" class="flex items-center justify-center gap-2 mb-4 mt-4">
+    <!-- Media type filter (cinema only) + refresh, on one row -->
+    <div class="flex items-center justify-between gap-2 mb-4 mt-4">
+      <div *ngIf="kind === 'cinema'" class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="setMediaTypeFilter('all')"
+          [ngClass]="mediaTypeFilter === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
+          class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
+        >
+          All
+        </button>
+        <button
+          type="button"
+          (click)="setMediaTypeFilter('tv')"
+          [ngClass]="mediaTypeFilter === 'tv' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
+          class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
+        >
+          TV Shows
+        </button>
+        <button
+          type="button"
+          (click)="setMediaTypeFilter('movie')"
+          [ngClass]="mediaTypeFilter === 'movie' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
+          class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
+        >
+          Movies
+        </button>
+      </div>
       <button
-        type="button"
-        (click)="setMediaTypeFilter('all')"
-        [ngClass]="mediaTypeFilter === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
-        class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
+        (click)="refresh()"
+        [disabled]="isLoading || isRefreshing"
+        title="Refresh"
+        class="flex items-center justify-center h-10 w-10 rounded-full border border-gray-500 text-gray-300 hover:text-white hover:border-gray-400 transition disabled:opacity-50 ml-auto"
       >
-        All
-      </button>
-      <button
-        type="button"
-        (click)="setMediaTypeFilter('tv')"
-        [ngClass]="mediaTypeFilter === 'tv' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
-        class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
-      >
-        TV Shows
-      </button>
-      <button
-        type="button"
-        (click)="setMediaTypeFilter('movie')"
-        [ngClass]="mediaTypeFilter === 'movie' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
-        class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
-      >
-        Movies
+        <i class="fas fa-arrows-rotate text-lg" [class.fa-spin]="isRefreshing"></i>
       </button>
     </div>
 

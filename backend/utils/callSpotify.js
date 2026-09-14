@@ -181,4 +181,52 @@ async function getUpcomingAlbums(spotifyArtistId) {
   }
 }
 
-module.exports = { getPlaylistTracks, findArtistId, getUpcomingAlbums };
+// Exact-match lookup by ISRC (track) or UPC (album) - the "smart link"
+// feature's Spotify half (see mainSearchController.js's getSmartLink).
+// Odesli/song.link (the app's prior smart-link provider) deprecated public
+// unauthenticated access entirely (confirmed: every call now gets back
+// `{"statusCode":401,"code":"PUBLIC_API_ACCESS_DEPRECATED"}`, for both track
+// and album URLs), and Songwhip - the other established smart-link service -
+// shut down for good in July 2024. Spotify's own search already supports
+// exact catalog-code lookups, so this replaces Odesli's role for Spotify
+// specifically; see smartLinkProviders.js for the Apple Music/YouTube Music
+// equivalents built the same way.
+async function findSpotifyLink({ type, isrc, upc, title, artist }) {
+  const token = await getCachedAppToken();
+  if (!token) return null;
+
+  const externalId = type === "album" ? upc : isrc;
+
+  // Exact-code lookup first when we have one - but different platforms can
+  // genuinely register different UPC/ISRC codes for what's still the same
+  // release (verified directly: Drake's "Iceman" album has UPC 600574206992
+  // on Deezer vs 00600574207005 on Spotify - not a formatting difference,
+  // an actual different catalog code), so this isn't a reliable enough
+  // signal on its own - falls through to a text search below rather than
+  // giving up when it comes back empty.
+  if (externalId) {
+    const exactMatch = await searchSpotify({ token, type, query: type === "album" ? `upc:${externalId}` : `isrc:${externalId}` });
+    if (exactMatch) return exactMatch;
+  }
+
+  if (!title || !artist) return null;
+  return searchSpotify({ token, type, query: type === "album" ? `album:${title} artist:${artist}` : `track:${title} artist:${artist}` });
+}
+
+async function searchSpotify({ token, type, query }) {
+  try {
+    const response = await axios.get(`${API_BASE}/search`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { q: query, type, limit: 1 },
+      timeout: 8000,
+    });
+
+    const item = type === "album" ? response.data?.albums?.items?.[0] : response.data?.tracks?.items?.[0];
+    return item?.external_urls?.spotify || null;
+  } catch (error) {
+    console.error("Spotify smart-link search error:", error.response?.status, error.message);
+    return null;
+  }
+}
+
+module.exports = { getPlaylistTracks, findArtistId, getUpcomingAlbums, findSpotifyLink };

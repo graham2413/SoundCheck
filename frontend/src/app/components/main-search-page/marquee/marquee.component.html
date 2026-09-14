@@ -12,6 +12,8 @@
           @itemAnim
           (click)="onCardClick(album, i)"
         >
+          <span class="rank-ribbon"><span>#{{ trendingRank(i) }}</span></span>
+
           <!-- Loader -->
           <div
             *ngIf="!marqueeImageLoaded[i]"

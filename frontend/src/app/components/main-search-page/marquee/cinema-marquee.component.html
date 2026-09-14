@@ -9,6 +9,7 @@
         <div class="cinema-card-wrapper" @itemAnim (click)="onCardClick(item, i)">
           <div class="cinema-card-outer w-[7rem] md:w-[10rem] rounded-lg overflow-hidden">
           <div class="cinema-card relative h-[10.5rem] md:h-[15rem]">
+            <span class="rank-ribbon"><span>#{{ trendingRank(i) }}</span></span>
             <div *ngIf="!marqueeImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">
               <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
             </div>
@@ -25,12 +26,6 @@
               [class.invisible]="!marqueeImageLoaded[i % items.length]"
               class="w-full h-full object-cover"
             />
-
-            <app-cinema-badge
-              *ngIf="marqueeImageLoaded[i]"
-              class="cinema-badge--overlay"
-              [badge]="marqueeBadge(item)"
-            ></app-cinema-badge>
           </div>
 
           <div class="cinema-card-info">
@@ -39,6 +34,9 @@
             <p *ngIf="item.genres?.length" class="cinema-card-genre truncate" [title]="item.genres?.join(', ')">
               {{ item.genres?.join(', ') }}
             </p>
+            <div class="badge-slot mt-1 flex items-center">
+              <app-cinema-badge [badge]="marqueeBadge(item)" size="sm"></app-cinema-badge>
+            </div>
           </div>
           </div>
         </div>

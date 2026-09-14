@@ -45,6 +45,11 @@ type CombinedEntry = CalendarEntry | MusicCalendarEntry;
   ],
 })
 export class CalendarPageComponent implements OnInit {
+  // Remembers whichever kind was last used, across full app reloads -
+  // defaults to 'cinema' the very first time, matching this app's prior
+  // hardcoded default. Only used as a fallback when no ?kind= query param
+  // (e.g. from a push notification link) is present - see ngOnInit.
+  private static readonly LAST_KIND_KEY = 'lastCalendarKind';
   kind: CalendarKind = 'cinema';
   entries: CombinedEntry[] = [];
   isLoading = true;
@@ -199,8 +204,25 @@ export class CalendarPageComponent implements OnInit {
     const query = this.route.snapshot.queryParamMap;
     const requestedKind = query.get('kind');
     const requestedRange = query.get('range');
-    if (requestedKind === 'music' || requestedKind === 'cinema') this.kind = requestedKind;
-    if (requestedRange === 'past' || requestedRange === 'upcoming') this.range = requestedRange;
+
+    if (requestedKind === 'music' || requestedKind === 'cinema') {
+      this.kind = requestedKind;
+    } else {
+      // No explicit ?kind= (e.g. a push notification link) - fall back to
+      // whichever kind was last used instead of always defaulting to cinema.
+      const lastKind = localStorage.getItem(CalendarPageComponent.LAST_KIND_KEY);
+      if (lastKind === 'music' || lastKind === 'cinema') this.kind = lastKind;
+    }
+
+    if (requestedRange === 'past' || requestedRange === 'upcoming') {
+      this.range = requestedRange;
+    } else if (!requestedKind) {
+      // Matches setKind()'s own kind->range convention (music defaults to
+      // past releases, cinema to upcoming) when the kind came from the
+      // remembered last-used value rather than an explicit link.
+      this.range = this.kind === 'music' ? 'past' : 'upcoming';
+    }
+
     this.loadCalendar();
   }
 
@@ -287,6 +309,7 @@ export class CalendarPageComponent implements OnInit {
     if (this.kind === kind || this.isLoading) return;
     this.kind = kind;
     this.range = kind === 'music' ? 'past' : 'upcoming';
+    localStorage.setItem(CalendarPageComponent.LAST_KIND_KEY, kind);
     this.loadCalendar();
   }
 

@@ -11,12 +11,14 @@ import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password.
 import { NotFoundComponent } from './components/not-found.component/not-found-page.component';
 import { CalendarPageComponent } from './components/calendar-page/calendar-page.component';
 import { CinemaReviewPageDevPreviewComponent } from './components/cinema-review-page/cinema-review-page-dev-preview.component';
+import { NotificationsPageComponent } from './components/notifications-page/notifications-page.component';
 
 export const appRoutes: Routes = [
     { path: '', component: MainSearchComponent, canActivate: [AuthGuard], data: { animation: 'homePage' } },
     { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard], data: { animation: 'profilePage' } },
     { path: 'friends', component: FriendsComponent, canActivate: [AuthGuard], data: { animation: 'friendsPage' } },
     { path: 'calendar', component: CalendarPageComponent, canActivate: [AuthGuard], data: { animation: 'calendarPage' } },
+    { path: 'notifications', component: NotificationsPageComponent, canActivate: [AuthGuard], data: { animation: 'notificationsPage' } },
     { path: 'profile/:userId', component: ViewProfilePageComponent, canActivate: [AuthGuard], data: { animation: 'viewProfilePage' } },
 
     // Dev-only preview of the in-progress cinema review page redesign, no auth guard

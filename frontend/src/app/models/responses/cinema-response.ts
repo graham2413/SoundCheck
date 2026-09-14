@@ -80,6 +80,43 @@ export interface CinemaReview extends Omit<CinemaItem, 'user'> {
 export interface CinemaReviewsResponse {
   reviews: CinemaReview[];
   userReview: CinemaReview | null;
+  totalCount: number;
+  avgRating: number | null;
+  hasMore: boolean;
+}
+
+// One row from GET /api/cinema/activityFeed - either a whole movie/show
+// rating (entryType 'top', itemId is a real CinemaItem _id usable with the
+// existing like-toggle endpoint) or a single TV episode rating (entryType
+// 'episode', itemId is null - episodeReviews subdocuments have no likes of
+// their own, so `likes` is always 0 and the like button is hidden for these).
+export interface CinemaActivityEntry {
+  itemId: string | null;
+  activityKey: string;
+  entryType: 'top' | 'episode';
+  seasonNumber: number | null;
+  episodeNumber: number | null;
+  mediaType: 'movie' | 'tv';
+  tmdbId?: string;
+  imdbId?: string;
+  title: string;
+  cover?: string;
+  decimalRating: number;
+  reviewText: string;
+  containsSpoilers: boolean;
+  likes: number;
+  likedBy: string[];
+  activityDate: string;
+  user: {
+    _id: string;
+    username: string;
+    profilePicture: string;
+  };
+}
+
+export interface CinemaActivityFeedResponse {
+  reviews: CinemaActivityEntry[];
+  nextCursor: { cursorDate: string; cursorId: string } | null;
 }
 
 export interface ImdbStats {

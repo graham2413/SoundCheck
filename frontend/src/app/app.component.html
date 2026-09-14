@@ -131,6 +131,7 @@
   <!-- Loader fallback -->
   <div
     *ngIf="!profileLoaded"
+    @loaderFade
     class="full-screen-loader fixed inset-0 flex items-center justify-center text-white"
   >
     <div class="background-underlay"></div>

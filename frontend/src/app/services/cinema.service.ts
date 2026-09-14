@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environments';
-import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CalendarSubtitle, CalendarMonthGroup, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor, CinemaSeasonEpisodesResponse, EpisodeImdbRatingsResponse, EpisodeReviewsResponse, CinemaSoundtrackResponse } from '../models/responses/cinema-response';
+import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CalendarSubtitle, CalendarMonthGroup, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor, CinemaSeasonEpisodesResponse, EpisodeImdbRatingsResponse, EpisodeReviewsResponse, CinemaSoundtrackResponse, CinemaActivityFeedResponse } from '../models/responses/cinema-response';
 
 export interface WatchlistCursor {
   cursorValue: string;
@@ -335,12 +335,17 @@ export class CinemaService {
     );
   }
 
-  // Everyone's reviews (rating + text) for the same movie/show as `item`
+  // Everyone's reviews (rating + text) for the same movie/show as `item`,
+  // paginated via offset/limit (mirrors getCalendar's pattern) - `userReview`,
+  // `totalCount` and `avgRating` are computed server-side across ALL reviews
+  // regardless of page, so the header stays accurate as more pages load.
   getCinemaReviews(
     item: CinemaItem,
-    sort: 'recent' | 'highest' | 'liked' = 'recent'
+    sort: 'recent' | 'highest' | 'liked' = 'recent',
+    offset = 0,
+    limit = 20
   ): Observable<{ success: boolean; data: CinemaReviewsResponse }> {
-    let params = new HttpParams().set('sort', sort);
+    let params = new HttpParams().set('sort', sort).set('offset', offset).set('limit', limit);
 
     if (item.imdbId) {
       params = params.set('imdbId', item.imdbId);
@@ -353,6 +358,22 @@ export class CinemaService {
     return this.http.get<{ success: boolean; data: CinemaReviewsResponse }>(`${this.apiUrl}/reviews`, {
       headers: this.authHeaders(),
       params,
+    });
+  }
+
+  // Chronological feed of self + friends' cinema activity - mirrors
+  // ReviewService.getActivityFeed's cursor-based pagination for music.
+  getCinemaActivityFeed(
+    params: { cursorDate?: string; cursorId?: string; limit?: number } = {}
+  ): Observable<CinemaActivityFeedResponse> {
+    let httpParams = new HttpParams();
+    if (params.cursorDate) httpParams = httpParams.set('cursorDate', params.cursorDate);
+    if (params.cursorId) httpParams = httpParams.set('cursorId', params.cursorId);
+    if (params.limit !== undefined) httpParams = httpParams.set('limit', params.limit.toString());
+
+    return this.http.get<CinemaActivityFeedResponse>(`${this.apiUrl}/activityFeed`, {
+      headers: this.authHeaders(),
+      params: httpParams,
     });
   }
 }

@@ -141,7 +141,14 @@ export class SeeAllTrendingComponent implements OnInit, OnChanges {
   }
 
   onMusicCardClick(index: number): void {
-    const list = this.filteredAlbums;
+    // The grid only ever upgrades the cover for its own <img> binding
+    // (highQualityCover) - without doing the same here, the review page
+    // modal (and prev/next navigation within it) received the original
+    // small Deezer thumbnail and rendered it blurry.
+    const list = this.filteredAlbums.map((album) => ({
+      ...album,
+      cover: this.highQualityCover(album.cover),
+    }));
     this.musicCardClick.emit({ album: list[index], list, index });
   }
 
