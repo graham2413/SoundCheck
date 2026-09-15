@@ -248,6 +248,7 @@ export class CinemaReviewModalComponent implements OnInit {
       keyboard: true,
       centered: true,
       scrollable: false,
+      windowClass: 'cinema-detail-modal',
     };
     const modalRef = this.modal.open(CinemaReviewModalComponent, modalOptions);
     modalRef.componentInstance.record = record;

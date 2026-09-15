@@ -307,6 +307,7 @@ export class NotificationsPageComponent implements OnInit {
       keyboard: true,
       centered: true,
       scrollable: false,
+      windowClass: 'cinema-detail-modal',
     };
 
     const record: CinemaItem = {

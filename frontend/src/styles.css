@@ -32,6 +32,32 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   animation: none !important;
 }
 
+/* Cinema detail modal (opened via windowClass: 'cinema-detail-modal') slides
+   in/out from the right instead of using the disabled-above default. This is
+   applied to the WINDOW element itself (ngb-modal-window, already fixed +
+   inset:0 to exactly the viewport per the rule below) rather than to
+   .modal-dialog - the modal's actual visible content is the component's own
+   `fixed inset-0` wrapper (see the comment on ngb-modal-window below), and a
+   `transform` on any ancestor creates a new containing block for
+   position:fixed descendants. Putting the transform on .modal-dialog (which
+   Bootstrap CSS would normally size, but isn't loaded here, so it has no
+   defined size of its own) collapsed that containing block and made the
+   modal render invisibly; the window element is the right place since it's
+   already exactly viewport-sized, so translating it moves the whole thing
+   as one rigid unit. Needs higher specificity than the ".modal" disable rule
+   above (both are !important, so the more-specific selector wins regardless
+   of source order) - ngb-modal-window already toggles the "show" class on
+   open/close and waits for this transition's transitionend event either way
+   (that's ng-bootstrap's normal modal-animation mechanism; nothing extra
+   needed on the component side to get the reverse slide-out on close). */
+.cinema-detail-modal.modal.fade {
+  transition: transform 300ms ease-out !important;
+  transform: translateX(100%);
+}
+.cinema-detail-modal.modal.fade.show {
+  transform: translateX(0);
+}
+
 /* This project doesn't load Bootstrap's CSS, so ng-bootstrap's <ngb-modal-window>/
    <ngb-modal-backdrop> host elements have no position set at all - they sit in
    normal document flow as the last elements in <body>. Since NgbModal focuses

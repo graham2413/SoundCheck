@@ -1,5 +1,36 @@
 const Redis = require('ioredis');
 const fs = require('fs');
+const zlib = require('zlib');
+
+// Below this size, gzip's own header/footer overhead (~20 bytes) can make a
+// value BIGGER than it started - not worth compressing tiny values like the
+// "1" flags used for locks/dedupe.
+const GZIP_MIN_BYTES = 256;
+
+function maybeGzip(value) {
+  if (typeof value !== 'string') return value; // numbers/Buffers passed straight through as-is
+  const buf = Buffer.from(value, 'utf8');
+  if (buf.length < GZIP_MIN_BYTES) return buf;
+  return zlib.gzipSync(buf);
+}
+
+// Every value written by safeSet is gzip-magic-checked on read rather than
+// tagged with a custom prefix - this doubles as the fallback for values
+// already sitting in Redis from before this compression was added (and for
+// the small values maybeGzip deliberately left uncompressed), with no
+// separate migration/versioning needed.
+function maybeGunzip(buf) {
+  if (!buf) return null;
+  if (buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b) {
+    try {
+      return zlib.gunzipSync(buf).toString('utf8');
+    } catch (err) {
+      console.error('Redis value had gzip magic bytes but failed to decompress:', err.message);
+      // fall through - treat as plain instead of losing the value entirely
+    }
+  }
+  return buf.toString('utf8');
+}
 
 const isProd = process.env.NODE_ENV === 'production';
 // Not every Redis provider's endpoint requires (or even supports) TLS on
@@ -58,9 +89,17 @@ if (process.env.NODE_ENV === 'test') {
   // Fail-safe wrappers - catch and log instead of throwing, so a transient
   // Redis outage or a provider quota rejection degrades to a cache-miss/
   // no-op instead of taking down the request that called it.
+  //
+  // Values above GZIP_MIN_BYTES are transparently gzip-compressed before
+  // writing and decompressed after reading (via the *Buffer command variants,
+  // since compressed data is binary and would get mangled by ioredis's
+  // default utf8 string decoding) - this was added after a few large cached
+  // TMDb detail payloads (TV shows' full-cast lists especially) pushed a
+  // free-tier Redis instance close to its storage cap. See maybeGzip/
+  // maybeGunzip above for the compression + backward-compatible decode logic.
   redis.safeGet = async (key) => {
     try {
-      return await redis.get(key);
+      return maybeGunzip(await redis.getBuffer(key));
     } catch (err) {
       console.error(`Redis GET failed for key "${key}":`, err.message);
       return null;
@@ -69,7 +108,8 @@ if (process.env.NODE_ENV === 'test') {
 
   redis.safeSet = async (...args) => {
     try {
-      return await redis.set(...args);
+      const [key, value, ...rest] = args;
+      return await redis.set(key, maybeGzip(value), ...rest);
     } catch (err) {
       console.error(`Redis SET failed for key "${args[0]}":`, err.message);
       return null;
@@ -91,7 +131,8 @@ if (process.env.NODE_ENV === 'test') {
   redis.safeMget = async (keys) => {
     if (!keys.length) return [];
     try {
-      return await redis.mget(keys);
+      const buffers = await redis.mgetBuffer(keys);
+      return buffers.map(maybeGunzip);
     } catch (err) {
       console.error(`Redis MGET failed for ${keys.length} key(s):`, err.message);
       return keys.map(() => null);

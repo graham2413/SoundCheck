@@ -30,6 +30,10 @@ export class UpdateService {
       this.updateAvailable = true;
       this.updateNotes = data?.notes || {};
       this.updateBuildNumber = latestBuildNumber;
+      // The forced-update overlay is the only thing that should scroll while
+      // it's up - without this, the page behind it (which can be taller than
+      // the viewport) keeps its own scrollbar and captures wheel/touch input.
+      document.body.style.overflow = 'hidden';
       return true;
     } catch {
       return false;

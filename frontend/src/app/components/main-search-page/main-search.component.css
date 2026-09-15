@@ -15,38 +15,107 @@
   animation: bounce-twice 3s ease-in-out infinite;
 }
 
-/* Pulsing ring around the Music/Cinema switch button's circular border */
-@keyframes switch-pulse {
+/* Coin-flip on the switch button when toggling Music/Cinema. This wrapper
+   stays in the DOM across the toggle (unlike .switch-icon-wrap below, which
+   gets destroyed/recreated by the *ngIf/else icon swap) so the animation
+   plays through in one continuous run instead of restarting mid-flight.
+   Perspective lives on the button itself (search-type-switch-btn, further
+   down) since it must be set on an ancestor of the rotated element, not the
+   rotated element itself.
+   The keyframe rotates to 90deg (edge-on/invisible), jumps to -90deg (the
+   same edge-on angle, so the jump itself is invisible), then rotates back
+   to 0 - this reads as one continuous spin without ever showing the image's
+   mirrored backface, since a flat PNG has no "back" texture to show. The
+   underlying icon is swapped (via displaySearchType, in the component) at
+   the 50% mark to line up with that invisible jump. */
+.search-type-switch-btn {
+  perspective: 600px;
+}
+
+.switch-icon-flip {
+  display: inline-block;
+}
+
+.switch-icon-flip.flip-active {
+  animation: switch-icon-flip 500ms ease-in-out;
+}
+
+@keyframes switch-icon-flip {
   0% {
-    box-shadow: 0 0 0 0 rgba(15, 94, 228, 0.55);
+    transform: rotateY(0deg) scale(1);
   }
-  70% {
-    box-shadow: 0 0 0 8px rgba(15, 94, 228, 0);
+  49% {
+    transform: rotateY(90deg) scale(0.85);
+  }
+  50% {
+    transform: rotateY(-90deg) scale(0.85);
+  }
+  80% {
+    transform: rotateY(0deg) scale(1.08);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(15, 94, 228, 0);
+    transform: rotateY(0deg) scale(1);
   }
 }
 
-.search-type-switch-btn {
-  animation: switch-pulse 2s ease-out infinite;
+/* Music/Cinema switch-button icon (shared by both the popcorn and disc
+   images): a soft blue glow plus a few small stars that shoot outward on a
+   loop. */
+.switch-icon-wrap {
+  position: relative;
+  display: inline-block;
 }
 
-/* Font Awesome Free only ships fa-music/fa-film as solid glyphs (no outline
-   "regular" style in the free tier) - fake an outline look by hiding the
-   fill and drawing only the glyph's stroke instead. Firefox doesn't support
-   -webkit-text-stroke and falls back to a solid-filled icon. */
-.fa-icon-outline {
-  color: transparent;
-  -webkit-text-stroke: 1.5px #0F5EE4;
+.switch-icon-glow {
+  filter: drop-shadow(0 0 4px rgba(15, 94, 228, 0.9)) drop-shadow(0 0 10px rgba(15, 94, 228, 0.6));
 }
 
-/* fa-music's glyph isn't centered in its own advance box (extra whitespace
-   on the right), so it sits visibly right-of-center in the circular switch
-   button next to app-film-camera-icon (a custom SVG that IS centered) -
-   nudge it left to match. */
-.fa-icon-outline.fa-music {
-  margin-left: -0.1em;
+.switch-icon-star {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #0f5ee4;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  opacity: 0;
+  animation: popcorn-star-shoot 2.4s ease-out infinite;
+}
+
+.switch-icon-star.s1 {
+  top: 6%;
+  left: 58%;
+  --dx: 16px;
+  --dy: -18px;
+  animation-delay: 0s;
+}
+
+.switch-icon-star.s2 {
+  top: 28%;
+  left: 82%;
+  --dx: 20px;
+  --dy: -4px;
+  animation-delay: 0.8s;
+}
+
+.switch-icon-star.s3 {
+  top: 0%;
+  left: 30%;
+  --dx: -14px;
+  --dy: -16px;
+  animation-delay: 1.6s;
+}
+
+@keyframes popcorn-star-shoot {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.3);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(1);
+  }
 }
 
 .see-all-btn {

@@ -96,7 +96,7 @@
   <!-- Heading -->
   <div class="max-w-5xl mx-auto px-4 relative flex items-center justify-between gap-3">
     <div class="pr-16 md:pr-0 md:flex-1 md:text-center">
-      <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mt-3 md:pl-0">
+      <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mt-5 md:pl-0">
         Explore
         <span
           (click)="toggleSearchType()"
@@ -107,14 +107,20 @@
           type="button"
           (click)="toggleSearchType()"
           title="Click to switch between Music and Cinema"
-          class="search-type-switch-btn hidden md:inline-flex align-middle ml-2 w-10 h-10 md:w-12 md:h-12 rounded-full transition items-center justify-center"
-          style="background: #020814; border: 1px solid rgba(15,94,228,0.4)"
+          class="search-type-switch-btn hidden md:inline-flex align-middle ml-2 w-10 h-10 md:w-12 md:h-12 rounded-full transition items-center justify-center overflow-visible"
+          style="background: #020814"
         >
-          <app-film-camera-icon *ngIf="searchType === 'music'; else musicIconDesktop" class="text-[#0F5EE4] block w-5 h-5 md:w-7 md:h-7"></app-film-camera-icon>
-          <ng-template #musicIconDesktop><i class="fas fa-icon-outline text-lg md:text-2xl fa-music"></i></ng-template>
+          <span class="switch-icon-flip" [class.flip-active]="isFlippingSwitchIcon">
+            <span class="switch-icon-wrap">
+              <img [src]="switchIconSrc" alt="" class="switch-icon-glow block w-12 h-10 md:w-16 md:h-12 max-w-none flex-shrink-0" />
+              <span class="switch-icon-star s1"></span>
+              <span class="switch-icon-star s2"></span>
+              <span class="switch-icon-star s3"></span>
+            </span>
+          </span>
         </button>
       </h1>
-      <p class="mt-1 md:mb-4 text-sm max-[400px]:text-xs md:text-xl text-gray-300 md:pl-0">
+      <p class="mt-1 ml-1 md:mb-4 text-sm max-[400px]:text-xs md:text-xl text-gray-300 md:pl-0">
         {{
           searchType === 'music'
             ? 'Find your next favorite track'
@@ -127,19 +133,25 @@
       type="button"
       (click)="toggleSearchType()"
       title="Click to switch between Music and Cinema"
-      class="search-type-switch-btn md:hidden absolute right-4 w-14 h-14 rounded-full transition flex items-center justify-center"
+      class="search-type-switch-btn md:hidden absolute right-4 w-14 h-14 rounded-full transition flex items-center justify-center overflow-visible mt-1 mr-2"
       [style.top.px]="switchButtonTopPx"
-      style="background: #020814; border: 1px solid rgba(15,94,228,0.4)"
+      style="background: #020814"
     >
-      <app-film-camera-icon *ngIf="searchType === 'music'; else musicIconMobile" class="text-[#0F5EE4] block w-8 h-8"></app-film-camera-icon>
-      <ng-template #musicIconMobile><i class="fas fa-icon-outline text-3xl fa-music"></i></ng-template>
+      <span class="switch-icon-flip" [class.flip-active]="isFlippingSwitchIcon">
+        <span class="switch-icon-wrap">
+          <img [src]="switchIconSrc" alt="" [style.width.rem]="displaySearchType === 'cinema' ? 3.5 : 4" class="switch-icon-glow block h-[4rem] max-w-none flex-shrink-0" />
+          <span class="switch-icon-star s1"></span>
+          <span class="switch-icon-star s2"></span>
+          <span class="switch-icon-star s3"></span>
+        </span>
+      </span>
     </button>
   </div>
 
   <!-- Search Bar -->
   <div
     #searchBar
-    class="relative mt-3 md:mt-1 w-full max-w-3xl mx-auto px-3"
+    class="relative mt-4 md:mt-1 w-full max-w-3xl mx-auto px-3"
   >
     <button
       *ngIf="searchType === 'music'"
@@ -287,11 +299,29 @@
     </div>
   </div>
 
-  <!-- Marquee -->
-  <app-marquee *ngIf="searchType === 'music'" (cardClick)="onMarqueeCardClick($event)"></app-marquee>
+  <!-- Marquee - always mounted (never *ngIf-destroyed) and toggled via
+       Tailwind's hidden/block classes instead. Destroying/recreating
+       whichever marquee wasn't active used to happen in the same tick as
+       the switch button's flip animation - mounting/tearing down a whole
+       component (plus the poster images inside it) was heavy enough to
+       occasionally block the main thread past the animation's invisible
+       window, causing the old icon to flash back into view before snapping
+       to the new one. Toggling a class on an already-existing element is
+       just a display swap, so there's nothing left to race the animation -
+       as a bonus, each marquee now only ever fetches its data once per page
+       load instead of refetching on every single switch back into that
+       mode. (Using the native [hidden] attribute here doesn't work: an
+       author stylesheet rule like Tailwind's own `.block` always overrides
+       the browser's default `[hidden] { display: none }` UA style
+       regardless of selector specificity, since author styles beat
+       user-agent styles in the cascade - so app-cinema-marquee's earlier
+       static `class="block"` silently defeated its own [hidden] binding.
+       Using hidden/block as plain classes sidesteps that entirely.) -->
+  <app-marquee [class.hidden]="searchType !== 'music'" [class.block]="searchType === 'music'" (cardClick)="onMarqueeCardClick($event)"></app-marquee>
   <app-cinema-marquee
-    *ngIf="searchType === 'cinema'"
-    class="block pb-3"
+    [class.hidden]="searchType !== 'cinema'"
+    [class.block]="searchType === 'cinema'"
+    class="pb-3"
     [mode]="cinemaMarqueeMode"
     (cardClick)="onCinemaMarqueeCardClick($event)"
   ></app-cinema-marquee>
@@ -376,26 +406,37 @@
     *ngIf="searchType === 'music' && !isLoading && activeTab === 'all'"
     class="mt-4 w-full max-w-3xl mx-auto px-2 pb-[4rem] sm:pb-1"
   >
-    <ul class="space-y-2">
+    <ul class="space-y-3">
       <li
         @itemAnim
         *ngFor="let item of (resultsExpanded ? combinedAllResults : (combinedAllResults | slice:0:10)); let i = index"
-        class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
+        class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
+        style="background-color: #101621; border-color: #212530"
         (click)="openModal(item)"
       >
-        <img
-          [src]="allResultImage(item) || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
-          alt="Cover"
-          class="h-16 w-16 md:h-20 md:w-20 rounded-md object-cover shadow-md border border-gray-800 flex-shrink-0"
-        />
-        <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
+        <div class="relative aspect-square h-24 md:h-36 flex-shrink-0">
+          <img
+            [src]="allResultImage(item) || 'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'"
+            alt="Cover"
+            class="h-full w-full object-cover rounded-l-lg"
+          />
+        </div>
+        <div class="flex flex-col justify-center flex-1 min-w-0 pl-1 pr-3">
           <p class="text-base md:text-lg font-semibold text-white leading-tight truncate" [title]="allResultTitle(item)">
             {{ allResultTitle(item) }}
           </p>
           <p class="text-sm md:text-base text-gray-400 mt-1 truncate">
+            <span
+              *ngIf="allResultIsExplicit(item)"
+              class="inline-flex items-center justify-center bg-gray-600 text-white text-[9px] font-bold w-4 h-4 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+              title="Explicit"
+            >
+              E
+            </span>
             {{ allResultSubtitle(item) }}
           </p>
         </div>
+        <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
       </li>
     </ul>
     <button
@@ -419,70 +460,20 @@
       *ngIf="activeTab === 'songs'"
       class="mx-auto mb-6 p-1 sm:p-3 rounded-lg shadow-lg sm:w-full max-w-5xl"
     >
-     <!-- <div class="relative mb-[2.8rem]">
-        <div class="absolute right-0 top-0 pr-1">
-          <button
-            #filterButton
-            (click)="toggleGenreFilter('songs')"
-            class="p-2 rounded-md transition flex items-center gap-2 md:text-xl border border-gray-700"
-            [ngClass]="
-              selectedGenre.songs ? 'bg-[#0F5EE4] md:hover:bg-blue-500' : ''
-            "
-          >
-            <span *ngIf="selectedGenre.songs" class="inline">
-              {{ selectedGenre.songs }}
-            </span>
-            <i class="fa-solid fa-sliders"></i>
-          </button>
-
-          <div
-            #dropdownContainer
-            *ngIf="showGenreDropdown.songs"
-            class="absolute right-0 mt-2 w-[15rem] bg-[#020814]/90 backdrop-blur-md p-3 rounded-lg shadow-xl z-10 border border-gray-700"
-          >
-            <button
-              *ngIf="selectedGenre.songs"
-              (click)="clearFilter('songs')"
-              class="flex items-center justify-center w-full text-left text-white py-1 rounded-md transition border border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-medium mb-2"
-            >
-              <i class="fas fa-times mr-2"></i> Clear
-            </button>
-
-            <div class="custom-scrollbar max-h-60 overflow-y-auto pr-2">
-              <button
-                *ngFor="let genre of genres.songs"
-                (click)="filterByGenre('songs', genre)"
-                class="block w-full text-left px-4 py-1 mb-1 rounded-md transition-all duration-200 font-medium text-lg group"
-              >
-                <span
-                  class="text-gray-100 opacity-50 transition-all duration-200 group-hover:text-white group-hover:opacity-100 group-hover:text-[1.25rem]"
-                  [ngClass]="{
-                    'text-white opacity-100 text-[1.25rem]':
-                      selectedGenre.songs === genre
-                  }"
-                >
-                  {{ genre }}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
--->
-
-      <ul class="space-y-2">
+      <ul class="space-y-3">
         <li
           @itemAnim
           *ngFor="let song of (resultsExpanded ? filteredResults.songs : (filteredResults.songs | slice:0:10)); let i = index"
-          class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
+          class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
+          style="background-color: #101621; border-color: #212530"
           (click)="openModal(song)"
         >
           <!-- Image -->
-          <div class="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0">
+          <div class="relative aspect-square h-24 md:h-36 flex-shrink-0">
             <!-- Loader -->
             <div
               *ngIf="!imageLoaded.songs[i]"
-              class="absolute inset-0 flex items-center justify-center rounded-md border border-gray-800 bg-gray-900"
+              class="absolute inset-0 flex items-center justify-center rounded-l-lg bg-gray-900"
             >
               <div
                 class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
@@ -498,11 +489,11 @@
               (load)="imageLoaded.songs[i] = true"
               [class.invisible]="!imageLoaded.songs[i]"
               alt="Cover"
-              class="h-16 w-16 md:h-20 md:w-20 rounded-md object-cover shadow-md border border-gray-800"
+              class="h-full w-full object-cover rounded-l-lg"
             />
           </div>
           <!-- Text Container -->
-          <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
+          <div class="flex flex-col justify-center flex-1 min-w-0 pl-1 pr-3">
             <p
               class="text-lg md:text-xl font-semibold text-white leading-tight truncate overflow-hidden whitespace-nowrap"
               title="{{ song.title }}"
@@ -516,7 +507,7 @@
             >
               <span
                 *ngIf="song?.isExplicit"
-                class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+                class="inline-flex items-center justify-center bg-gray-600 text-white text-[9px] font-bold w-4 h-4 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
                 title="Explicit"
               >
                 E
@@ -524,6 +515,7 @@
               {{ song.artist }}
             </p>
           </div>
+          <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
         </li>
       </ul>
       <button
@@ -544,19 +536,20 @@
     >
 
 
-      <ul class="space-y-2">
+      <ul class="space-y-3">
         <li
           @itemAnim
           *ngFor="let album of (resultsExpanded ? filteredResults.albums : (filteredResults.albums | slice:0:10)); let i = index"
-          class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
+          class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
+          style="background-color: #101621; border-color: #212530"
           (click)="openModal(album)"
         >
           <!-- Image -->
-          <div class="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0">
+          <div class="relative aspect-square h-24 md:h-36 flex-shrink-0">
             <!-- Loader -->
             <div
               *ngIf="!imageLoaded.albums[i]"
-              class="absolute inset-0 flex items-center justify-center rounded-md border border-gray-800 bg-gray-900"
+              class="absolute inset-0 flex items-center justify-center rounded-l-lg bg-gray-900"
             >
               <div
                 class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
@@ -572,12 +565,12 @@
               (load)="imageLoaded.albums[i] = true"
               [class.invisible]="!imageLoaded.albums[i]"
               alt="Album Cover"
-              class="h-16 w-16 md:h-20 md:w-20 rounded-md object-cover shadow-md border border-gray-800"
+              class="h-full w-full object-cover rounded-l-lg"
             />
           </div>
 
           <!-- Text Container -->
-          <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
+          <div class="flex flex-col justify-center flex-1 min-w-0 pl-1 pr-3">
             <p
               class="text-lg md:text-xl font-semibold text-white leading-tight truncate"
               title="{{ album.title }}"
@@ -590,7 +583,7 @@
             >
               <span
                 *ngIf="album?.isExplicit"
-                class="inline-flex items-center justify-center bg-gray-600 text-white text-[12px] font-bold w-5 h-5 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
+                class="inline-flex items-center justify-center bg-gray-600 text-white text-[9px] font-bold w-4 h-4 px-[1px] rounded leading-none mr-1 whitespace-nowrap align-middle"
                 title="Explicit"
               >
                 E
@@ -598,6 +591,7 @@
               {{ album.artist }}
             </p>
           </div>
+          <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
         </li>
       </ul>
       <button
@@ -617,19 +611,20 @@
       class="mx-auto mb-6 p-1 rounded-lg shadow-lg sm:w-full max-w-5xl"
     >
       <div class="relative mb-[2.8rem]">
-        <ul>
+        <ul class="space-y-3">
           <li
             @itemAnim
             *ngFor="let artist of (resultsExpanded ? filteredResults.artists : (filteredResults.artists | slice:0:10)); let i = index"
-            class="flex flex-row cursor-pointer items-center p-2 transition-transform duration-300 ease-in-out md:hover:translate-y-[.2rem] md:hover:scale-[101%] md:hover:bg-gray-700/50 md:hover:shadow-xl md:hover:border md:hover:border-blue-400 md:hover:rounded-lg"
+            class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
+            style="background-color: #101621; border-color: #212530"
             (click)="openModal(artist)"
           >
             <!-- Image -->
-            <div class="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0">
+            <div class="relative aspect-square h-24 md:h-36 flex-shrink-0">
               <!-- Loader -->
               <div
                 *ngIf="!imageLoaded.artists[i]"
-                class="absolute inset-0 flex items-center justify-center rounded-md border border-gray-800 bg-gray-900"
+                class="absolute inset-0 flex items-center justify-center rounded-l-lg bg-gray-900"
               >
                 <div
                   class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"
@@ -645,12 +640,12 @@
                 (load)="imageLoaded.artists[i] = true"
                 [class.invisible]="!imageLoaded.artists[i]"
                 alt="Artist"
-                class="h-16 w-16 md:h-20 md:w-20 rounded-md object-cover shadow-md border border-gray-800"
+                class="h-full w-full object-cover rounded-l-lg"
               />
             </div>
 
             <!-- Text Container -->
-            <div class="flex flex-col justify-center flex-1 min-w-0 pl-4">
+            <div class="flex flex-col justify-center flex-1 min-w-0 pl-1 pr-3">
               <p
                 class="text-lg md:text-xl font-semibold text-white leading-tight truncate overflow-hidden whitespace-nowrap"
                 title="{{ artist.name }}"
@@ -658,6 +653,7 @@
                 {{ artist.name }}
               </p>
             </div>
+            <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>
           </li>
         </ul>
         <button

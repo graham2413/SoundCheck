@@ -38,6 +38,9 @@ const PushSubscription = require("../models/PushSubscription");
   if (sub) {
     console.log("Endpoint host:", new URL(sub.endpoint).host);
     console.log("Subscription updatedAt:", sub.updatedAt);
+    console.log("Last push status:", sub.lastPushStatus || "(never sent)");
+    console.log("Last push at:", sub.lastPushAt || "(never sent)");
+    if (sub.lastPushError) console.log("Last push error:", sub.lastPushError);
   }
 
   await mongoose.disconnect();

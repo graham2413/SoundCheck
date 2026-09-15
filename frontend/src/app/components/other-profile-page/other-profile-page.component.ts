@@ -1096,6 +1096,7 @@ export class ViewProfilePageComponent implements OnInit {
       keyboard: true,
       centered: true,
       scrollable: false,
+      windowClass: 'cinema-detail-modal',
     };
 
     const cinemaList = list.map((r) => ({ ...r, type: 'Cinema' as const }));

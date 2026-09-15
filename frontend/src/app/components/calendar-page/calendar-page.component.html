@@ -10,15 +10,30 @@
           (click)="setKind(kind === 'cinema' ? 'music' : 'cinema')"
           [disabled]="isLoading"
           [title]="kind === 'cinema' ? 'Switch to Music Calendar' : 'Switch to Cinema Calendar'"
-          class="search-type-switch-btn flex items-center justify-center h-12 w-12 rounded-full transition disabled:opacity-50"
-          style="background: #020814; border: 1px solid rgba(15,94,228,0.4)"
+          class="pr-[3rem] pt-[1.8rem] search-type-switch-btn flex items-center justify-center h-12 w-12 rounded-full transition disabled:opacity-50 overflow-visible"
+          style="background: #020814"
         >
-          <i *ngIf="kind === 'cinema'" class="fas fa-icon-outline text-2xl fa-music"></i>
-          <app-film-camera-icon *ngIf="kind !== 'cinema'" class="text-[#0F5EE4] block w-7 h-7"></app-film-camera-icon>
+          <span class="switch-icon-flip" [class.flip-active]="isFlippingSwitchIcon">
+            <span class="switch-icon-wrap">
+              <img [src]="switchIconSrc" alt="" [style.width.rem]="displayKind === 'cinema' ? 3.5 : 4" class="switch-icon-glow block h-[4rem] max-w-none flex-shrink-0" />
+              <span class="switch-icon-star s1"></span>
+              <span class="switch-icon-star s2"></span>
+              <span class="switch-icon-star s3"></span>
+            </span>
+          </span>
         </button>
       </div>
     </div>
-    <p class="text-left text-gray-400 text-base md:text-xl mb-6 pl-2">
+    <!-- Hidden (not removed - [class.invisible] keeps its layout space
+         reserved so the Upcoming/Past toggle below doesn't shift up and
+         collide with the popcorn/disc switch button) while loading, since
+         `subtitle` isn't cleared until the new page's response arrives and
+         would otherwise show the PREVIOUS (now stale/mismatched) text.
+         min-h reserves room for the longest (2-line) fallback sentence at
+         all times, even once loaded with the usually-shorter one-line
+         subtitleLabel, so the toggle below always renders at its final
+         settled position instead of starting lower and jumping up. -->
+    <p [class.invisible]="isLoading" class="text-left text-gray-400 text-base md:text-xl pl-2 min-h-[3rem] md:min-h-[3.5rem]">
       {{
         subtitleLabel ||
           (kind === 'music'
@@ -143,7 +158,7 @@
 
               <img
                 [src]="
-                  entry.cover ||
+                  getHighQualityImage(entry.cover) ||
                   'https://res.cloudinary.com/drbccjuul/image/upload/e_improve:outdoor/m2bmgchypxctuwaac801'
                 "
                 loading="lazy"

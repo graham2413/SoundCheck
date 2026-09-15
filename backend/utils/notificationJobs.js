@@ -153,19 +153,27 @@ async function sendWeeklySummaries() {
           { releaseDate: { $gte: weekStart, $lt: current } },
           { lastEpisodeAirDate: { $gte: weekStart, $lt: current } },
         ],
-      }).select("mediaType").lean(),
+      }).select("mediaType title").lean(),
     ]);
 
     const movies = cinemaItems.filter((item) => item.mediaType === "movie");
     const tv = cinemaItems.filter((item) => item.mediaType === "tv");
     if (!musicReleases.length && !movies.length && !tv.length) return;
 
+    // Skip any category with nothing in it rather than padding the summary
+    // with "0 movies" - e.g. a week with only music releases should just say
+    // "4 music releases", not "0 movies, 0 TV releases, 4 music releases".
+    const parts = [];
+    if (movies.length) parts.push(`${movies.length} movie${movies.length === 1 ? "" : "s"}`);
+    if (tv.length) parts.push(`${tv.length} TV release${tv.length === 1 ? "" : "s"}`);
+    if (musicReleases.length) parts.push(`${musicReleases.length} music release${musicReleases.length === 1 ? "" : "s"}`);
+
     return createAndSendNotification({
       user: user._id,
       type: "weekly-summary",
       dedupeKey: `weekly-summary:${currentDate}`,
       title: "Your weekly release summary",
-      message: `${movies.length} movie${movies.length === 1 ? "" : "s"}, ${tv.length} TV release${tv.length === 1 ? "" : "s"}, ${musicReleases.length} music release${musicReleases.length === 1 ? "" : "s"}`,
+      message: parts.join(", "),
       targetUrl: "/calendar",
       details: {
         movies: movies.map((item) => item.title),

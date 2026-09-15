@@ -2,24 +2,15 @@
   background: #020814;
   min-height: 100vh;
   padding-bottom: 6rem;
-  /* No fill-mode (not "both"/"forwards") - fill-mode: both leaves the end
-     keyframe's `transform` permanently applied even after the animation
-     finishes, which creates a new containing block for every
-     position:fixed descendant (our fullscreen image/trailer overlays),
-     confining them to this element's own box instead of the true viewport.
-     Without a fill-mode, transform reverts to none once the 0.35s
-     animation completes, same visual effect on load, no lingering bug. */
   animation: cinemaFadeIn 0.35s ease;
 }
 
 @keyframes cinemaFadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

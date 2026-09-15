@@ -41,7 +41,6 @@ import { animate, animateChild, query, stagger, style, transition, trigger } fro
 import { MarqueeComponent } from './marquee/marquee.component';
 import { CinemaMarqueeComponent } from './marquee/cinema-marquee.component';
 import { SeeAllTrendingComponent } from './see-all-trending/see-all-trending.component';
-import { FilmCameraIconComponent } from 'src/app/shared/film-camera-icon/film-camera-icon.component';
 
 type ActivityRecord = Review['albumSongOrArtist'];
 type ModalRecord = Song | Album | Artist | PopularRecord | ActivityRecord;
@@ -60,7 +59,6 @@ type CinemaActivityEntryVm = CinemaActivityEntry & { likedByCurrentUser: boolean
     CinemaMarqueeComponent,
     SeeAllTrendingComponent,
     CinemaBadgeComponent,
-    FilmCameraIconComponent,
   ],
   animations: [
     trigger('fadeSlideIn', [
@@ -120,6 +118,20 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   private static readonly LAST_SEARCH_TYPE_KEY = 'lastSearchType';
   searchType: 'music' | 'cinema' =
     (localStorage.getItem(MainSearchComponent.LAST_SEARCH_TYPE_KEY) as 'music' | 'cinema') || 'cinema';
+  // Lags `searchType` for the switch button's icon only, so the coin-flip
+  // animation can swap the underlying image at the animation's invisible
+  // midpoint instead of instantly on click - everything else (label,
+  // subtitle, placeholder) still reacts to `searchType` immediately.
+  displaySearchType: 'music' | 'cinema' = this.searchType;
+  isFlippingSwitchIcon = false;
+  private static readonly SWITCH_ICON_FLIP_SWAP_MS = 250; // must match the
+    // 50% mark of .switch-icon-flip's keyframes (main-search.component.css)
+  private static readonly SWITCH_ICON_FLIP_TOTAL_MS = 500; // must match
+    // .switch-icon-flip's animation-duration
+
+  get switchIconSrc(): string {
+    return this.displaySearchType === 'cinema' ? 'assets/popcorn-icon.png' : 'assets/music-disc-icon.png';
+  }
   cinemaResults: CinemaSearchResult[] = [];
   cinemaActiveTab: 'all' | 'movie' | 'tv' = 'all';
   isModalOpen = false;
@@ -247,6 +259,13 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     this.setUserProfile();
+
+    // Warms the browser's image cache/decode for whichever of the two switch
+    // icons ISN'T the initial searchType, so the very first flip never has
+    // to decode a never-before-requested image mid-animation (the delay
+    // that caused the old icon to visibly linger before snapping over).
+    new Image().src = 'assets/popcorn-icon.png';
+    new Image().src = 'assets/music-disc-icon.png';
 
     this.section = history.state.section || null;
 
@@ -398,7 +417,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
       if (width >= 768) {
         offsetPadding = 170;
       } else {
-        offsetPadding = 65; // Less padding for mobile screens
+        offsetPadding = 60; // Less padding for mobile screens
       }
 
       const offset = elementTop - offsetPadding;
@@ -482,7 +501,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
       const searchBarEl = this.searchBar.nativeElement;
       const elementTop =
         searchBarEl.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPadding = window.innerWidth >= 768 ? 170 : 65;
+      const offsetPadding = window.innerWidth >= 768 ? 170 : 60;
       window.scrollTo({
         top: elementTop - offsetPadding,
         behavior: 'smooth',
@@ -625,6 +644,10 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     return `${(item as Song).artist} · Song`;
   }
 
+  allResultIsExplicit(item: Song | Album | Artist): boolean {
+    return !!(item as Song | Album).isExplicit;
+  }
+
   // Same client-side split as music's All/Songs/Albums/Artists pills - one
   // cinema search already returns both movies and TV shows together, so no
   // extra network call needed to filter by media type.
@@ -670,20 +693,47 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   toggleSearchType() {
-    this.searchType = this.searchType === 'music' ? 'cinema' : 'music';
+    const nextType = this.searchType === 'music' ? 'cinema' : 'music';
 
-    // Reset search state so stale results from the other mode don't show
-    this.query = '';
-    this.lastSearchedQuery = '';
-    this.searchAttempted = false;
-    this.cinemaResults = [];
-    this.imageLoaded.cinema = {};
-    this.results = { songs: [], albums: [], artists: [] };
-    this.filteredResults = { songs: [], albums: [], artists: [] };
-    this.loadRecentSearches();
-    // Subtitle text length differs between modes, which can shift the search
-    // bar's position - recompute after the new layout has painted.
-    setTimeout(() => this.recomputeSwitchButtonPosition());
+    // Coin-flip the switch button's icon, and swap `searchType` (plus
+    // everything reactive to it, including mounting the potentially-heavy
+    // <app-cinema-marquee>) at the SAME invisible midpoint as the icon's own
+    // image swap - not at click time (mounting the heavy marquee in the same
+    // tick as the animation START left no buffer at all before the CSS
+    // transform's first invisible point, so any synchronous work delayed the
+    // icon-swap paint past it and the OLD icon flashed back into view), and
+    // not deferred all the way to full completion either (that fixed the
+    // glitch but made the new content feel laggy, arriving ~250ms after the
+    // icon had already visibly landed). The 250ms mark keeps ~150ms of
+    // buffer before the rotation becomes clearly visible again (50%-80% of
+    // the keyframe eases back from edge-on toward face-on), which is enough
+    // slack for this synchronous work in practice while still feeling
+    // immediate once the icon disappears mid-flip.
+    this.isFlippingSwitchIcon = true;
+    setTimeout(() => {
+      this.displaySearchType = nextType;
+      this.searchType = nextType;
+
+      // Reset search state so stale results from the other mode don't show
+      this.query = '';
+      this.lastSearchedQuery = '';
+      this.searchAttempted = false;
+      this.cinemaResults = [];
+      this.imageLoaded.cinema = {};
+      this.results = { songs: [], albums: [], artists: [] };
+      this.filteredResults = { songs: [], albums: [], artists: [] };
+      this.loadRecentSearches();
+    }, MainSearchComponent.SWITCH_ICON_FLIP_SWAP_MS);
+    setTimeout(() => {
+      this.isFlippingSwitchIcon = false;
+      // Subtitle text length differs between modes, which can shift the
+      // search bar's position - recompute only once the flip animation has
+      // fully finished. This write is layout-forcing (it sets the mobile
+      // button's `top`), and doing it while the button's own icon was still
+      // mid-rotateY caused Chrome to visibly glitch/repaint the button -
+      // hence waiting for the same deadline as the flip itself.
+      this.recomputeSwitchButtonPosition();
+    }, MainSearchComponent.SWITCH_ICON_FLIP_TOTAL_MS);
   }
 
   ngAfterViewInit(): void {
@@ -1074,6 +1124,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
       keyboard: true,
       centered: true,
       scrollable: false,
+      windowClass: 'cinema-detail-modal',
     };
 
     const modalRef = this.modal.open(CinemaReviewModalComponent, modalOptions);

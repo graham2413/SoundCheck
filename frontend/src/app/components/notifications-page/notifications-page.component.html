@@ -4,7 +4,7 @@
       <button
         (click)="goBack()"
         aria-label="Go back"
-        class="absolute left-0 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center hover:bg-gray-800 transition"
+        class="absolute left-0 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center md:hover:bg-gray-800 transition"
       >
         <i class="fas fa-chevron-left text-gray-200 text-lg"></i>
       </button>
@@ -14,7 +14,7 @@
       <button
         (click)="toggleSettings()"
         aria-label="Notification settings"
-        class="absolute right-0 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center hover:bg-gray-800 transition"
+        class="absolute right-0 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center md:hover:bg-gray-800 transition"
       >
         <i class="fas fa-gear text-gray-200 text-lg"></i>
       </button>
@@ -39,7 +39,7 @@
             <h2 class="text-lg font-bold">Notification Settings</h2>
             <p class="text-gray-400 text-sm mt-0.5">Control what kind of notifications you receive from this device.</p>
           </div>
-          <button (click)="toggleSettings()" aria-label="Close settings" class="text-gray-400 hover:text-white flex-shrink-0">
+          <button (click)="toggleSettings()" aria-label="Close settings" class="text-gray-400 md:hover:text-white flex-shrink-0">
             <i class="fas fa-times text-lg"></i>
           </button>
         </div>
@@ -130,7 +130,7 @@
         *ngFor="let option of filterOptions"
         type="button"
         (click)="setFilter(option.value)"
-        [ngClass]="activeFilter === option.value ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800/70 text-gray-300 hover:text-white'"
+        [ngClass]="activeFilter === option.value ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800/70 text-gray-300 md:hover:text-white'"
         class="px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors"
       >
         {{ option.label }}
@@ -151,7 +151,7 @@
             type="button"
             [disabled]="isDeletingAllNotifications"
             (click)="deleteAllNotifications()"
-            class="px-3 py-1 rounded-full border border-red-300 text-red-300 text-sm md:text-base font-semibold hover:bg-gray-800/50 transition disabled:opacity-50"
+            class="px-3 py-1 rounded-full border border-red-300 text-red-300 text-sm md:text-base font-semibold md:hover:bg-gray-800/50 transition disabled:opacity-50"
           >
             Clear all
           </button>
@@ -162,7 +162,7 @@
             @itemAnim
             *ngFor="let notification of group.items; trackBy: trackByNotificationId"
             (click)="openNotificationItem(notification)"
-            class="relative flex items-center gap-3 p-3 pl-4 transition-all hover:bg-gray-900 cursor-pointer group rounded-md bg-gray-900/40 overflow-hidden"
+            class="relative flex items-center gap-3 p-3 pl-4 transition-all md:hover:bg-gray-900 cursor-pointer group rounded-md bg-gray-900/40 overflow-hidden"
           >
             <span class="absolute left-0 top-0 bottom-0 w-1 bg-[#0F5EE4]"></span>
 
@@ -205,7 +205,7 @@
               type="button"
               [attr.aria-label]="'Complete ' + notification.title"
               (click)="$event.stopPropagation(); deleteNotification(notification)"
-              class="text-gray-400 hover:text-white flex-shrink-0 self-start mt-1"
+              class="text-gray-400 md:hover:text-white flex-shrink-0 self-start mt-1"
             >
               <i class="fas fa-check"></i>
             </button>

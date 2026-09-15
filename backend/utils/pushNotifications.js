@@ -39,11 +39,19 @@ async function sendPushForNotification(userId, notification) {
         },
       })
     );
+    await PushSubscription.updateOne(
+      { user: userId },
+      { $set: { lastPushStatus: "sent", lastPushError: null, lastPushAt: new Date() } }
+    );
   } catch (error) {
     if (error.statusCode === 404 || error.statusCode === 410) {
       await PushSubscription.deleteOne({ user: userId });
       return;
     }
+    await PushSubscription.updateOne(
+      { user: userId },
+      { $set: { lastPushStatus: "failed", lastPushError: error.message || String(error), lastPushAt: new Date() } }
+    ).catch(() => {});
     console.error("Push notification delivery failed:", error.message || error);
   }
 }

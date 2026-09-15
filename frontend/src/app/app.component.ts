@@ -287,6 +287,7 @@ export class AppComponent implements OnInit {
   private previewUpdateOverlayIfRequested(): void {
     if (new URLSearchParams(window.location.search).get('previewUpdate') !== 'true') return;
     this.updateService.updateAvailable = true;
+    document.body.style.overflow = 'hidden';
     this.updateService.updateBuildNumber = '42';
     this.updateService.updateNotes = {
       'New features': ['Track user lastLoggedIn timestamp, visible to admin on friends list'],

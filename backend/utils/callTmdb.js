@@ -9,7 +9,7 @@ const RATE_LIMIT_WINDOW_MS = 1000;
 const RATE_LIMIT_MAX_REQUESTS = 40;
 const QUEUE_DELAY_MS = 200;
 
-const DETAILS_CACHE_TTL = 259200; // 3 days - short enough to keep watch/providers reasonably fresh
+const DETAILS_CACHE_TTL = 129600; // 1.5 days - short enough to keep watch/providers reasonably fresh; shortened from 3 days since this is also the cache for the full aggregate_credits cast list, one of the biggest Redis storage consumers
 const SEARCH_CACHE_TTL = 7200; // 2 hours
 const GENRE_CACHE_TTL = 2592000; // 30 days
 const CALENDAR_DETAILS_CACHE_TTL = 43200; // 12 hours - short enough to always refresh at least once per calendar day

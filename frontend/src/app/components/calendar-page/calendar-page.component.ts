@@ -14,7 +14,6 @@ import { SearchService } from 'src/app/services/search.service';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
 import { CinemaRateModalComponent } from '../cinema-review-page/cinema-rate-modal.component';
 import { ReviewPageComponent } from '../review-page/review-page.component';
-import { FilmCameraIconComponent } from 'src/app/shared/film-camera-icon/film-camera-icon.component';
 
 // Both entry shapes share _id/airDate/cover/title (everything the shared
 // month/day grouping and the row shell need) - `kind` alone decides which
@@ -27,7 +26,7 @@ type CombinedEntry = CalendarEntry | MusicCalendarEntry;
   templateUrl: './calendar-page.component.html',
   styleUrls: ['./calendar-page.component.css'],
   standalone: true,
-  imports: [CommonModule, InfiniteScrollDirective, FilmCameraIconComponent],
+  imports: [CommonModule, InfiniteScrollDirective],
   animations: [
     // Container - staggers each row's own @entryAnim as they enter, so the
     // list reveals top-down instead of popping in all at once.
@@ -51,6 +50,21 @@ export class CalendarPageComponent implements OnInit {
   // (e.g. from a push notification link) is present - see ngOnInit.
   private static readonly LAST_KIND_KEY = 'lastCalendarKind';
   kind: CalendarKind = 'cinema';
+  // Lags `kind` for the switch button's icon only, so the coin-flip
+  // animation can swap the underlying image at the animation's invisible
+  // midpoint instead of instantly on click (same technique as main-search
+  // component's identical switch button).
+  displayKind: CalendarKind = this.kind;
+  isFlippingSwitchIcon = false;
+  private static readonly SWITCH_ICON_FLIP_SWAP_MS = 250; // must match the
+    // 50% mark of .switch-icon-flip's keyframes (calendar-page.component.css)
+  private static readonly SWITCH_ICON_FLIP_TOTAL_MS = 500; // must match
+    // .switch-icon-flip's animation-duration
+
+  get switchIconSrc(): string {
+    return this.displayKind === 'cinema' ? 'assets/popcorn-icon.png' : 'assets/music-disc-icon.png';
+  }
+
   entries: CombinedEntry[] = [];
   isLoading = true;
   isRefreshing = false;
@@ -201,6 +215,13 @@ export class CalendarPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Warms the browser's image cache/decode for whichever of the two switch
+    // icons ISN'T the initial kind, so the very first flip never has to
+    // decode a never-before-requested image mid-animation (see
+    // main-search.component.ts's identical preload for the full story).
+    new Image().src = 'assets/popcorn-icon.png';
+    new Image().src = 'assets/music-disc-icon.png';
+
     const query = this.route.snapshot.queryParamMap;
     const requestedKind = query.get('kind');
     const requestedRange = query.get('range');
@@ -311,6 +332,13 @@ export class CalendarPageComponent implements OnInit {
     this.range = kind === 'music' ? 'past' : 'upcoming';
     localStorage.setItem(CalendarPageComponent.LAST_KIND_KEY, kind);
     this.loadCalendar();
+
+    // Coin-flip the switch button's icon - see main-search.component.ts's
+    // identical toggleSearchType() for why the swap is timed to the
+    // animation's invisible midpoint rather than instant.
+    this.isFlippingSwitchIcon = true;
+    setTimeout(() => { this.displayKind = this.kind; }, CalendarPageComponent.SWITCH_ICON_FLIP_SWAP_MS);
+    setTimeout(() => { this.isFlippingSwitchIcon = false; }, CalendarPageComponent.SWITCH_ICON_FLIP_TOTAL_MS);
   }
 
   refresh(): void {
@@ -391,6 +419,19 @@ export class CalendarPageComponent implements OnInit {
   // Tracker feed used to (see transformReleaseToModalRecord in
   // main-search.component.ts) - existing review/song-review flow, no changes
   // needed there.
+  // Deezer's plain `cover` field is a small default-size thumbnail - every
+  // other consumer of a Deezer cover in this app upgrades it with
+  // `?size=xl` (see main-search.component.ts's identical helper), but the
+  // calendar page never did, so both the list thumbnail and the opened
+  // review modal showed the low-res version.
+  getHighQualityImage(imageUrl: string | undefined | null): string {
+    if (!imageUrl) return '';
+    if (imageUrl.includes('api.deezer.com')) {
+      return `${imageUrl}?size=xl`;
+    }
+    return imageUrl;
+  }
+
   private openMusicEntry(entry: MusicCalendarEntry): void {
     const modalOptions: NgbModalOptions = {
       backdrop: 'static',
@@ -404,7 +445,7 @@ export class CalendarPageComponent implements OnInit {
       type: 'Album' as const,
       title: entry.title,
       artist: entry.artistName,
-      cover: entry.cover,
+      cover: this.getHighQualityImage(entry.cover),
       isExplicit: entry.isExplicit,
       releaseDate: entry.airDate,
       avgRating: 0,
@@ -423,6 +464,7 @@ export class CalendarPageComponent implements OnInit {
       keyboard: true,
       centered: true,
       scrollable: false,
+      windowClass: 'cinema-detail-modal',
     };
 
     const record: CinemaItem = {
