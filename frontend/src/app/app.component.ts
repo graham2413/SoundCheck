@@ -380,6 +380,7 @@ export class AppComponent implements OnInit {
       '/reset-password',
       '/forgot-password',
       '/not-found',
+      '/top-three',
     ];
     return !this.isNavbarForceHidden && !hiddenRoutes.some((route) => this.currentUrl.startsWith(route));
   }

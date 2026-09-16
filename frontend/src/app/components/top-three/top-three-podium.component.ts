@@ -39,6 +39,8 @@ export class TopThreePodiumComponent implements OnInit, OnChanges {
   @Input() profileUserId!: string;
   @Input() isOwnProfile = false;
 
+  readonly categoryLabels = CATEGORY_LABELS;
+
   data: TopThreeResponse | null = null;
   isLoading = true;
   isPrivate = false;

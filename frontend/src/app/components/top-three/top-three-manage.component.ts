@@ -119,7 +119,16 @@ export class TopThreeManageComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/profile', this.viewedUserId || '']);
+    // viewedUserId is only set when arriving here via someone else's podium
+    // ("See All" on a profile that isn't your own) - on your own it's null,
+    // so falling back to it left this navigating to '/profile/' (empty
+    // :userId segment) instead of your actual profile route.
+    const targetUserId = this.viewedUserId || this.loggedInUserId;
+    if (targetUserId) {
+      this.router.navigate(['/profile', targetUserId]);
+    } else {
+      this.router.navigate(['/profile']);
+    }
   }
 
   selectCategory(category: TopThreeCategory): void {
