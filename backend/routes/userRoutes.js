@@ -27,6 +27,13 @@ router.post('/recent-searches', authenticateUser, userController.addRecentSearch
 router.post('/recent-searches/remove', authenticateUser, userController.removeRecentSearch);
 router.post('/recent-searches/clear', authenticateUser, userController.clearRecentSearches);
 
+// Top 3 podium
+router.get('/top-three', authenticateUser, userController.getMyTopThree);
+router.get('/top-three/:id', userController.getUserTopThree); // public, gated by topThree.isPublic
+router.put('/top-three/visibility', authenticateUser, userController.setTopThreeVisibility);
+router.put('/top-three/:category/auto', authenticateUser, userController.setTopThreeAuto);
+router.put('/top-three/:category', authenticateUser, userController.setTopThreeCategory);
+
 // Push subscriptions and notification to-do list
 router.get("/notifications", authenticateUser, notificationController.getNotifications);
 router.delete("/notifications", authenticateUser, notificationController.deleteAllNotifications);

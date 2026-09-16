@@ -2,6 +2,7 @@ const webpush = require("web-push");
 const User = require("../models/User");
 const PushSubscription = require("../models/PushSubscription");
 const Notification = require("../models/Notification");
+const { getLocalDateString } = require("./calendarHelpers");
 
 let vapidConfigured = false;
 
@@ -16,12 +17,19 @@ function configureWebPush() {
 }
 
 async function sendPushForNotification(userId, notification) {
-  if (!configureWebPush()) return;
-
   const subscription = await PushSubscription.findOne({ user: userId }).lean();
   if (!subscription) return;
 
   try {
+    // Inside the try (not a standalone early-return before it) because
+    // setVapidDetails() throws synchronously on a malformed VAPID_SUBJECT
+    // (must start with "mailto:" or "https:") - previously that throw
+    // happened before this try block even started, so it went uncaught,
+    // silently rejecting the promise and leaving PushSubscription's
+    // lastPushStatus stuck at null forever with nothing logged anywhere,
+    // for every single send, indistinguishable from "never attempted".
+    if (!configureWebPush()) return;
+
     await webpush.sendNotification(
       {
         endpoint: subscription.endpoint,
@@ -29,8 +37,21 @@ async function sendPushForNotification(userId, notification) {
       },
       JSON.stringify({
         notification: {
+          // iOS/WebKit web push unconditionally appends its own app-name
+          // attribution below the body regardless of what's sent here
+          // (sourced from manifest.webmanifest's name, not overridable or
+          // removable - confirmed against WebKit's web push docs and
+          // third-party PWA push write-ups, Sept 2026). Putting the app name
+          // in `title` too (tried previously) just duplicated it ("Cinewave"
+          // / "from Cinewave") - title stays the notification's own headline
+          // so the app name appears exactly once, where iOS puts it anyway.
           title: notification.title,
           body: notification.message,
+          // Large image shown in the expanded notification (Android Chrome
+          // only - iOS's web push ignores this entirely and always shows the
+          // static manifest icon regardless of what's sent here, confirmed
+          // against WebKit's docs, Sept 2026).
+          ...(notification.details?.cover ? { image: notification.details.cover } : {}),
           // Every push opens the Notifications Center list first (never a
           // direct deep link) - {url} bare wasn't the actual shape ngsw-worker
           // expects (it reads onActionClick.default.{operation,url}), so this
@@ -87,8 +108,25 @@ function recordTypeLabel(recordType) {
   }
 }
 
+// Only a release dated TODAY (America/Chicago, matching notificationJobs.js's
+// scanMusicReleaseNotifications - the cron job that also calls this function)
+// triggers a push. syncArtistAlbums() inserts a Release doc the first time
+// OUR db sees it, which for a newly-followed (or re-synced) artist can
+// include albums that actually came out long ago - without this exact-day
+// check, that first sync reads as "new" and notifies everyone for the
+// artist's entire back catalog. Matching scanMusicReleaseNotifications's own
+// gate exactly (rather than a looser multi-day window) means the two call
+// sites can never disagree on what counts as "new today".
+function isReleasedToday(releaseDate) {
+  const todayStr = getLocalDateString();
+  const start = new Date(`${todayStr}T00:00:00.000Z`);
+  const end = new Date(`${todayStr}T23:59:59.999Z`);
+  const releaseTime = new Date(releaseDate).getTime();
+  return releaseTime >= start.getTime() && releaseTime <= end.getTime();
+}
+
 async function notifyUsersForNewMusicRelease(release) {
-  if (new Date(release.releaseDate) > new Date()) return;
+  if (!isReleasedToday(release.releaseDate)) return;
 
   const users = await User.find({
     "artistList.id": release.artistId,

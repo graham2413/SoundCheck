@@ -1,0 +1,163 @@
+<div
+  *ngIf="!(isPrivate && !isOwnProfile)"
+  class="rounded-2xl p-4 mt-4 w-full"
+  style="background: #0b1220; border: 1px solid rgba(88, 89, 92, 0.4)"
+>
+  <!-- Reuses the exact same layout classes as the real toggle row/heading/
+       podium below (just with a pulsing placeholder fill swapped in) so the
+       card is already the right width/height before data arrives, instead
+       of a small spinner that pops open into a taller card once it loads. -->
+  <div *ngIf="isLoading">
+    <div class="flex items-center gap-2 pb-1">
+      <span class="skeleton-fill skeleton-pill" style="width: 5.5rem; height: 2.25rem"></span>
+      <span class="skeleton-fill skeleton-pill" style="width: 4rem; height: 1.75rem"></span>
+      <span class="skeleton-fill skeleton-pill" style="width: 4rem; height: 1.75rem"></span>
+    </div>
+    <div class="mt-3 mb-2">
+      <span class="skeleton-fill skeleton-pill" style="width: 9rem; height: 1.5rem"></span>
+    </div>
+    <div class="podium-track">
+      <div class="podium-slot podium-slot-rank2">
+        <div class="podium-photo-box skeleton-fill"></div>
+        <div class="podium-block-wrap podium-block-wrap-rank2">
+          <div class="podium-block-top skeleton-fill"></div>
+          <div class="podium-block-front skeleton-fill"></div>
+        </div>
+      </div>
+      <div class="podium-slot podium-slot-rank1">
+        <div class="podium-photo-box skeleton-fill"></div>
+        <div class="podium-block-wrap podium-block-wrap-rank1">
+          <div class="podium-block-top skeleton-fill"></div>
+          <div class="podium-block-front skeleton-fill"></div>
+        </div>
+      </div>
+      <div class="podium-slot podium-slot-rank3">
+        <div class="podium-photo-box skeleton-fill"></div>
+        <div class="podium-block-wrap podium-block-wrap-rank3">
+          <div class="podium-block-top skeleton-fill"></div>
+          <div class="podium-block-front skeleton-fill"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!isLoading && data">
+    <!-- Toggle row: Cinema/Music pills, with the active side's sub-category
+         pills inline next to it and the inactive side's hidden entirely. -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1">
+      <button
+        *ngIf="showCinemaPill"
+        type="button"
+        (click)="selectGroup('cinema')"
+        [ngClass]="activeGroup === 'cinema' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800/70 text-gray-300'"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors"
+      >
+        <i class="fas fa-film"></i> Cinema
+      </button>
+      <ng-container *ngIf="activeGroup === 'cinema'">
+        <button
+          *ngFor="let category of subCategories"
+          type="button"
+          (click)="selectCategory(category)"
+          [ngClass]="activeCategory === category ? 'text-white border-[#0F5EE4]' : 'text-gray-400 border-transparent'"
+          class="px-2 py-1 rounded-full text-sm font-medium border whitespace-nowrap transition-colors"
+        >
+          {{ category === 'movies' ? 'Movies' : 'Shows' }}
+        </button>
+      </ng-container>
+
+      <button
+        *ngIf="showMusicPill"
+        type="button"
+        (click)="selectGroup('music')"
+        [ngClass]="activeGroup === 'music' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-800/70 text-gray-300'"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors"
+      >
+        <i class="fas fa-music"></i> Music
+      </button>
+      <ng-container *ngIf="activeGroup === 'music'">
+        <button
+          *ngFor="let category of subCategories"
+          type="button"
+          (click)="selectCategory(category)"
+          [ngClass]="activeCategory === category ? 'text-white border-[#0F5EE4]' : 'text-gray-400 border-transparent'"
+          class="px-2 py-1 rounded-full text-sm font-medium border whitespace-nowrap transition-colors"
+        >
+          {{ category === 'songs' ? 'Songs' : category === 'albums' ? 'Albums' : 'Artists' }}
+        </button>
+      </ng-container>
+    </div>
+
+    <div class="flex items-center justify-between mt-3 mb-2">
+      <h3 class="text-white text-xl font-extrabold pl-1">Top 3 {{ categoryLabel }}</h3>
+      <button type="button" (click)="goToManage()" class="text-sm font-semibold text-[#0F5EE4] whitespace-nowrap flex items-center gap-1 flex-shrink-0">
+        See All <i class="fas fa-chevron-right text-xs"></i>
+      </button>
+    </div>
+
+    <ng-container *ngFor="let run of [animationRun]; trackBy: trackByRun">
+      <!-- Populated podium -->
+      <div *ngIf="isActivePopulated" class="podium-track">
+        <div
+          *ngFor="let entry of podiumItems; trackBy: trackByItemId"
+          class="podium-slot"
+          [ngClass]="'podium-slot-rank' + entry.rank"
+        >
+          <div class="podium-photo-wrap">
+            <span *ngIf="entry.rank === 1" class="podium-crown"><i class="fas fa-crown"></i></span>
+            <div
+              class="podium-photo-box cursor-pointer"
+              [class.podium-photo-portrait]="isCinemaCategory"
+              [class.podium-photo-glow]="entry.rank === 1"
+              (click)="onPodiumItemClick(entry.item)"
+            >
+              <div *ngIf="!imageLoaded[entry.item.id]" class="podium-photo-loader">
+                <div class="podium-photo-spinner"></div>
+              </div>
+              <img
+                [src]="entry.item.cover"
+                [alt]="entry.item.title"
+                class="podium-photo"
+                loading="lazy"
+                (load)="imageLoaded[entry.item.id] = true"
+                (error)="imageLoaded[entry.item.id] = true"
+                [class.invisible]="!imageLoaded[entry.item.id]"
+              />
+            </div>
+          </div>
+          <!-- Image's bottom edge rests directly on the platform - the rank
+               badge straddles that seam, and title/subtitle live inside the
+               front face itself, below the badge with some clearance. -->
+          <div class="podium-block-wrap" [ngClass]="'podium-block-wrap-rank' + entry.rank">
+            <span class="podium-rank-badge"><span class="podium-rank-number">{{ entry.rank }}</span></span>
+            <div class="podium-block-top"></div>
+            <div class="podium-block-front">
+              <p class="podium-title" [title]="entry.item.title">{{ entry.item.title }}</p>
+              <p *ngIf="entry.item.subtitle" class="podium-subtitle" [title]="entry.item.subtitle">{{ entry.item.subtitle }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty / not-yet-populated state -->
+      <div *ngIf="!isActivePopulated" class="text-center py-6">
+        <div class="ghost-podium-track">
+          <span class="ghost-star"><i class="fas fa-star"></i></span>
+          <div class="ghost-podium-slot ghost-podium-slot-2"><span>2</span></div>
+          <div class="ghost-podium-slot ghost-podium-slot-1"><span>1</span></div>
+          <div class="ghost-podium-slot ghost-podium-slot-3"><span>3</span></div>
+        </div>
+        <p class="text-white font-bold mt-4">No top {{ categoryLabel.toLowerCase() }} selected yet</p>
+        <p class="text-gray-400 text-sm mt-1">Add your top 3 {{ categoryLabel.toLowerCase() }} to show off your taste!</p>
+        <button
+          *ngIf="isOwnProfile"
+          type="button"
+          (click)="goToManage()"
+          class="mt-4 px-4 py-2 rounded-full bg-[#0F5EE4] text-white font-semibold text-sm inline-flex items-center gap-2"
+        >
+          <i class="fas fa-plus"></i> Add Top 3
+        </button>
+      </div>
+    </ng-container>
+  </ng-container>
+</div>

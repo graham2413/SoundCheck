@@ -8,6 +8,7 @@ import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
 import { UpdateService } from 'src/app/services/update.service';
 import { CinemaService } from 'src/app/services/cinema.service';
+import { TopThreeService } from 'src/app/services/top-three.service';
 
 @Component({
   selector: 'app-user-profile',
@@ -53,6 +54,13 @@ export class ProfileComponent implements OnInit {
   cinemaWatchlistIsPublic: boolean = false;
   isImportingTraktExport: boolean = false;
 
+  // Unlike cinemaWatchlistIsPublic above (buffered, only actually saved when
+  // the page's main Save Changes button is pressed), this saves immediately
+  // on toggle via its own dedicated endpoint - same immediate-save pattern
+  // already used for the notification preference toggles.
+  topThreeIsPublic: boolean = false;
+  isSavingTopThreeVisibility: boolean = false;
+
   preferredApp: string | null = null;
   appVersion: string = '';
   isCheckingForUpdate: boolean = false;
@@ -79,7 +87,8 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
     private router: Router,
     private authService: AuthService,
     private updateService: UpdateService,
-    private cinemaService: CinemaService
+    private cinemaService: CinemaService,
+    private topThreeService: TopThreeService
   ) {}
 
   ngOnInit(): void {
@@ -107,6 +116,26 @@ platformStyles: Record<string, { label: string; color: string; icon?: string; im
     if (!this.userProfile || !this.userProfile.username) {
       this.userService.getAuthenticatedUserProfile().subscribe();
     }
+
+    this.topThreeService.getMyTopThree().subscribe({
+      next: (response) => (this.topThreeIsPublic = response.isPublic),
+    });
+  }
+
+  toggleTopThreeVisibility(): void {
+    if (this.isSavingTopThreeVisibility) return;
+    const next = !this.topThreeIsPublic;
+    this.isSavingTopThreeVisibility = true;
+    this.topThreeService.setVisibility(next).subscribe({
+      next: () => {
+        this.topThreeIsPublic = next;
+        this.isSavingTopThreeVisibility = false;
+      },
+      error: () => {
+        this.isSavingTopThreeVisibility = false;
+        this.toastr.error('Failed to update Top 3 visibility.', 'Error');
+      },
+    });
   }
 
   updateProfilePictureUrl() {

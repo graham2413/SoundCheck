@@ -67,7 +67,52 @@ const userSchema = new Schema({
         }
       ],
       default: []
-    } 
+    },
+
+    // Top 3 podium per category. Each category defaults to "auto" (no stored
+    // items - computed live from the user's own ratings on read, see
+    // computeAutoTopThree in userController.js) until manualOverride is set,
+    // at which point `items` holds the user's own curated (ordered) picks
+    // instead. isPublic gates the whole feature on other users' profiles,
+    // same pattern as cinemaWatchlistIsPublic above.
+    topThree: {
+      isPublic: { type: Boolean, default: false },
+      movies: {
+        manualOverride: { type: Boolean, default: false },
+        items: {
+          type: [{ id: String, title: String, cover: String }],
+          default: [],
+        },
+      },
+      shows: {
+        manualOverride: { type: Boolean, default: false },
+        items: {
+          type: [{ id: String, title: String, cover: String }],
+          default: [],
+        },
+      },
+      songs: {
+        manualOverride: { type: Boolean, default: false },
+        items: {
+          type: [{ id: String, title: String, subtitle: String, cover: String }],
+          default: [],
+        },
+      },
+      albums: {
+        manualOverride: { type: Boolean, default: false },
+        items: {
+          type: [{ id: String, title: String, subtitle: String, cover: String }],
+          default: [],
+        },
+      },
+      artists: {
+        manualOverride: { type: Boolean, default: false },
+        items: {
+          type: [{ id: String, title: String, cover: String }],
+          default: [],
+        },
+      },
+    },
 });
 
 // Export User model

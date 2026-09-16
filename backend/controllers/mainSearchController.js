@@ -11,6 +11,7 @@ const {
 } = require("../utils/calendarHelpers");
 const Release = require("../models/Release");
 const User = require("../models/User");
+const ArtistSyncState = require("../models/ArtistSyncState");
 const { notifyUsersForNewMusicRelease } = require("../utils/pushNotifications");
 
 const MUSIC_CALENDAR_CACHE_TTL = 86400; // 24h safety-net - actual invalidation is calendar-day based
@@ -559,6 +560,24 @@ const getArtistTopTracks = async (req, res) => {
   }
 };
 
+// Single lightweight call (no pagination) used to cheaply detect whether an
+// artist might have released anything new since our last full check - see
+// cronSyncAllArtists. Returns null on any failure so callers fail OPEN
+// (treat as "might have changed, do the full check") rather than silently
+// skipping a real update because this cheap probe itself errored.
+async function getArtistAlbumCount(artistId) {
+  try {
+    const response = await fetchWithRetry(() =>
+      callDeezer(`https://api.deezer.com/artist/${artistId}`)
+    );
+    const count = response?.data?.nb_album;
+    return typeof count === "number" ? count : null;
+  } catch (err) {
+    console.error(`getArtistAlbumCount failed for artist ${artistId}:`, err.message || err);
+    return null;
+  }
+}
+
 // Shared method to sync artist albums to MongoDB
 // This is used both for manual sync and scheduled tasks
 async function syncArtistAlbums(artistId, artistName, fullSync = false) {
@@ -725,13 +744,31 @@ const getAndStoreArtistAlbums = async (req, res) => {
   await syncArtistAlbums(artistId, artistName, true);
   await redis.safeSet(redisKey, "1", "EX", 60 * 60 * 6); // 6h TTL
 
+  // Following an artist always needs the full fetch regardless - there's no
+  // prior state to diff against yet, so the nb_album short-circuit below
+  // can't skip anything here. This just records today's count as the
+  // baseline so tomorrow's cron sync has something to compare against
+  // instead of treating this artist as "unknown, must fully check" forever.
+  const albumCount = await getArtistAlbumCount(artistId);
+  await ArtistSyncState.updateOne(
+    { artistId },
+    { $set: { albumCount, lastCheckedAt: new Date(), lastFullSyncAt: new Date() } },
+    { upsert: true }
+  );
+
   res.status(200).json({ message: "Synced from user action" });
 };
 
-// Cron job method to update all followed artists' albums
-async function cronSyncAllArtists(batchSize = 10, delayMs = 1000) {
+// Cron job method to update all followed artists' albums.
+// `forceFull` bypasses the nb_album short-circuit below for every artist
+// regardless of whether their count looks unchanged - a periodic safety net
+// (see server.js's Sunday check, same pattern already used for cinema
+// metadata) in case Deezer's count is ever stale or an artist's catalog gets
+// re-tagged in a way that doesn't move nb_album.
+async function cronSyncAllArtists(batchSize = 10, delayMs = 1000, forceFull = false) {
   const followedArtists = await getFollowedArtistList();
   let totalSynced = 0;
+  let totalSkippedNoChange = 0;
 
   for (let i = 0; i < followedArtists.length; i += batchSize) {
     const batch = followedArtists.slice(i, i + batchSize);
@@ -744,7 +781,32 @@ async function cronSyncAllArtists(batchSize = 10, delayMs = 1000) {
         if (cached) return { id, name, status: "skipped" };
 
         try {
+          // Cheap "did anything actually change" probe before paying for the
+          // full paginated album fetch + DB diff - most followed artists
+          // release nothing on any given day. A stored count of null means
+          // we've never successfully captured a baseline (or the previous
+          // probe failed), so it always falls through to a full check.
+          const syncState = forceFull ? null : await ArtistSyncState.findOne({ artistId: id }).lean();
+          const currentCount = forceFull ? null : await getArtistAlbumCount(id);
+          const knownUnchanged =
+            !forceFull &&
+            syncState?.albumCount != null &&
+            currentCount != null &&
+            syncState.albumCount === currentCount;
+
+          if (knownUnchanged) {
+            await ArtistSyncState.updateOne({ artistId: id }, { $set: { lastCheckedAt: new Date() } });
+            await redis.safeSet(redisKey, "1", "EX", 60 * 60 * 24 * 2);
+            return { id, name, status: "skipped-no-change" };
+          }
+
           await syncArtistAlbums(id, name);
+          const newCount = forceFull ? await getArtistAlbumCount(id) : currentCount;
+          await ArtistSyncState.updateOne(
+            { artistId: id },
+            { $set: { albumCount: newCount, lastCheckedAt: new Date(), lastFullSyncAt: new Date() } },
+            { upsert: true }
+          );
           await redis.safeSet(redisKey, "1", "EX", 60 * 60 * 24 * 2); // outlives the date-scoped key by a day as a safety margin
           return { id, name, status: "synced" };
         } catch (err) {
@@ -763,6 +825,7 @@ async function cronSyncAllArtists(batchSize = 10, delayMs = 1000) {
       if (result.status === "fulfilled") {
         const { status } = result.value;
         if (status === "synced") totalSynced += 1;
+        if (status === "skipped-no-change") totalSkippedNoChange += 1;
       } else {
         console.error(`Unhandled sync rejection:`, result.reason);
       }
@@ -778,8 +841,39 @@ async function cronSyncAllArtists(batchSize = 10, delayMs = 1000) {
   }
 
   console.log(
-    `Cron sync completed. Total artists: ${followedArtists.length}, Synced: ${totalSynced}`
+    `Cron sync completed. Total artists: ${followedArtists.length}, Synced: ${totalSynced}, Skipped (no change): ${totalSkippedNoChange}`
   );
+
+  await cleanupOrphanedArtistData(followedArtists);
+}
+
+// Safety-net sweep, not the primary cleanup path - unfollowing an artist
+// already deletes its Release rows + ArtistSyncState doc synchronously, the
+// moment the last follower leaves (see userController.js's removeArtist).
+// This just catches anything that path could ever miss (a user record
+// edited outside the normal flow, a bug, etc.) so orphaned data can't
+// accumulate silently forever. Safe to run daily: Release data is only ever
+// read scoped to a requesting user's OWN artistList (calendar, weekly
+// summary), so once nobody follows an artist nothing in the app still
+// queries for it - re-following it later just re-fetches from Deezer like a
+// fresh follow would anyway. Reviews are unaffected either way - they store
+// their own full copy of the album/song details, not a reference to Release.
+async function cleanupOrphanedArtistData(followedArtists) {
+  const followedIds = new Set(followedArtists.map((a) => a.id));
+
+  const releaseArtistIds = await Release.distinct("artistId");
+  const orphanedReleaseIds = releaseArtistIds.filter((id) => !followedIds.has(id));
+  if (orphanedReleaseIds.length > 0) {
+    const { deletedCount } = await Release.deleteMany({ artistId: { $in: orphanedReleaseIds } });
+    console.log(`Cleaned up ${deletedCount} Release doc(s) for ${orphanedReleaseIds.length} no-longer-followed artist(s).`);
+  }
+
+  const syncStateArtistIds = await ArtistSyncState.distinct("artistId");
+  const orphanedSyncStateIds = syncStateArtistIds.filter((id) => !followedIds.has(id));
+  if (orphanedSyncStateIds.length > 0) {
+    await ArtistSyncState.deleteMany({ artistId: { $in: orphanedSyncStateIds } });
+    console.log(`Cleaned up ${orphanedSyncStateIds.length} ArtistSyncState doc(s) for no-longer-followed artist(s).`);
+  }
 }
 
 // Helper function to get the list of followed artists from MongoDB

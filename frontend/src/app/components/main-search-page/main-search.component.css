@@ -19,16 +19,20 @@
    stays in the DOM across the toggle (unlike .switch-icon-wrap below, which
    gets destroyed/recreated by the *ngIf/else icon swap) so the animation
    plays through in one continuous run instead of restarting mid-flight.
-   Perspective lives on the button itself (search-type-switch-btn, further
-   down) since it must be set on an ancestor of the rotated element, not the
-   rotated element itself.
+   Perspective lives on the button itself (search-type-switch-btn.flip-perspective,
+   further down) since it must be set on an ancestor of the rotated element,
+   not the rotated element itself.
    The keyframe rotates to 90deg (edge-on/invisible), jumps to -90deg (the
    same edge-on angle, so the jump itself is invisible), then rotates back
    to 0 - this reads as one continuous spin without ever showing the image's
    mirrored backface, since a flat PNG has no "back" texture to show. The
    underlying icon is swapped (via displaySearchType, in the component) at
    the 50% mark to line up with that invisible jump. */
-.search-type-switch-btn {
+.search-type-switch-btn.flip-perspective {
+  /* Only applied while flipping (not always-on) because an always-on 3D
+     rendering context forces mobile WebKit to rasterize the drop-shadow
+     filter below into its layer's rectangular bounding box, showing a faint
+     rectangle around the glow even at rest. */
   perspective: 600px;
 }
 

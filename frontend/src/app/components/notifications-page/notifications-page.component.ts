@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { AppNotification, NotificationPreferences, NotificationService } from 'src/app/services/notification.service';
@@ -33,6 +33,7 @@ interface NotificationGroup {
   standalone: true,
   imports: [CommonModule, TimeAgoPipe],
   templateUrl: './notifications-page.component.html',
+  styleUrls: ['./notifications-page.component.css'],
   animations: [
     trigger('fadeSlideIn', [
       // Animate the container
@@ -55,11 +56,33 @@ interface NotificationGroup {
     ])
   ]
 })
-export class NotificationsPageComponent implements OnInit {
+export class NotificationsPageComponent implements OnInit, OnDestroy {
   notifications: AppNotification[] = [];
   isLoadingNotifications = false;
   isDeletingAllNotifications = false;
   activeFilter: NotificationFilter = 'all';
+
+  // Swipe-to-delete (mobile only - desktop keeps the checkmark button, mouse
+  // users don't swipe). Card slides left over a fixed red trash panel behind
+  // it; dragging past SWIPE_THRESHOLD_PX and releasing snaps fully open to
+  // SWIPE_REVEAL_PX instead of settling wherever the finger happened to stop,
+  // same drag-then-snap approach already used for the cinema page's
+  // full-screen image swipe (cinema-review-page.component.ts).
+  private static readonly SWIPE_REVEAL_PX = 80;
+  private static readonly SWIPE_THRESHOLD_PX = 40;
+  // Public copy so the template can size/position the trash panel from the
+  // same number the drag-clamp logic below uses, instead of a second
+  // hardcoded 80 that could quietly drift out of sync with this one.
+  readonly swipeRevealPx = NotificationsPageComponent.SWIPE_REVEAL_PX;
+  isMobileView = false;
+  swipeOffsetPx: { [id: string]: number } = {};
+  swipingRowId: string | null = null; // disables the CSS transition only while actively dragging this row
+  isDeletingRow: { [id: string]: boolean } = {};
+  private draggingNotificationId: string | null = null;
+  private activeSwipePointerId: number | null = null;
+  private dragStartX = 0;
+  private dragStartOffset = 0;
+  private readonly onResize = () => (this.isMobileView = window.innerWidth < 768);
 
   // Moved here from the Edit Profile page - notification settings belong
   // next to the notifications they control, not buried in profile editing.
@@ -97,6 +120,12 @@ export class NotificationsPageComponent implements OnInit {
     this.notificationService.getPreferences().subscribe({
       next: ({ preferences }) => (this.notificationPreferences = preferences),
     });
+    this.isMobileView = window.innerWidth < 768;
+    window.addEventListener('resize', this.onResize);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.onResize);
   }
 
   toggleSettings(): void {
@@ -219,6 +248,20 @@ export class NotificationsPageComponent implements OnInit {
     return notification.details?.cover || FALLBACK_COVER;
   }
 
+  // Deezer cover URLs stored on the notification (see notificationJobs.js /
+  // pushNotifications.js) are the default resolution - the main search page
+  // upgrades these to full quality before opening the review modal
+  // (main-search.component.ts's getHighQualityImage), but that upgrade never
+  // happened for a cover coming straight from a notification, so it opened
+  // blurry. Mirrors that same logic here.
+  private getHighQualityImage(imageUrl: string | undefined): string {
+    if (!imageUrl) return '';
+    if (imageUrl.includes('api.deezer.com')) {
+      return `${imageUrl}?size=xl`;
+    }
+    return imageUrl;
+  }
+
   deleteNotification(notification: AppNotification): void {
     // deleteNotification() already updates notificationService's shared
     // count on success (see notification.service.ts) - the navbar/profile
@@ -226,6 +269,70 @@ export class NotificationsPageComponent implements OnInit {
     this.notificationService.deleteNotification(notification._id).subscribe({
       next: () => (this.notifications = this.notifications.filter((item) => item._id !== notification._id)),
     });
+  }
+
+  // Mobile swipe-to-delete's trash button - separate from deleteNotification()
+  // above (still used by the desktop checkmark button) because this one
+  // needs its own loading/disabled state on the specific row being deleted,
+  // and must clear that state again on failure so the button doesn't stay
+  // stuck disabled with a spinner forever if the request fails.
+  onSwipeDelete(notification: AppNotification): void {
+    if (this.isDeletingRow[notification._id]) return;
+    this.isDeletingRow[notification._id] = true;
+    this.notificationService.deleteNotification(notification._id).subscribe({
+      next: () => {
+        this.notifications = this.notifications.filter((item) => item._id !== notification._id);
+      },
+      error: () => {
+        this.isDeletingRow[notification._id] = false;
+        this.swipeOffsetPx[notification._id] = 0;
+      },
+    });
+  }
+
+  // Tapping an already-open (swiped) row just closes it instead of
+  // navigating - matches the common swipe-to-delete convention of requiring
+  // a second, deliberate tap on the trash icon itself to actually delete.
+  onRowTap(notification: AppNotification): void {
+    if ((this.swipeOffsetPx[notification._id] || 0) !== 0) {
+      this.swipeOffsetPx[notification._id] = 0;
+      return;
+    }
+    this.openNotificationItem(notification);
+  }
+
+  onRowPointerDown(event: PointerEvent, notification: AppNotification): void {
+    if (!this.isMobileView || this.draggingNotificationId) return;
+    this.draggingNotificationId = notification._id;
+    this.activeSwipePointerId = event.pointerId;
+    this.dragStartX = event.clientX;
+    this.dragStartOffset = this.swipeOffsetPx[notification._id] || 0;
+    this.swipingRowId = notification._id;
+  }
+
+  onRowPointerMove(event: PointerEvent, notification: AppNotification): void {
+    if (this.draggingNotificationId !== notification._id || event.pointerId !== this.activeSwipePointerId) return;
+    const delta = event.clientX - this.dragStartX;
+    const next = this.dragStartOffset + delta;
+    this.swipeOffsetPx[notification._id] = Math.min(0, Math.max(-NotificationsPageComponent.SWIPE_REVEAL_PX, next));
+  }
+
+  onRowPointerUp(event: PointerEvent, notification: AppNotification): void {
+    if (this.draggingNotificationId !== notification._id || event.pointerId !== this.activeSwipePointerId) return;
+    this.finishSwipeDrag(notification._id);
+  }
+
+  onRowPointerCancel(notification: AppNotification): void {
+    if (this.draggingNotificationId !== notification._id) return;
+    this.finishSwipeDrag(notification._id);
+  }
+
+  private finishSwipeDrag(id: string): void {
+    this.draggingNotificationId = null;
+    this.activeSwipePointerId = null;
+    this.swipingRowId = null; // re-enable the transition for the snap below
+    const current = this.swipeOffsetPx[id] || 0;
+    this.swipeOffsetPx[id] = current <= -NotificationsPageComponent.SWIPE_THRESHOLD_PX ? -NotificationsPageComponent.SWIPE_REVEAL_PX : 0;
   }
 
   deleteAllNotifications(): void {
@@ -285,7 +392,7 @@ export class NotificationsPageComponent implements OnInit {
       type: 'Album' as const,
       title: details.title ?? '',
       artist: details.artistName ?? '',
-      cover: details.cover,
+      cover: this.getHighQualityImage(details.cover),
       isExplicit: details.isExplicit,
       releaseDate: details.releaseDate,
       avgRating: 0,

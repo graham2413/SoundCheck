@@ -108,6 +108,7 @@
           (click)="toggleSearchType()"
           title="Click to switch between Music and Cinema"
           class="search-type-switch-btn hidden md:inline-flex align-middle ml-2 w-10 h-10 md:w-12 md:h-12 rounded-full transition items-center justify-center overflow-visible"
+          [class.flip-perspective]="isFlippingSwitchIcon"
           style="background: #020814"
         >
           <span class="switch-icon-flip" [class.flip-active]="isFlippingSwitchIcon">
@@ -134,6 +135,7 @@
       (click)="toggleSearchType()"
       title="Click to switch between Music and Cinema"
       class="search-type-switch-btn md:hidden absolute right-4 w-14 h-14 rounded-full transition flex items-center justify-center overflow-visible mt-1 mr-2"
+      [class.flip-perspective]="isFlippingSwitchIcon"
       [style.top.px]="switchButtonTopPx"
       style="background: #020814"
     >

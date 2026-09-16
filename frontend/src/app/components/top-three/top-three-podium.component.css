@@ -1,0 +1,334 @@
+/* Populated podium - 3 pedestal blocks: #2 left, #1 centered (tallest, crown
+   + blue glow), #3 right. Each block is genuinely two planes (see
+   .podium-block-top/-front below), not just a gradient standing in for
+   depth - the top face is a real rotateX-tilted rectangle sitting above the
+   flat front face. */
+.podium-track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.75rem;
+  padding-top: 2rem;
+}
+
+/* Loading skeleton - reuses .podium-photo-box/.podium-block-top/-front's own
+   sizing/shape (see the HTML) so the card is already the right width/height
+   before data arrives, rather than a small spinner that pops open into a
+   taller card once the real podium loads. Only .skeleton-pill (the toggle
+   row/heading placeholders) needs its own shape - the podium pieces already
+   have one, .skeleton-fill just needs to swap their background/animation in
+   without fighting their existing border-radius (a same-specificity
+   .skeleton-fill rule for that would lose to their own more-specific rule
+   below regardless of source order, so it's set here via a compound
+   selector instead). */
+.skeleton-fill {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.podium-photo-box.skeleton-fill,
+.podium-block-top.skeleton-fill,
+.podium-block-front.skeleton-fill,
+.skeleton-pill.skeleton-fill {
+  background: #2d3748;
+}
+
+.skeleton-pill {
+  display: inline-block;
+  border-radius: 9999px;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.podium-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 1 7.5rem;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(70px);
+  animation: podium-rise 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Rise order: #3 first, then #2, then #1 (the "build up to the winner"
+   reveal) - independent of their left-to-right visual position. */
+.podium-slot-rank3 {
+  animation-delay: 0ms;
+}
+.podium-slot-rank2 {
+  animation-delay: 260ms;
+}
+.podium-slot-rank1 {
+  animation-delay: 520ms;
+}
+
+@keyframes podium-rise {
+  from {
+    opacity: 0;
+    transform: translateY(70px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.podium-photo-wrap {
+  position: relative;
+}
+
+/* The sized/bordered element - square by default (album art, artist
+   photos); .podium-photo-portrait switches it to a taller box for
+   movie/show posters instead of cropping them into a square and losing
+   most of the artwork. Holds both the loader (below) and the <img> itself,
+   which just fills it via object-fit. Same size regardless of rank - only
+   the platform height varies, not the photo. */
+.podium-photo-box {
+  position: relative;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #1f2937;
+  overflow: hidden;
+}
+
+.podium-photo-portrait {
+  width: 5rem;
+  height: 7.5rem;
+}
+
+.podium-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.podium-photo-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.podium-photo-spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 9999px;
+  border-top: 2px solid #fff;
+  border-right: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-left: 2px solid transparent;
+  animation: podium-spin 700ms linear infinite;
+}
+
+@keyframes podium-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Appears once #1 has finished rising (520ms delay + 450ms duration). */
+.podium-photo-glow {
+  animation: podium-glow-in 400ms ease-out 970ms both;
+}
+
+@keyframes podium-glow-in {
+  from {
+    box-shadow: 0 0 0 rgba(15, 94, 228, 0);
+  }
+  to {
+    box-shadow: 0 0 22px 4px rgba(15, 94, 228, 0.55);
+  }
+}
+
+.podium-crown {
+  position: absolute;
+  top: -1.7rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px) scale(0.5);
+  /* Same primary blue as the Edit Profile button's background, not the
+     conventional gold - matches the app's own accent instead of a generic
+     trophy color. */
+  color: #0f5ee4;
+  font-size: 1.1rem;
+  text-shadow: 0 2px 8px rgba(15, 94, 228, 0.6);
+  opacity: 0;
+  animation: podium-crown-pop 350ms ease-out 970ms both;
+}
+
+@keyframes podium-crown-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px) scale(0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Title/subtitle now live inside the front face itself (see
+   .podium-block-front's padding-top below for the gap under the badge),
+   not below the whole platform. */
+.podium-title {
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  max-width: 100%;
+  padding: 0 0.35rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-subtitle {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.68rem;
+  margin-top: 0.15rem;
+  max-width: 100%;
+  padding: 0 0.35rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Real 3D geometry (not just a gradient) - .podium-block-top is an actual
+   rotateX-tilted plane sitting above the flat front face, so it reads as a
+   receding top surface rather than a flat rectangle. All three pedestals
+   share the same blue family (brand blue #0F5EE4's darker relatives); #1
+   is just brighter/taller and gets the glow, not a different color.
+   No gap above it (margin-top: 0) - the photo's bottom edge rests directly
+   on the platform, with the rank badge straddling that seam. */
+.podium-block-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.podium-block-top {
+  height: 0.85rem;
+  background: linear-gradient(135deg, #4a78c4 0%, #2c4d85 100%);
+  border-radius: 0.5rem 0.5rem 0 0;
+  transform-origin: bottom;
+  transform: perspective(60px) rotateX(45deg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* padding-top clears the rank badge (which overlaps up into this face by
+   about half its height) with visible room to spare before the title
+   starts, rather than the title sitting right against the badge. */
+.podium-block-front {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 1.5rem;
+  border-radius: 0 0 0.25rem 0.25rem;
+  background: linear-gradient(180deg, #1e3a6b 0%, #12213e 100%);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* Rank badge - straddles the seam between the photo's bottom edge and the
+   platform's top edge, sitting lower (closer to fully-on-the-platform) than
+   it first did. */
+.podium-rank-badge {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  background: #0b1220;
+  border: 2px solid #0f5ee4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.podium-block-wrap-rank1 .podium-block-top {
+  background: linear-gradient(135deg, #5e8ddb 0%, #3a5f9e 100%);
+}
+
+.podium-block-wrap-rank1 .podium-block-front {
+  height: 6.75rem;
+  background: linear-gradient(180deg, #24467e 0%, #152a4d 100%);
+  box-shadow: 0 0 22px rgba(15, 94, 228, 0.4), 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.podium-block-wrap-rank2 .podium-block-front {
+  height: 5.25rem;
+}
+
+.podium-block-wrap-rank3 .podium-block-front {
+  height: 4.5rem;
+}
+
+.podium-rank-number {
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+/* Empty state - hollow "ghost" version of the same podium shape, static
+   (no rise animation - there's nothing to reveal yet). */
+.ghost-podium-track {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.6rem;
+  max-width: 16rem;
+  margin: 0 auto;
+}
+
+.ghost-star {
+  position: absolute;
+  top: -1.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #3b82f6;
+  font-size: 1rem;
+}
+
+.ghost-podium-slot {
+  flex: 1;
+  border: 1.5px solid rgba(15, 94, 228, 0.5);
+  border-radius: 0.5rem 0.5rem 0.2rem 0.2rem;
+  background: rgba(15, 94, 228, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7fa3e8;
+  font-weight: 700;
+}
+
+.ghost-podium-slot-1 {
+  height: 4.5rem;
+  order: 2;
+}
+
+.ghost-podium-slot-2 {
+  height: 3.4rem;
+  order: 1;
+}
+
+.ghost-podium-slot-3 {
+  height: 3rem;
+  order: 3;
+}

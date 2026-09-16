@@ -255,29 +255,52 @@
         </div>
       </div>
 
-      <!-- Watchlist Privacy -->
-      <div
-        class="flex items-center justify-between pb-5 mb-5"
-        style="max-width: 20rem; margin-left: auto; margin-right: auto"
-      >
-        <span class="text-white font-medium">Public Watchlist</span>
-        <button
-          type="button"
-          (click)="cinemaWatchlistIsPublic = !cinemaWatchlistIsPublic"
-          [ngClass]="{
-            'bg-[#0F5EE4]': cinemaWatchlistIsPublic,
-            'bg-gray-600': !cinemaWatchlistIsPublic
-          }"
-          class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors"
-        >
-          <span
+      <!-- Privacy -->
+      <div style="max-width: 20rem; margin-left: auto; margin-right: auto">
+        <h3 class="text-gray-400 text-xs font-bold tracking-wider uppercase mb-3">Privacy</h3>
+
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-white font-medium">Public Watchlist</span>
+          <button
+            type="button"
+            (click)="cinemaWatchlistIsPublic = !cinemaWatchlistIsPublic"
             [ngClass]="{
-              'translate-x-6': cinemaWatchlistIsPublic,
-              'translate-x-1': !cinemaWatchlistIsPublic
+              'bg-[#0F5EE4]': cinemaWatchlistIsPublic,
+              'bg-gray-600': !cinemaWatchlistIsPublic
             }"
-            class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
-          ></span>
-        </button>
+            class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors"
+          >
+            <span
+              [ngClass]="{
+                'translate-x-6': cinemaWatchlistIsPublic,
+                'translate-x-1': !cinemaWatchlistIsPublic
+              }"
+              class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
+            ></span>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between pb-5 mb-5">
+          <span class="text-white font-medium">Public Top 3</span>
+          <button
+            type="button"
+            [disabled]="isSavingTopThreeVisibility"
+            (click)="toggleTopThreeVisibility()"
+            [ngClass]="{
+              'bg-[#0F5EE4]': topThreeIsPublic,
+              'bg-gray-600': !topThreeIsPublic
+            }"
+            class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors disabled:opacity-50"
+          >
+            <span
+              [ngClass]="{
+                'translate-x-6': topThreeIsPublic,
+                'translate-x-1': !topThreeIsPublic
+              }"
+              class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
+            ></span>
+          </button>
+        </div>
       </div>
 
       <!-- Import Trakt Export -->

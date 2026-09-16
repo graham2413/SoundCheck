@@ -23,7 +23,7 @@
     <!-- Notification settings overlay (moved here from Edit Profile) -->
     <div
       *ngIf="showSettings"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-3"
       (click)="toggleSettings()"
     >
       <div
@@ -31,7 +31,7 @@
         (click)="$event.stopPropagation()"
       >
         <!-- Header -->
-        <div class="flex items-start gap-3 p-5">
+        <div class="flex items-start gap-3 p-3 pt-4">
           <span class="flex items-center justify-center w-11 h-11 rounded-xl bg-[#0F5EE4]/20 text-[#0F5EE4] flex-shrink-0">
             <i class="fas fa-bell"></i>
           </span>
@@ -47,7 +47,7 @@
         <div class="border-t border-gray-800"></div>
 
         <!-- Push notifications -->
-        <div class="flex items-center gap-3 p-5">
+        <div class="flex items-center gap-3 p-3">
           <span class="flex items-center justify-center w-11 h-11 rounded-xl bg-gray-800 text-gray-300 flex-shrink-0">
             <i class="fas fa-bell"></i>
           </span>
@@ -59,7 +59,7 @@
             type="button"
             (click)="pushEnabled ? disableNotifications() : enableNotifications()"
             [disabled]="isUpdatingNotifications"
-            class="flex items-center gap-2 flex-shrink-0 disabled:opacity-60"
+            class="flex items-center flex-shrink-0 disabled:opacity-60"
           >
             <span
               [ngClass]="pushEnabled ? 'bg-[#0F5EE4]' : 'bg-gray-600'"
@@ -70,16 +70,13 @@
                 class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
               ></span>
             </span>
-            <span class="text-sm font-medium text-gray-300 w-16 text-left">
-              {{ isUpdatingNotifications ? 'Updating...' : pushEnabled ? 'Enabled' : 'Disabled' }}
-            </span>
           </button>
         </div>
 
         <div class="border-t border-gray-800"></div>
 
         <!-- New music releases -->
-        <label class="flex items-center gap-3 p-5 cursor-pointer">
+        <label class="flex items-center gap-3 p-3 cursor-pointer">
           <span class="flex items-center justify-center w-11 h-11 rounded-xl bg-gray-800 text-gray-300 flex-shrink-0">
             <i class="fas fa-music"></i>
           </span>
@@ -101,7 +98,7 @@
         <div class="border-t border-gray-800"></div>
 
         <!-- Weekly summary -->
-        <label class="flex items-center gap-3 p-5 cursor-pointer">
+        <label class="flex items-center gap-3 p-3 pb-4 cursor-pointer">
           <span class="flex items-center justify-center w-11 h-11 rounded-xl bg-gray-800 text-gray-300 flex-shrink-0">
             <i class="fas fa-calendar-days"></i>
           </span>
@@ -151,8 +148,21 @@
             type="button"
             [disabled]="isDeletingAllNotifications"
             (click)="deleteAllNotifications()"
-            class="px-3 py-1 rounded-full border border-red-300 text-red-300 text-sm md:text-base font-semibold md:hover:bg-gray-800/50 transition disabled:opacity-50"
+            class="flex items-center gap-1.5 px-3 py-1 rounded-full border border-red-300 text-red-300 text-sm md:text-base font-semibold md:hover:bg-gray-800/50 transition disabled:opacity-50"
           >
+            <!-- Font Awesome's outline trash ("Regular" style) is Pro-only -
+                 not in this project's free package - so this is a plain
+                 inline SVG outline instead (same approach as the caught-up
+                 checkmark draw above). -->
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">
+              <path
+                d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-9 0 1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
             Clear all
           </button>
         </div>
@@ -161,62 +171,121 @@
           <div
             @itemAnim
             *ngFor="let notification of group.items; trackBy: trackByNotificationId"
-            (click)="openNotificationItem(notification)"
-            class="relative flex items-center gap-3 p-3 pl-4 transition-all md:hover:bg-gray-900 cursor-pointer group rounded-md bg-gray-900/40 overflow-hidden"
+            class="relative rounded-md overflow-hidden"
           >
-            <span class="absolute left-0 top-0 bottom-0 w-1 bg-[#0F5EE4]"></span>
+            <!-- Swipe-left reveal (mobile only - desktop keeps the checkmark
+                 button below instead, since mouse users don't swipe). Its own
+                 transform (not just the card's translucent bg-gray-900/40
+                 painting over it) is what actually keeps it out of view at
+                 rest: translateX(80px) pushes it past the wrapper's right
+                 edge, where overflow-hidden above clips it entirely - a
+                 semi-transparent card in front wouldn't have been enough on
+                 its own. Moves in lockstep with the card via the same
+                 swipeOffsetPx value so the two slide together. -->
+            <div
+              class="md:hidden absolute inset-y-0 right-0 flex items-center justify-center bg-red-500"
+              [style.width.px]="swipeRevealPx"
+              [style.transform]="'translateX(' + (swipeRevealPx + (swipeOffsetPx[notification._id] || 0)) + 'px)'"
+              [style.transition]="swipingRowId === notification._id ? 'none' : 'transform 200ms ease-out'"
+            >
+              <button
+                type="button"
+                [attr.aria-label]="'Delete ' + notification.title"
+                [disabled]="isDeletingRow[notification._id]"
+                (click)="onSwipeDelete(notification)"
+                class="flex items-center justify-center w-full h-full text-white disabled:opacity-70"
+              >
+                <div *ngIf="isDeletingRow[notification._id]" class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
+                <i *ngIf="!isDeletingRow[notification._id]" class="fas fa-trash text-lg"></i>
+              </button>
+            </div>
 
-            <ng-container *ngIf="isCinemaNotification(notification); else musicOrReportCover">
-              <img
-                [src]="notificationCover(notification)"
-                alt=""
-                class="w-14 h-20 object-cover rounded-md flex-shrink-0 bg-gray-800"
-              />
-            </ng-container>
-            <ng-template #musicOrReportCover>
-              <ng-container *ngIf="notification.type === 'music-release'; else reportIcon">
+            <div
+              class="relative flex items-center gap-3 p-3 pl-4 md:hover:bg-gray-900 cursor-pointer group bg-gray-900/40"
+              [style.transform]="'translateX(' + (swipeOffsetPx[notification._id] || 0) + 'px)'"
+              [style.transition]="swipingRowId === notification._id ? 'none' : 'transform 200ms ease-out'"
+              style="touch-action: pan-y;"
+              (click)="onRowTap(notification)"
+              (pointerdown)="onRowPointerDown($event, notification)"
+              (pointermove)="onRowPointerMove($event, notification)"
+              (pointerup)="onRowPointerUp($event, notification)"
+              (pointercancel)="onRowPointerCancel(notification)"
+            >
+              <span class="absolute left-0 top-0 bottom-0 w-1 bg-[#0F5EE4]"></span>
+
+              <ng-container *ngIf="isCinemaNotification(notification); else musicOrReportCover">
                 <img
                   [src]="notificationCover(notification)"
                   alt=""
-                  class="w-14 h-14 object-cover rounded-md flex-shrink-0 bg-gray-800"
+                  class="w-14 h-20 object-cover rounded-md flex-shrink-0 bg-gray-800"
                 />
               </ng-container>
-              <ng-template #reportIcon>
-                <span class="flex items-center justify-center w-14 h-14 rounded-md bg-gray-800 text-gray-300 flex-shrink-0">
-                  <i class="fas fa-chart-simple"></i>
-                </span>
+              <ng-template #musicOrReportCover>
+                <ng-container *ngIf="notification.type === 'music-release'; else reportIcon">
+                  <img
+                    [src]="notificationCover(notification)"
+                    alt=""
+                    class="w-14 h-14 object-cover rounded-md flex-shrink-0 bg-gray-800"
+                  />
+                </ng-container>
+                <ng-template #reportIcon>
+                  <span class="flex items-center justify-center w-14 h-14 rounded-md bg-gray-800 text-gray-300 flex-shrink-0">
+                    <i class="fas fa-chart-simple"></i>
+                  </span>
+                </ng-template>
               </ng-template>
-            </ng-template>
 
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <span class="text-[0.65rem] font-bold tracking-wider uppercase text-gray-400">{{ notificationBadge(notification) }}</span>
-                <span class="text-gray-500 text-xs">{{ notification.createdAt | timeAgo }}</span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-[0.65rem] font-bold tracking-wider uppercase text-gray-400">{{ notificationBadge(notification) }}</span>
+                  <span class="text-gray-500 text-xs">{{ notification.createdAt | timeAgo }}</span>
+                </div>
+                <p class="text-white font-semibold truncate">{{ notification.title }}</p>
+                <p class="text-gray-400 text-sm truncate">{{ notification.message }}</p>
+                <ng-container *ngIf="notification.details as details">
+                  <p *ngIf="details.movies?.length" class="text-gray-500 text-xs mt-1">Movies: {{ (details.movies || []).join(', ') }}</p>
+                  <p *ngIf="details.tv?.length" class="text-gray-500 text-xs mt-1">TV: {{ (details.tv || []).join(', ') }}</p>
+                  <p *ngIf="details.music?.length" class="text-gray-500 text-xs mt-1">Music: {{ (details.music || []).join(', ') }}</p>
+                </ng-container>
               </div>
-              <p class="text-white font-semibold truncate">{{ notification.title }}</p>
-              <p class="text-gray-400 text-sm truncate">{{ notification.message }}</p>
-              <ng-container *ngIf="notification.details as details">
-                <p *ngIf="details.movies?.length" class="text-gray-500 text-xs mt-1">Movies: {{ (details.movies || []).join(', ') }}</p>
-                <p *ngIf="details.tv?.length" class="text-gray-500 text-xs mt-1">TV: {{ (details.tv || []).join(', ') }}</p>
-                <p *ngIf="details.music?.length" class="text-gray-500 text-xs mt-1">Music: {{ (details.music || []).join(', ') }}</p>
-              </ng-container>
+
+              <!-- Desktop: checkmark/dismiss button -->
+              <button
+                type="button"
+                [attr.aria-label]="'Complete ' + notification.title"
+                (click)="$event.stopPropagation(); deleteNotification(notification)"
+                class="hidden md:inline-flex text-gray-400 md:hover:text-white flex-shrink-0 self-start mt-1"
+              >
+                <i class="fas fa-check"></i>
+              </button>
+
+              <!-- Mobile: tap-to-open affordance (delete is now the swipe above) -->
+              <i class="md:hidden fas fa-chevron-right text-lg flex-shrink-0" style="color: #939297"></i>
             </div>
-            <button
-              type="button"
-              [attr.aria-label]="'Complete ' + notification.title"
-              (click)="$event.stopPropagation(); deleteNotification(notification)"
-              class="text-gray-400 md:hover:text-white flex-shrink-0 self-start mt-1"
-            >
-              <i class="fas fa-check"></i>
-            </button>
           </div>
         </div>
       </div>
 
-      <!-- Always shown at the bottom of the list, or alone when there's nothing to show -->
-      <div class="text-center py-8 rounded-md bg-gray-900/40 mt-2">
-        <span class="flex items-center justify-center w-10 h-10 rounded-full bg-[#0F5EE4]/20 text-[#0F5EE4] mx-auto mb-3">
-          <i class="fas fa-check"></i>
+      <!-- Empty state - nothing currently displayed (never had any, deleted
+           the last one, "Clear all", or an empty filter tab). *ngIf (rather
+           than always rendering it below the list) means this element is
+           freshly inserted into the DOM each time the list becomes empty, so
+           the CSS draw/pop animation on it (see the .caught-up-* rules)
+           replays every time on its own - no extra "have I shown this
+           already" state needed. -->
+      <div *ngIf="groupedNotifications.length === 0" class="text-center py-8 rounded-md bg-gray-900/40 mt-2">
+        <span class="caught-up-badge flex items-center justify-center w-10 h-10 rounded-full bg-[#0F5EE4]/20 text-[#0F5EE4] mx-auto mb-3">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+            <path
+              class="caught-up-check-path"
+              d="M5 13l4 4L19 7"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              pathLength="1"
+            />
+          </svg>
         </span>
         <p class="font-bold">You're all caught up!</p>
         <p class="text-gray-400 text-sm mt-1">Check back later for more releases and updates.</p>

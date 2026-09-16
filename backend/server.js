@@ -155,10 +155,16 @@ cron.schedule('0 11 * * *', async () => {
   timezone: 'America/Chicago'
 });
 
-// Sync all artists albums in DB daily at 3 AM
+// Sync all artists albums in DB daily at 3 AM. Skips the expensive full
+// fetch+diff for an artist whose Deezer nb_album count hasn't moved since
+// last check (see cronSyncAllArtists) - except on Sundays, which force a
+// full check for everyone regardless, as a safety net in case that count
+// signal is ever stale (same "full recheck on Sundays" pattern already used
+// for cinema metadata below).
 cron.schedule('0 3 * * *', async () => {
-  console.log('🔥 Starting daily artist album sync at 3 AM (local)');
-  await cronSyncAllArtists().catch((err) => console.error('Daily artist album sync failed:', err));
+  const forceFull = getLocalDayOfWeek('America/Chicago') === 'Sun';
+  console.log(`🔥 Starting daily artist album sync at 3 AM (local) - ${forceFull ? 'full recheck' : 'changed artists only'}`);
+  await cronSyncAllArtists(10, 1000, forceFull).catch((err) => console.error('Daily artist album sync failed:', err));
 }, {
   timezone: 'America/Chicago'
 });

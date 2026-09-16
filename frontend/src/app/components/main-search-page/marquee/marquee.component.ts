@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, NgZone, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
 import { SpotifyService } from 'src/app/services/spotify.service';
@@ -35,6 +35,7 @@ export class MarqueeComponent implements OnDestroy, OnInit {
     list: any[];
     index: number;
   }>();
+  @ViewChild('track') trackRef?: ElementRef<HTMLElement>;
 
   albums: any[] = [];
   loopedAlbums: any[] = [];
@@ -45,7 +46,7 @@ export class MarqueeComponent implements OnDestroy, OnInit {
   private position = 0;
   private lastFrameTime = 0;
 
-  constructor(private spotifyService: SpotifyService, private cdRef: ChangeDetectorRef) {}
+  constructor(private spotifyService: SpotifyService, private cdRef: ChangeDetectorRef, private ngZone: NgZone) {}
 
   async ngOnInit(): Promise<void> {
     const stored = localStorage.getItem('albumImages');
@@ -137,26 +138,35 @@ export class MarqueeComponent implements OnDestroy, OnInit {
     if (this.animationFrameId !== null) cancelAnimationFrame(this.animationFrameId);
   }
 
+  // Runs the whole rAF loop outside Angular's zone: driving it inside the
+  // zone (as it was before) made zone.js treat every single animation frame
+  // as an event that could affect app state, triggering a full app-wide
+  // change-detection pass ~60 times/sec - that CD churn, stacked on top of
+  // the initial entrance stagger animation, is what read as stutter at the
+  // start and small hitches throughout. Also caches the track element via
+  // ViewChild instead of re-querying the DOM every frame.
   private startAutoScroll(): void {
     if (this.animationFrameId !== null) return;
-    const animateTrack = (timestamp: number): void => {
-      const track = document.querySelector<HTMLElement>('app-marquee .marquee-track:not(.marquee-track-loading)');
-      if (!track) {
-        this.animationFrameId = null;
-        return;
-      }
+    this.ngZone.runOutsideAngular(() => {
+      const animateTrack = (timestamp: number): void => {
+        const track = this.trackRef?.nativeElement;
+        if (!track) {
+          this.animationFrameId = null;
+          return;
+        }
 
-      if (!this.lastFrameTime) this.lastFrameTime = timestamp;
-      const elapsed = Math.min(timestamp - this.lastFrameTime, 100);
-      this.lastFrameTime = timestamp;
-      const loopWidth = track.scrollWidth / 2;
-      if (loopWidth > 0) {
-        this.position = (this.position + (elapsed * 0.03)) % loopWidth;
-        track.style.transform = `translate3d(${-this.position}px, 0, 0)`;
-      }
+        if (!this.lastFrameTime) this.lastFrameTime = timestamp;
+        const elapsed = Math.min(timestamp - this.lastFrameTime, 100);
+        this.lastFrameTime = timestamp;
+        const loopWidth = track.scrollWidth / 2;
+        if (loopWidth > 0) {
+          this.position = (this.position + (elapsed * 0.03)) % loopWidth;
+          track.style.transform = `translate3d(${-this.position}px, 0, 0)`;
+        }
+        this.animationFrameId = requestAnimationFrame(animateTrack);
+      };
       this.animationFrameId = requestAnimationFrame(animateTrack);
-    };
-    this.animationFrameId = requestAnimationFrame(animateTrack);
+    });
   }
 
   getLastFridayNoon(): number {

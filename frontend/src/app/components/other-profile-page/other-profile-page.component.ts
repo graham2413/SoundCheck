@@ -32,11 +32,12 @@ import {
   DEFAULT_WATCHLIST_FILTERS,
 } from '../cinema-watchlist-filter/cinema-watchlist-filter.component';
 import { NotificationService } from 'src/app/services/notification.service';
+import { TopThreePodiumComponent } from '../top-three/top-three-podium.component';
 
 type ModalRecord = Album | Song | Artist | BaseRecord;
 @Component({
   selector: 'app-view-profile-page',
-  imports: [CommonModule, FormsModule, CinemaWatchlistComponent, CinemaWatchlistFilterComponent],
+  imports: [CommonModule, FormsModule, CinemaWatchlistComponent, CinemaWatchlistFilterComponent, TopThreePodiumComponent],
   templateUrl: './other-profile-page.component.html',
   styleUrl: './other-profile-page.component.css',
   standalone: true,

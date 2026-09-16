@@ -143,8 +143,8 @@
             style="background-color: #101621; border-color: #212530"
           >
             <div
-              class="relative h-32 md:h-40 flex-shrink-0"
-              [ngClass]="isMusicEntry(entry) ? 'aspect-square' : 'aspect-[2/3]'"
+              class="relative flex-shrink-0"
+              [ngClass]="isMusicEntry(entry) ? 'aspect-square h-28 md:h-36' : 'aspect-[2/3] h-32 md:h-40'"
             >
               <!-- Loader -->
               <div
@@ -170,7 +170,10 @@
               />
             </div>
 
-            <div class="flex flex-col justify-center flex-1 min-w-0 py-3 pr-3">
+            <div
+              class="flex flex-col justify-center flex-1 min-w-0 pr-3"
+              [ngClass]="isMusicEntry(entry) ? 'py-2' : 'py-3'"
+            >
               <span
                 class="block text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
                 [title]="entry.title"
@@ -192,12 +195,12 @@
               </ng-container>
               <p
                 *ngIf="isMusicEntry(entry)"
-                class="text-gray-400 text-sm mt-1 truncate overflow-hidden whitespace-nowrap"
+                class="text-gray-400 text-sm mt-0.5 truncate overflow-hidden whitespace-nowrap"
               >
                 {{ entry.artistName }}
               </p>
 
-              <p class="text-[#3b82f6] text-sm mt-1">
+              <p class="text-[#3b82f6] text-sm" [ngClass]="isMusicEntry(entry) ? 'mt-0.5' : 'mt-1'">
                 <i class="far fa-calendar"></i>
                 {{ formatFullDate(entry.airDate) }}
               </p>
@@ -212,7 +215,7 @@
               </span>
               <span
                 *ngIf="isMusicEntry(entry)"
-                class="calendar-type-badge mt-1.5"
+                class="calendar-type-badge mt-1"
                 [ngClass]="entry.recordType === 'album' ? 'calendar-type-badge-album' : 'calendar-type-badge-tv'"
               >
                 <img *ngIf="entry.recordType === 'album'; else musicReleaseIcon" src="assets/album.png" alt="" class="calendar-album-icon" />

@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const Review = require("../models/Review");
 const CinemaItem = require("../models/CinemaItem");
 const Release = require('../models/Release');
+const ArtistSyncState = require('../models/ArtistSyncState');
 const PushSubscription = require('../models/PushSubscription');
 const Notification = require('../models/Notification');
 const redis = require('../utils/redisClient');
@@ -621,6 +622,12 @@ exports.removeFromArtistList = async (req, res) => {
       const deleteResult = await Release.deleteMany({ artistId: id });
       console.log(`Deleted ${deleteResult.deletedCount} releases for artist ${id} as no users follow them.`);
 
+      // Sync bookkeeping doc (see mainSearchController.js's cronSyncAllArtists) -
+      // cleared here too rather than left for the daily cron's own orphan
+      // sweep, so a re-follow later starts from a clean slate immediately
+      // instead of up to a day later.
+      await ArtistSyncState.deleteOne({ artistId: id });
+
         // Clear Redis cache so future follow triggers re-sync
       const redisKey = `artist-sync:user:${id}`;
       await redis.safeDel(redisKey);
@@ -717,5 +724,194 @@ exports.clearRecentSearches = async (req, res) => {
   } catch (error) {
     console.error("Error clearing recent searches:", error);
     return res.status(500).json({ message: "Server Error" });
+  }
+};
+
+/*
+TOP THREE PODIUM
+*/
+
+const TOP_THREE_CATEGORIES = ["movies", "shows", "songs", "albums", "artists"];
+
+// A category with no manual curation is always computed live from the
+// user's own ratings rather than stored - "top 3 by rating" over a single
+// user's own CinemaItem/Review docs is a cheap, already-indexed query (same
+// shape as cinemaReviews above), so there's no need to persist or refresh
+// anything for the common (auto) case.
+async function computeAutoTopThree(userId, category) {
+  if (category === "movies" || category === "shows") {
+    const mediaType = category === "movies" ? "movie" : "tv";
+    const items = await CinemaItem.find({ user: userId, mediaType, decimalRating: { $ne: null } })
+      .sort({ decimalRating: -1, createdAt: -1 })
+      .limit(3)
+      .select("tmdbId title cover releaseDate")
+      .lean();
+
+    return items.map((item) => ({
+      id: item.tmdbId || item._id.toString(),
+      title: item.title || "",
+      subtitle: item.releaseDate ? String(new Date(item.releaseDate).getFullYear()) : "",
+      cover: item.cover || "",
+    }));
+  }
+
+  const reviewType = { songs: "Song", albums: "Album", artists: "Artist" }[category];
+  const reviews = await Review.find({ user: userId, "albumSongOrArtist.type": reviewType, rating: { $ne: null } })
+    .sort({ rating: -1, createdAt: -1 })
+    .limit(3)
+    .select("albumSongOrArtist")
+    .lean();
+
+  return reviews.map(({ albumSongOrArtist: record }) => {
+    if (reviewType === "Artist") {
+      return { id: record.id, title: record.name || "", cover: record.picture || "" };
+    }
+    return { id: record.id, title: record.title || "", subtitle: record.artist || "", cover: record.cover || "" };
+  });
+}
+
+// Resolves every category's current podium in one pass - manually curated
+// items where the user has opted in, auto-computed otherwise (see above).
+async function resolveTopThree(userId, storedTopThree) {
+  const stored = storedTopThree || {};
+  const result = {};
+
+  await Promise.all(
+    TOP_THREE_CATEGORIES.map(async (category) => {
+      const categoryState = stored[category];
+      if (categoryState?.manualOverride) {
+        result[category] = { manualOverride: true, items: categoryState.items || [] };
+      } else {
+        result[category] = { manualOverride: false, items: await computeAutoTopThree(userId, category) };
+      }
+    })
+  );
+
+  return result;
+}
+
+exports.getMyTopThree = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("topThree").lean();
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    const categories = await resolveTopThree(user._id, user.topThree);
+    res.json({ isPublic: user.topThree?.isPublic || false, ...categories });
+  } catch (error) {
+    console.error("Error fetching top three:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// Public - mirrors getUserProfile's visibility model (cinemaWatchlistIsPublic).
+// Hides everything but the isPublic flag itself when the owner has kept
+// their podium private, rather than a 403/404 that would leak whether a
+// user document exists at all.
+exports.getUserTopThree = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("topThree").lean();
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    const isPublic = user.topThree?.isPublic || false;
+    if (!isPublic) return res.json({ isPublic: false });
+
+    const categories = await resolveTopThree(user._id, user.topThree);
+    res.json({ isPublic: true, ...categories });
+  } catch (error) {
+    console.error("Error fetching user top three:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+exports.setTopThreeCategory = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized. User not found." });
+    }
+
+    const { category } = req.params;
+    if (!TOP_THREE_CATEGORIES.includes(category)) {
+      return res.status(400).json({ message: "Invalid category." });
+    }
+
+    const { items } = req.body;
+    if (!Array.isArray(items) || items.length !== 3) {
+      return res.status(400).json({ message: "Exactly 3 items are required." });
+    }
+    if (items.some((item) => !item?.id || !item?.title)) {
+      return res.status(400).json({ message: "Each item needs an id and title." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    user.topThree[category].manualOverride = true;
+    user.topThree[category].items = items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      subtitle: item.subtitle || "",
+      cover: item.cover || "",
+    }));
+    user.markModified("topThree");
+    await user.save();
+
+    res.json({ message: "Top 3 updated.", category, items: user.topThree[category].items });
+  } catch (error) {
+    console.error("Error setting top three:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+exports.setTopThreeAuto = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized. User not found." });
+    }
+
+    const { category } = req.params;
+    if (!TOP_THREE_CATEGORIES.includes(category)) {
+      return res.status(400).json({ message: "Invalid category." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    // Auto needs nothing stored (see computeAutoTopThree) - clearing items
+    // rather than leaving stale picks sitting unused in the document.
+    user.topThree[category].manualOverride = false;
+    user.topThree[category].items = [];
+    user.markModified("topThree");
+    await user.save();
+
+    const items = await computeAutoTopThree(user._id, category);
+    res.json({ message: "Switched to auto.", category, items });
+  } catch (error) {
+    console.error("Error switching top three to auto:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+exports.setTopThreeVisibility = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized. User not found." });
+    }
+
+    const { isPublic } = req.body;
+    if (typeof isPublic !== "boolean") {
+      return res.status(400).json({ message: "isPublic must be a boolean." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    user.topThree.isPublic = isPublic;
+    user.markModified("topThree");
+    await user.save();
+
+    res.json({ message: "Visibility updated.", isPublic });
+  } catch (error) {
+    console.error("Error updating top three visibility:", error);
+    res.status(500).json({ message: "Server Error" });
   }
 };

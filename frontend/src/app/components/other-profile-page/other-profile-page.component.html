@@ -254,6 +254,15 @@
   <span class="text-gray-400 text-sm">Watchlist</span>
 </div>
       </div>
+
+      <!-- Top 3 podium - self-fetching (own vs public endpoint decided
+           internally), hides itself entirely if the owner has kept it
+           private and this isn't their own profile. -->
+      <app-top-three-podium
+        *ngIf="otherUser"
+        [profileUserId]="otherUser._id"
+        [isOwnProfile]="isOwnProfile"
+      ></app-top-three-podium>
     </div>
 
     <!-- Fullscreen Overlay Panel -->

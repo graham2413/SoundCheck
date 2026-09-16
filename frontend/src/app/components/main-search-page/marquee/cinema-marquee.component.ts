@@ -2,13 +2,16 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
   EventEmitter,
   Input,
+  NgZone,
   OnChanges,
   OnDestroy,
   OnInit,
   Output,
   SimpleChanges,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { animate, animateChild, query, stagger, style, transition, trigger } from '@angular/animations';
@@ -52,6 +55,7 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
     list: CinemaSearchResult[];
     index: number;
   }>();
+  @ViewChild('track') trackRef?: ElementRef<HTMLElement>;
 
   items: CinemaSearchResult[] = [];
   loopedItems: CinemaSearchResult[] = [];
@@ -65,7 +69,7 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
 
   private readonly CACHE_TTL_MS = 24 * 60 * 60 * 1000; // matches the backend's 24h Redis cache
 
-  constructor(private cinemaService: CinemaService, private cdRef: ChangeDetectorRef) {}
+  constructor(private cinemaService: CinemaService, private cdRef: ChangeDetectorRef, private ngZone: NgZone) {}
 
   async ngOnInit(): Promise<void> {
     await this.loadForMode();
@@ -178,33 +182,42 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
     this.stopAutoScroll();
   }
 
+  // Runs the whole rAF loop outside Angular's zone: driving it inside the
+  // zone (as it was before) made zone.js treat every single animation frame
+  // as an event that could affect app state, triggering a full app-wide
+  // change-detection pass ~60 times/sec - that CD churn, stacked on top of
+  // the initial entrance stagger animation, is what read as stutter at the
+  // start and small hitches throughout. Also caches the track element via
+  // ViewChild instead of re-querying the DOM every frame.
   private startAutoScroll(): void {
     if (this.isAutoScrolling || this.items.length === 0) return;
 
     this.isAutoScrolling = true;
     this.position = 0;
     this.lastFrameTime = 0;
-    const scroll = (timestamp: number): void => {
-      const track = document.querySelector<HTMLElement>('app-cinema-marquee .marquee-track:not(.marquee-track-loading)');
-      if (!track) {
-        this.isAutoScrolling = false;
-        this.animationFrameId = null;
-        return;
-      }
+    this.ngZone.runOutsideAngular(() => {
+      const scroll = (timestamp: number): void => {
+        const track = this.trackRef?.nativeElement;
+        if (!track) {
+          this.isAutoScrolling = false;
+          this.animationFrameId = null;
+          return;
+        }
 
-      if (!this.lastFrameTime) this.lastFrameTime = timestamp;
-      const elapsed = Math.min(timestamp - this.lastFrameTime, 100);
-      this.lastFrameTime = timestamp;
-      const loopWidth = track.scrollWidth / 2;
-      if (loopWidth > 0) {
-        this.position = (this.position + elapsed * 0.03) % loopWidth;
-        track.style.transform = `translate3d(${-this.position}px, 0, 0)`;
-      }
+        if (!this.lastFrameTime) this.lastFrameTime = timestamp;
+        const elapsed = Math.min(timestamp - this.lastFrameTime, 100);
+        this.lastFrameTime = timestamp;
+        const loopWidth = track.scrollWidth / 2;
+        if (loopWidth > 0) {
+          this.position = (this.position + elapsed * 0.03) % loopWidth;
+          track.style.transform = `translate3d(${-this.position}px, 0, 0)`;
+        }
 
-      this.animationFrameId = requestAnimationFrame((nextTimestamp) => scroll(nextTimestamp));
-    };
+        this.animationFrameId = requestAnimationFrame((nextTimestamp) => scroll(nextTimestamp));
+      };
 
-    this.animationFrameId = requestAnimationFrame((timestamp) => scroll(timestamp));
+      this.animationFrameId = requestAnimationFrame((timestamp) => scroll(timestamp));
+    });
   }
 
   private stopAutoScroll(): void {

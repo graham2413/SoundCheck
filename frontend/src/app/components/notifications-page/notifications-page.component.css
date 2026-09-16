@@ -1,0 +1,31 @@
+/* "You're all caught up" empty-state checkmark - draws itself stroke-first,
+   then the surrounding badge pops to emphasize it once drawn. Plays purely
+   from being freshly mounted (the *ngIf in the template re-creates this
+   element each time the empty state appears), not from any JS trigger. */
+.caught-up-check-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: caught-up-draw 350ms ease-out forwards;
+}
+
+.caught-up-badge {
+  animation: caught-up-pop 320ms ease-out 350ms both;
+}
+
+@keyframes caught-up-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes caught-up-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
