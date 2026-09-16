@@ -88,6 +88,10 @@
 
 .podium-photo-wrap {
   position: relative;
+  margin-bottom: -0.6rem;
+  /* Without this, the pedestal (later in the DOM) painted over the image
+     in the small region the negative margin above makes them overlap. */
+  z-index: 2;
 }
 
 /* The sized/bordered element - square by default (album art, artist
@@ -101,7 +105,9 @@
   width: 4.5rem;
   height: 4.5rem;
   border-radius: 0.6rem;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  /* Same primary blue as the crown/rank badge's border, not the previous
+     neutral gray. */
+  border: 1px solid #0f5ee4;
   background: #1f2937;
   overflow: hidden;
 }
@@ -225,7 +231,7 @@
 
 .podium-block-top {
   height: 0.85rem;
-  background: linear-gradient(135deg, #4a78c4 0%, #2c4d85 100%);
+  background: linear-gradient(135deg, #5e8ddb 0%, #3a5f9e 100%);
   border-radius: 0.5rem 0.5rem 0 0;
   transform-origin: bottom;
   transform: perspective(60px) rotateX(45deg);
@@ -242,7 +248,7 @@
   justify-content: flex-start;
   padding-top: 2.5rem;
   border-radius: 0 0 0.25rem 0.25rem;
-  background: linear-gradient(180deg, #1e3a6b 0%, #12213e 100%);
+  background: linear-gradient(180deg, #24467e 0%, #152a4d 100%);
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
 }
 
@@ -266,13 +272,11 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-.podium-block-wrap-rank1 .podium-block-top {
-  background: linear-gradient(135deg, #5e8ddb 0%, #3a5f9e 100%);
-}
-
+/* Same surface color as ranks 2/3 (.podium-block-top/-front above already
+   use rank 1's original brighter blue as the shared default) - just taller,
+   plus the glow. */
 .podium-block-wrap-rank1 .podium-block-front {
   height: 7.75rem;
-  background: linear-gradient(180deg, #24467e 0%, #152a4d 100%);
   box-shadow: 0 0 22px rgba(15, 94, 228, 0.4), 0 8px 16px rgba(0, 0, 0, 0.5);
 }
 
