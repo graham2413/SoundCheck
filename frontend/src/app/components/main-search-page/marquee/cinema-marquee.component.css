@@ -46,7 +46,7 @@
 
 .cinema-card-title {
   color: #e5e7eb;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
@@ -89,7 +89,7 @@
 
 .cinema-card img {
   object-fit: cover;
-  border-radius: 0.5rem;
+  border-radius: 0.5rem 0.5rem 0 0;
 }
 
 /* Diagonal corner ribbon for rank (#1, #2...) - same styling as the trending

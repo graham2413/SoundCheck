@@ -36,7 +36,16 @@
 /* Marquee/Trending-all specific - the badge stretches to the card's full
    width with its label centered inside, instead of sizing to its own
    content and sitting left-aligned like every other surface (search
-   results, watchlist, detail page) still does. */
+   results, watchlist, detail page) still does. The host itself also needs
+   to go block/full-width first - it's a custom element (default
+   display:inline) sized to its content, so the inner span's width:100%
+   previously had nothing real to fill and the badge still hugged its
+   label. */
+:host-context(.cinema-badge--full-width) {
+  display: block;
+  width: 100%;
+}
+
 :host-context(.cinema-badge--full-width) .cinema-badge {
   width: 100%;
   justify-content: center;

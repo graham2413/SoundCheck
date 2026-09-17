@@ -8,8 +8,8 @@
     >
       <ng-container *ngFor="let item of loopedItems; let i = index; trackBy: trackByIndex">
         <div class="cinema-card-wrapper" @itemAnim (click)="onCardClick(item, i)">
-          <div class="cinema-card-outer w-[7rem] md:w-[10rem] rounded-lg overflow-hidden">
-          <div class="cinema-card relative h-[10.5rem] md:h-[15rem]">
+          <div class="cinema-card-outer w-[8.5rem] md:w-[12rem] rounded-lg overflow-hidden">
+          <div class="cinema-card relative h-[12.75rem] md:h-[18rem]">
             <span class="rank-ribbon"><span>#{{ trendingRank(i) }}</span></span>
             <div *ngIf="!marqueeImageLoaded[i]" class="absolute inset-0 flex items-center justify-center bg-gray-800">
               <div class="w-5 h-5 border-t-2 border-white rounded-full animate-spin"></div>
@@ -46,7 +46,7 @@
       <div class="marquee-track marquee-track-loading">
         <div
           *ngFor="let _ of skeletonArray"
-          class="skeleton-card bg-[#1F2937] p-3 rounded-lg h-[12.7rem] md:h-[17.2rem] w-[7rem] md:w-[10rem] shrink-0"
+          class="skeleton-card bg-[#1F2937] p-3 rounded-lg h-[14.95rem] md:h-[20.2rem] w-[8.5rem] md:w-[12rem] shrink-0"
         >
           <div class="skeleton-img"></div>
           <div class="skeleton-text-group w-full flex flex-col items-start">

@@ -796,11 +796,11 @@
               </span>
             </p>
           </div>
-          <!-- Capped to 2 (unlike the detail page's full list) - this row
-               has a fixed height (h-36/h-40 above), and pills wrap instead
-               of truncating with an ellipsis like the plain text this
-               replaced, so an uncapped list could overflow it. -->
-          <app-genre-pills size="sm" class="mt-1 block overflow-hidden" [genres]="item.genres?.slice(0, 2)"></app-genre-pills>
+          <!-- mode="line" fits as many full genre pills as the row's width
+               allows and collapses the rest into a trailing "+N" (see
+               genre-pills.component.ts) - this row has a fixed height
+               (h-36/h-40 above), so pills can't wrap onto more lines. -->
+          <app-genre-pills size="sm" mode="line" class="mt-1 block" [genres]="item.genres"></app-genre-pills>
         </div>
         <div class="flex items-center justify-between gap-2 flex-wrap mt-2 mb-0.5">
           <!-- Badge fields (episode air dates/theatrical info) only exist

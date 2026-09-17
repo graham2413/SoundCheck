@@ -254,9 +254,9 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
 
   // Same kind/priority/icon logic as everywhere else (see cinema-status-
   // badge.ts), just with shortened labels - the marquee's mobile card is
-  // only 7rem (112px) wide, so the full shared labels ("Returning to
-  // Theaters", "New Season Soon") measured as overflowing the card by
-  // 10-28px in testing.
+  // only 8.5rem (136px) wide, so the full shared labels ("Returning to
+  // Theaters", "New Season Soon") measured as overflowing the card in
+  // testing.
   marqueeBadge(item: CinemaSearchResult): CinemaBadgeVm | null {
     const badge = getCinemaStatusBadge(item);
     if (!badge) return null;

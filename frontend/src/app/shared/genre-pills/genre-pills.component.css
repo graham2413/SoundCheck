@@ -24,14 +24,6 @@
   overflow: hidden;
 }
 
-/* Hides the flash of every genre pill that would otherwise show for one
-   frame before the first measurement trims them down - see `measured` in
-   the component. Visibility (not display:none) so layout/widths are still
-   real for that same measurement pass to read. */
-.genre-pills--measuring {
-  visibility: hidden;
-}
-
 .genre-pill {
   display: inline-block;
   width: fit-content;
@@ -42,6 +34,17 @@
   color: #a9c6f5;
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* 'line' mode always keeps at least one genre pill even when it doesn't
+   actually fit the measured budget (see `truncatedPillIndex` in the
+   component) - let that pill shrink and truncate with an ellipsis instead
+   of getting hard-clipped (no "...") by the container's overflow:hidden. */
+.genre-pill--truncate {
+  flex-shrink: 1;
+  min-width: 1.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Muted/neutral rather than the genre pills' blue - reads as "more exists"
@@ -60,16 +63,22 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* Expanded state (mode="line", expandable) - clicking anywhere in the row
+   collapses back to the trimmed "+N" view. */
+.genre-pills--clickable {
+  cursor: pointer;
+}
+
 /* Matches the detail page's year/runtime line (Tailwind text-sm, 0.875rem)
    directly above this - was 0.9rem with more padding, which read as
    noticeably bigger than that line instead of sitting at the same visual
    weight. */
 .genre-pills--md .genre-pill {
   padding: 0.35rem 0.85rem;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
 }
 
 .genre-pills--sm .genre-pill {
   padding: 0.2rem 0.65rem;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
 }
