@@ -11,6 +11,27 @@ const CALENDAR_CACHE_TIMEZONE = "America/Chicago"; // matches server.js cron tim
 const getLocalDateString = (timeZone = CALENDAR_CACHE_TIMEZONE) =>
   new Intl.DateTimeFormat("en-CA", { timeZone }).format(new Date());
 
+// Seconds remaining until the next local midnight in `timeZone` - used to
+// size a cache TTL so something warmed once (e.g. the calendar-details
+// prewarm cron, see server.js) actually lasts the rest of the calendar day
+// instead of expiring on a fixed duration that can fall hours before
+// midnight depending on what time the warm happened to run. Not DST-transition
+// aware (can be off by ~1h on the two days/year the clock shifts) - fine for
+// a cache TTL, not worth the added complexity for that edge case.
+const secondsUntilNextLocalMidnight = (timeZone = CALENDAR_CACHE_TIMEZONE) => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  // hour12:false can format midnight as "24" in some environments - normalize.
+  const elapsedSeconds = (get("hour") % 24) * 3600 + get("minute") * 60 + get("second");
+  return Math.max(60, 86400 - elapsedSeconds);
+};
+
 // Plain Y/M/D calendar math for the "N upcoming releases {this week|this
 // month|...}" cascade and month-group headers below - operates on
 // "YYYY-MM-DD" strings only (never a raw `new Date(dateString)` parse, which
@@ -86,6 +107,7 @@ function buildCalendarMonthGroups(entries) {
 module.exports = {
   CALENDAR_CACHE_TIMEZONE,
   getLocalDateString,
+  secondsUntilNextLocalMidnight,
   MONTH_NAMES,
   parseYmd,
   toYmdStr,

@@ -796,15 +796,24 @@
               </span>
             </p>
           </div>
-          <p
-            *ngIf="item.genres?.length"
-            class="text-[#3B82F6] text-sm mt-1 truncate overflow-hidden whitespace-nowrap"
-          >
-            {{ item.genres?.join(', ') }}
-          </p>
+          <!-- Capped to 2 (unlike the detail page's full list) - this row
+               has a fixed height (h-36/h-40 above), and pills wrap instead
+               of truncating with an ellipsis like the plain text this
+               replaced, so an uncapped list could overflow it. -->
+          <app-genre-pills size="sm" class="mt-1 block overflow-hidden" [genres]="item.genres?.slice(0, 2)"></app-genre-pills>
         </div>
         <div class="flex items-center justify-between gap-2 flex-wrap mt-2 mb-0.5">
-          <app-cinema-badge [badge]="cinemaBadge(item)"></app-cinema-badge>
+          <!-- Badge fields (episode air dates/theatrical info) only exist
+               once this result's own independent enrichment call resolves
+               (see loadCinemaEnrichment) - shows a placeholder in its slot
+               until then instead of silently looking like "no badge". -->
+          <span
+            *ngIf="isEnrichingCinema(item); else cinemaBadgeSlot"
+            class="inline-block h-5 w-20 rounded-full bg-slate-700/40 animate-pulse"
+          ></span>
+          <ng-template #cinemaBadgeSlot>
+            <app-cinema-badge [badge]="cinemaBadge(item)"></app-cinema-badge>
+          </ng-template>
         </div>
       </div>
       <i class="fas fa-chevron-right text-lg pr-3" style="color: #939297"></i>

@@ -126,10 +126,8 @@ Trending Now      </h1>
         <div class="grid-card-info-panel">
           <p class="grid-card-title truncate">{{ item.title }}</p>
           <p class="grid-card-date truncate">{{ releaseMonthYear(item) }}</p>
-          <p *ngIf="item.genres?.length" class="grid-card-genre truncate">
-            {{ item.genres?.join(', ') }}
-          </p>
-          <app-cinema-badge class="mt-1 block" [badge]="cinemaBadge(item)"></app-cinema-badge>
+          <app-genre-pills size="sm" mode="line" class="mt-1 block" [genres]="item.genres"></app-genre-pills>
+          <app-cinema-badge class="mt-1 block cinema-badge--full-width" [badge]="cinemaBadge(item)"></app-cinema-badge>
         </div>
       </div>
     </div>

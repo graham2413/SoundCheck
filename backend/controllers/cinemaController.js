@@ -97,6 +97,16 @@ exports.getUsDigitalRelease = getUsDigitalRelease;
 // GET /api/cinema/search?query=... (Protected)
 // Searches movies/shows via TMDb's /search/multi, filtered down to just
 // movie/tv results (no "person" entries) and mapped to a clean shape.
+//
+// Deliberately fast-path only: title/cover/releaseDate/genres are all
+// /search/multi already gives for free. This used to also fetch each
+// result's full TMDb details inline (for TV's real year-range, and either
+// media type's badge fields) awaited via Promise.all before responding -
+// one slow/rate-limited detail call held the ENTIRE response hostage behind
+// it, since Promise.all only resolves once every item has. See
+// getSearchEnrichment below - the frontend now fetches that per result
+// independently after these base results render, so each card's extras
+// resolve (or don't) on its own schedule instead of gating everyone else's.
 exports.searchCinema = async (req, res) => {
   try {
     const { query } = req.query;
@@ -125,68 +135,73 @@ exports.searchCinema = async (req, res) => {
         };
       });
 
-    // TV shows only get a start year from /search/multi (no last_air_date there) -
-    // fetch full details (cached 7 days via getTmdbDetails) just for the TV
-    // results so we can show a real "2008-2013"/"2008-Present" year range.
-    const tvResults = results.filter((r) => r.mediaType === "tv");
-    if (tvResults.length > 0) {
-      const tvDetails = await Promise.all(
-        tvResults.map((r) => getTmdbDetails(r.tmdbId, "tv").catch(() => null))
-      );
-
-      tvResults.forEach((r, i) => {
-        const details = tvDetails[i];
-        if (!details) return;
-
-        const startYear = r.releaseDate ? new Date(r.releaseDate).getFullYear() : null;
-        const endYear = details.last_air_date ? new Date(details.last_air_date).getFullYear() : null;
-        if (!startYear) return;
-
-        const hasEnded = details.status === "Ended" || details.status === "Canceled";
-        if (hasEnded) {
-          r.releaseYearRange = endYear && endYear !== startYear ? `${startYear}-${endYear}` : `${startYear}`;
-        } else if (endYear && endYear !== startYear) {
-          r.releaseYearRange = `${startYear}-Present`;
-        }
-        // Free - already have the full details object fetched above for the year range.
-        if (details.number_of_seasons) {
-          r.numberOfSeasons = details.number_of_seasons;
-        }
-        // Free too - drives the "New Episode"/"Airing Soon"/"New Season Soon" badge client-side.
-        r.lastEpisodeAirDate = details.last_episode_to_air?.air_date || null;
-        r.nextEpisodeAirDate = details.next_episode_to_air?.air_date || null;
-        r.nextEpisodeNumber = details.next_episode_to_air?.episode_number ?? null;
-      });
-    }
-
-    // Movies need their own details call (release_dates isn't in /search/multi)
-    // to know about a later theatrical reissue - mirrors the TV block above so
-    // watchlist and search show the exact same "Back in Theaters"/"Returning
-    // to Theaters" badge, and also corrects the release year for the rare
-    // title whose only US theatrical entry on record is itself a reissue.
-    // Also drives the "In Theaters"/"New Release" badge (see movie-release-badge.ts).
-    const movieResults = results.filter((r) => r.mediaType === "movie");
-    if (movieResults.length > 0) {
-      const movieDetailsList = await Promise.all(
-        movieResults.map((r) => getTmdbDetails(r.tmdbId, "movie").catch(() => null))
-      );
-
-      movieResults.forEach((r, i) => {
-        const details = movieDetailsList[i];
-        if (!details) return;
-
-        const originalReleaseDate = getUsOriginalTheatricalRelease(details);
-        if (originalReleaseDate) {
-          r.releaseDate = originalReleaseDate;
-        }
-        r.rereleaseDate = getUsRerelease(details, originalReleaseDate);
-        r.hadTheatricalRelease = hasTheatricalRelease(details);
-        r.digitalReleaseDate = getUsDigitalRelease(details);
-        r.hasStreamingAvailability = !!buildWatchProviders(details["watch/providers"]?.results?.US?.flatrate).length;
-      });
-    }
-
     res.status(200).json({ success: true, data: results });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Server Error" });
+  }
+};
+
+// GET /api/cinema/search-enrichment/:mediaType/:tmdbId (Protected)
+// The "nice to have" extras searchCinema used to compute inline for every
+// result at once - a real TV year range (2008-2013/2008-Present, not just
+// the start year /search/multi gives) plus whatever the status badge needs
+// (episode air dates for TV; theatrical/rerelease/streaming info for
+// movies). One result at a time, fetched by the frontend independently per
+// search-result card - see that comment on searchCinema for why. Same
+// underlying getTmdbDetails cache searchCinema used, so this is often
+// already-warm data (e.g. re-searching a title already viewed), not a
+// fresh TMDb call every time.
+exports.getSearchEnrichment = async (req, res) => {
+  try {
+    const { mediaType, tmdbId } = req.params;
+    if (mediaType !== "movie" && mediaType !== "tv") {
+      return res.status(400).json({ success: false, message: "mediaType must be 'movie' or 'tv'" });
+    }
+
+    const details = await getTmdbDetails(tmdbId, mediaType);
+    if (!details) {
+      return res.status(200).json({ success: true, data: null });
+    }
+
+    if (mediaType === "tv") {
+      const startYear = details.first_air_date ? new Date(details.first_air_date).getFullYear() : null;
+      const endYear = details.last_air_date ? new Date(details.last_air_date).getFullYear() : null;
+      const hasEnded = details.status === "Ended" || details.status === "Canceled";
+
+      let releaseYearRange = null;
+      if (startYear) {
+        if (hasEnded) {
+          releaseYearRange = endYear && endYear !== startYear ? `${startYear}-${endYear}` : `${startYear}`;
+        } else if (endYear && endYear !== startYear) {
+          releaseYearRange = `${startYear}-Present`;
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          releaseYearRange,
+          numberOfSeasons: details.number_of_seasons || null,
+          lastEpisodeAirDate: details.last_episode_to_air?.air_date || null,
+          nextEpisodeAirDate: details.next_episode_to_air?.air_date || null,
+          nextEpisodeNumber: details.next_episode_to_air?.episode_number ?? null,
+        },
+      });
+    }
+
+    // Movie - mirrors the badge-relevant fields the watchlist/detail page
+    // already compute the same way (getUsOriginalTheatricalRelease etc.).
+    const originalReleaseDate = getUsOriginalTheatricalRelease(details);
+    return res.status(200).json({
+      success: true,
+      data: {
+        releaseDate: originalReleaseDate,
+        rereleaseDate: getUsRerelease(details, originalReleaseDate),
+        hadTheatricalRelease: hasTheatricalRelease(details),
+        digitalReleaseDate: getUsDigitalRelease(details),
+        hasStreamingAvailability: !!buildWatchProviders(details["watch/providers"]?.results?.US?.flatrate).length,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }
@@ -986,7 +1001,7 @@ exports.getCinemaDetail = async (req, res) => {
         ? details.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates?.find(
             (d) => d.type === 3
           )?.certification || null
-        : null;
+        : details.content_ratings?.results?.find((r) => r.iso_3166_1 === "US")?.rating || null;
 
     // Movies have imdb_id natively; TV only exposes it via external_ids.
     const imdbId = details.imdb_id || details.external_ids?.imdb_id || null;

@@ -1,11 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { Router } from '@angular/router';
-import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
+import { combineLatest, Observable, timer } from 'rxjs';
+import { switchMap, take } from 'rxjs/operators';
+import { NgbModal, NgbModalOptions, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { TopThreeService } from 'src/app/services/top-three.service';
+import { AppLoaderService } from 'src/app/services/app-loader.service';
 import { TopThreeCategory, TopThreeItem, TopThreeResponse } from 'src/app/models/responses/top-three.response';
 import { ReviewPageComponent } from '../review-page/review-page.component';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
+import { CinemaRateModalComponent } from '../cinema-review-page/cinema-rate-modal.component';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
 
 type TopThreeGroup = 'cinema' | 'music';
@@ -28,6 +32,12 @@ const CATEGORY_LABELS: Record<TopThreeCategory, string> = {
 // category is on auto (computed live from ratings) or manually curated.
 const REQUIRED_ITEM_COUNT = 3;
 
+// How long to hold the populated podium back after the app's full-screen
+// boot loader has actually finished fading away (see AppLoaderService and
+// the comment in load() below) before revealing it and starting its
+// entrance animation.
+const REVEAL_DELAY_AFTER_LOADER_MS = 500;
+
 @Component({
   selector: 'app-top-three-podium',
   standalone: true,
@@ -47,6 +57,10 @@ export class TopThreePodiumComponent implements OnInit, OnChanges {
 
   activeGroup: TopThreeGroup = 'cinema';
   activeCategory: TopThreeCategory = 'movies';
+
+  // Drives the category dropdown (Movies/Shows/Songs/etc) opening below its
+  // trigger pill - closed by picking an option or by the backdrop click.
+  isCategoryMenuOpen = false;
 
   // Keyed by item id (not rank) so a cover that's already loaded once stays
   // marked loaded if it reappears (e.g. switching away from and back to a
@@ -69,7 +83,12 @@ export class TopThreePodiumComponent implements OnInit, OnChanges {
   // That's what the constant reloading/stutter was.
   podiumItems: { rank: 1 | 2 | 3; item: TopThreeItem }[] = [];
 
-  constructor(private topThreeService: TopThreeService, private router: Router, private modal: NgbModal) {}
+  constructor(
+    private topThreeService: TopThreeService,
+    private router: Router,
+    private modal: NgbModal,
+    private appLoaderService: AppLoaderService
+  ) {}
 
   ngOnInit(): void {
     this.load();
@@ -90,8 +109,17 @@ export class TopThreePodiumComponent implements OnInit, OnChanges {
       ? this.topThreeService.getMyTopThree()
       : this.topThreeService.getUserTopThree(this.profileUserId);
 
-    request$.subscribe({
-      next: (response) => {
+    // This component mounts (and starts fetching) the instant the app's
+    // full-screen boot loader *starts* fading out, well before it's
+    // actually gone (they crossfade - see app.component.html). Waiting on
+    // AppLoaderService instead of just a fixed delay from our own mount
+    // means the populated podium - and its rise-in/crown-pop/glow-in
+    // entrance animation - only appears REVEAL_DELAY_AFTER_LOADER_MS after
+    // the loader has genuinely finished, not while still hidden underneath
+    // it. Once the loader has already gone (the common case for any load()
+    // after the very first), this resolves immediately.
+    combineLatest([request$, this.revealGate$()]).subscribe({
+      next: ([response]) => {
         this.isLoading = false;
         if (!response.isPublic && !this.isOwnProfile) {
           this.isPrivate = true;
@@ -105,6 +133,13 @@ export class TopThreePodiumComponent implements OnInit, OnChanges {
         this.isPrivate = true;
       },
     });
+  }
+
+  private revealGate$(): Observable<number> {
+    return this.appLoaderService.loaderGone$.pipe(
+      take(1),
+      switchMap((loaderGoneAt) => timer(Math.max(0, REVEAL_DELAY_AFTER_LOADER_MS - (Date.now() - loaderGoneAt))))
+    );
   }
 
   private categoryState(category: TopThreeCategory) {
@@ -145,6 +180,7 @@ export class TopThreePodiumComponent implements OnInit, OnChanges {
   }
 
   selectGroup(group: TopThreeGroup): void {
+    this.isCategoryMenuOpen = false;
     if (this.activeGroup === group) return;
     this.activeGroup = group;
     this.activeCategory = GROUP_CATEGORIES[group].find((category) => this.isCategoryPopulated(category)) ?? GROUP_CATEGORIES[group][0];
@@ -153,6 +189,7 @@ export class TopThreePodiumComponent implements OnInit, OnChanges {
   }
 
   selectCategory(category: TopThreeCategory): void {
+    this.isCategoryMenuOpen = false;
     if (this.activeCategory === category) return;
     this.activeCategory = category;
     this.refreshPodiumItems();
@@ -284,6 +321,59 @@ export class TopThreePodiumComponent implements OnInit, OnChanges {
     modalRef.componentInstance.record = record;
     modalRef.componentInstance.recordList = [record];
     modalRef.componentInstance.currentIndex = 0;
+
+    // Without this, clicking "Rate"/"Edit Review" inside the detail modal
+    // emits `rate` to nobody - every other opener of this same modal
+    // (main-search, calendar-page, other-profile-page) subscribes to it to
+    // open the actual rate/edit modal; this one just never did.
+    modalRef.componentInstance.rate.subscribe((updatedRecord: CinemaItem) => {
+      this.openCinemaRatingModal(updatedRecord, modalRef);
+    });
+  }
+
+  // Shared cinema rate/edit-review modal (movies + shows) - mirrors
+  // other-profile-page.component.ts's openCinemaRatingModal, minus the
+  // watchlist-grid/cinemaReviews-list bookkeeping that only applies there -
+  // the podium has no such lists to keep in sync.
+  private openCinemaRatingModal(record: CinemaItem, detailsModalRef: NgbModalRef): NgbModalRef {
+    const modalOptions: NgbModalOptions = {
+      backdrop: 'static',
+      keyboard: true,
+      centered: true,
+      scrollable: false,
+      // Reuses the cinema detail modal's own slide-in-from-right/slide-out-
+      // to-right CSS (styles.css) so opening/closing Rate feels like the
+      // same "push deeper"/"pop back" navigation as the detail page's own
+      // sub-views, instead of the disabled-by-default instant appear.
+      windowClass: 'cinema-detail-modal',
+    };
+
+    const modalRef = this.modal.open(CinemaRateModalComponent, modalOptions);
+    const instance = modalRef.componentInstance;
+    instance.mode = 'cinema';
+    instance.tmdbId = record.tmdbId ?? '';
+    instance.mediaType = record.mediaType;
+    instance.itemTitle = record.title;
+    instance.cover = record.cover ?? null;
+    instance.releaseDate = record.releaseDate ?? null;
+    instance.displayTitle = record.title;
+    instance.displayYear =
+      record.mediaType === 'tv' ? record.releaseYearRange ?? null : record.releaseDate ? new Date(record.releaseDate).getFullYear() : null;
+    instance.typeLabel = record.mediaType === 'movie' ? 'Movie' : 'TV Show';
+    instance.genres = record.genres ?? [];
+    instance.initialRating = record.decimalRating ?? null;
+    instance.initialReviewText = record.reviewText ?? '';
+    instance.initialContainsSpoilers = record.containsSpoilers ?? false;
+
+    modalRef.result.then(
+      (result) => {
+        if (!result) return;
+        detailsModalRef.componentInstance.refreshAfterRating();
+      },
+      () => {}
+    );
+
+    return modalRef;
   }
 
   goToManage(): void {

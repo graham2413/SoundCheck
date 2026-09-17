@@ -12,6 +12,7 @@ import {
   animate,
   query,
   group,
+  AnimationEvent,
 } from '@angular/animations';
 import { catchError, filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -25,6 +26,7 @@ import { NavbarVisibilityService } from './services/navbar-visibility.service';
 import { forkJoin, of, timer } from 'rxjs';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { UpdateService } from './services/update.service';
+import { AppLoaderService } from './services/app-loader.service';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -126,7 +128,8 @@ export class AppComponent implements OnInit {
     private cdRef: ChangeDetectorRef,
     private swUpdate: SwUpdate,
     private updateService: UpdateService,
-    private navbarVisibility: NavbarVisibilityService
+    private navbarVisibility: NavbarVisibilityService,
+    private appLoaderService: AppLoaderService
   ) {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -387,5 +390,17 @@ export class AppComponent implements OnInit {
 
   setActiveOutlet(outlet: RouterOutlet) {
     this.activeOutlet = outlet;
+  }
+
+  // Fires once the boot loader's own :leave transition (@loaderFade, 350ms)
+  // has actually finished - see AppLoaderService for why components
+  // underneath care about this instead of just their own mount time.
+  // The trigger also fires a "done" event for the element's *entry*
+  // (toState !== 'void', an instant no-op since no :enter transition is
+  // defined) - only the real leave, where toState is 'void', means the
+  // loader has actually gone.
+  onLoaderFadeDone(event: AnimationEvent): void {
+    if (event.toState !== 'void') return;
+    this.appLoaderService.markLoaderGone();
   }
 }

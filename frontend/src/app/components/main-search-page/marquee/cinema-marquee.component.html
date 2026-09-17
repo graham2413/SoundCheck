@@ -32,10 +32,8 @@
           <div class="cinema-card-info">
             <p class="cinema-card-title truncate">{{ item.title }}</p>
             <p class="cinema-card-date">{{ releaseMonthYear(item) }}</p>
-            <p *ngIf="item.genres?.length" class="cinema-card-genre truncate" [title]="item.genres?.join(', ')">
-              {{ item.genres?.join(', ') }}
-            </p>
-            <div class="badge-slot mt-1 flex items-center">
+            <app-genre-pills size="sm" mode="line" class="mt-1 block" [genres]="item.genres"></app-genre-pills>
+            <div class="badge-slot cinema-badge--full-width mt-1 flex items-center">
               <app-cinema-badge [badge]="marqueeBadge(item)" size="sm"></app-cinema-badge>
             </div>
           </div>

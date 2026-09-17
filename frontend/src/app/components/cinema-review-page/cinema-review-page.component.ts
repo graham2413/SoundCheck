@@ -6,6 +6,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PROVIDER_LOGO_OVERRIDES } from '../../shared/provider-logo-overrides';
 import { getCinemaStatusBadge, withShortBadgeLabel, CinemaBadgeVm } from '../../shared/cinema-status-badge';
 import { CinemaBadgeComponent } from '../../shared/cinema-badge/cinema-badge.component';
+import { GenrePillsComponent } from '../../shared/genre-pills/genre-pills.component';
 import { CinemaSortDropdownComponent, CinemaDropdownOption } from '../../shared/cinema-sort-dropdown/cinema-sort-dropdown.component';
 import { CinemaEpisodesTabComponent } from './cinema-episodes-tab.component';
 import { CinemaReview, CinemaPersonCredit, CinemaSeasonEpisode, EpisodeImdbRating } from '../../models/responses/cinema-response';
@@ -26,7 +27,7 @@ export type ReviewSort = 'recent' | 'highest' | 'liked';
 @Component({
   selector: 'app-cinema-review-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, CinemaBadgeComponent, CinemaSortDropdownComponent, CinemaEpisodesTabComponent],
+  imports: [CommonModule, FormsModule, CinemaBadgeComponent, GenrePillsComponent, CinemaSortDropdownComponent, CinemaEpisodesTabComponent],
   templateUrl: './cinema-review-page.component.html',
   styleUrls: ['./cinema-review-page.component.css'],
   animations: [

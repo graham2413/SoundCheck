@@ -51,9 +51,7 @@
         TBA<span *ngIf="formattedStatus">&nbsp;&middot;&nbsp;{{ formattedStatus }}</span>
       </p>
 
-      <p class="text-[#3B82F6] text-sm mt-2" *ngIf="genres.length">
-        {{ genres.join(', ') }}
-      </p>
+      <app-genre-pills class="mt-2" mode="line" [expandable]="true" [genres]="genres"></app-genre-pills>
 
       <div class="flex items-center gap-2 mt-3">
         <span class="cert-pill" *ngIf="certification">{{ certification }}</span>
@@ -329,9 +327,7 @@
         <div class="cinema-card-info">
           <p class="cinema-card-title truncate">{{ item.title }}</p>
           <p class="cinema-card-date">{{ similarReleaseDate(item) }}</p>
-          <p *ngIf="item.genres?.length" class="cinema-card-genre truncate" [title]="item.genres?.join(', ')">
-            {{ item.genres?.join(', ') }}
-          </p>
+          <app-genre-pills size="sm" mode="line" class="mt-1 block" [genres]="item.genres"></app-genre-pills>
           <app-cinema-badge class="mt-1 block" [badge]="similarBadge(item)"></app-cinema-badge>
         </div>
       </div>

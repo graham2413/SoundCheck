@@ -215,29 +215,35 @@
 
       <!-- Stats Card -->
       <div
-        class="mt-6 w-full rounded-2xl p-4 flex justify-around"
+        class="mt-4 w-full rounded-2xl p-4 flex divide-x divide-[rgba(88,89,92,0.4)]"
         style="background: #0b1220; border: 1px solid rgba(88, 89, 92, 0.4)"
       >
-        <div class="flex flex-col items-center cursor-pointer" (click)="openReviews()">
+        <!-- flex-1 (equal-width columns) rather than natural width + justify-around
+             - with unequal-width columns the divider (a border on the edge of the
+             column after it) sat wherever that column's content happened to start,
+             not centered in the gap between the two counts. Equal-width columns
+             with centered content make the shared edge - and the divider on it -
+             sit equidistant from both counts. -->
+        <div class="flex-1 flex flex-col items-center cursor-pointer" (click)="openReviews()">
           <span class="text-lg font-semibold">{{
             (otherUser.reviews?.length || 0) + (otherUser.cinemaReviews?.length || 0)
           }}</span>
           <span class="text-gray-400 text-sm">Reviews</span>
         </div>
-        <div class="flex flex-col items-center cursor-pointer" (click)="openFriends()">
+        <div class="flex-1 flex flex-col items-center cursor-pointer" (click)="openFriends()">
           <span class="text-lg font-semibold">{{
             otherUser.friends?.length || 0
           }}</span>
           <span class="text-gray-400 text-sm">Friends</span>
         </div>
-        <div class="flex flex-col items-center cursor-pointer" (click)="openList()">
+        <div class="flex-1 flex flex-col items-center cursor-pointer" (click)="openList()">
           <span class="text-lg font-semibold">{{
             otherUser.artistList?.length || 0
           }}</span>
           <span class="text-gray-400 text-sm">Artists</span>
         </div>
 <div
-  class="flex flex-col items-center cursor-pointer"
+  class="flex-1 flex flex-col items-center cursor-pointer"
   *ngIf="canViewWatchlist"
   (click)="openWatchlist()"
 >

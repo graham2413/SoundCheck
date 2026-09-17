@@ -34,6 +34,7 @@ import { CinemaService } from 'src/app/services/cinema.service';
 import { CinemaItem, CinemaSearchResult, CinemaActivityEntry } from 'src/app/models/responses/cinema-response';
 import { getCinemaStatusBadge, CinemaBadgeVm } from 'src/app/shared/cinema-status-badge';
 import { CinemaBadgeComponent } from 'src/app/shared/cinema-badge/cinema-badge.component';
+import { GenrePillsComponent } from 'src/app/shared/genre-pills/genre-pills.component';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
 import { CinemaRateModalComponent } from '../cinema-review-page/cinema-rate-modal.component';
 import { MainSearchStateService } from 'src/app/services/main-search-state.service';
@@ -59,6 +60,7 @@ type CinemaActivityEntryVm = CinemaActivityEntry & { likedByCurrentUser: boolean
     CinemaMarqueeComponent,
     SeeAllTrendingComponent,
     CinemaBadgeComponent,
+    GenrePillsComponent,
   ],
   animations: [
     trigger('fadeSlideIn', [
@@ -133,6 +135,11 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.displaySearchType === 'cinema' ? 'assets/popcorn-icon.png' : 'assets/music-disc-icon.png';
   }
   cinemaResults: CinemaSearchResult[] = [];
+  // Keyed by "mediaType:tmdbId" - true while that specific result's
+  // "nice to have" extras (real TV year range, badge fields) are still
+  // in flight. See loadCinemaEnrichment below for why this is per-result
+  // rather than one flag for the whole search.
+  cinemaEnrichmentLoading: { [key: string]: boolean } = {};
   cinemaActiveTab: 'all' | 'movie' | 'tv' = 'all';
   isModalOpen = false;
   selectedRecord: Album | Artist | Song | null = null;
@@ -519,10 +526,12 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     this.resultsExpanded = false;
     this.cinemaActiveTab = 'all';
 
+    this.cinemaEnrichmentLoading = {};
     this.cinemaService.searchCinema(query).subscribe({
       next: ({ data }) => {
         this.cinemaResults = data;
         this.isLoading = false;
+        this.loadCinemaEnrichment(data);
       },
       error: () => {
         this.toastr.error(
@@ -719,6 +728,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
       this.lastSearchedQuery = '';
       this.searchAttempted = false;
       this.cinemaResults = [];
+      this.cinemaEnrichmentLoading = {};
       this.imageLoaded.cinema = {};
       this.results = { songs: [], albums: [], artists: [] };
       this.filteredResults = { songs: [], albums: [], artists: [] };
@@ -777,6 +787,7 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     this.lastSearchedQuery = '';
     this.searchAttempted = false;
     this.cinemaResults = [];
+    this.cinemaEnrichmentLoading = {};
     this.results = { songs: [], albums: [], artists: [] };
     this.filteredResults = { songs: [], albums: [], artists: [] };
     // Deferred - the "x" button click would otherwise steal focus back to
@@ -1154,6 +1165,11 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
       keyboard: true,
       centered: true,
       scrollable: false,
+      // Reuses the cinema detail modal's own slide-in-from-right/slide-out-
+      // to-right CSS (styles.css) so opening/closing Rate feels like the
+      // same "push deeper"/"pop back" navigation as the detail page's own
+      // sub-views, instead of the disabled-by-default instant appear.
+      windowClass: 'cinema-detail-modal',
     };
 
     const modalRef = this.modal.open(CinemaRateModalComponent, modalOptions);
@@ -1377,6 +1393,36 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
   // Same badge logic/priority/icons as everywhere else (see shared/cinema-status-badge.ts).
   cinemaBadge(item: CinemaSearchResult): CinemaBadgeVm | null {
     return getCinemaStatusBadge(item);
+  }
+
+  private cinemaEnrichmentKey(item: CinemaSearchResult): string {
+    return `${item.mediaType}:${item.tmdbId}`;
+  }
+
+  isEnrichingCinema(item: CinemaSearchResult): boolean {
+    return !!this.cinemaEnrichmentLoading[this.cinemaEnrichmentKey(item)];
+  }
+
+  // Fires one independent request per result instead of awaiting all of
+  // them together - a single slow/rate-limited title's extras (real TV
+  // year range, badge fields) used to hold up the ENTIRE search response
+  // behind it (see getSearchEnrichment's comment in cinemaController.js).
+  // Now each card's own loading indicator clears the moment ITS OWN
+  // request resolves, independent of how long any other card's takes.
+  private loadCinemaEnrichment(items: CinemaSearchResult[]): void {
+    for (const item of items) {
+      const key = this.cinemaEnrichmentKey(item);
+      this.cinemaEnrichmentLoading[key] = true;
+      this.cinemaService.getSearchEnrichment(item.mediaType, item.tmdbId).subscribe({
+        next: ({ data }) => {
+          if (data) Object.assign(item, data);
+          this.cinemaEnrichmentLoading[key] = false;
+        },
+        error: () => {
+          this.cinemaEnrichmentLoading[key] = false;
+        },
+      });
+    }
   }
 
   toggleLike(review: Review) {

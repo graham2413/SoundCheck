@@ -19,6 +19,7 @@ import { CinemaService } from 'src/app/services/cinema.service';
 import { CinemaSearchResult } from '../../../models/responses/cinema-response';
 import { getCinemaStatusBadge, CinemaBadgeVm } from '../../../shared/cinema-status-badge';
 import { CinemaBadgeComponent } from '../../../shared/cinema-badge/cinema-badge.component';
+import { GenrePillsComponent } from '../../../shared/genre-pills/genre-pills.component';
 
 // Cinema counterpart to app-marquee - static horizontally-scrollable strip
 // (native overflow-x scroll), sourced from GET /cinema/trending, with taller
@@ -28,7 +29,7 @@ import { CinemaBadgeComponent } from '../../../shared/cinema-badge/cinema-badge.
 @Component({
   selector: 'app-cinema-marquee',
   standalone: true,
-  imports: [CommonModule, CinemaBadgeComponent],
+  imports: [CommonModule, CinemaBadgeComponent, GenrePillsComponent],
   templateUrl: './cinema-marquee.component.html',
   styleUrls: ['./cinema-marquee.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

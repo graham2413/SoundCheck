@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { trigger, transition, style, animate, query, group } from '@angular/animations';
 import { NgbActiveModal, NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { CinemaReviewPageComponent, ReviewFilter, ReviewSort } from './cinema-review-page.component';
@@ -24,12 +25,42 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
   selector: 'app-cinema-review-modal',
   standalone: true,
   imports: [CommonModule, CinemaReviewPageComponent, CinemaCastListComponent, CinemaAllReviewsComponent, CinemaAwardsPageComponent, CinemaEpisodeDetailComponent, CinemaSoundtrackListComponent],
+  animations: [
+    // Same push-forward/pop-back feel as this modal's own slide-in-from-
+    // right entrance (see the .cinema-detail-modal rule in styles.css) -
+    // opening a sub-view (Cast/All Reviews/Awards/Episode/Soundtrack) slides
+    // it in from the right while the overview slides out to the left;
+    // going back (any sub-view -> overview) reverses both directions. Every
+    // sub-view's own `back` always returns straight to "overview" (never
+    // sub-view -> sub-view directly), so these two transitions cover every
+    // real case.
+    trigger('panelSlide', [
+      transition('overview => *', [
+        query(':enter', [style({ transform: 'translateX(100%)' })], { optional: true }),
+        query(':leave', [style({ position: 'absolute', top: 0, left: 0, width: '100%' })], { optional: true }),
+        group([
+          query(':enter', [animate('300ms ease-out', style({ transform: 'translateX(0)' }))], { optional: true }),
+          query(':leave', [animate('300ms ease-out', style({ transform: 'translateX(-100%)' }))], { optional: true }),
+        ]),
+      ]),
+      transition('* => overview', [
+        query(':enter', [style({ transform: 'translateX(-100%)' })], { optional: true }),
+        query(':leave', [style({ position: 'absolute', top: 0, left: 0, width: '100%' })], { optional: true }),
+        group([
+          query(':enter', [animate('300ms ease-out', style({ transform: 'translateX(0)' }))], { optional: true }),
+          query(':leave', [animate('300ms ease-out', style({ transform: 'translateX(100%)' }))], { optional: true }),
+        ]),
+      ]),
+    ]),
+  ],
   template: `
     <div #scrollContainer class="fixed inset-0 z-50 overflow-y-auto bg-[#020814]">
       <div class="cinema-loader-overlay" *ngIf="!detail">
         <div class="cinema-loader-ring"></div>
         <p class="cinema-loader-text">Loading details…</p>
       </div>
+
+      <div [@panelSlide]="currentPanel" style="position: relative; overflow: hidden;">
 
       <app-cinema-review-page
         *ngIf="detail && !showFullCast && !showAllReviews && !showAwards && !showEpisodeDetail && !showSoundtrack"
@@ -156,6 +187,8 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
         (back)="switchToReview()"
         (trackClick)="onSoundtrackTrackClick($event)"
       ></app-cinema-soundtrack-list>
+
+      </div>
     </div>
   `,
 })
@@ -380,6 +413,19 @@ export class CinemaReviewModalComponent implements OnInit {
   // the cast list already scrolled down if the review page had been scrolled.
   private resetScroll(): void {
     this.scrollContainer.nativeElement.scrollTop = 0;
+  }
+
+  // Drives the panelSlide animation (see @Component.animations above) - a
+  // plain derived getter, same pattern app.component.ts's own
+  // [@routeAnimations]="prepareRoute(activeOutlet)" already uses elsewhere
+  // in this app, rather than a separate stored field mirroring these flags.
+  get currentPanel(): string {
+    if (this.showFullCast) return 'cast';
+    if (this.showAllReviews) return 'allReviews';
+    if (this.showAwards) return 'awards';
+    if (this.showEpisodeDetail) return 'episode';
+    if (this.showSoundtrack) return 'soundtrack';
+    return 'overview';
   }
 
   switchToCast(): void {

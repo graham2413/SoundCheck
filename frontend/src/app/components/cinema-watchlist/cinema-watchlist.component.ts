@@ -6,6 +6,7 @@ import { CinemaItem } from 'src/app/models/responses/cinema-response';
 import { TimeAgoPipe } from 'src/app/shared/timeAgo/time-ago.pipe';
 import { getCinemaStatusBadge, CinemaBadgeVm } from 'src/app/shared/cinema-status-badge';
 import { CinemaBadgeComponent } from 'src/app/shared/cinema-badge/cinema-badge.component';
+import { GenrePillsComponent } from 'src/app/shared/genre-pills/genre-pills.component';
 
 // Exclusive theatrical windows don't last forever - without this bound, an
 // old catalog title that never got streamingPlatforms/digitalReleaseDate
@@ -23,7 +24,7 @@ const IN_THEATERS_WINDOW_DAYS = 90;
 @Component({
   selector: 'app-cinema-watchlist',
   standalone: true,
-  imports: [CommonModule, InfiniteScrollDirective, TimeAgoPipe, CinemaBadgeComponent],
+  imports: [CommonModule, InfiniteScrollDirective, TimeAgoPipe, CinemaBadgeComponent, GenrePillsComponent],
   templateUrl: './cinema-watchlist.component.html',
   styleUrl: './cinema-watchlist.component.css',
   animations: [

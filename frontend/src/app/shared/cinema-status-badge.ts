@@ -53,7 +53,11 @@ export function getCinemaStatusBadge(item: CinemaStatusBadgeInput): CinemaBadgeV
   if (item.mediaType === 'tv') {
     const episodeBadge = getTvEpisodeBadge(item.lastEpisodeAirDate, item.nextEpisodeAirDate, item.nextEpisodeNumber);
     if (episodeBadge) {
-      return { kind: episodeBadge, label: tvEpisodeBadgeLabel(episodeBadge), icon: getCinemaBadgeIcon(episodeBadge) };
+      return {
+        kind: episodeBadge.kind,
+        label: tvEpisodeBadgeLabel(episodeBadge),
+        icon: getCinemaBadgeIcon(episodeBadge.kind),
+      };
     }
     if (isNewSeries(item.releaseDate)) {
       return { kind: 'new-release', label: 'New Series', icon: getCinemaBadgeIcon('new-release') };

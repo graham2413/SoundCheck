@@ -266,6 +266,11 @@ export class CinemaEpisodeDetailComponent implements OnChanges, AfterViewChecked
       keyboard: true,
       centered: true,
       scrollable: false,
+      // Reuses the cinema detail modal's own slide-in-from-right/slide-out-
+      // to-right CSS (styles.css) so opening/closing Rate feels like the
+      // same "push deeper"/"pop back" navigation as the detail page's own
+      // sub-views, instead of the disabled-by-default instant appear.
+      windowClass: 'cinema-detail-modal',
     };
 
     const modalRef = this.modal.open(CinemaRateModalComponent, modalOptions);

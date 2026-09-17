@@ -2,6 +2,7 @@
 const axios = require("axios");
 const https = require("https");
 const redis = require("./redisClient");
+const { CALENDAR_CACHE_TIMEZONE, secondsUntilNextLocalMidnight } = require("./calendarHelpers");
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
@@ -12,7 +13,6 @@ const QUEUE_DELAY_MS = 200;
 const DETAILS_CACHE_TTL = 129600; // 1.5 days - short enough to keep watch/providers reasonably fresh; shortened from 3 days since this is also the cache for the full aggregate_credits cast list, one of the biggest Redis storage consumers
 const SEARCH_CACHE_TTL = 7200; // 2 hours
 const GENRE_CACHE_TTL = 2592000; // 30 days
-const CALENDAR_DETAILS_CACHE_TTL = 43200; // 12 hours - short enough to always refresh at least once per calendar day
 const SEASON_CACHE_TTL = 86400; // 1 day - shorter than DETAILS_CACHE_TTL since airing seasons get new stills/air dates as episodes approach
 
 // Caps simultaneous connections to stay under TMDb's ~20 concurrent connections/IP limit
@@ -138,6 +138,7 @@ function trimCrew(crew) {
 // etc. that were never used but still counted toward Redis storage.
 function trimTmdbDetails(raw) {
   const usRelease = raw.release_dates?.results?.find((r) => r.iso_3166_1 === "US") || null;
+  const usContentRating = raw.content_ratings?.results?.find((r) => r.iso_3166_1 === "US") || null;
   const usProviders = raw["watch/providers"]?.results?.US || null;
 
   return {
@@ -161,6 +162,7 @@ function trimTmdbDetails(raw) {
     next_episode_to_air: raw.next_episode_to_air,
     external_ids: raw.external_ids ? { imdb_id: raw.external_ids.imdb_id } : undefined,
     release_dates: usRelease ? { results: [usRelease] } : null,
+    content_ratings: usContentRating ? { results: [usContentRating] } : null,
     "watch/providers": usProviders ? { results: { US: { flatrate: usProviders.flatrate } } } : null,
     credits: raw.credits ? { cast: trimCast(raw.credits.cast), crew: trimCrew(raw.credits.crew) } : undefined,
     aggregate_credits: raw.aggregate_credits ? { cast: trimCast(raw.aggregate_credits.cast) } : undefined,
@@ -188,18 +190,24 @@ function trimTmdbDetails(raw) {
 }
 
 async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = false } = {}) {
-  // v8: bumped to key by mediaType+tmdbId, not just tmdbId - movie IDs and TV
-  // IDs are separate TMDb namespaces (e.g. movie 1398 is "Stalker", TV 1398
-  // is "The Sopranos"), so the old tmdbId-only key let whichever media type
-  // got cached first silently serve its data for the other's requests too.
-  const cacheKey = `tmdb:details:v8:${mediaType}:${tmdbId}`;
+  // v9: added content_ratings for TV (see appendToResponse/trimTmdbDetails
+  // below) - bumped so existing cached entries (which predate that field)
+  // refresh immediately instead of silently missing it for up to
+  // DETAILS_CACHE_TTL. Before that, v8 bumped to key by mediaType+tmdbId,
+  // not just tmdbId - movie IDs and TV IDs are separate TMDb namespaces
+  // (e.g. movie 1398 is "Stalker", TV 1398 is "The Sopranos"), so the old
+  // tmdbId-only key let whichever media type got cached first silently
+  // serve its data for the other's requests too.
+  const cacheKey = `tmdb:details:v9:${mediaType}:${tmdbId}`;
   if (!forceRefresh) {
     const cached = await redis.safeGet(cacheKey);
     if (cached) return JSON.parse(cached);
   }
 
-  // release_dates is movie-only (TV uses content_ratings instead) - needed
-  // for certification + accurate US theatrical release date/re-release detection.
+  // release_dates is movie-only (holds US theatrical certification) -
+  // content_ratings is TV's equivalent (holds US content rating, e.g.
+  // "TV-MA") - needed for certification + accurate US theatrical
+  // release-date/re-release detection on the movie side.
   // aggregate_credits is TV-only - merges cast across every season/episode,
   // unlike the plain "credits" field which is just the current season.
   // external_ids is TV-only - movies already get imdb_id natively, but TV's
@@ -207,7 +215,7 @@ async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = fals
   const appendToResponse =
     mediaType === "movie"
       ? "watch/providers,credits,release_dates,images,videos,recommendations"
-      : "watch/providers,credits,aggregate_credits,external_ids,images,videos,recommendations";
+      : "watch/providers,credits,aggregate_credits,external_ids,content_ratings,images,videos,recommendations";
 
   const response = await callTmdb(`/${mediaType}/${tmdbId}`, {
     append_to_response: appendToResponse,
@@ -225,9 +233,14 @@ async function getTmdbDetails(tmdbId, mediaType = "movie", { forceRefresh = fals
 }
 
 // Cache-aware wrapper for the calendar: same /movie|tv/:id details call as
-// getTmdbDetails, but with a much shorter TTL since next_episode_to_air and
-// release_date can change within days - short TTL keeps this fresh at least
-// once per calendar day without needing day-boundary-aware invalidation.
+// getTmdbDetails, but expires at the next local midnight instead of a fixed
+// duration - next_episode_to_air/release_date can change day to day, so this
+// needs to refresh at least once per calendar day, but a fixed TTL (e.g. 12h)
+// warmed by the daily prewarm cron (see server.js, runs ~4 AM local) went
+// stale mid-afternoon, well before a lot of users' actual first calendar
+// check of the day - defeating the point of prewarming. Expiring at midnight
+// means one warm covers the *entire* rest of the calendar day, however late
+// in the day it's actually checked.
 // `forceRefresh` bypasses the cache read (used by the calendar's refresh
 // button) but still writes the fresh result back to cache.
 async function getTmdbDetailsForCalendar(tmdbId, mediaType, forceRefresh = false) {
@@ -246,11 +259,12 @@ async function getTmdbDetailsForCalendar(tmdbId, mediaType, forceRefresh = false
   );
 
   if (response.data) {
-    // +/-10% jitter so items cached around the same time (e.g. a user's whole
-    // watchlist backfilled at once) don't all expire in the same instant and
-    // stampede TMDb with a burst of simultaneous live calls on the next load.
-    const jitter = CALENDAR_DETAILS_CACHE_TTL * (0.9 + Math.random() * 0.2);
-    await redis.safeSet(cacheKey, JSON.stringify(response.data), "EX", Math.round(jitter));
+    // A few minutes of positive jitter (not a shrinking +/-, which would cut
+    // some items' coverage short of midnight) so items warmed in the same
+    // prewarm batch don't all expire in the same instant and stampede TMDb
+    // with a burst of simultaneous live calls right at midnight.
+    const ttlSeconds = secondsUntilNextLocalMidnight(CALENDAR_CACHE_TIMEZONE) + Math.floor(Math.random() * 300);
+    await redis.safeSet(cacheKey, JSON.stringify(response.data), "EX", ttlSeconds);
   } else {
     // callTmdb never throws itself (it exhausts retries and resolves with
     // `{ data: null }`) - throw here instead of returning null so a genuine

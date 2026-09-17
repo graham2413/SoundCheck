@@ -7,6 +7,7 @@ import { AlbumImage } from '../../../models/responses/album-images-response';
 import { CinemaSearchResult } from '../../../models/responses/cinema-response';
 import { getCinemaStatusBadge, CinemaBadgeVm } from '../../../shared/cinema-status-badge';
 import { CinemaBadgeComponent } from '../../../shared/cinema-badge/cinema-badge.component';
+import { GenrePillsComponent } from '../../../shared/genre-pills/genre-pills.component';
 import {
   CinemaWatchlistFilterComponent,
   CinemaWatchlistFilterState,
@@ -45,7 +46,7 @@ export type SeeAllTrendingKind = 'music' | 'cinema';
 @Component({
   selector: 'app-see-all-trending',
   standalone: true,
-  imports: [CommonModule, CinemaBadgeComponent, CinemaWatchlistFilterComponent],
+  imports: [CommonModule, CinemaBadgeComponent, GenrePillsComponent, CinemaWatchlistFilterComponent],
   templateUrl: './see-all-trending.component.html',
   styleUrls: ['./see-all-trending.component.css'],
   animations: [

@@ -137,6 +137,21 @@ export class CinemaService {
     });
   }
 
+  // Per-result "nice to have" extras (real TV year range, badge fields) -
+  // searchCinema itself only returns the fast /search/multi fields; the
+  // caller fetches this independently per result so one slow/rate-limited
+  // title's extras don't hold up any other result's. See
+  // getSearchEnrichment's own comment in cinemaController.js.
+  getSearchEnrichment(
+    mediaType: 'movie' | 'tv',
+    tmdbId: string
+  ): Observable<{ success: boolean; data: Partial<CinemaSearchResult> | null }> {
+    return this.http.get<{ success: boolean; data: Partial<CinemaSearchResult> | null }>(
+      `${this.apiUrl}/search-enrichment/${mediaType}/${tmdbId}`,
+      { headers: this.authHeaders() }
+    );
+  }
+
   // Trending movies/shows this week (powers the cinema marquee)
   getTrendingCinema(mediaType: 'movie' | 'tv'): Observable<{ success: boolean; data: CinemaSearchResult[] }> {
     return this.http.get<{ success: boolean; data: CinemaSearchResult[] }>(`${this.apiUrl}/trending`, {

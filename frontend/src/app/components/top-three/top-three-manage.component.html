@@ -1,26 +1,28 @@
 <div class="bg-[#020814] text-white min-h-screen pt-[1rem] md:pt-[6rem] pb-[6rem] px-3">
   <div class="max-w-2xl mx-auto">
-    <div class="relative flex items-center justify-center mb-4">
-      <button
-        (click)="goBack()"
-        aria-label="Go back"
-        class="absolute left-0 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center md:hover:bg-gray-800 transition"
-      >
-        <i class="fas fa-chevron-left text-gray-200 text-lg"></i>
+    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 mb-4">
+      <button (click)="goBack()" class="icon-circle-btn" aria-label="Go back">
+        <i class="fas fa-chevron-left"></i>
       </button>
-      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Top 3</h1>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-center">Top 3</h1>
       <button
         *ngIf="isOwn"
         (click)="toggleSettings()"
+        class="icon-circle-btn"
         aria-label="Top 3 settings"
-        class="absolute right-0 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center md:hover:bg-gray-800 transition"
       >
-        <i class="fas fa-gear text-gray-200 text-lg"></i>
+        <i class="fas fa-gear"></i>
       </button>
+      <!-- Keeps the grid's 3-column back/title/settings layout symmetric when
+           the settings button is hidden (viewing someone else's Top 3) - an
+           empty div with no fixed size would collapse this auto-sized column
+           to 0 width, shifting the centered title right into that space
+           instead of keeping it centered. -->
+      <div *ngIf="!isOwn" class="w-12 h-12"></div>
     </div>
 
     <!-- Category tabs -->
-    <div class="flex items-center gap-2 mb-4 overflow-x-auto">
+    <div class="flex items-center gap-2 mb-4 overflow-x-auto pt-5">
       <button
         *ngFor="let cat of allCategories"
         type="button"

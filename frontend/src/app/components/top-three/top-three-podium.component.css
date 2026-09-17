@@ -1,3 +1,20 @@
+/* Custom elements default to display:inline, which - inside the profile
+   page's flex column (align-items: center) - made this whole host
+   shrink-to-fit its own content's intrinsic width instead of filling the
+   column's available width. The inner card div below already sets
+   width:100%, but that's 100% of THIS shrink-wrapped host, not of the
+   page - and the populated podium-track (~21rem: 3 pedestals + gaps) and
+   the empty ghost-podium-track (capped at max-width:16rem) have different
+   intrinsic widths, so the host - and the whole card - ended up narrower
+   for the empty state than the populated one. Making the host itself a
+   block that fills its parent fixes the card at one width regardless of
+   which state is inside it.
+*/
+:host {
+  display: block;
+  width: 100%;
+}
+
 /* Populated podium - 3 pedestal blocks: #2 left, #1 centered (tallest, crown
    + blue glow), #3 right. Each block is genuinely two planes (see
    .podium-block-top/-front below), not just a gradient standing in for
@@ -9,6 +26,16 @@
   justify-content: center;
   gap: 0.75rem;
   padding-top: 2rem;
+  /* The rise-in animation starts each pedestal translateY(70px) below its
+     resting spot - without this, that starting position sat below the
+     track's own box (and often below the whole card, since the card's
+     height is otherwise just tall enough for the settled pedestals), so
+     they visibly flew up from underneath/outside the card instead of
+     reading as rising up from inside it. The crown (top: -1.7rem) and
+     rank-1's glow (a ~1.4rem blur) both stay clear of this clipping too -
+     they extend upward from the photo box into this track's own 2rem
+     top padding, well inside it either way. */
+  overflow: hidden;
 }
 
 /* Loading skeleton - reuses .podium-photo-box/.podium-block-top/-front's own
@@ -61,6 +88,21 @@
   opacity: 0;
   transform: translateY(70px);
   animation: podium-rise 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* The loading skeleton (see the HTML) reuses .podium-slot/-block-wrap-rank*
+   purely for their static sizing/shape so its placeholder card is already
+   the right dimensions - but those classes also carry the real podium's
+   entrance animation, which isn't gated by JS at all, just by these
+   classes existing in the DOM. Without this override the skeleton played
+   the rise-in the instant it mounted (well before there's any real data),
+   then the actual populated podium played it AGAIN when it swapped in -
+   two rises back to back. Scoped to .skeleton-track so the real, populated
+   .podium-track (no such class) is unaffected. */
+.podium-track.skeleton-track .podium-slot {
+  opacity: 1;
+  transform: none;
+  animation: none;
 }
 
 /* Rise order: #3 first, then #2, then #1 (the "build up to the winner"

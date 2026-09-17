@@ -1,2 +1,22 @@
-/* Intentionally minimal - this page relies on the same Tailwind utility
-   classes used throughout the rest of the app rather than bespoke CSS. */
+/* Matches the Trending Now "See All" page's back button exactly (same
+   class name/definition, copied rather than shared since Angular component
+   styles are scoped per-component) - see
+   see-all-trending.component.css - so the two pages' back/settings buttons
+   share the same size, border, and hover behavior. */
+.icon-circle-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  border: 1px solid rgba(107, 114, 128, 0.4);
+  background: transparent;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  transition: background-color 0.15s ease;
+}
+
+.icon-circle-btn:hover {
+  background: #1f2937;
+}

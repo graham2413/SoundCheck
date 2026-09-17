@@ -15,6 +15,7 @@ const {
   editCinemaItem,
   getCinemaReviews,
   searchCinema,
+  getSearchEnrichment,
   getCinemaTrending,
   getCalendar,
   toggleWatchlist,
@@ -62,6 +63,12 @@ router.get("/popular-actors", authenticateUser, getPopularActors);
 
 // Search movies/shows via TMDb (Protected)
 router.get("/search", authenticateUser, searchCinema);
+
+// Per-result "nice to have" extras (real TV year range, badge fields) for
+// one search result at a time (Protected) - see getSearchEnrichment's own
+// comment for why this is separate from /search itself.
+router.get("/search-enrichment/:mediaType/:tmdbId", authenticateUser, getSearchEnrichment);
+
 router.get("/trending", authenticateUser, getCinemaTrending);
 
 // Distinct genres/providers available to filter this user's watchlist by (Protected)
