@@ -29,15 +29,14 @@
 
     <!-- Search Bar -->
     <div class="relative mt-4">
-      <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+      <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
       <input
         #searchInput
         type="text"
         [(ngModel)]="searchQuery"
         (keydown.enter)="searchUsers()"
         placeholder="Search for users by name..."
-        style="background-color: #131928"
-        class="w-full pl-10 pr-9 py-3 rounded-full text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:border-[#0F5EE4]"
+        class="bg-gray-900/50 w-full pl-10 pr-9 py-3 rounded-full text-white placeholder-gray-500 border border-gray-800 focus:outline-none focus:border-[#0F5EE4]"
       />
       <button
         *ngIf="searchQuery.trim() && searchQuery.trim() === lastSearchedQuery"

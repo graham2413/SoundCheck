@@ -63,4 +63,5 @@ export interface MusicCalendarResponse {
   total: number;
   subtitle: CalendarSubtitle;
   monthGroups: CalendarMonthGroup[];
+  typeCounts: { all: number; song: number; album: number };
 }

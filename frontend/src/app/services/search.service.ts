@@ -117,11 +117,13 @@ getSmartLink(params: {
 
 // Music calendar - upcoming/past releases for the current user's followed
 // artists, same shape/pagination as CinemaService.getCalendar.
-getMusicCalendar(forceRefresh = false, range: 'upcoming' | 'past' = 'upcoming', offset = 0, limit = 20): Observable<MusicCalendarResponse> {
+getMusicCalendar(forceRefresh = false, range: 'upcoming' | 'past' = 'upcoming', offset = 0, limit = 20, search = '', type: 'all' | 'song' | 'album' = 'all'): Observable<MusicCalendarResponse> {
   const token = localStorage.getItem('token');
   const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
 
   let params: Record<string, string> = { range, offset: String(offset), limit: String(limit) };
+  if (search) params = { ...params, search };
+  if (type !== 'all') params = { ...params, type };
   if (forceRefresh) params = { ...params, refresh: 'true' };
 
   return this.http.get<MusicCalendarResponse>(`${this.apiUrl}/music-calendar`, { headers, params });

@@ -97,6 +97,72 @@
 
         <div class="border-t border-gray-800"></div>
 
+        <!-- New movie releases -->
+        <label class="flex items-center gap-3 p-3 cursor-pointer">
+          <span class="flex items-center justify-center w-11 h-11 rounded-xl bg-gray-800 text-gray-300 flex-shrink-0">
+            <i class="fas fa-film"></i>
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="text-white font-semibold">New movie releases</p>
+            <p class="text-gray-400 text-sm">Get notified when a tracked movie is released.</p>
+          </div>
+          <button
+            type="button"
+            (click)="updateNotificationPreference('immediateMovies', !notificationPreferences.immediateMovies)"
+            [attr.aria-pressed]="notificationPreferences.immediateMovies"
+            class="w-6 h-6 rounded flex-shrink-0 flex items-center justify-center transition-colors"
+            [ngClass]="notificationPreferences.immediateMovies ? 'bg-[#0F5EE4]' : 'bg-gray-700 border border-gray-600'"
+          >
+            <i *ngIf="notificationPreferences.immediateMovies" class="fas fa-check text-white text-xs"></i>
+          </button>
+        </label>
+
+        <div class="border-t border-gray-800"></div>
+
+        <!-- New TV episodes -->
+        <label class="flex items-center gap-3 p-3 cursor-pointer">
+          <span class="flex items-center justify-center w-11 h-11 rounded-xl bg-gray-800 text-gray-300 flex-shrink-0">
+            <i class="fas fa-tv"></i>
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="text-white font-semibold">New TV episodes</p>
+            <p class="text-gray-400 text-sm">Get notified when a tracked show airs a new episode.</p>
+          </div>
+          <button
+            type="button"
+            (click)="updateNotificationPreference('immediateTvEpisodes', !notificationPreferences.immediateTvEpisodes)"
+            [attr.aria-pressed]="notificationPreferences.immediateTvEpisodes"
+            class="w-6 h-6 rounded flex-shrink-0 flex items-center justify-center transition-colors"
+            [ngClass]="notificationPreferences.immediateTvEpisodes ? 'bg-[#0F5EE4]' : 'bg-gray-700 border border-gray-600'"
+          >
+            <i *ngIf="notificationPreferences.immediateTvEpisodes" class="fas fa-check text-white text-xs"></i>
+          </button>
+        </label>
+
+        <div class="border-t border-gray-800"></div>
+
+        <!-- New TV seasons -->
+        <label class="flex items-center gap-3 p-3 cursor-pointer">
+          <span class="flex items-center justify-center w-11 h-11 rounded-xl bg-gray-800 text-gray-300 flex-shrink-0">
+            <i class="fas fa-clapperboard"></i>
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="text-white font-semibold">New TV seasons</p>
+            <p class="text-gray-400 text-sm">Get notified when a tracked show starts a new season.</p>
+          </div>
+          <button
+            type="button"
+            (click)="updateNotificationPreference('immediateTvSeasons', !notificationPreferences.immediateTvSeasons)"
+            [attr.aria-pressed]="notificationPreferences.immediateTvSeasons"
+            class="w-6 h-6 rounded flex-shrink-0 flex items-center justify-center transition-colors"
+            [ngClass]="notificationPreferences.immediateTvSeasons ? 'bg-[#0F5EE4]' : 'bg-gray-700 border border-gray-600'"
+          >
+            <i *ngIf="notificationPreferences.immediateTvSeasons" class="fas fa-check text-white text-xs"></i>
+          </button>
+        </label>
+
+        <div class="border-t border-gray-800"></div>
+
         <!-- Weekly summary -->
         <label class="flex items-center gap-3 p-3 pb-4 cursor-pointer">
           <span class="flex items-center justify-center w-11 h-11 rounded-xl bg-gray-800 text-gray-300 flex-shrink-0">

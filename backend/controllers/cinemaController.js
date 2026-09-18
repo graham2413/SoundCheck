@@ -326,9 +326,17 @@ exports.getCalendar = async (req, res) => {
     // list - mediaType filtering happens here, per-request, on whichever
     // array (cached or freshly computed) is in hand, so a filter change
     // never needs its own separate cache entry/TMDb refetch.
+    const search = typeof req.query.search === "string" ? req.query.search.trim().toLowerCase().slice(0, 100) : "";
     const buildPage = (calendar) => {
-      const filtered = mediaTypeFilter === "all" ? calendar : calendar.filter((e) => e.mediaType === mediaTypeFilter);
+      const searched = search
+        ? calendar.filter((e) => e.title?.toLowerCase().includes(search) || e.episodeName?.toLowerCase().includes(search))
+        : calendar;
+      const filtered = mediaTypeFilter === "all" ? searched : searched.filter((e) => e.mediaType === mediaTypeFilter);
+      // True totals per media type (respecting the search but not the tab), so
+      // the All/TV/Movies pills can show counts before every page has loaded.
+      const tvCount = searched.filter((e) => e.mediaType === "tv").length;
       return {
+        mediaTypeCounts: { all: searched.length, tv: tvCount, movie: searched.length - tvCount },
         data: filtered.slice(offset, offset + limit),
         hasMore: offset + limit < filtered.length,
         total: filtered.length,
@@ -596,6 +604,8 @@ const fetchOmdbData = async (imdbId) => {
   const data = {
     awardsRaw: omdbData.Awards && omdbData.Awards !== "N/A" ? omdbData.Awards : null,
     boxOfficeUs: omdbData.BoxOffice && omdbData.BoxOffice !== "N/A" ? omdbData.BoxOffice : null,
+    // US-style rating (PG-13, TV-MA, ...) - fallback for titles TMDb has no US certification for.
+    rated: omdbData.Rated && !["N/A", "Not Rated", "Unrated"].includes(omdbData.Rated) ? omdbData.Rated : null,
   };
 
   await redis.safeSet(cacheKey, JSON.stringify(data), "EX", IMDB_STATS_CACHE_TTL);
@@ -875,11 +885,19 @@ exports.getCinemaDetail = async (req, res) => {
       }
     }
 
-    const certification =
+    const tmdbCertification =
       mediaType === "movie"
-        ? details.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates?.find(
-            (d) => d.type === 3
-          )?.certification || null
+        ? (() => {
+            // Prefer the theatrical (type 3) certification, but fall back to any
+            // other US release (digital/physical/TV) that has one - streaming-only
+            // and limited releases often have no theatrical entry.
+            const usReleases = details.release_dates?.results?.find((r) => r.iso_3166_1 === "US")?.release_dates || [];
+            return (
+              usReleases.find((d) => d.type === 3 && d.certification)?.certification ||
+              usReleases.find((d) => d.certification)?.certification ||
+              null
+            );
+          })()
         : details.content_ratings?.results?.find((r) => r.iso_3166_1 === "US")?.rating || null;
 
     // Movies have imdb_id natively; TV only exposes it via external_ids.
@@ -889,6 +907,8 @@ exports.getCinemaDetail = async (req, res) => {
       imdbId ? fetchOmdbData(imdbId).catch(() => null) : Promise.resolve(null),
       getLocalImdbRating(imdbId).catch(() => null),
     ]);
+
+    const certification = tmdbCertification || omdbData?.rated || null;
 
     const watchProviders = buildWatchProviders(
       details["watch/providers"]?.results?.US?.flatrate
@@ -946,7 +966,10 @@ exports.getCinemaDetail = async (req, res) => {
         nextEpisodeAirDate: mediaType === "tv" ? details.next_episode_to_air?.air_date || null : null,
         nextEpisodeNumber: mediaType === "tv" ? details.next_episode_to_air?.episode_number ?? null : null,
         numberOfSeasons: mediaType === "tv" ? details.number_of_seasons || null : null,
-        runtimeMinutes: details.runtime || details.episode_run_time?.[0] || null,
+        // Movies only - a show has no single runtime (TMDb's episode_run_time
+        // is just one episode's length, and only set for some shows); each
+        // episode shows its own runtime instead.
+        runtimeMinutes: mediaType === "movie" ? details.runtime || null : null,
         certification,
         genres: (details.genres || []).map((g) => g.name),
         description: details.overview || null,

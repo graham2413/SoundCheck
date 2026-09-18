@@ -59,10 +59,10 @@
   <div
     @itemAnim
     (click)="onItemClick(item, i)"
-    class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
-    style="background-color: #101621; border-color: #212530"
+    class="bg-gray-900/50 flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
+    style="border-color: #212530"
   >
-    <div class="relative aspect-[2/3] h-36 md:h-40 flex-shrink-0">
+    <div class="relative aspect-[2/3] h-32 md:h-40 flex-shrink-0">
       <!-- No cover on file (e.g. TMDb had no poster yet) - mirrors the
            detail page's placeholder so it's consistent across the app. -->
       <div
@@ -95,7 +95,7 @@
       </ng-container>
     </div>
 
-    <div class="flex flex-col justify-between flex-1 min-w-0 h-36 md:h-40 py-3">
+    <div class="flex flex-col justify-between flex-1 min-w-0 h-32 md:h-40 py-2 md:py-3">
       <div class="min-w-0">
         <span
           class="block text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
@@ -119,8 +119,8 @@
         <!-- mode="line" fits as many full genre pills as the row's width
              allows and collapses the rest into a trailing "+N" (see
              genre-pills.component.ts) - this row has a fixed height
-             (h-36/h-40 above), so pills can't wrap onto more lines. -->
-        <app-genre-pills size="sm" mode="line" class="mt-1 block" [genres]="item.genres"></app-genre-pills>
+             (h-32/h-40 above), so pills can't wrap onto more lines. -->
+        <app-genre-pills size="sm" mode="line" class="mt-2 block" [genres]="item.genres"></app-genre-pills>
       </div>
       <div class="flex items-center justify-between gap-2 flex-wrap mt-2 mb-0.5">
         <app-cinema-badge [badge]="cinemaBadge(item)"></app-cinema-badge>

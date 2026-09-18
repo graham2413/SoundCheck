@@ -249,7 +249,8 @@ export class CinemaService {
     range: 'upcoming' | 'past' = 'upcoming',
     offset = 0,
     limit = 20,
-    mediaType: 'all' | 'movie' | 'tv' = 'all'
+    mediaType: 'all' | 'movie' | 'tv' = 'all',
+    search = ''
   ): Observable<{
     success: boolean;
     data: CalendarEntry[];
@@ -257,8 +258,10 @@ export class CinemaService {
     total: number;
     subtitle: CalendarSubtitle;
     monthGroups: CalendarMonthGroup[];
+    mediaTypeCounts: { all: number; tv: number; movie: number };
   }> {
     let params: Record<string, string> = { range, offset: String(offset), limit: String(limit), mediaType };
+    if (search) params = { ...params, search };
     if (forceRefresh) params = { ...params, refresh: 'true' };
 
     return this.http.get<{
@@ -268,6 +271,7 @@ export class CinemaService {
       total: number;
       subtitle: CalendarSubtitle;
       monthGroups: CalendarMonthGroup[];
+      mediaTypeCounts: { all: number; tv: number; movie: number };
     }>(`${this.apiUrl}/calendar`, {
       headers: this.authHeaders(),
       params,

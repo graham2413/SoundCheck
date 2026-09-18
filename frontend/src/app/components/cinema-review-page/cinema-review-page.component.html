@@ -42,10 +42,13 @@
         <span *ngIf="mediaType !== 'tv' && year">{{ year }}</span>
         <span *ngIf="year && runtimeLabel">&nbsp;&middot;&nbsp;</span>
         <span *ngIf="runtimeLabel">{{ runtimeLabel }}</span>
+        <span *ngIf="(year || runtimeLabel) && certification">&nbsp;&middot;&nbsp;</span>
+        <span *ngIf="certification">{{ certification }}</span>
       </p>
       <p class="text-gray-400 text-sm mt-1" *ngIf="isUpcoming && formattedReleaseDate">
         {{ formattedReleaseDate }}
         <span *ngIf="runtimeLabel">&nbsp;&middot;&nbsp;{{ runtimeLabel }}</span>
+        <span *ngIf="certification">&nbsp;&middot;&nbsp;{{ certification }}</span>
       </p>
       <p class="text-gray-400 text-sm mt-1" *ngIf="!releaseDate">
         TBA<span *ngIf="formattedStatus">&nbsp;&middot;&nbsp;{{ formattedStatus }}</span>
@@ -54,7 +57,6 @@
       <app-genre-pills class="mt-2" mode="line" [expandable]="true" [genres]="genres"></app-genre-pills>
 
       <div class="flex items-center gap-2 mt-3">
-        <span class="cert-pill" *ngIf="certification">{{ certification }}</span>
         <app-cinema-badge [badge]="detailBadge"></app-cinema-badge>
       </div>
     </div>

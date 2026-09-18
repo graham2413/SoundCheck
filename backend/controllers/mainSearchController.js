@@ -1079,13 +1079,33 @@ const getMusicCalendar = async (req, res) => {
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
     const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
 
-    const buildPage = (calendar) => ({
-      data: calendar.slice(offset, offset + limit),
-      hasMore: offset + limit < calendar.length,
-      total: calendar.length,
-      subtitle: buildCalendarSubtitle(calendar, range, todayStr),
-      monthGroups: buildCalendarMonthGroups(calendar),
-    });
+    // Applied per-request on top of the cached full list (same approach as
+    // cinemaController.js's getCalendar), so it never needs its own cache entry.
+    const search = typeof req.query.search === "string" ? req.query.search.trim().toLowerCase().slice(0, 100) : "";
+    // "song" = a single; "album" = everything else (albums, EPs, compilations,
+    // and older rows with no recordType captured).
+    const typeFilter = ["song", "album"].includes(req.query.type) ? req.query.type : "all";
+    const isSong = (e) => e.recordType === "single";
+    const buildPage = (fullCalendar) => {
+      const searched = search
+        ? fullCalendar.filter(
+            (e) => e.title?.toLowerCase().includes(search) || e.artistName?.toLowerCase().includes(search)
+          )
+        : fullCalendar;
+      // True per-type totals (respecting search, not the active tab) so the
+      // filter pills can show counts before every page has loaded.
+      const songCount = searched.filter(isSong).length;
+      const calendar =
+        typeFilter === "all" ? searched : searched.filter((e) => (typeFilter === "song" ? isSong(e) : !isSong(e)));
+      return {
+        typeCounts: { all: searched.length, song: songCount, album: searched.length - songCount },
+        data: calendar.slice(offset, offset + limit),
+        hasMore: offset + limit < calendar.length,
+        total: calendar.length,
+        subtitle: buildCalendarSubtitle(calendar, range, todayStr),
+        monthGroups: buildCalendarMonthGroups(calendar),
+      };
+    };
 
     if (!forceRefresh) {
       const cached = await redis.safeGet(cacheKey);

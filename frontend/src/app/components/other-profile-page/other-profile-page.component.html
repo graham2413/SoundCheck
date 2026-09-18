@@ -248,7 +248,7 @@
   (click)="openWatchlist()"
 >
   <span class="text-lg font-semibold min-h-[28px] flex items-center">
-    <ng-container *ngIf="!isLoadingWatchlist; else watchlistCountLoading">
+    <ng-container *ngIf="!isLoadingWatchlist || isProfileReady; else watchlistCountLoading">
       {{ watchlistTotalCount }}
     </ng-container>
 
@@ -380,15 +380,24 @@
           <ng-container *ngSwitchCase="'watchlist'">
             <div class="max-w-3xl mx-auto mb-4">
               <div class="relative">
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                 <input
                   type="text"
                   [(ngModel)]="watchlistSearchQuery"
                   (ngModelChange)="onWatchlistSearchInput()"
                   placeholder="Search your watchlist..."
-                  style="background-color: #131928"
-                  class="w-full pl-10 pr-4 py-2 rounded-full text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:border-[#0F5EE4]"
+                  class="bg-gray-900/50 w-full pl-10 pr-10 py-2 rounded-full text-white placeholder-gray-500 border border-gray-800 focus:outline-none focus:border-[#0F5EE4]"
                 />
+                <button
+                  *ngIf="watchlistSearchQuery.trim()"
+                  type="button"
+                  (click)="watchlistSearchQuery = ''; onWatchlistSearchInput()"
+                  class="absolute inset-y-0 right-4 flex items-center"
+                >
+                  <span class="flex items-center justify-center w-5 h-5 rounded-full bg-gray-400 hover:bg-gray-300 transition">
+                    <i class="fas fa-times text-sm" style="color: #131928"></i>
+                  </span>
+                </button>
               </div>
             </div>
 

@@ -67,42 +67,109 @@
       </button>
     </div>
 
-    <!-- Media type filter (cinema only) + refresh, on one row -->
-    <div class="flex items-center justify-between gap-2 mb-4 mt-4">
-      <div *ngIf="kind === 'cinema'" class="flex items-center gap-2">
+    <!-- Search + refresh (always shown, both kinds) -->
+    <div class="flex items-center gap-2 mt-4 mb-3">
+      <div class="relative flex-1">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
+        <input
+          #searchBox
+          type="text"
+          [value]="searchInput"
+          (input)="onSearchInput(searchBox.value)"
+          [placeholder]="kind === 'music' ? 'Search albums or artists' : 'Search movies or shows'"
+          maxlength="100"
+          class="w-full h-10 pl-9 pr-9 rounded-full bg-gray-900/50 border border-gray-800 text-white text-base placeholder-gray-500 focus:outline-none focus:border-[#0F5EE4]"
+        />
         <button
+          *ngIf="searchInput"
           type="button"
-          (click)="setMediaTypeFilter('all')"
-          [ngClass]="mediaTypeFilter === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
-          class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
+          (mousedown)="$event.preventDefault()"
+          (click)="clearSearch()"
+          title="Clear search"
+          class="absolute inset-y-0 right-3 flex items-center"
         >
-          All
-        </button>
-        <button
-          type="button"
-          (click)="setMediaTypeFilter('tv')"
-          [ngClass]="mediaTypeFilter === 'tv' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
-          class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
-        >
-          TV Shows
-        </button>
-        <button
-          type="button"
-          (click)="setMediaTypeFilter('movie')"
-          [ngClass]="mediaTypeFilter === 'movie' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
-          class="px-4 py-1.5 rounded-full font-semibold text-sm transition-colors"
-        >
-          Movies
+          <span class="flex items-center justify-center w-5 h-5 rounded-full bg-gray-400 hover:bg-gray-300 transition">
+            <i class="fas fa-times text-sm" style="color: #131928"></i>
+          </span>
         </button>
       </div>
       <button
         (click)="refresh()"
         [disabled]="isLoading || isRefreshing"
         title="Refresh"
-        class="flex items-center justify-center h-10 w-10 rounded-full border border-gray-500 text-gray-300 hover:text-white hover:border-gray-400 transition disabled:opacity-50 ml-auto"
+        class="flex items-center justify-center h-10 w-10 flex-shrink-0 rounded-full border border-gray-600 text-gray-300 hover:text-white hover:border-gray-400 transition disabled:opacity-50"
       >
-        <i class="fas fa-arrows-rotate text-lg" [class.fa-spin]="isRefreshing"></i>
+        <i class="fas fa-arrows-rotate text-md" [class.fa-spin]="isRefreshing"></i>
       </button>
+    </div>
+
+    <!-- Media type filter (cinema only) -->
+    <div *ngIf="kind === 'cinema'" class="mb-2">
+      <div class="flex items-center gap-2 overflow-x-auto">
+        <button
+          type="button"
+          (click)="setMediaTypeFilter('all')"
+          [ngClass]="mediaTypeFilter === 'all' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
+          class="flex items-center gap-2 px-3 py-1 rounded-full font-semibold text-sm transition-colors"
+        >
+          All
+          <span
+            *ngIf="mediaTypeCounts"
+            [ngClass]="mediaTypeFilter === 'all' ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'"
+            class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors"
+            >{{ mediaTypeCounts.all }}</span
+          >
+        </button>
+        <button
+          type="button"
+          (click)="setMediaTypeFilter('tv')"
+          [ngClass]="mediaTypeFilter === 'tv' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
+          class="flex items-center gap-2 px-3 py-1 rounded-full font-semibold text-sm transition-colors"
+        >
+          TV Shows
+          <span
+            *ngIf="mediaTypeCounts"
+            [ngClass]="mediaTypeFilter === 'tv' ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'"
+            class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors"
+            >{{ mediaTypeCounts.tv }}</span
+          >
+        </button>
+        <button
+          type="button"
+          (click)="setMediaTypeFilter('movie')"
+          [ngClass]="mediaTypeFilter === 'movie' ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
+          class="flex items-center gap-2 px-3 py-1 rounded-full font-semibold text-sm transition-colors"
+        >
+          Movies
+          <span
+            *ngIf="mediaTypeCounts"
+            [ngClass]="mediaTypeFilter === 'movie' ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'"
+            class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors"
+            >{{ mediaTypeCounts.movie }}</span
+          >
+        </button>
+      </div>
+    </div>
+
+    <!-- Song / album filter (music only) -->
+    <div *ngIf="kind === 'music'" class="mb-2">
+      <div class="flex items-center gap-2 overflow-x-auto">
+        <button
+          *ngFor="let opt of musicTypeOptions"
+          type="button"
+          (click)="setMusicTypeFilter(opt.key)"
+          [ngClass]="musicTypeFilter === opt.key ? 'bg-[#0F5EE4] text-white' : 'bg-gray-900/50 text-gray-300 border border-gray-700'"
+          class="flex items-center gap-2 px-3 py-1 rounded-full font-semibold text-sm transition-colors"
+        >
+          {{ opt.label }}
+          <span
+            *ngIf="musicTypeCounts"
+            [ngClass]="musicTypeFilter === opt.key ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'"
+            class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors"
+            >{{ musicTypeCounts[opt.key] }}</span
+          >
+        </button>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -139,8 +206,8 @@
             @entryAnim
             *ngFor="let entry of dayGroup.items; trackBy: trackByEntryId"
             (click)="openEntry(entry)"
-            class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border ml-2"
-            style="background-color: #101621; border-color: #212530"
+            class="bg-gray-900/50 flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border ml-2"
+            style="border-color: #212530"
           >
             <div
               class="relative flex-shrink-0"
@@ -195,12 +262,12 @@
               </ng-container>
               <p
                 *ngIf="isMusicEntry(entry)"
-                class="text-gray-400 text-sm mt-0.5 truncate overflow-hidden whitespace-nowrap"
+                class="text-gray-400 text-sm mt-0.5 mb-0.5 truncate overflow-hidden whitespace-nowrap"
               >
                 {{ entry.artistName }}
               </p>
 
-              <p class="text-[#3b82f6] text-sm" [ngClass]="isMusicEntry(entry) ? 'mt-0.5' : 'mt-1'">
+              <p class="text-[#3b82f6] text-sm mb-1" [ngClass]="isMusicEntry(entry) ? 'mt-0.5' : 'mt-1'">
                 <i class="far fa-calendar"></i>
                 {{ formatFullDate(entry.airDate) }}
               </p>
@@ -245,6 +312,8 @@
       class="mt-12 mx-4 text-center text-gray-400 text-lg bg-gray-800 p-4 rounded-lg"
     >
       <i class="fas fa-calendar-alt text-4xl mb-2"></i>
+      <p *ngIf="searchQuery; else defaultEmptyState">No results for "{{ searchQuery }}".</p>
+      <ng-template #defaultEmptyState>
       <ng-container *ngIf="kind === 'cinema'; else musicEmptyState">
         <p *ngIf="range === 'upcoming'">Nothing upcoming yet. Add shows/movies to your watchlist to see them here.</p>
         <p *ngIf="range === 'past'">Nothing here yet. Recently released/aired items from your watchlist will show up here.</p>
@@ -252,6 +321,7 @@
       <ng-template #musicEmptyState>
         <p *ngIf="range === 'upcoming'">Nothing upcoming yet. Follow artists to see their announced releases here.</p>
         <p *ngIf="range === 'past'">Nothing here yet. Recent releases from artists you follow will show up here.</p>
+      </ng-template>
       </ng-template>
     </div>
   </div>

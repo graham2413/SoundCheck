@@ -56,14 +56,23 @@ function cinemaItemDetails(item) {
   };
 }
 
+// Cinema sweeps the same few-day window as music (see the note above
+// scanMusicReleaseNotifications) so a title whose date TMDb synced late still
+// gets its push. Dedupe keys use the item's own date rather than "today", so
+// re-sweeping a day already notified is a no-op.
+const NOTIFY_SWEEP_WINDOW_DAYS = 3;
+
 async function scanCinemaReleaseNotifications() {
   const today = getLocalDateString(TIMEZONE);
-  const { start, end } = dayBounds(today);
+  const { end } = dayBounds(today);
+  const start = new Date(end.getTime() - NOTIFY_SWEEP_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const startDay = dateOnly(start);
+  const inWindow = (day) => day && day >= startDay && day <= today;
   const items = await CinemaItem.find({
     $or: [
-      { mediaType: "movie", releaseDate: { $gte: start, $lte: end }, isWatchlist: true },
-      { mediaType: "tv", lastEpisodeAirDate: { $gte: start, $lte: end }, isWatchlist: true },
-      { mediaType: "tv", nextEpisodeAirDate: { $gte: start, $lte: end }, nextEpisodeNumber: 1, isWatchlist: true },
+      { mediaType: "movie", releaseDate: { $gte: start, $lte: end } },
+      { mediaType: "tv", lastEpisodeAirDate: { $gte: start, $lte: end } },
+      { mediaType: "tv", nextEpisodeAirDate: { $gte: start, $lte: end }, nextEpisodeNumber: 1 },
     ],
   }).lean();
 
@@ -75,7 +84,7 @@ async function scanCinemaReleaseNotifications() {
       return createAndSendNotification({
         user: item.user,
         type: "movie-release",
-        dedupeKey: `movie-release:${item.tmdbId || item._id}:${today}`,
+        dedupeKey: `movie-release:${item.tmdbId || item._id}:${dateOnly(item.releaseDate)}`,
         title: "Movie released",
         message: item.title,
         targetUrl: "/calendar?range=past",
@@ -84,13 +93,13 @@ async function scanCinemaReleaseNotifications() {
     }
 
     const episodeDate = dateOnly(item.lastEpisodeAirDate);
-    if (episodeDate === today && item.user) {
+    if (inWindow(episodeDate) && item.user) {
       const enabled = await User.exists({ _id: item.user, "notificationPreferences.immediateTvEpisodes": { $ne: false } });
       if (enabled) {
         await createAndSendNotification({
           user: item.user,
           type: "tv-episode",
-          dedupeKey: `tv-episode:${item.tmdbId || item._id}:${today}`,
+          dedupeKey: `tv-episode:${item.tmdbId || item._id}:${episodeDate}`,
           title: "New episode aired",
           message: item.title,
           targetUrl: "/calendar?range=past",
@@ -99,13 +108,14 @@ async function scanCinemaReleaseNotifications() {
       }
     }
 
-    if (dateOnly(item.nextEpisodeAirDate) === today && item.nextEpisodeNumber === 1 && item.user) {
+    const seasonDate = dateOnly(item.nextEpisodeAirDate);
+    if (inWindow(seasonDate) && item.nextEpisodeNumber === 1 && item.user) {
       const enabled = await User.exists({ _id: item.user, "notificationPreferences.immediateTvSeasons": { $ne: false } });
       if (enabled) {
         await createAndSendNotification({
           user: item.user,
           type: "tv-season",
-          dedupeKey: `tv-season:${item.tmdbId || item._id}:${today}`,
+          dedupeKey: `tv-season:${item.tmdbId || item._id}:${seasonDate}`,
           title: "New season started",
           message: item.title,
           targetUrl: "/calendar?range=past",
@@ -122,8 +132,6 @@ async function scanCinemaReleaseNotifications() {
 // once it does sync in, instead of permanently missing its push the moment
 // its releaseDate stops being "today". See pushNotifications.js's
 // NOTIFY_WINDOW_DAYS/notifiedAt for the matching gate on the actual send.
-const NOTIFY_SWEEP_WINDOW_DAYS = 3;
-
 async function scanMusicReleaseNotifications() {
   const today = getLocalDateString(TIMEZONE);
   const { end } = dayBounds(today);

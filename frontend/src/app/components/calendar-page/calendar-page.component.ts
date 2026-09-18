@@ -72,8 +72,25 @@ export class CalendarPageComponent implements OnInit {
   imageLoaded: { [id: string]: boolean } = {};
   range: 'upcoming' | 'past' = 'upcoming';
   mediaTypeFilter: 'all' | 'movie' | 'tv' = 'all';
+  // Text currently in the search box vs. the (debounced) query actually sent
+  // to the backend - see onSearchInput.
+  searchInput = '';
+  searchQuery = '';
+  private searchDebounce?: ReturnType<typeof setTimeout>;
   subtitle: CalendarSubtitle | null = null;
   monthGroups: CalendarMonthGroup[] = [];
+  // True per-type totals from the backend (cinema only) - shown on the
+  // filter pills before every page has loaded. Kept during reloads so the
+  // numbers don't flicker away on each tab change.
+  mediaTypeCounts: { all: number; tv: number; movie: number } | null = null;
+  // Music equivalent: singles ("Songs") vs everything else ("Albums").
+  musicTypeFilter: 'all' | 'song' | 'album' = 'all';
+  readonly musicTypeOptions: { key: 'all' | 'song' | 'album'; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'song', label: 'Songs' },
+    { key: 'album', label: 'Albums' },
+  ];
+  musicTypeCounts: { all: number; song: number; album: number } | null = null;
 
   get pageTitle(): string {
     return this.kind === 'music' ? 'Music Calendar' : 'Cinema Calendar';
@@ -253,17 +270,27 @@ export class CalendarPageComponent implements OnInit {
   private fetchPage(
     forceRefresh: boolean,
     offset: number
-  ): Observable<{ data: CombinedEntry[]; hasMore: boolean; total: number; subtitle: CalendarSubtitle; monthGroups: CalendarMonthGroup[] }> {
+  ): Observable<{
+    data: CombinedEntry[];
+    hasMore: boolean;
+    total: number;
+    subtitle: CalendarSubtitle;
+    monthGroups: CalendarMonthGroup[];
+    mediaTypeCounts?: { all: number; tv: number; movie: number };
+    typeCounts?: { all: number; song: number; album: number };
+  }> {
     const obs$ =
       this.kind === 'music'
-        ? this.searchService.getMusicCalendar(forceRefresh, this.range, offset, CalendarPageComponent.PAGE_SIZE)
-        : this.cinemaService.getCalendar(forceRefresh, this.range, offset, CalendarPageComponent.PAGE_SIZE, this.mediaTypeFilter);
+        ? this.searchService.getMusicCalendar(forceRefresh, this.range, offset, CalendarPageComponent.PAGE_SIZE, this.searchQuery, this.musicTypeFilter)
+        : this.cinemaService.getCalendar(forceRefresh, this.range, offset, CalendarPageComponent.PAGE_SIZE, this.mediaTypeFilter, this.searchQuery);
     return obs$ as unknown as Observable<{
       data: CombinedEntry[];
       hasMore: boolean;
       total: number;
       subtitle: CalendarSubtitle;
       monthGroups: CalendarMonthGroup[];
+      mediaTypeCounts?: { all: number; tv: number; movie: number };
+      typeCounts?: { all: number; song: number; album: number };
     }>;
   }
 
@@ -275,12 +302,14 @@ export class CalendarPageComponent implements OnInit {
     this.hasMore = false;
 
     this.fetchPage(false, 0).subscribe({
-      next: ({ data, hasMore, subtitle, monthGroups }) => {
+      next: ({ data, hasMore, subtitle, monthGroups, mediaTypeCounts, typeCounts }) => {
         this.entries = data;
         this.hasMore = hasMore;
         this.offset = data.length;
         this.subtitle = subtitle;
         this.monthGroups = monthGroups;
+        this.mediaTypeCounts = mediaTypeCounts ?? null;
+        this.musicTypeCounts = typeCounts ?? null;
         this.isLoading = false;
       },
       error: () => {
@@ -318,9 +347,36 @@ export class CalendarPageComponent implements OnInit {
     this.loadCalendar();
   }
 
+  setMusicTypeFilter(type: 'all' | 'song' | 'album'): void {
+    if (this.musicTypeFilter === type || this.isLoading) return;
+    this.musicTypeFilter = type;
+    this.loadCalendar();
+  }
+
   setMediaTypeFilter(mediaType: 'all' | 'movie' | 'tv'): void {
     if (this.mediaTypeFilter === mediaType || this.isLoading) return;
     this.mediaTypeFilter = mediaType;
+    this.loadCalendar();
+  }
+
+  // Debounced so each keystroke doesn't fire a request; the backend does the
+  // matching (the list is paginated, so a client-side filter would miss
+  // anything not scrolled in yet).
+  onSearchInput(value: string): void {
+    this.searchInput = value;
+    clearTimeout(this.searchDebounce);
+    this.searchDebounce = setTimeout(() => this.applySearch(value.trim()), 300);
+  }
+
+  clearSearch(): void {
+    clearTimeout(this.searchDebounce);
+    this.searchInput = '';
+    this.applySearch('');
+  }
+
+  private applySearch(query: string): void {
+    if (query === this.searchQuery) return;
+    this.searchQuery = query;
     this.loadCalendar();
   }
 
@@ -328,6 +384,9 @@ export class CalendarPageComponent implements OnInit {
     if (this.kind === kind || this.isLoading) return;
     this.kind = kind;
     this.range = 'upcoming';
+    clearTimeout(this.searchDebounce);
+    this.searchInput = '';
+    this.searchQuery = '';
     localStorage.setItem(CalendarPageComponent.LAST_KIND_KEY, kind);
     this.loadCalendar();
 
@@ -349,12 +408,14 @@ export class CalendarPageComponent implements OnInit {
     this.hasMore = false;
 
     this.fetchPage(true, 0).subscribe({
-      next: ({ data, hasMore, subtitle, monthGroups }) => {
+      next: ({ data, hasMore, subtitle, monthGroups, mediaTypeCounts, typeCounts }) => {
         this.entries = data;
         this.hasMore = hasMore;
         this.offset = data.length;
         this.subtitle = subtitle;
         this.monthGroups = monthGroups;
+        this.mediaTypeCounts = mediaTypeCounts ?? null;
+        this.musicTypeCounts = typeCounts ?? null;
         this.isRefreshing = false;
         this.isLoading = false;
         this.toastr.success('Calendar refreshed.', 'Success');

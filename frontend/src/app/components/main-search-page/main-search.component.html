@@ -207,12 +207,12 @@
           ? 'Search music & artists...'
           : 'Search movies and shows...'
       }}"
-      class="w-full rounded-full border border-gray-700 text-white py-2 focus:outline-none focus:border-[#0F5EE4] text-base md:text-lg text-ellipsis overflow-hidden"
+      class="w-full rounded-full border border-gray-800 bg-gray-900/50 placeholder-gray-500 text-white py-2 focus:outline-none focus:border-[#0F5EE4] text-base md:text-lg text-ellipsis overflow-hidden"
       [ngClass]="[
         searchType === 'music' ? 'pl-28 md:pl-32' : 'pl-9 md:pl-10',
         query.trim() && query.trim() === lastSearchedQuery ? 'pr-9' : 'pr-5'
       ]"
-      style="direction: ltr; text-align: left; background-color: #131928"
+      style="direction: ltr; text-align: left"
     />
   </div>
 
@@ -338,37 +338,41 @@
       type="button"
       [disabled]="isLoading"
       (click)="selectResultsTab('all')"
-      [ngClass]="activeTab === 'all' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
-      class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+      [ngClass]="activeTab === 'all' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-gray-900/50 text-gray-300 border-gray-700'"
+      class="flex-shrink-0 flex items-center gap-2 px-3 py-1 rounded-full text-sm md:text-base font-semibold border transition"
     >
-      All ({{ combinedAllResults.length }})
+      All
+      <span [ngClass]="activeTab === 'all' ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'" class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors">{{ combinedAllResults.length }}</span>
     </button>
     <button
       type="button"
       [disabled]="isLoading"
       (click)="selectResultsTab('songs')"
-      [ngClass]="activeTab === 'songs' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
-      class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+      [ngClass]="activeTab === 'songs' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-gray-900/50 text-gray-300 border-gray-700'"
+      class="flex-shrink-0 flex items-center gap-2 px-3 py-1 rounded-full text-sm md:text-base font-semibold border transition"
     >
-      Songs ({{ filteredResults.songs.length }})
+      Songs
+      <span [ngClass]="activeTab === 'songs' ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'" class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors">{{ filteredResults.songs.length }}</span>
     </button>
     <button
       type="button"
       [disabled]="isLoading"
       (click)="selectResultsTab('albums')"
-      [ngClass]="activeTab === 'albums' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
-      class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+      [ngClass]="activeTab === 'albums' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-gray-900/50 text-gray-300 border-gray-700'"
+      class="flex-shrink-0 flex items-center gap-2 px-3 py-1 rounded-full text-sm md:text-base font-semibold border transition"
     >
-      Albums ({{ filteredResults.albums.length }})
+      Albums
+      <span [ngClass]="activeTab === 'albums' ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'" class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors">{{ filteredResults.albums.length }}</span>
     </button>
     <button
       type="button"
       [disabled]="isLoading"
       (click)="selectResultsTab('artists')"
-      [ngClass]="activeTab === 'artists' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
-      class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+      [ngClass]="activeTab === 'artists' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-gray-900/50 text-gray-300 border-gray-700'"
+      class="flex-shrink-0 flex items-center gap-2 px-3 py-1 rounded-full text-sm md:text-base font-semibold border transition"
     >
-      Artists ({{ filteredResults.artists.length }})
+      Artists
+      <span [ngClass]="activeTab === 'artists' ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'" class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors">{{ filteredResults.artists.length }}</span>
     </button>
   </div>
 
@@ -412,8 +416,8 @@
       <li
         @itemAnim
         *ngFor="let item of (resultsExpanded ? combinedAllResults : (combinedAllResults | slice:0:10)); let i = index"
-        class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
-        style="background-color: #101621; border-color: #212530"
+        class="bg-gray-900/50 flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
+        style="border-color: #212530"
         (click)="openModal(item)"
       >
         <div class="relative aspect-square h-24 md:h-36 flex-shrink-0">
@@ -466,8 +470,8 @@
         <li
           @itemAnim
           *ngFor="let song of (resultsExpanded ? filteredResults.songs : (filteredResults.songs | slice:0:10)); let i = index"
-          class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
-          style="background-color: #101621; border-color: #212530"
+          class="bg-gray-900/50 flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
+          style="border-color: #212530"
           (click)="openModal(song)"
         >
           <!-- Image -->
@@ -542,8 +546,8 @@
         <li
           @itemAnim
           *ngFor="let album of (resultsExpanded ? filteredResults.albums : (filteredResults.albums | slice:0:10)); let i = index"
-          class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
-          style="background-color: #101621; border-color: #212530"
+          class="bg-gray-900/50 flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
+          style="border-color: #212530"
           (click)="openModal(album)"
         >
           <!-- Image -->
@@ -617,8 +621,8 @@
           <li
             @itemAnim
             *ngFor="let artist of (resultsExpanded ? filteredResults.artists : (filteredResults.artists | slice:0:10)); let i = index"
-            class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
-            style="background-color: #101621; border-color: #212530"
+            class="bg-gray-900/50 flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
+            style="border-color: #212530"
             (click)="openModal(artist)"
           >
             <!-- Image -->
@@ -697,7 +701,7 @@
       class="animate-pulse flex flex-row items-center gap-4 rounded-lg overflow-hidden"
       style="background-color: #101621"
     >
-      <div class="aspect-[2/3] h-36 md:h-40 bg-gray-700 flex-shrink-0"></div>
+      <div class="aspect-[2/3] h-32 md:h-40 bg-gray-700 flex-shrink-0"></div>
       <div class="flex flex-col justify-center flex-1 gap-2 py-3 pr-3">
         <div class="h-4 bg-gray-700 rounded w-1/2"></div>
         <div class="h-3 bg-gray-700 rounded w-1/4"></div>
@@ -715,26 +719,29 @@
       <button
         type="button"
         (click)="selectCinemaTab('all')"
-        [ngClass]="cinemaActiveTab === 'all' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
-        class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+        [ngClass]="cinemaActiveTab === 'all' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-gray-900/50 text-gray-300 border-gray-700'"
+        class="flex-shrink-0 flex items-center gap-2 px-3 py-1 rounded-full text-sm md:text-base font-semibold border transition"
       >
-        All ({{ cinemaResults.length }})
+        All
+        <span [ngClass]="cinemaActiveTab === 'all' ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'" class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors">{{ cinemaResults.length }}</span>
       </button>
       <button
         type="button"
         (click)="selectCinemaTab('movie')"
-        [ngClass]="cinemaActiveTab === 'movie' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
-        class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+        [ngClass]="cinemaActiveTab === 'movie' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-gray-900/50 text-gray-300 border-gray-700'"
+        class="flex-shrink-0 flex items-center gap-2 px-3 py-1 rounded-full text-sm md:text-base font-semibold border transition"
       >
-        Movies ({{ cinemaMovieResults.length }})
+        Movies
+        <span [ngClass]="cinemaActiveTab === 'movie' ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'" class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors">{{ cinemaMovieResults.length }}</span>
       </button>
       <button
         type="button"
         (click)="selectCinemaTab('tv')"
-        [ngClass]="cinemaActiveTab === 'tv' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-transparent text-gray-300 border-gray-700'"
-        class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm md:text-base font-semibold border transition"
+        [ngClass]="cinemaActiveTab === 'tv' ? 'bg-[#0F5EE4] text-white border-transparent' : 'bg-gray-900/50 text-gray-300 border-gray-700'"
+        class="flex-shrink-0 flex items-center gap-2 px-3 py-1 rounded-full text-sm md:text-base font-semibold border transition"
       >
-        TV ({{ cinemaTvResults.length }})
+        TV
+        <span [ngClass]="cinemaActiveTab === 'tv' ? 'bg-[#0A3D9C] text-white' : 'bg-gray-700/60 text-gray-200'" class="min-w-[1.4rem] h-[1.4rem] px-1.5 rounded-full text-xs font-bold flex items-center justify-center transition-colors">{{ cinemaTvResults.length }}</span>
       </button>
     </div>
     <div class="flex flex-col gap-3">
@@ -742,10 +749,10 @@
       @itemAnim
       *ngFor="let item of (resultsExpanded ? cinemaResultsForTab : (cinemaResultsForTab | slice:0:10)); let i = index"
       (click)="openCinemaSearchResult(item)"
-      class="flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
-      style="background-color: #101621; border-color: #212530"
+      class="bg-gray-900/50 flex flex-row items-center gap-2 rounded-lg cursor-pointer overflow-hidden border"
+      style="border-color: #212530"
     >
-      <div class="relative aspect-[2/3] h-36 md:h-40 flex-shrink-0">
+      <div class="relative aspect-[2/3] h-32 md:h-40 flex-shrink-0">
         <!-- No cover on file (e.g. TMDb had no poster yet) - mirrors the
              detail page's placeholder so it's consistent across the app. -->
         <div
@@ -779,7 +786,7 @@
           />
         </ng-container>
       </div>
-      <div class="flex flex-col justify-between flex-1 min-w-0 h-36 md:h-40 py-3">
+      <div class="flex flex-col justify-between flex-1 min-w-0 h-32 md:h-40 py-2 md:py-3">
         <div class="min-w-0">
           <span
             class="block text-white font-semibold text-base md:text-xl truncate overflow-hidden whitespace-nowrap"
@@ -799,7 +806,7 @@
           <!-- mode="line" fits as many full genre pills as the row's width
                allows and collapses the rest into a trailing "+N" (see
                genre-pills.component.ts) - this row has a fixed height
-               (h-36/h-40 above), so pills can't wrap onto more lines. -->
+               (h-32/h-40 above), so pills can't wrap onto more lines. -->
           <app-genre-pills size="sm" mode="line" class="mt-1 block" [genres]="item.genres"></app-genre-pills>
         </div>
         <div class="flex items-center justify-between gap-2 flex-wrap mt-2 mb-0.5">

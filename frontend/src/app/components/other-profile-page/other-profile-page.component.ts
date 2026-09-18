@@ -875,8 +875,12 @@ export class ViewProfilePageComponent implements OnInit {
     }
 
     this.isLoadingWatchlist = true;
-    this.isWatchlistCountLoaded = false;
-    this.isProfileReady = false;
+    // Only the very first load (or a profile switch) should blank the whole
+    // page - later reloads from search/tab/filter changes just show the
+    // watchlist's own loading state below the search bar.
+    if (!this.isProfileReady) {
+      this.isWatchlistCountLoaded = false;
+    }
     this.watchlistCursor = null;
     this.hasMoreWatchlist = true;
     this.cinemaService.getWatchlist(this.otherUserId, null, this.buildWatchlistApiFilters()).subscribe({
