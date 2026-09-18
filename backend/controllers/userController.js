@@ -774,6 +774,36 @@ async function computeAutoTopThree(userId, category) {
   });
 }
 
+// Looks up the user's own rating for each podium item (manual picks don't
+// store one, and it can change after they were picked) so the podium can show
+// it. Items the user hasn't rated get rating: null.
+async function attachRatings(userId, category, items) {
+  if (!items.length) return items;
+
+  const isCinema = category === "movies" || category === "shows";
+  const ratingById = new Map();
+
+  if (isCinema) {
+    const mediaType = category === "movies" ? "movie" : "tv";
+    const docs = await CinemaItem.find({ user: userId, mediaType, tmdbId: { $in: items.map((i) => String(i.id)) } })
+      .select("tmdbId decimalRating")
+      .lean();
+    docs.forEach((doc) => ratingById.set(String(doc.tmdbId), doc.decimalRating));
+  } else {
+    const reviewType = { songs: "Song", albums: "Album", artists: "Artist" }[category];
+    const ids = items.flatMap((i) => [String(i.id), Number(i.id)]);
+    const docs = await Review.find({ user: userId, "albumSongOrArtist.type": reviewType, "albumSongOrArtist.id": { $in: ids } })
+      .select("albumSongOrArtist.id rating")
+      .lean();
+    docs.forEach((doc) => ratingById.set(String(doc.albumSongOrArtist.id), doc.rating));
+  }
+
+  return items.map((item) => {
+    const plain = typeof item.toObject === "function" ? item.toObject() : item;
+    return { ...plain, rating: ratingById.get(String(item.id)) ?? null };
+  });
+}
+
 // Resolves every category's current podium in one pass - manually curated
 // items where the user has opted in, auto-computed otherwise (see above).
 async function resolveTopThree(userId, storedTopThree) {
@@ -784,9 +814,10 @@ async function resolveTopThree(userId, storedTopThree) {
     TOP_THREE_CATEGORIES.map(async (category) => {
       const categoryState = stored[category];
       if (categoryState?.manualOverride) {
-        result[category] = { manualOverride: true, items: categoryState.items || [] };
+        result[category] = { manualOverride: true, items: await attachRatings(userId, category, categoryState.items || []) };
       } else {
-        result[category] = { manualOverride: false, items: await computeAutoTopThree(userId, category) };
+        const items = await computeAutoTopThree(userId, category);
+        result[category] = { manualOverride: false, items: await attachRatings(userId, category, items) };
       }
     })
   );

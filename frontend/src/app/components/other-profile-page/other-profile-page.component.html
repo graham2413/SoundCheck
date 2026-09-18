@@ -22,7 +22,7 @@
       *ngIf="otherUser._id !== loggedInUser._id"
       (click)="goBack()"
       aria-label="Go back"
-      class="absolute top-4 left-4 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center z-10 hover:bg-gray-800 transition"
+      class="absolute top-0 left-4 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center z-10 hover:bg-gray-800 transition"
     >
       <i class="fas fa-chevron-left text-gray-200 text-lg"></i>
     </button>
@@ -33,20 +33,37 @@
       type="button"
       (click)="goToNotifications()"
       aria-label="Notifications"
-      class="absolute top-4 right-4 z-10 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center"
+      class="absolute top-0 right-4 z-10 w-12 h-12 rounded-full border border-gray-500/40 bg-transparent flex items-center justify-center"
     >
       <i class="fas fa-bell text-gray-200 text-lg"></i>
       <span
         *ngIf="notificationCount"
-        class="absolute -top-2 -right-2 min-w-[1.2rem] h-[1.2rem] rounded-full bg-[#0F5EE4] text-[0.7rem] font-bold flex items-center justify-center px-1"
+        class="absolute -top-2 -right-2 min-w-[1.2rem] h-[1.2rem] rounded-full bg-red-600 text-[0.7rem] font-bold flex items-center justify-center px-1"
         >{{ notificationCount }}</span
       >
     </button>
 
+    <!-- Page title - same white-first-word / blue-second-word treatment as
+         the Find Friends header. h-12 + mt-4 lines it up with the absolutely
+         positioned back/notification buttons at top-4. -->
+    <h1
+      class="h-12 flex items-center justify-start text-3xl font-extrabold"
+      [class.pl-14]="!isOwnProfile"
+    >
+      {{ isOwnProfile ? 'My' : 'User' }}&nbsp;<span style="color: #0F5EE4">Profile</span>
+    </h1>
+
     <!-- Avatar, Name, Joined Date, Action Button(s) -->
-    <div class="flex flex-col items-center pt-2">
+    <div class="flex flex-col items-center pt-4">
+      <!-- Profile card: avatar + name/joined on the left, action button(s)
+           on the right, stats row underneath. -->
+      <div
+        class="w-full rounded-2xl p-4"
+        style="background: #0b1220; border: 1px solid rgba(88, 89, 92, 0.4)"
+      >
+      <div class="flex flex-wrap items-center gap-3">
       <!-- Profile Picture -->
-      <div class="relative w-[8rem] h-[8rem] rounded-full overflow-hidden">
+      <div class="relative w-[4.5rem] h-[4.5rem] shrink-0 rounded-full overflow-hidden">
         <!-- Loader -->
         <div
           *ngIf="!isImageLoaded(-1, 'profile')"
@@ -73,14 +90,15 @@
       <!-- Fullscreen Image Modal -->
       <div
         *ngIf="isImageModalOpen"
-        class="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center"
-        (click)="isImageModalOpen = false"
+        class="profile-image-overlay fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center"
+        [class.profile-image-closing]="isImageModalClosing"
+        (click)="closeImageModal()"
       >
         <!-- Close Button -->
         <button
           type="button"
           aria-label="Close"
-          (click)="isImageModalOpen = false"
+          (click)="closeImageModal()"
           class="absolute top-4 left-4 w-12 h-12 rounded-full border border-gray-500/40 flex items-center justify-center text-gray-200 text-lg"
           style="background: rgba(2, 8, 20, 0.75)"
         >
@@ -91,30 +109,33 @@
         <img
           [src]="getTransformedImageUrl(otherUser.profilePicture)"
           alt="Profile Picture"
-          class="max-w-[90vw] max-h-[90vh] rounded-full shadow-lg"
+          class="profile-image-full max-w-[90vw] max-h-[90vh] rounded-full shadow-lg"
           (click)="$event.stopPropagation()"
         />
       </div>
 
       <!-- Name + Join Date -->
-      <h2 class="mt-3 text-xl md:text-2xl font-semibold text-center">
-        {{ otherUser.username }}
-      </h2>
-      <p class="text-gray-400 text-sm text-center">
-        Joined {{ otherUser.createdAt | date }}
-      </p>
+      <div class="min-w-0 flex-1">
+        <h2 class="text-lg md:text-xl font-semibold truncate">
+          {{ otherUser.username }}
+        </h2>
+        <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <p class="text-gray-400 text-sm">
+          Member since {{ otherUser.createdAt | date : 'MMM y' }}
+        </p>
 
       <!-- Friend/Follow or Edit Profile Button(s) -->
+      <div class="shrink-0">
       <ng-container *ngIf="otherUser && loggedInUser">
         <!-- Own profile -->
         <ng-container *ngIf="otherUser._id === loggedInUser._id">
           <button
             (click)="goToUserProfile()"
             [disabled]="decliningFriendRequest"
-            class="mt-4 px-6 py-2 rounded-full bg-[#0F5EE4] text-white font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+            class="px-3 py-1 text-xs rounded-full bg-[#0F5EE4] text-white font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
           >
             <ng-container *ngIf="!decliningFriendRequest; else loadingIcon">
-              <i class="fas fa-user-edit"></i> Edit Profile
+              <i class="fas fa-pencil-alt"></i> Edit Profile
             </ng-container>
             <ng-template #loadingIcon>
               <i class="fas fa-spinner fa-spin"></i>
@@ -134,7 +155,7 @@
           <button
             (click)="sendFriendRequest(otherUser)"
             [disabled]="isLoadingFriendAction"
-            class="mt-4 px-6 py-2 rounded-full bg-[#0F5EE4] text-white font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+            class="px-3 py-1 text-xs rounded-full bg-[#0F5EE4] text-white font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
           >
             <ng-container *ngIf="!isLoadingFriendAction; else addLoadingIcon">
               <i class="fas fa-user-plus"></i> Add Friend
@@ -156,7 +177,7 @@
           <button
             type="button"
             disabled
-            class="mt-4 px-6 py-2 rounded-full border border-gray-600 text-gray-400 font-semibold flex items-center gap-2 cursor-not-allowed"
+            class="px-3 py-1 text-xs rounded-full border border-gray-600 text-gray-400 font-semibold flex items-center gap-2 cursor-not-allowed"
           >
             <i class="fas fa-clock"></i> Request Sent
           </button>
@@ -170,7 +191,7 @@
             otherUser.hasPendingRequestReceived
           "
         >
-          <div class="mt-4 flex items-center gap-3">
+          <div class="flex items-center gap-2">
             <button
               (click)="declineFriendRequest(otherUser)"
               [disabled]="decliningFriendRequest"
@@ -206,17 +227,21 @@
         >
           <button
             (click)="openModal(otherUser)"
-            class="mt-4 px-6 py-2 rounded-full border border-gray-600 text-gray-100 hover:bg-gray-800/50 transition font-semibold flex items-center gap-2"
+            class="px-3 py-1 text-xs rounded-full border border-gray-600 text-gray-100 hover:bg-gray-800/50 transition font-semibold flex items-center gap-2"
           >
             <i class="fas fa-user-check"></i> Friends
           </button>
         </ng-container>
       </ng-container>
+      </div>
+        </div>
+      </div>
+      </div>
 
-      <!-- Stats Card -->
+      <!-- Stats row -->
       <div
-        class="mt-4 w-full rounded-2xl p-4 flex divide-x divide-[rgba(88,89,92,0.4)]"
-        style="background: #0b1220; border: 1px solid rgba(88, 89, 92, 0.4)"
+        class="mt-4 w-full rounded-2xl py-3 flex divide-x divide-[rgba(88,89,92,0.4)]"
+        style="background: rgba(255, 255, 255, 0.03)"
       >
         <!-- flex-1 (equal-width columns) rather than natural width + justify-around
              - with unequal-width columns the divider (a border on the edge of the
@@ -259,6 +284,7 @@
 
   <span class="text-gray-400 text-sm">Watchlist</span>
 </div>
+      </div>
       </div>
 
       <!-- Top 3 podium - self-fetching (own vs public endpoint decided

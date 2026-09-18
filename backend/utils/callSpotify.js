@@ -115,7 +115,13 @@ const ARTIST_ID_CACHE_TTL = 30 * 24 * 60 * 60; // 30 days
 async function findArtistId(name) {
   const cacheKey = `spotify:artist-id:${name.toLowerCase().trim()}`;
   const cached = await redis.safeGet(cacheKey);
-  if (cached) return cached === "null" ? null : cached;
+  if (cached) {
+    if (cached === "null") return null;
+    // Sliding TTL for resolved IDs only - a cached "null" (no match) keeps its
+    // fixed TTL so a later-appearing artist can still be found.
+    await redis.safeExpire(cacheKey, ARTIST_ID_CACHE_TTL);
+    return cached;
+  }
 
   const token = await getCachedAppToken();
   if (!token) return null;

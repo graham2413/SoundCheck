@@ -1,0 +1,60 @@
+/* Full-screen profile picture: backdrop fades in while the image grows from
+   roughly its avatar size. */
+.profile-image-overlay {
+  animation: profile-image-overlay-in 220ms ease-out both;
+}
+
+.profile-image-full {
+  animation: profile-image-zoom-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes profile-image-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes profile-image-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Closing: mirror of the open animation. Added while the component keeps the
+   overlay mounted (see closeImageModal). */
+.profile-image-overlay.profile-image-closing {
+  animation: profile-image-overlay-out 220ms ease-in both;
+  pointer-events: none;
+}
+
+.profile-image-overlay.profile-image-closing .profile-image-full {
+  animation: profile-image-zoom-out 220ms ease-in both;
+}
+
+@keyframes profile-image-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes profile-image-zoom-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}

@@ -207,6 +207,12 @@ export class TopThreePodiumComponent implements OnInit, OnChanges {
     ].filter((entry): entry is { rank: 1 | 2 | 3; item: TopThreeItem } => !!entry.item);
   }
 
+  // Same circumference (2 * PI * r=18) and fill math as review-page's ring.
+  ratingDashOffset(value: number | null | undefined): number {
+    const clamped = Math.min(Math.max(value || 0, 0), 10);
+    return 113.1 - (clamped / 10) * 113.1;
+  }
+
   get subCategories(): TopThreeCategory[] {
     return GROUP_CATEGORIES[this.activeGroup];
   }

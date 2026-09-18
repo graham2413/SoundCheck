@@ -119,6 +119,9 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   dragOffsetPx = 0;
   private static readonly SWIPE_TRANSITION_MS = 250;
   private static readonly SWIPE_THRESHOLD_PX = 60;
+  private static readonly FULLSCREEN_ANIM_MS = 250;
+  fullScreenAnim: 'opening' | 'closing' | null = null;
+  private fullScreenAnimTimer: ReturnType<typeof setTimeout> | null = null;
   private isDragging = false;
   private activePointerId: number | null = null;
   private dragStartX = 0;
@@ -143,12 +146,37 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
     this.fullScreenIndex = Math.max(0, this.fullScreenImages.indexOf(url));
     this.dragOffsetPx = 0;
     this.setBackgroundScrollLocked(true);
+
+    // Zoom/fade in - the class only lives for the animation's duration so
+    // slides created later by next/previous navigation don't replay it.
+    this.clearFullScreenAnimTimer();
+    this.fullScreenAnim = 'opening';
+    this.fullScreenAnimTimer = setTimeout(() => {
+      this.fullScreenAnim = null;
+      this.fullScreenAnimTimer = null;
+    }, CinemaReviewPageComponent.FULLSCREEN_ANIM_MS);
   }
 
   closeFullScreenImage(): void {
-    this.fullScreenImages = [];
+    if (this.fullScreenAnim === 'closing' || !this.fullScreenImages.length) return;
+
     this.setBackgroundScrollLocked(false);
     this.resetNativePinchZoom();
+
+    // Keep the overlay mounted while it plays the closing animation, then
+    // actually tear it down.
+    this.clearFullScreenAnimTimer();
+    this.fullScreenAnim = 'closing';
+    this.fullScreenAnimTimer = setTimeout(() => {
+      this.fullScreenImages = [];
+      this.fullScreenAnim = null;
+      this.fullScreenAnimTimer = null;
+    }, CinemaReviewPageComponent.FULLSCREEN_ANIM_MS);
+  }
+
+  private clearFullScreenAnimTimer(): void {
+    if (this.fullScreenAnimTimer) clearTimeout(this.fullScreenAnimTimer);
+    this.fullScreenAnimTimer = null;
   }
 
   // Pinch-zooming the image viewer (allowed via `touch-action: pinch-zoom`

@@ -9,6 +9,8 @@ export interface TopThreeItem {
   title: string;
   subtitle?: string;
   cover: string;
+  // The viewed user's own rating for this item (0-10), null if unrated.
+  rating?: number | null;
 }
 
 export interface TopThreeCategoryState {

@@ -67,6 +67,18 @@ export class ViewProfilePageComponent implements OnInit {
 
   isLoadingFriendAction: boolean = false;
   isImageModalOpen: boolean = false;
+  isImageModalClosing: boolean = false;
+
+  // Keeps the full-screen picture mounted while it plays its closing
+  // animation (see .profile-image-closing in the CSS), then removes it.
+  closeImageModal(): void {
+    if (this.isImageModalClosing) return;
+    this.isImageModalClosing = true;
+    setTimeout(() => {
+      this.isImageModalOpen = false;
+      this.isImageModalClosing = false;
+    }, 220);
+  }
   showPanel: 'reviews' | 'friends' | 'artists' | 'watchlist' | null = null;
   notificationCount = 0;
   reviewMode: 'music' | 'cinema' = 'music';

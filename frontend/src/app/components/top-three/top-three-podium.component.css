@@ -24,7 +24,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.4rem;
   padding-top: 2rem;
   /* The rise-in animation starts each pedestal translateY(70px) below its
      resting spot - without this, that starting position sat below the
@@ -36,6 +36,10 @@
      they extend upward from the photo box into this track's own 2rem
      top padding, well inside it either way. */
   overflow: hidden;
+  /* Matches the card's rounded-2xl corners (1rem, minus its 1px border) so
+     the square-cornered pedestals get clipped to the card's curve instead of
+     poking out past it. */
+  border-radius: 0 0 calc(1rem - 1px) calc(1rem - 1px);
 }
 
 /* Loading skeleton - reuses .podium-photo-box/.podium-block-top/-front's own
@@ -83,8 +87,11 @@
      text apparently nudged the browser's flex-shrink math differently per
      category, even with a fixed basis), so it's now a true fixed width via
      both flex-basis and width, identical for every category every time. */
-  flex: 0 0 6.5rem;
-  width: 6.5rem;
+  /* Capped at 7.25rem but shrinks with the card so three slots still fit
+     on narrow phones (still identical across categories - depends only on
+     the track's width, never on content). */
+  flex: 0 0 min(7.25rem, calc((100% - 1.5rem) / 3));
+  width: min(7.25rem, calc((100% - 1.5rem) / 3));
   opacity: 0;
   transform: translateY(70px);
   animation: podium-rise 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -144,8 +151,8 @@
    the platform height varies, not the photo. */
 .podium-photo-box {
   position: relative;
-  width: 4.5rem;
-  height: 4.5rem;
+  width: 5.5rem;
+  height: 5.5rem;
   border-radius: 0.6rem;
   /* Same primary blue as the crown/rank badge's border, not the previous
      neutral gray. */
@@ -155,8 +162,8 @@
 }
 
 .podium-photo-portrait {
-  width: 4.5rem;
-  height: 6.75rem;
+  width: 5.5rem;
+  height: 8.25rem;
 }
 
 .podium-photo {
@@ -289,7 +296,7 @@
   align-items: center;
   justify-content: flex-start;
   padding-top: 2.5rem;
-  border-radius: 0 0 0.25rem 0.25rem;
+  border-radius: 0;
   background: linear-gradient(180deg, #24467e 0%, #152a4d 100%);
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
 }
@@ -306,12 +313,97 @@
   height: 1.75rem;
   border-radius: 9999px;
   background: #0b1220;
-  border: 2px solid #0f5ee4;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.podium-ring-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.podium-ring-svg circle {
+  fill: none;
+}
+
+/* Shiny metallic ring: a conic gradient with bright highlight stops, masked
+   down to a ring and slowly rotated so the highlights sweep around it. */
+.podium-rank-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, var(--m1), var(--m2), var(--m3), var(--m2), var(--m1), var(--m2), var(--m3), var(--m2), var(--m1));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+  animation: podium-ring-shine 4s linear infinite;
+}
+
+@keyframes podium-ring-shine {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.podium-rank-badge-1 {
+  --m1: #b8860b;
+  --m2: #f5c542;
+  --m3: #fff6c2;
+  box-shadow: 0 0 8px rgba(245, 197, 66, 0.55), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.podium-rank-badge-2 {
+  --m1: #7c8794;
+  --m2: #c9d1d9;
+  --m3: #ffffff;
+  box-shadow: 0 0 8px rgba(201, 209, 217, 0.45), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.podium-rank-badge-3 {
+  --m1: #8a4b17;
+  --m2: #cd7f32;
+  --m3: #ffd2a1;
+  box-shadow: 0 0 8px rgba(205, 127, 50, 0.5), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Top-right corner of the photo, mirroring the rank badge's circle but with
+   the rating in the center and a progress ring like the review page's. */
+.podium-rating-badge {
+  position: absolute;
+  top: -0.6rem;
+  right: -0.6rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background: #0b1220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Same colors as the cinema review page's .ring-track/.ring-progress-blue. */
+.podium-ring-track {
+  stroke: rgba(148, 163, 184, 0.2);
+}
+
+.podium-ring-progress {
+  stroke: #0f5ee4;
+}
+
+.podium-rating-number {
+  position: relative;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1;
 }
 
 /* Same surface color as ranks 2/3 (.podium-block-top/-front above already
@@ -360,7 +452,7 @@
 .ghost-podium-slot {
   flex: 1;
   border: 1.5px solid rgba(15, 94, 228, 0.5);
-  border-radius: 0.5rem 0.5rem 0.2rem 0.2rem;
+  border-radius: 0.5rem 0.5rem 0 0;
   background: rgba(15, 94, 228, 0.08);
   display: flex;
   align-items: center;

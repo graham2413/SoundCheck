@@ -140,6 +140,12 @@ export class TopThreeManageComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Movie/show posters are 2:3 portraits - the thumbnails get a taller box
+  // for them instead of cropping into a square.
+  get isCinemaCategory(): boolean {
+    return this.category === 'movies' || this.category === 'shows';
+  }
+
   get categoryLabel(): string {
     return this.categoryLabels[this.category];
   }

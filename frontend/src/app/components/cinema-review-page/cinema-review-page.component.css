@@ -74,6 +74,40 @@
   overflow: hidden;
 }
 
+/* Open/close: the backdrop fades while the image zooms from/to a smaller
+   size. Classes are only present during the animation (see the component's
+   fullScreenAnim). */
+.poster-fullscreen-overlay.is-opening {
+  animation: poster-fs-fade-in 250ms ease-out both;
+}
+.poster-fullscreen-overlay.is-closing {
+  animation: poster-fs-fade-out 250ms ease-in both;
+  pointer-events: none;
+}
+.poster-fullscreen-overlay.is-opening .poster-fullscreen-img {
+  animation: poster-fs-zoom-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.poster-fullscreen-overlay.is-closing .poster-fullscreen-img {
+  animation: poster-fs-zoom-out 250ms ease-in both;
+}
+
+@keyframes poster-fs-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes poster-fs-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes poster-fs-zoom-in {
+  from { transform: scale(0.4); }
+  to { transform: scale(1); }
+}
+@keyframes poster-fs-zoom-out {
+  from { transform: scale(1); }
+  to { transform: scale(0.4); }
+}
+
 .poster-fullscreen-track {
   display: flex;
   width: 300vw;
@@ -170,6 +204,18 @@
    image's natural ratio instead of letterboxing it inside a forced 2:3 box. */
 .poster-frame-loaded {
   height: auto;
+}
+
+/* Slightly smaller poster below the sm breakpoint (matches Tailwind's 640px). */
+@media (max-width: 639px) {
+  .poster-frame {
+    flex-basis: 115px;
+    width: 115px;
+  }
+
+  .poster-frame:not(.poster-frame-loaded) {
+    height: 172px;
+  }
 }
 
 .poster-placeholder {

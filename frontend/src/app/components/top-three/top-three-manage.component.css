@@ -20,3 +20,62 @@
 .icon-circle-btn:hover {
   background: #1f2937;
 }
+
+/* Rank badge - same shiny gold/silver/bronze ring as the profile podium's
+   (.podium-rank-badge in top-three-podium.component.css). */
+.rank-badge {
+  position: relative;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  background: #0b1220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, var(--m1), var(--m2), var(--m3), var(--m2), var(--m1), var(--m2), var(--m3), var(--m2), var(--m1));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+  animation: rank-ring-shine 4s linear infinite;
+}
+
+@keyframes rank-ring-shine {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rank-badge-1 {
+  --m1: #b8860b;
+  --m2: #f5c542;
+  --m3: #fff6c2;
+  box-shadow: 0 0 8px rgba(245, 197, 66, 0.55), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.rank-badge-2 {
+  --m1: #7c8794;
+  --m2: #c9d1d9;
+  --m3: #ffffff;
+  box-shadow: 0 0 8px rgba(201, 209, 217, 0.45), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.rank-badge-3 {
+  --m1: #8a4b17;
+  --m2: #cd7f32;
+  --m3: #ffd2a1;
+  box-shadow: 0 0 8px rgba(205, 127, 50, 0.5), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.rank-badge-number {
+  position: relative;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+}

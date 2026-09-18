@@ -283,7 +283,12 @@ async function getGenreFromId(genreId) {
 
   const cacheKey = `genre-id:${genreId}`;
   const cached = await redis.safeGet(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    // Sliding TTL for resolved names only - a cached "Unknown" keeps its
+    // fixed TTL so a transient miss can self-correct.
+    if (cached !== "Unknown") await redis.safeExpire(cacheKey, 86400);
+    return cached;
+  }
 
   try {
     const genreResponse = await fetchWithRetry(() =>
