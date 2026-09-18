@@ -46,6 +46,14 @@ export interface MusicCalendarEntry {
   // id/preview/etc) - calendar-page.component.ts maps it when opening the
   // review page.
   tracklist?: { title: string; artist: string | null; durationMs: number | null }[];
+  // True ONLY for a genuine pre-release stub with no real catalog entry yet
+  // (Spotify/MusicBrainz-sourced UpcomingRelease row) - false/absent for
+  // everything else, INCLUDING a same-day Deezer release shown under the
+  // "upcoming" tab's date range (see getMusicCalendar's upcoming branch) -
+  // that one has a real, fully-fetchable Deezer albumId. Use this, not
+  // which tab an entry is displayed under, to decide whether to skip live
+  // API calls when opening the review page.
+  isPreRelease?: boolean;
 }
 
 export interface MusicCalendarResponse {

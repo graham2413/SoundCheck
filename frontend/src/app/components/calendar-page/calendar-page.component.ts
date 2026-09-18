@@ -238,12 +238,9 @@ export class CalendarPageComponent implements OnInit {
 
     if (requestedRange === 'past' || requestedRange === 'upcoming') {
       this.range = requestedRange;
-    } else if (!requestedKind) {
-      // Matches setKind()'s own kind->range convention (music defaults to
-      // past releases, cinema to upcoming) when the kind came from the
-      // remembered last-used value rather than an explicit link.
-      this.range = this.kind === 'music' ? 'past' : 'upcoming';
     }
+    // No explicit ?range= - `range` already defaults to 'upcoming' for both
+    // kinds (see the field initializer above), so nothing else to do here.
 
     this.loadCalendar();
   }
@@ -330,7 +327,7 @@ export class CalendarPageComponent implements OnInit {
   setKind(kind: CalendarKind): void {
     if (this.kind === kind || this.isLoading) return;
     this.kind = kind;
-    this.range = kind === 'music' ? 'past' : 'upcoming';
+    this.range = 'upcoming';
     localStorage.setItem(CalendarPageComponent.LAST_KIND_KEY, kind);
     this.loadCalendar();
 
@@ -451,13 +448,16 @@ export class CalendarPageComponent implements OnInit {
       releaseDate: entry.airDate,
       avgRating: 0,
       reviewCount: 0,
-      // entry.albumId is a Spotify/MusicBrainz sourceId for an upcoming
-      // release, not a real Deezer album id - review-page.component.ts uses
-      // this flag to skip API calls that can never succeed for it. tracklist
-      // is mapped from MusicBrainz's data when available (see
+      // entry.isPreRelease (not "which tab is this shown under") - a
+      // same-day Deezer release can appear in the upcoming tab's date range
+      // too (see getMusicCalendar's upcoming branch) but has a real,
+      // fully-fetchable Deezer albumId, unlike a genuine Spotify/MusicBrainz
+      // pre-release stub. review-page.component.ts uses this flag to skip
+      // API calls that can never succeed for a true stub. tracklist is
+      // mapped from MusicBrainz's data when available (see
       // mapUpcomingTracklist below), [] otherwise - never left undefined,
       // since review-page's trackSummary getter indexes into it directly.
-      isUpcoming: this.range === 'upcoming',
+      isUpcoming: !!entry.isPreRelease,
       tracklist: this.mapUpcomingTracklist(entry),
       recordType: entry.recordType,
     };

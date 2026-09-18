@@ -14,6 +14,7 @@
 // has no relationship type linking a release group to an individual episode.
 const axios = require("axios");
 const redis = require("./redisClient");
+const { cloudinary } = require("../config/cloudinaryConfig");
 
 const MB_BASE = "https://musicbrainz.org/ws/2";
 // MusicBrainz's own etiquette rules require a descriptive User-Agent
@@ -27,12 +28,26 @@ const USER_AGENT = "SoundCheck-Cinewave/1.0 (soundtrack + artist release lookup;
 // queue (not a sliding window like TMDb/Deezer use) - one shared timestamp
 // gates every call, cold lookups just take a few seconds the first time.
 const REQUEST_INTERVAL_MS = 1100; // small buffer over the stated 1 req/sec
-let lastRequestAt = 0;
+let lastReservedSlot = 0;
 
-async function waitForSlot() {
-  const wait = lastRequestAt + REQUEST_INTERVAL_MS - Date.now();
-  if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-  lastRequestAt = Date.now();
+// Reserves the next slot synchronously - the read-modify-write on
+// lastReservedSlot happens in one tick with no `await` in between, so it
+// can't be interleaved by another concurrent caller (JS is single-threaded;
+// an `await` is the only place execution could hand off to another call).
+// This matters once callers run concurrently (e.g. cronSyncAllArtists
+// processing a batch of several artists' upcoming-release syncs via
+// Promise.all): a naive "read lastRequestAt, await the wait, then write
+// lastRequestAt" version lets every concurrent caller read the same stale
+// timestamp, compute the same wait, and all fire their request in the same
+// burst once it elapses - confirmed directly in production logs, where a
+// 10-artist batch produced ~10 simultaneous MusicBrainz requests that the
+// server dropped nearly all of (TLS socket resets), not the intended
+// one-request-per-1.1s trickle.
+function waitForSlot() {
+  const now = Date.now();
+  lastReservedSlot = Math.max(lastReservedSlot + REQUEST_INTERVAL_MS, now);
+  const wait = lastReservedSlot - now;
+  return wait > 0 ? new Promise((resolve) => setTimeout(resolve, wait)) : Promise.resolve();
 }
 
 // MusicBrainz's public server returns a plain 503 "currently busy" fairly
@@ -217,8 +232,17 @@ const UPCOMING_RELEASE_GROUPS_CACHE_TTL = 12 * 60 * 60; // 12 hours
 // confirmed by direct testing (e.g. Kings of Leon's unreleased "O My
 // Beloved" already has front art registered). Its own convenience redirect
 // (`/release-group/:mbid/front-{size}`) 404s cleanly when nothing's
-// registered, so a plain existence check is all that's needed - no JSON
-// parsing required, the same URL doubles as the final <img src>.
+// registered.
+//
+// Mirrored into our own Cloudinary account (same account already used
+// elsewhere in this app, e.g. userController.js's profile pictures) the
+// first time it resolves, rather than storing archive.org's own URL
+// directly - archive.org has confirmed, if intermittent, outages (seen
+// directly this session: the same URL failed with a TLS handshake error,
+// then succeeded moments later), and every calendar page load would
+// otherwise depend on it being up *at that exact moment*. Cloudinary's
+// upload API fetches a remote URL server-side in one call, so this doubles
+// as the existence check - no separate HEAD request needed.
 // Cached alongside the release-group list itself (same TTL) since it's
 // checked once per candidate release, not on every calendar page load.
 async function resolveCoverArtUrl(releaseGroupMbid) {
@@ -226,19 +250,27 @@ async function resolveCoverArtUrl(releaseGroupMbid) {
   const cached = await redis.safeGet(cacheKey);
   if (cached) return cached === "null" ? null : cached;
 
-  const url = `https://coverartarchive.org/release-group/${releaseGroupMbid}/front-500`;
+  const sourceUrl = `https://coverartarchive.org/release-group/${releaseGroupMbid}/front-500`;
   let resolved = null;
   try {
-    // HEAD only - confirming existence, not downloading the image. Not
-    // routed through callMusicBrainz/waitForSlot: this hits archive.org, not
-    // musicbrainz.org, so MusicBrainz's 1 req/sec etiquette doesn't apply.
-    await axios.head(url, { timeout: 8000 });
-    resolved = url;
+    // Not routed through callMusicBrainz/waitForSlot: this hits archive.org,
+    // not musicbrainz.org, so MusicBrainz's 1 req/sec etiquette doesn't
+    // apply. overwrite: true so a re-run (e.g. after Cover Art Archive later
+    // adds/changes art) replaces our mirrored copy instead of erroring on a
+    // duplicate public_id.
+    const result = await cloudinary.uploader.upload(sourceUrl, {
+      folder: "upcoming-release-covers",
+      public_id: releaseGroupMbid,
+      overwrite: true,
+    });
+    resolved = result.secure_url;
   } catch (error) {
     // 404 (no art registered for this release group) is the common, expected
-    // case - not worth logging as an error.
-    if (error.response?.status !== 404) {
-      console.error(`Cover Art Archive lookup failed for ${releaseGroupMbid}:`, error.response?.status, error.message);
+    // case - not worth logging as an error. Cloudinary wraps the source
+    // fetch failure in its own error shape rather than a plain axios
+    // response, so check its message instead of a status code.
+    if (!/404|not found/i.test(error.message || "")) {
+      console.error(`Cover art mirror failed for ${releaseGroupMbid}:`, error.message || error);
     }
   }
 

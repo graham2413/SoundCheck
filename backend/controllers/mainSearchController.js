@@ -568,12 +568,21 @@ const getArtistTopTracks = async (req, res) => {
 // cronSyncAllArtists. Returns null on any failure so callers fail OPEN
 // (treat as "might have changed, do the full check") rather than silently
 // skipping a real update because this cheap probe itself errored.
+//
+// Uses /albums?limit=1's own `total` field, NOT /artist/{id}'s separate
+// `nb_album` counter - confirmed directly (St. Paul & The Broken Bones,
+// 2026-09-18) that nb_album can lag the real album listing by at least one
+// (it read 21 the same day the artist's real 22nd album, "Proxy", was
+// already live and individually fetchable) - Deezer's own precomputed
+// counter is a derived cache that can go stale independently of the actual
+// catalog it's supposed to summarize. The listing endpoint's own total is
+// the real count, not a copy of it, so it can't drift the same way.
 async function getArtistAlbumCount(artistId) {
   try {
     const response = await fetchWithRetry(() =>
-      callDeezer(`https://api.deezer.com/artist/${artistId}`)
+      callDeezer(`https://api.deezer.com/artist/${artistId}/albums?limit=1`)
     );
-    const count = response?.data?.nb_album;
+    const count = response?.data?.total;
     return typeof count === "number" ? count : null;
   } catch (err) {
     console.error(`getArtistAlbumCount failed for artist ${artistId}:`, err.message || err);
@@ -785,12 +794,18 @@ async function syncUpcomingReleasesForArtist(artistId, artistName) {
     const normalizedTitle = normalizeReleaseTitle(candidate.title);
     const setFields = {
       title: candidate.title,
-      cover: candidate.cover,
       releaseDate: candidate.releaseDate,
       recordType: candidate.recordType,
       source: candidate.source,
       sourceId: candidate.sourceId,
     };
+    // Only overwritten when this candidate actually has one - a transient
+    // Cover Art Archive/Cloudinary mirror failure on a later sync (see
+    // resolveCoverArtUrl) shouldn't erase a cover a previous day's sync
+    // already successfully mirrored.
+    if (candidate.cover) {
+      setFields.cover = candidate.cover;
+    }
     // Only overwritten when this candidate actually has one - Spotify never
     // supplies a tracklist at all, and even MusicBrainz can come back empty
     // on a day its own tracklist lookup fails/is still unpopulated. Without
@@ -1112,14 +1127,28 @@ const getMusicCalendar = async (req, res) => {
         recordType: r.recordType || null,
       }));
     } else {
-      const releases = await UpcomingRelease.find({
-        artistId: { $in: artistIds },
-        releaseDate: { $gte: new Date(todayStr) },
-      })
-        .sort({ releaseDate: 1 })
-        .lean();
+      // "Past" excludes today ($lt above) on the assumption that a same-day
+      // release belongs here instead - true only if BOTH ranges read from
+      // the same source. They don't: past reads Release (Deezer), upcoming
+      // reads UpcomingRelease (Spotify/MusicBrainz) - a release Deezer
+      // already confirmed for today never gets written to UpcomingRelease
+      // (nothing does that for Deezer-sourced rows), so without this it
+      // falls into a gap, excluded from past yet absent from upcoming.
+      // Confirmed directly: St. Paul & The Broken Bones' "Proxy" (Deezer,
+      // 2026-09-18) was invisible in both tabs until this was added.
+      const todayEnd = new Date(new Date(todayStr).getTime() + 24 * 60 * 60 * 1000);
+      const [upcomingReleases, releasedTodayFromDeezer] = await Promise.all([
+        UpcomingRelease.find({
+          artistId: { $in: artistIds },
+          releaseDate: { $gte: new Date(todayStr) },
+        }).lean(),
+        Release.find({
+          artistId: { $in: artistIds },
+          releaseDate: { $gte: new Date(todayStr), $lt: todayEnd },
+        }).lean(),
+      ]);
 
-      calendar = releases.map((r) => ({
+      const upcomingCalendar = upcomingReleases.map((r) => ({
         _id: r._id.toString(),
         // No Deezer albumId exists for an upcoming release - sourceId
         // (Spotify album id or MusicBrainz release-group id) fills the same
@@ -1134,10 +1163,31 @@ const getMusicCalendar = async (req, res) => {
         // UpcomingRelease's model comments.
         isExplicit: false,
         recordType: r.recordType || null,
-        // Only ever non-empty for a MusicBrainz-sourced row - see
-        // UpcomingRelease's model comments.
         tracklist: r.tracklist || [],
+        // True ONLY for a genuine pre-release stub with no real catalog
+        // entry yet - the frontend uses this (not "which tab is this shown
+        // under") to decide whether to skip live Deezer/smart-link/player
+        // API calls. A same-day Deezer release below is NOT one of these -
+        // it has a real, fully-fetchable Deezer albumId.
+        isPreRelease: true,
       }));
+
+      const releasedTodayCalendar = releasedTodayFromDeezer.map((r) => ({
+        _id: r._id.toString(),
+        albumId: r.albumId,
+        artistId: r.artistId,
+        artistName: r.artistName,
+        title: r.title,
+        cover: r.cover,
+        airDate: r.releaseDate.toISOString().slice(0, 10),
+        isExplicit: r.isExplicit,
+        recordType: r.recordType || null,
+        isPreRelease: false,
+      }));
+
+      calendar = [...releasedTodayCalendar, ...upcomingCalendar].sort((a, b) =>
+        a.airDate.localeCompare(b.airDate)
+      );
     }
 
     await redis.safeSet(cacheKey, JSON.stringify({ cachedDate: todayStr, data: calendar }), "EX", MUSIC_CALENDAR_CACHE_TTL);
@@ -1268,6 +1318,7 @@ module.exports = {
   callDeezer,
   getAndStoreArtistAlbums,
   cronSyncAllArtists,
+  syncArtistAlbums,
   syncUpcomingReleasesForArtist,
   getReleasesByArtistIds,
   getMusicCalendar,

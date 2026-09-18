@@ -15,7 +15,9 @@ const UpcomingRelease = new mongoose.Schema(
     artistName: { type: String, required: true },
     title: { type: String, required: true },
     cover: { type: String, default: null },
-    releaseDate: { type: Date, required: true, index: true },
+    // No `index: true` here - releaseDate's index is declared below as a TTL
+    // index instead (a plain index on the same field would conflict with it).
+    releaseDate: { type: Date, required: true },
     // Each source's own vocabulary ("album"/"single"/etc), lowercased at the
     // source for both providers (see callSpotify.js/callMusicBrainz.js) so
     // it matches Release.recordType's existing lowercase convention - same
@@ -55,5 +57,16 @@ const UpcomingRelease = new mongoose.Schema(
 UpcomingRelease.index({ artistId: 1, releaseDate: 1, normalizedTitle: 1 });
 // Calendar read path - getMusicCalendar's upcoming branch reads soonest-first.
 UpcomingRelease.index({ releaseDate: 1, _id: 1 });
+
+// Auto-deletes a row a week after its own releaseDate, via MongoDB's TTL
+// background sweep - no cron/app code needed. Once a release actually ships,
+// the real Deezer-sourced Release row takes over (see syncArtistAlbums) and
+// this row already stops appearing in "upcoming" (releaseDate < today), so
+// it's dead weight from that point on - this just stops it from sitting in
+// the collection forever. A week of grace (not immediate deletion at
+// midnight) covers any timezone slop between how releaseDate was stored and
+// a user's local "today".
+const UPCOMING_RELEASE_TTL_SECONDS = 7 * 24 * 60 * 60;
+UpcomingRelease.index({ releaseDate: 1 }, { expireAfterSeconds: UPCOMING_RELEASE_TTL_SECONDS });
 
 module.exports = mongoose.model("UpcomingRelease", UpcomingRelease);
