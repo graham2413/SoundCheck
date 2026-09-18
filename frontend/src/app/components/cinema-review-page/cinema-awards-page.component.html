@@ -16,7 +16,20 @@
        page's own header (just without the certification pill/status badge
        row), aligned to the top of the poster rather than vertically centered. -->
   <div class="flex items-start gap-3 px-4 pt-5">
-    <img *ngIf="cover" [src]="cover" [alt]="title" class="awards-poster-thumb" />
+    <div *ngIf="cover" class="relative awards-poster-thumb overflow-hidden">
+      <div *ngIf="!imageLoaded[cover]" class="absolute inset-0 flex items-center justify-center">
+        <div class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"></div>
+      </div>
+      <img
+        [src]="cover"
+        [alt]="title"
+        loading="lazy"
+        (load)="imageLoaded[cover] = true"
+        (error)="imageLoaded[cover] = true"
+        [class.invisible]="!imageLoaded[cover]"
+        class="w-full h-full object-cover"
+      />
+    </div>
     <div *ngIf="!cover" class="awards-poster-thumb awards-poster-placeholder">
       <i class="fas fa-clapperboard"></i>
     </div>

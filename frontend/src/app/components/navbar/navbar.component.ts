@@ -69,6 +69,9 @@ export class NavbarComponent implements OnInit {
   } as User;
 
   isProfileLoading: boolean = false;
+  // Keyed by picture URL so the spinner only shows until that image has
+  // actually loaded (not just until the profile request returned).
+  profilePictureLoaded: { [url: string]: boolean } = {};
   activeTab: string = 'home';
   notificationCount = 0;
 

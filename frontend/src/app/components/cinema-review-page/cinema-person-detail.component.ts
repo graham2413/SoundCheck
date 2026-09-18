@@ -64,6 +64,9 @@ export class CinemaPersonDetailComponent implements OnInit, OnChanges, OnDestroy
   private bioMeasured = false;
   creditImageLoaded: boolean[] = [];
 
+  // Keyed by image URL so an already-loaded image doesn't re-show the spinner.
+  imageLoaded: { [url: string]: boolean } = {};
+
   constructor(private cinemaService: CinemaService) {}
 
   // Locks the underlying page's scroll while this sheet is open - without

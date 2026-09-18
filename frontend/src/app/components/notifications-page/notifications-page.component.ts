@@ -78,6 +78,9 @@ export class NotificationsPageComponent implements OnInit, OnDestroy {
   swipeOffsetPx: { [id: string]: number } = {};
   swipingRowId: string | null = null; // disables the CSS transition only while actively dragging this row
   isDeletingRow: { [id: string]: boolean } = {};
+  // Keyed by notification id so a cover that's already loaded doesn't re-show
+  // the spinner if the row re-renders.
+  imageLoaded: { [id: string]: boolean } = {};
   private draggingNotificationId: string | null = null;
   private activeSwipePointerId: number | null = null;
   private dragStartX = 0;

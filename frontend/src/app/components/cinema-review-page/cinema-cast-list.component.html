@@ -66,13 +66,19 @@
       *ngFor="let member of visibleCast"
       (click)="selectedMember = member"
     >
-      <div class="aspect-[2/3] w-14 flex-shrink-0">
+      <div class="relative aspect-[2/3] w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-800">
+        <div *ngIf="member.profilePath && !imageLoaded[member.profilePath]" class="absolute inset-0 flex items-center justify-center">
+          <div class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"></div>
+        </div>
         <img
           *ngIf="member.profilePath"
           [src]="member.profilePath"
           [alt]="member.name"
           loading="lazy"
-          class="h-full w-full object-cover rounded-lg"
+          (load)="imageLoaded[member.profilePath] = true"
+          (error)="imageLoaded[member.profilePath] = true"
+          [class.invisible]="!imageLoaded[member.profilePath]"
+          class="h-full w-full object-cover"
         />
         <div
           *ngIf="!member.profilePath"

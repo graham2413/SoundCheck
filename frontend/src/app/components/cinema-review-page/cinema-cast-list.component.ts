@@ -35,6 +35,9 @@ export class CinemaCastListComponent implements OnChanges {
   @Output() back = new EventEmitter<void>();
   @Output() creditClick = new EventEmitter<CinemaPersonCredit>();
 
+  // Keyed by image URL so an already-loaded image doesn't re-show the spinner.
+  imageLoaded: { [url: string]: boolean } = {};
+
   showSortMenu = false;
   selectedMember: CastMember | null = null;
   showPopularActors = false;

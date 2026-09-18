@@ -32,7 +32,7 @@
         <div class="h-[4rem] w-[4rem] relative">
           <!-- Skeleton Loader (When Loading) -->
           <div
-            *ngIf="isProfileLoading"
+            *ngIf="isProfileLoading || (userProfile?.profilePicture && !profilePictureLoaded[userProfile.profilePicture])"
             class="absolute inset-0 flex items-center justify-center h-full w-full rounded-full border-2 border-gray-700 bg-gray-800"
           >
             <div
@@ -45,6 +45,9 @@
             *ngIf="!isProfileLoading && userProfile?.profilePicture"
             [src]="getTransformedImageUrl(userProfile.profilePicture)"
             alt="Profile Picture"
+            (load)="profilePictureLoaded[userProfile.profilePicture] = true"
+            (error)="profilePictureLoaded[userProfile.profilePicture] = true"
+            [class.invisible]="!profilePictureLoaded[userProfile.profilePicture]"
             class="absolute inset-0 h-full w-full object-cover rounded-full border-2 border-gray-700"
           />
           <i

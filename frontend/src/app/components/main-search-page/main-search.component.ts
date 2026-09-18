@@ -643,6 +643,14 @@ export class MainSearchComponent implements OnInit, AfterViewInit, OnDestroy {
     return (item as Artist).type === 'Artist' ? (item as Artist).name : (item as Song | Album).title;
   }
 
+  // Loader state for the "all results" rows, keyed by type+id (not list
+  // index) so it survives re-sorting/expanding the list.
+  allResultImageLoaded: { [key: string]: boolean } = {};
+
+  allResultKey(item: Song | Album | Artist): string {
+    return `${(item as any).type}-${item.id}`;
+  }
+
   allResultImage(item: Song | Album | Artist): string | null {
     return (item as Artist).type === 'Artist' ? (item as Artist).picture : (item as Song | Album).cover;
   }

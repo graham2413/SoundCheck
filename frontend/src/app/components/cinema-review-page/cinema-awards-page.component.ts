@@ -15,6 +15,9 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   styleUrls: ['./cinema-awards-page.component.css'],
 })
 export class CinemaAwardsPageComponent {
+  // Keyed by image URL so an already-loaded image doesn't re-show the spinner.
+  imageLoaded: { [url: string]: boolean } = {};
+
   @Input() title = '';
   @Input() cover: string | null = null;
   @Input() mediaType: 'movie' | 'tv' | null = null;

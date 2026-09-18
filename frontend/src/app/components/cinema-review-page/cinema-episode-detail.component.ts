@@ -30,6 +30,9 @@ import { CinemaRateModalComponent } from './cinema-rate-modal.component';
   styleUrls: ['./cinema-episode-detail.component.css'],
 })
 export class CinemaEpisodeDetailComponent implements OnChanges, AfterViewChecked {
+  // Keyed by image URL so an already-loaded image doesn't re-show the spinner.
+  imageLoaded: { [url: string]: boolean } = {};
+
   @Input() tmdbId: string | null = null;
   @Input() showTitle = '';
   @Input() showCover: string | null = null;

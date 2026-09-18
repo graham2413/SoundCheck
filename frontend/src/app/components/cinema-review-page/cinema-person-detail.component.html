@@ -22,12 +22,19 @@
   </button>
 
   <div class="flex items-start gap-4 px-4 pt-4">
-    <div class="aspect-[2/3] w-20 flex-shrink-0">
+    <div class="relative aspect-[2/3] w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-800">
+      <div *ngIf="fallbackProfilePath && !imageLoaded[fallbackProfilePath]" class="absolute inset-0 flex items-center justify-center">
+        <div class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"></div>
+      </div>
       <img
         *ngIf="fallbackProfilePath"
         [src]="fallbackProfilePath"
         [alt]="fallbackName"
-        class="h-full w-full object-cover rounded-lg"
+        loading="lazy"
+        (load)="imageLoaded[fallbackProfilePath] = true"
+        (error)="imageLoaded[fallbackProfilePath] = true"
+        [class.invisible]="!imageLoaded[fallbackProfilePath]"
+        class="h-full w-full object-cover"
       />
       <div
         *ngIf="!fallbackProfilePath"

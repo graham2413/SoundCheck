@@ -22,13 +22,19 @@
       *ngFor="let actor of actors; let i = index"
     >
       <span class="text-gray-500 font-bold text-sm w-6 text-center flex-shrink-0">{{ i + 1 }}</span>
-      <div class="aspect-[2/3] w-12 flex-shrink-0">
+      <div class="relative aspect-[2/3] w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-800">
+        <div *ngIf="actor.profilePath && !imageLoaded[actor.profilePath]" class="absolute inset-0 flex items-center justify-center">
+          <div class="w-4 h-4 border-t-2 border-white rounded-full animate-spin"></div>
+        </div>
         <img
           *ngIf="actor.profilePath"
           [src]="actor.profilePath"
           [alt]="actor.name"
           loading="lazy"
-          class="h-full w-full object-cover rounded-lg"
+          (load)="imageLoaded[actor.profilePath] = true"
+          (error)="imageLoaded[actor.profilePath] = true"
+          [class.invisible]="!imageLoaded[actor.profilePath]"
+          class="h-full w-full object-cover"
         />
         <div *ngIf="!actor.profilePath" class="h-full w-full rounded-lg bg-gray-800 flex items-center justify-center">
           <i class="fas fa-user text-gray-600"></i>

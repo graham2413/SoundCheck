@@ -31,6 +31,9 @@ type SoundtrackSource = 'soundtrackdb' | 'musicbrainz' | null;
   ],
 })
 export class CinemaSoundtrackListComponent {
+  // Keyed by image URL so an already-loaded image doesn't re-show the spinner.
+  imageLoaded: { [url: string]: boolean } = {};
+
   @Input() title = '';
   @Input() cover: string | null = null;
   @Input() tracks: CinemaSoundtrackTrack[] = [];

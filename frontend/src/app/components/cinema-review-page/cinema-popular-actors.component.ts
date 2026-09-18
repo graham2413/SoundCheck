@@ -18,6 +18,8 @@ export class CinemaPopularActorsComponent implements OnInit {
 
   actors: CinemaPopularActor[] = [];
   isLoading = true;
+  // Keyed by image URL so an already-loaded image doesn't re-show the spinner.
+  imageLoaded: { [url: string]: boolean } = {};
 
   constructor(private cinemaService: CinemaService) {}
 
