@@ -74,38 +74,26 @@
   overflow: hidden;
 }
 
-/* Open/close: the backdrop fades while the image zooms from/to a smaller
-   size. Classes are only present during the animation (see the component's
-   fullScreenAnim). */
+/* Open/close: backdrop fades while the image zooms; closing plays the same
+   keyframes in reverse (classes live only during the animation). */
 .poster-fullscreen-overlay.is-opening {
-  animation: poster-fs-fade-in 250ms ease-out both;
+  animation: poster-fs-fade 250ms ease-out both;
 }
 .poster-fullscreen-overlay.is-closing {
-  animation: poster-fs-fade-out 250ms ease-in both;
+  animation: poster-fs-fade 250ms ease-in reverse both;
   pointer-events: none;
 }
-.poster-fullscreen-overlay.is-opening .poster-fullscreen-img {
-  animation: poster-fs-zoom-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+.is-opening .poster-fullscreen-img {
+  animation: poster-fs-zoom 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
-.poster-fullscreen-overlay.is-closing .poster-fullscreen-img {
-  animation: poster-fs-zoom-out 250ms ease-in both;
+.is-closing .poster-fullscreen-img {
+  animation: poster-fs-zoom 250ms ease-in reverse both;
 }
-
-@keyframes poster-fs-fade-in {
+@keyframes poster-fs-fade {
   from { opacity: 0; }
-  to { opacity: 1; }
 }
-@keyframes poster-fs-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-@keyframes poster-fs-zoom-in {
+@keyframes poster-fs-zoom {
   from { transform: scale(0.4); }
-  to { transform: scale(1); }
-}
-@keyframes poster-fs-zoom-out {
-  from { transform: scale(1); }
-  to { transform: scale(0.4); }
 }
 
 .poster-fullscreen-track {
