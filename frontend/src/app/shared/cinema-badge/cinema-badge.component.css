@@ -18,6 +18,12 @@
   font-size: 0.55rem;
 }
 
+.cinema-badge--lg {
+  gap: 0.4rem;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+}
+
 .cinema-badge--sm i {
   font-size: 0.5rem;
 }

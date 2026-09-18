@@ -23,5 +23,6 @@ export class CinemaBadgeComponent {
   @Input() badge: CinemaBadgeVm | null = null;
   // 'sm' shrinks the text/icon for tight spaces (e.g. the marquee's narrow
   // cards) - default 'md' keeps every existing usage's look unchanged.
-  @Input() size: 'sm' | 'md' = 'md';
+  // 'lg' is only used by the cinema details page header.
+  @Input() size: 'sm' | 'md' | 'lg' = 'md';
 }

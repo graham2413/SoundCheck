@@ -57,7 +57,7 @@
       <app-genre-pills class="mt-2" mode="line" [expandable]="true" [genres]="genres"></app-genre-pills>
 
       <div class="flex items-center gap-2 mt-3">
-        <app-cinema-badge [badge]="detailBadge"></app-cinema-badge>
+        <app-cinema-badge [badge]="detailBadge" size="lg"></app-cinema-badge>
       </div>
     </div>
   </div>
@@ -138,11 +138,9 @@
         [class.fa-plus]="!isTogglingWatchlist && !isWatchlist"
         [class.fa-check]="!isTogglingWatchlist && isWatchlist"
       ></i>
-      <!-- Short label below the sm breakpoint - clamp()'d font-size alone
-           can't make all 3 buttons' full labels fit on common phone widths
-           without truncating, so swap to shorter wording there instead. -->
-      <span class="action-btn-label hidden sm:inline">{{ isWatchlist ? 'On Watchlist' : 'Add to Watchlist' }}</span>
-      <span class="action-btn-label sm:hidden">{{ isWatchlist ? 'Added' : 'Add' }}</span>
+      <!-- Short label at every width - the full wording doesn't fit all 3
+           buttons on common phone widths, so it's used everywhere for consistency. -->
+      <span class="action-btn-label">{{ isWatchlist ? 'Added' : 'Add' }}</span>
     </button>
     <button type="button" class="action-btn action-btn-outline" (click)="rate.emit()">
       <i class="flex-shrink-0" [class.far]="!userReview" [class.fa-star]="!userReview" [class.fas]="userReview" [class.fa-pen]="userReview"></i>
@@ -209,6 +207,14 @@
         Release Date
       </div>
       <span class="detail-row-value">{{ formattedReleaseDate || year }}</span>
+    </div>
+
+    <div class="detail-row" *ngIf="formattedRereleaseDate">
+      <div class="detail-row-label">
+        <i class="far fa-calendar"></i>
+        Re-release Date
+      </div>
+      <span class="detail-row-value">{{ formattedRereleaseDate }}</span>
     </div>
 
     <div class="detail-row" *ngIf="director">

@@ -5,6 +5,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PROVIDER_LOGO_OVERRIDES } from '../../shared/provider-logo-overrides';
 import { getCinemaStatusBadge, withShortBadgeLabel, CinemaBadgeVm } from '../../shared/cinema-status-badge';
+import { getMovieRereleaseBadge } from '../../shared/movie-rerelease-badge';
 import { CinemaBadgeComponent } from '../../shared/cinema-badge/cinema-badge.component';
 import { GenrePillsComponent } from '../../shared/genre-pills/genre-pills.component';
 import { CinemaSortDropdownComponent, CinemaDropdownOption } from '../../shared/cinema-sort-dropdown/cinema-sort-dropdown.component';
@@ -757,6 +758,17 @@ export class CinemaReviewPageComponent implements OnInit, OnChanges, AfterViewIn
   get formattedReleaseDate(): string | null {
     if (!this.releaseDate) return null;
     return this.parseLocalDate(this.releaseDate).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+
+  // Only for movies currently in a "Returning to Theaters"/"Back in Theaters"
+  // window (same windows as the badge) - otherwise the row stays hidden.
+  get formattedRereleaseDate(): string | null {
+    if (this.mediaType === 'tv' || !this.rereleaseDate || !getMovieRereleaseBadge(this.rereleaseDate)) return null;
+    return this.parseLocalDate(this.rereleaseDate).toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
       year: 'numeric',
