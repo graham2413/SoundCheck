@@ -10,16 +10,7 @@ const {
   buildCalendarSubtitle,
   buildCalendarMonthGroups,
 } = require("../utils/calendarHelpers");
-const {
-  getCachedEpisodeMap,
-  cacheEpisodeMap,
-  cacheEmptyResult,
-  acquireScanLock,
-  releaseScanLock,
-  scanImdbEpisodeFile,
-  mergeRatingsIntoEpisodes,
-  mapTmdbStatusToShowStatus,
-} = require("../utils/imdbEpisodeMap");
+const { getSeasonEpisodeRatings } = require("../utils/episodeRatingLookup");
 const { getPersonWikipediaPopularity } = require("../utils/wikipediaPopularity");
 const { parseTraktExport } = require("../utils/parseTraktExport");
 const { backfillCinemaCovers } = require("../scripts/backfillCinemaCovers");
@@ -541,151 +532,39 @@ exports.getCinemaSoundtrack = async (req, res) => {
   }
 };
 
-// A show's episode list is only ever considered stale (not just present/
-// absent) for currently-airing shows, since only those can gain a genuinely
-// new episode mapping between now and this key's TTL expiry. Ended shows'
-// mappings are complete forever, so they're never proactively refreshed.
-const ONGOING_STALE_AFTER_MS = 24 * 60 * 60 * 1000;
-
-function isStale(cachedPayload, showStatus) {
-  if (showStatus !== "ongoing") return false;
-  const cachedAtMs = new Date(cachedPayload.cachedAt).getTime();
-  if (!Number.isFinite(cachedAtMs)) return false;
-  return Date.now() - cachedAtMs > ONGOING_STALE_AFTER_MS;
-}
-
-// Background refresh/scan - fire-and-forget, never awaited by a request
-// handler. Re-acquires the same lock other callers use, so a background
-// refresh can never run concurrently with (or duplicate) an on-demand scan
-// for the same show.
-async function refreshEpisodeMapInBackground(parentTconst, showStatus) {
-  const gotLock = await acquireScanLock(parentTconst).catch(() => false);
-  if (!gotLock) return;
-  try {
-    const byParent = await scanImdbEpisodeFile(parentTconst);
-    const episodes = byParent.get(parentTconst) || [];
-    if (episodes.length) {
-      await cacheEpisodeMap(parentTconst, episodes, { showStatus, cacheSource: "coldFallback" });
-    } else {
-      await cacheEmptyResult(parentTconst);
-    }
-  } catch (error) {
-    console.error(`imdbEpisodeMap: background refresh failed for ${parentTconst}:`, error.message);
-  } finally {
-    await releaseScanLock(parentTconst).catch(() => {});
-  }
-}
-
-// Fire-and-forget warm-cache hook - called (never awaited) right after a
-// user watchlists, marks watched, or rates/reviews a TV show, so a show they
-// just interacted with is likely already cached by the time they open its
-// Episodes tab, even if it was never nightly-prewarmed (e.g. just added).
-// Purely a performance optimization: correctness still comes from the
-// on-demand endpoint's own cold-scan fallback, so this never needs to be
-// awaited by the calling request handler.
-async function triggerEpisodeMapPrewarmForShow(item) {
-  if (!item || item.mediaType !== "tv" || !item.imdbId || !/^tt\d+$/.test(item.imdbId)) return;
-  const parentTconst = item.imdbId;
-
-  try {
-    const alreadyCached = await getCachedEpisodeMap(parentTconst);
-    if (alreadyCached) return; // don't rescan - staleness is handled by the read endpoint
-
-    const gotLock = await acquireScanLock(parentTconst);
-    if (!gotLock) return; // a scan for this show is already in flight
-
-    try {
-      const showStatus = mapTmdbStatusToShowStatus(item.status);
-      const byParent = await scanImdbEpisodeFile(parentTconst);
-      const episodes = byParent.get(parentTconst) || [];
-      if (episodes.length) {
-        await cacheEpisodeMap(parentTconst, episodes, { showStatus, cacheSource: "userActionPrewarm" });
-      } else {
-        await cacheEmptyResult(parentTconst);
-      }
-    } finally {
-      await releaseScanLock(parentTconst).catch(() => {});
-    }
-  } catch (error) {
-    console.error(`imdbEpisodeMap: user-action prewarm failed for ${parentTconst}:`, error.message);
-  }
-}
-
-// GET /api/cinema/tv/:parentTconst/episodes/imdb-ratings?showStatus=ended|ongoing
-// Per-episode IMDb ratings for a TV show, by its IMDb ID - works for ANY
-// show (tracked or a brand-new search result), not just ones already
-// prewarmed. See utils/imdbEpisodeMap.js's top-of-file comment and
-// /memories/repo/tv-episode-imdb-ratings-plan.md for the full architecture
-// (Option A) this implements.
+// GET /api/cinema/tv/:parentTconst/season/:seasonNumber/episodes/imdb-ratings
+// Per-episode IMDb ratings for ONE season of a TV show, by its IMDb ID -
+// works for ANY show (tracked or a brand-new search result). Scoped to a
+// single season (rather than the whole show) so the response stays fast and
+// small regardless of how many seasons a long-running show has, and lines up
+// with the Episodes tab's own per-season fetch (getTvSeasonEpisodes) - the
+// two load in step as the user switches seasons. Resolves the show's TMDb tv
+// id, then fans out one cached, rate-limited TMDb call per episode to get
+// its tconst (see utils/episodeRatingLookup.js), instead of streaming and
+// scanning IMDb's full title.episode.tsv.gz file.
 exports.getEpisodeImdbRatings = async (req, res) => {
   try {
-    const { parentTconst } = req.params;
-    const showStatus = req.query.showStatus === "ended" ? "ended" : req.query.showStatus === "ongoing" ? "ongoing" : "unknown";
+    const { parentTconst, seasonNumber } = req.params;
+    const season = Number(seasonNumber);
 
     if (!parentTconst || !/^tt\d+$/.test(parentTconst)) {
       return res.status(400).json({ success: false, message: "Invalid parentTconst" });
     }
-
-    const cached = await getCachedEpisodeMap(parentTconst);
-
-    if (cached) {
-      const stale = isStale(cached, showStatus);
-      if (stale) {
-        // Don't block the response on the refresh - return what we have now.
-        refreshEpisodeMapInBackground(parentTconst, showStatus);
-      }
-      const episodes = await mergeRatingsIntoEpisodes(cached.episodes);
-      return res.status(200).json({
-        success: true,
-        data: {
-          parentTconst,
-          cacheStatus: stale ? "stale" : "hit",
-          source: "imdb-title-episode-dataset + imdb-title-ratings-dataset",
-          episodes,
-        },
-      });
+    if (!Number.isInteger(season) || season < 1) {
+      return res.status(400).json({ success: false, message: "Invalid seasonNumber" });
     }
 
-    // Cache miss - only one concurrent request per show is ever allowed to
-    // actually perform the expensive full-file scan.
-    const gotLock = await acquireScanLock(parentTconst);
-    if (!gotLock) {
-      return res.status(202).json({
-        success: true,
-        data: {
-          parentTconst,
-          cacheStatus: "processing",
-          message: "Episode ratings are being prepared. Try again shortly.",
-        },
-      });
-    }
+    const episodes = await getSeasonEpisodeRatings(parentTconst, season);
 
-    try {
-      const byParent = await scanImdbEpisodeFile(parentTconst);
-      const episodes = byParent.get(parentTconst) || [];
-
-      if (!episodes.length) {
-        await cacheEmptyResult(parentTconst);
-        return res.status(200).json({
-          success: true,
-          data: { parentTconst, cacheStatus: "miss", source: "imdb-title-episode-dataset", episodes: [] },
-        });
-      }
-
-      await cacheEpisodeMap(parentTconst, episodes, { showStatus, cacheSource: "coldFallback" });
-      const merged = await mergeRatingsIntoEpisodes(episodes);
-      return res.status(200).json({
-        success: true,
-        data: {
-          parentTconst,
-          cacheStatus: "miss",
-          source: "imdb-title-episode-dataset + imdb-title-ratings-dataset",
-          episodes: merged,
-        },
-      });
-    } finally {
-      await releaseScanLock(parentTconst);
-    }
+    return res.status(200).json({
+      success: true,
+      data: {
+        parentTconst,
+        seasonNumber: season,
+        source: "tmdb-external-ids + imdb-title-ratings-dataset",
+        episodes,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Server Error" });
   }
@@ -1192,7 +1071,6 @@ exports.markEpisodeWatched = async (req, res) => {
     }
 
     await item.save();
-    triggerEpisodeMapPrewarmForShow(item);
 
     const myReview = item.episodeReviews.find(
       (r) => r.seasonNumber === seasonNumber && r.episodeNumber === episodeNumber
@@ -1245,7 +1123,6 @@ exports.rateEpisode = async (req, res) => {
     entry.reviewedAt = new Date();
 
     await item.save();
-    triggerEpisodeMapPrewarmForShow(item);
 
     res.status(200).json({
       success: true,
@@ -1310,7 +1187,6 @@ exports.rateCinema = async (req, res) => {
       });
     }
 
-    triggerEpisodeMapPrewarmForShow(item);
     await invalidateCalendarCache(req.user._id);
 
     res.status(200).json({ success: true, data: item });
@@ -1555,7 +1431,6 @@ exports.editCinemaItem = async (req, res) => {
     if (!isRefinement) item.createdAt = new Date();
     await item.save();
 
-    triggerEpisodeMapPrewarmForShow(item);
     await invalidateCalendarCache(req.user._id);
 
     res.status(200).json({ success: true, data: item });
@@ -1848,7 +1723,6 @@ exports.toggleWatchlist = async (req, res) => {
       });
     }
 
-    triggerEpisodeMapPrewarmForShow(item);
     await invalidateCalendarCache(req.user._id);
 
     res.status(200).json({ success: true, data: { isWatchlist: true, item } });
@@ -1907,7 +1781,6 @@ exports.markCinemaWatched = async (req, res) => {
       });
     }
 
-    triggerEpisodeMapPrewarmForShow(item);
     await invalidateCalendarCache(req.user._id);
 
     res.status(200).json({ success: true, data: item });

@@ -28,31 +28,6 @@
     </div>
   </div>
 
-  <!-- IMDb episode ratings loading/processing status cards - shown here
-     (below the season selector, above the list) since they represent a
-     currently-in-progress fetch, not a result. Only actually rendered past
-     a short delay (see showRatingsLoadingCard) so a fast cache hit never
-     flashes this. -->
-  <div class="mt-4" *ngIf="showRatingsLoadingCard || ratingsRequestState === 'processing'">
-    <div class="ratings-status-card ratings-status-card-loading" *ngIf="showRatingsLoadingCard">
-      <div class="ratings-status-spinner"></div>
-      <div>
-        <p class="ratings-status-title">Loading IMDb episode ratings…</p>
-        <p class="ratings-status-subtitle">We're preparing episode ratings. This usually takes a few seconds.</p>
-      </div>
-    </div>
-
-    <div class="ratings-status-card ratings-status-card-processing" *ngIf="ratingsRequestState === 'processing'">
-      <div class="ratings-status-spinner ratings-status-spinner-processing"></div>
-      <div>
-        <p class="ratings-status-title">Preparing IMDb ratings…</p>
-        <p class="ratings-status-subtitle">
-          Episode ratings are being processed. This can take a few seconds. We'll update automatically.
-        </p>
-      </div>
-    </div>
-  </div>
-
   <!-- Episode list -->
   <div
     #episodesContainer
@@ -88,12 +63,23 @@
             <i class="fas fa-clapperboard"></i>
           </div>
 
-          <div class="episode-card-rating" *ngIf="ratingFor(ep.episodeNumber) as r">
+          <!-- Per-episode IMDb rating badge - follows this app's image-loader
+               spinner pattern (see CLAUDE.md), adapted for a rating cell
+               instead of an image: a spinner shows while this season's
+               ratings are still in flight (past the usual short delay), and
+               is replaced by the rating once it resolves. If this episode
+               specifically has no IMDb rating, nothing renders at all. -->
+          <div class="episode-card-rating" *ngIf="ratingFor(ep.episodeNumber) as r; else episodeRatingLoading">
             <span class="episode-rating-badge-label">
               <img src="assets/imdb-logo.svg" alt="IMDb" class="episode-rating-imdb-logo" />
             </span>
             <span class="episode-rating-badge-value">{{ r.averageRating != null ? r.averageRating.toFixed(1) : '—' }}</span>
           </div>
+          <ng-template #episodeRatingLoading>
+            <div class="episode-card-rating episode-card-rating-loading" *ngIf="showRatingsLoadingIndicators">
+              <div class="w-3 h-3 border-t-2 border-white rounded-full animate-spin"></div>
+            </div>
+          </ng-template>
         </div>
 
         <div class="episode-card-body">
@@ -112,8 +98,9 @@
 
   <!-- IMDb episode ratings unavailable card - shown below the episode list,
        which always renders independently from TMDb metadata (see component
-       header comment). The loading/processing states live above the list
-       instead - see the block right after the season selector. -->
+       header comment). Per-episode loading spinners live inline on each
+       episode card instead of a separate status block - see
+       episode-card-rating above. -->
   <div class="mt-4">
     <div
       class="ratings-status-card ratings-status-card-empty"

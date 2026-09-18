@@ -281,7 +281,8 @@ export interface CinemaSeasonEpisodesResponse {
   };
 }
 
-// One episode's IMDb rating from GET /api/cinema/tv/:parentTconst/episodes/imdb-ratings
+// One episode's IMDb rating from GET
+// /api/cinema/tv/:parentTconst/season/:seasonNumber/episodes/imdb-ratings
 export interface EpisodeImdbRating {
   tconst: string;
   seasonNumber: number;
@@ -289,8 +290,6 @@ export interface EpisodeImdbRating {
   averageRating: number | null;
   numVotes: number | null;
 }
-
-export type EpisodeImdbRatingsCacheStatus = 'hit' | 'stale' | 'miss' | 'processing';
 
 // One user's rating/review for one specific episode, from GET
 // /api/cinema/tv/:tmdbId/episode/:seasonNumber/:episodeNumber/reviews
@@ -315,10 +314,9 @@ export interface EpisodeImdbRatingsResponse {
   success: boolean;
   data: {
     parentTconst: string;
-    cacheStatus: EpisodeImdbRatingsCacheStatus;
+    seasonNumber: number;
     source?: string;
-    message?: string;
-    episodes?: EpisodeImdbRating[];
+    episodes: EpisodeImdbRating[];
   };
 }
 

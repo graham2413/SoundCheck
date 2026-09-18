@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
-import { trigger, transition, style, animate, query, group } from '@angular/animations';
 import { NgbActiveModal, NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 import { CinemaReviewPageComponent, ReviewFilter, ReviewSort } from './cinema-review-page.component';
@@ -25,45 +24,52 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
   selector: 'app-cinema-review-modal',
   standalone: true,
   imports: [CommonModule, CinemaReviewPageComponent, CinemaCastListComponent, CinemaAllReviewsComponent, CinemaAwardsPageComponent, CinemaEpisodeDetailComponent, CinemaSoundtrackListComponent],
-  animations: [
-    // Same push-forward/pop-back feel as this modal's own slide-in-from-
-    // right entrance (see the .cinema-detail-modal rule in styles.css) -
-    // opening a sub-view (Cast/All Reviews/Awards/Episode/Soundtrack) slides
-    // it in from the right while the overview slides out to the left;
-    // going back (any sub-view -> overview) reverses both directions. Every
-    // sub-view's own `back` always returns straight to "overview" (never
-    // sub-view -> sub-view directly), so these two transitions cover every
-    // real case.
-    trigger('panelSlide', [
-      transition('overview => *', [
-        query(':enter', [style({ transform: 'translateX(100%)' })], { optional: true }),
-        query(':leave', [style({ position: 'absolute', top: 0, left: 0, width: '100%' })], { optional: true }),
-        group([
-          query(':enter', [animate('300ms ease-out', style({ transform: 'translateX(0)' }))], { optional: true }),
-          query(':leave', [animate('300ms ease-out', style({ transform: 'translateX(-100%)' }))], { optional: true }),
-        ]),
-      ]),
-      transition('* => overview', [
-        query(':enter', [style({ transform: 'translateX(-100%)' })], { optional: true }),
-        query(':leave', [style({ position: 'absolute', top: 0, left: 0, width: '100%' })], { optional: true }),
-        group([
-          query(':enter', [animate('300ms ease-out', style({ transform: 'translateX(0)' }))], { optional: true }),
-          query(':leave', [animate('300ms ease-out', style({ transform: 'translateX(100%)' }))], { optional: true }),
-        ]),
-      ]),
-    ]),
-  ],
+  // A sub-view (Cast/All Reviews/Awards/Episode/Soundtrack) slides in and
+  // covers the Overview, which stays put underneath rather than sliding
+  // away itself - the exact same "new layer slides over a static page
+  // beneath it" behavior as this modal's own entrance (see
+  // .cinema-detail-modal in styles.css) and the Create/Edit Review modal
+  // (opened as its own separate modal instance on top of this one). Overview
+  // is one absolutely-positioned layer that never moves; the sub-view is a
+  // second full-size layer on top of it, permanently mounted, whose only
+  // state is a `transform: translateX(...)` toggled between fully off-
+  // screen to the right and translateX(0). A previous version instead
+  // pushed both layers sideways together (a "track" twice the viewport
+  // width) - visually consistent between panels, but the wrong metaphor:
+  // the create/edit modal never moves the page under it, so this shouldn't
+  // either.
+  styles: [`
+    .panel-slider { position: relative; height: 100%; overflow: hidden; }
+    .panel-overview-slot {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .panel-subview-slot {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #020814;
+      transform: translateX(100%);
+      transition: transform 300ms ease-out;
+    }
+    .panel-subview-slot-visible { transform: translateX(0); }
+  `],
   template: `
-    <div #scrollContainer class="fixed inset-0 z-50 overflow-y-auto bg-[#020814]">
+    <div class="fixed inset-0 z-50 overflow-hidden bg-[#020814]">
       <div class="cinema-loader-overlay" *ngIf="!detail">
         <div class="cinema-loader-ring"></div>
         <p class="cinema-loader-text">Loading details…</p>
       </div>
 
-      <div [@panelSlide]="currentPanel" style="position: relative; overflow: hidden;">
+      <div class="panel-slider" *ngIf="detail">
 
+      <div class="panel-overview-slot">
       <app-cinema-review-page
-        *ngIf="detail && !showFullCast && !showAllReviews && !showAwards && !showEpisodeDetail && !showSoundtrack"
         [title]="detail.title"
         [cover]="detail.cover"
         [mediaType]="detail.mediaType"
@@ -119,16 +125,22 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
         (similarItemClick)="openRelatedTitle($event)"
         (episodeSelected)="onEpisodeSelected($event)"
       ></app-cinema-review-page>
+      </div>
 
+      <div
+        class="panel-subview-slot"
+        [class.panel-subview-slot-visible]="currentPanel !== 'overview'"
+        #subviewSlot
+      >
       <app-cinema-cast-list
-        *ngIf="detail && showFullCast"
+        *ngIf="showFullCast"
         [cast]="detail.cast"
         (back)="switchToReview()"
         (creditClick)="openRelatedTitle($event)"
       ></app-cinema-cast-list>
 
       <app-cinema-all-reviews
-        *ngIf="detail && showAllReviews"
+        *ngIf="showAllReviews"
         [title]="detail.title"
         [cover]="detail.cover"
         [appRating]="appRating"
@@ -148,7 +160,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
       ></app-cinema-all-reviews>
 
       <app-cinema-awards-page
-        *ngIf="detail && showAwards"
+        *ngIf="showAwards"
         [title]="detail.title"
         [cover]="detail.cover"
         [mediaType]="detail.mediaType"
@@ -163,7 +175,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
       ></app-cinema-awards-page>
 
       <app-cinema-episode-detail
-        *ngIf="detail && showEpisodeDetail && selectedEpisode"
+        *ngIf="showEpisodeDetail && selectedEpisode"
         [tmdbId]="detail.tmdbId"
         [showTitle]="detail.title"
         [showCover]="detail.cover"
@@ -176,7 +188,7 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
       ></app-cinema-episode-detail>
 
       <app-cinema-soundtrack-list
-        *ngIf="detail && showSoundtrack"
+        *ngIf="showSoundtrack"
         [title]="detail.title"
         [cover]="detail.cover"
         [tracks]="soundtrackTracks || []"
@@ -187,13 +199,14 @@ import { CinemaDetail, CinemaItem, CinemaPersonCredit, CinemaReview, CinemaSeaso
         (back)="switchToReview()"
         (trackClick)="onSoundtrackTrackClick($event)"
       ></app-cinema-soundtrack-list>
+      </div>
 
       </div>
     </div>
   `,
 })
 export class CinemaReviewModalComponent implements OnInit {
-  @ViewChild('scrollContainer') scrollContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('subviewSlot') subviewSlot?: ElementRef<HTMLDivElement>;
 
   @Input() record!: CinemaItem;
   @Input() recordList: CinemaItem[] = [];
@@ -408,11 +421,14 @@ export class CinemaReviewModalComponent implements OnInit {
     });
   }
 
-  // Review page and cast list share the same scrollable container (toggled
-  // via *ngIf), so switching views without resetting scrollTop would open
-  // the cast list already scrolled down if the review page had been scrolled.
+  // Only the sub-view's own scroll gets reset - Overview stays a static
+  // layer underneath the sliding sub-view (like the page behind the
+  // Create/Edit Review modal), so its scroll position must be left alone
+  // and simply revealed as-is whenever the user comes back to it, instead
+  // of visibly snapping to the top while still covered by the outgoing
+  // sub-view's slide-out animation.
   private resetScroll(): void {
-    this.scrollContainer.nativeElement.scrollTop = 0;
+    if (this.subviewSlot) this.subviewSlot.nativeElement.scrollTop = 0;
   }
 
   // Drives the panelSlide animation (see @Component.animations above) - a

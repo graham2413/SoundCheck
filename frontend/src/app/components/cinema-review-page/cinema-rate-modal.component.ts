@@ -55,6 +55,7 @@ export class CinemaRateModalComponent implements OnInit, OnDestroy {
   reviewText = '';
   containsSpoilers = false;
   isSaving = false;
+  isCoverLoaded = false;
 
   // Tap-to-edit the big rating number - plain text until clicked, then
   // swaps to a real number input (auto-focused/selected) so the user can

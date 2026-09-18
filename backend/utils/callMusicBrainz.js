@@ -13,12 +13,13 @@
 // was never released as a record, and TV is series-level only - MusicBrainz
 // has no relationship type linking a release group to an individual episode.
 const axios = require("axios");
+const redis = require("./redisClient");
 
 const MB_BASE = "https://musicbrainz.org/ws/2";
 // MusicBrainz's own etiquette rules require a descriptive User-Agent
 // identifying the app - unlike TMDb/Deezer this has no API key at all, this
 // header is the only thing that identifies the caller.
-const USER_AGENT = "SoundCheck-Cinewave/1.0 (soundtrack lookup; contact: dev@example.com)";
+const USER_AGENT = "SoundCheck-Cinewave/1.0 (soundtrack + artist release lookup; contact: dev@example.com)";
 
 // MusicBrainz asks unauthenticated callers to stay at ~1 request/second.
 // A single soundtrack lookup already makes several *sequential* calls of its
@@ -160,4 +161,156 @@ async function getSoundtrack(imdbId) {
   return tracks.length ? { available: true, tracks } : { available: false, tracks: [] };
 }
 
-module.exports = { getSoundtrack };
+// Long-TTL like callSpotify.js's findArtistId (an artist's MBID never
+// changes once resolved) - a Deezer artist id is a stable, precise key to
+// search MusicBrainz by, PROVIDED MusicBrainz has that Deezer artist page
+// logged as a URL relationship. That coverage is community-entered and
+// inconsistent, so this falls back to a fuzzy name search (same "two
+// artists can share a name" tradeoff callSpotify.js's own findArtistId
+// already accepts) when the precise lookup misses.
+const ARTIST_ID_CACHE_TTL = 30 * 24 * 60 * 60; // 30 days
+
+async function resolveArtistMbid(deezerArtistId, artistName) {
+  const cacheKey = `musicbrainz:artist-mbid:${deezerArtistId}`;
+  const cached = await redis.safeGet(cacheKey);
+  if (cached) return cached === "null" ? null : cached;
+
+  let mbid = await resolveArtistMbidByDeezerUrl(deezerArtistId);
+  if (!mbid) mbid = await resolveArtistMbidByName(artistName);
+
+  await redis.safeSet(cacheKey, mbid || "null", "EX", ARTIST_ID_CACHE_TTL);
+  return mbid;
+}
+
+// Deezer artist pages have been seen logged under both the bare and
+// locale-prefixed URL shape ("/artist/{id}" and "/en/artist/{id}") - a miss
+// on one is cheap since callMusicBrainz already returns null instead of
+// throwing on a 404, so trying both costs at most one extra rate-limited call.
+async function resolveArtistMbidByDeezerUrl(deezerArtistId) {
+  const candidateUrls = [
+    `https://www.deezer.com/artist/${deezerArtistId}`,
+    `https://www.deezer.com/en/artist/${deezerArtistId}`,
+  ];
+  for (const resource of candidateUrls) {
+    const data = await callMusicBrainz("/url", { resource, inc: "artist-rels" });
+    const relations = data?.relations || [];
+    const artistRel = relations.find((r) => r["target-type"] === "artist" && r.artist?.id);
+    if (artistRel) return artistRel.artist.id;
+  }
+  return null;
+}
+
+// Fuzzy fallback - picks the first search result only, no attempt at
+// cross-referencing genre/country to disambiguate two same-named artists.
+async function resolveArtistMbidByName(artistName) {
+  const data = await callMusicBrainz("/artist", { query: artistName, limit: 1 });
+  return data?.artists?.[0]?.id || null;
+}
+
+// Shorter TTL like callSpotify.js's getUpcomingAlbums - an upcoming date can
+// still be revised after first appearing on MusicBrainz.
+const UPCOMING_RELEASE_GROUPS_CACHE_TTL = 12 * 60 * 60; // 12 hours
+
+// The Cover Art Archive (archive.org-backed, tightly integrated with
+// MusicBrainz but a genuinely separate service/host) hosts real cover art
+// for a meaningful share of release groups - including pre-release ones,
+// confirmed by direct testing (e.g. Kings of Leon's unreleased "O My
+// Beloved" already has front art registered). Its own convenience redirect
+// (`/release-group/:mbid/front-{size}`) 404s cleanly when nothing's
+// registered, so a plain existence check is all that's needed - no JSON
+// parsing required, the same URL doubles as the final <img src>.
+// Cached alongside the release-group list itself (same TTL) since it's
+// checked once per candidate release, not on every calendar page load.
+async function resolveCoverArtUrl(releaseGroupMbid) {
+  const cacheKey = `musicbrainz:cover-art:${releaseGroupMbid}`;
+  const cached = await redis.safeGet(cacheKey);
+  if (cached) return cached === "null" ? null : cached;
+
+  const url = `https://coverartarchive.org/release-group/${releaseGroupMbid}/front-500`;
+  let resolved = null;
+  try {
+    // HEAD only - confirming existence, not downloading the image. Not
+    // routed through callMusicBrainz/waitForSlot: this hits archive.org, not
+    // musicbrainz.org, so MusicBrainz's 1 req/sec etiquette doesn't apply.
+    await axios.head(url, { timeout: 8000 });
+    resolved = url;
+  } catch (error) {
+    // 404 (no art registered for this release group) is the common, expected
+    // case - not worth logging as an error.
+    if (error.response?.status !== 404) {
+      console.error(`Cover Art Archive lookup failed for ${releaseGroupMbid}:`, error.response?.status, error.message);
+    }
+  }
+
+  await redis.safeSet(cacheKey, resolved || "null", "EX", UPCOMING_RELEASE_GROUPS_CACHE_TTL);
+  return resolved;
+}
+
+// Reuses the same getBestReleaseId -> getReleaseTracks chain the soundtrack
+// feature already uses, just against a music release-group instead of a
+// soundtrack one linked via IMDb. Coverage isn't guaranteed pre-release -
+// depends on whether a label/editor entered the full tracklist ahead of
+// time (common for pre-order campaigns, far from universal) - confirmed
+// directly working today for Kings of Leon's unreleased "O My Beloved"
+// (13 real tracks with durations, released ~7 weeks out). Cached alongside
+// the release-groups list itself since it's resolved once per candidate.
+async function getReleaseGroupTracklist(releaseGroupId) {
+  const cacheKey = `musicbrainz:tracklist:${releaseGroupId}`;
+  const cached = await redis.safeGet(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const releaseId = await getBestReleaseId(releaseGroupId);
+  const tracks = releaseId ? await getReleaseTracks(releaseId) : [];
+
+  await redis.safeSet(cacheKey, JSON.stringify(tracks), "EX", UPCOMING_RELEASE_GROUPS_CACHE_TTL);
+  return tracks;
+}
+
+// Real upcoming (future first-release-date) albums/singles for one resolved
+// MBID. Mirrors callSpotify.js's getUpcomingAlbums contract: day-precision
+// dates only, future-dated only, [] on any failure (degrade quietly).
+async function getUpcomingReleaseGroups(mbid) {
+  const cacheKey = `musicbrainz:upcoming-release-groups:${mbid}`;
+  const cached = await redis.safeGet(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const data = await callMusicBrainz("/release-group", {
+    artist: mbid,
+    type: "album|single",
+    limit: 25,
+  });
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const futureGroups = (data?.["release-groups"] || []).filter((rg) => {
+    const date = rg["first-release-date"];
+    // Day-precision only ("YYYY-MM-DD", 10 chars) - a bare year or
+    // year-month isn't a usable calendar entry, same reasoning as
+    // Spotify's release_date_precision === "day" filter.
+    return date && date.length === 10 && date > todayStr;
+  });
+
+  // Typically 0-2 candidates per artist at this point (already date-
+  // filtered), so resolving cover art for each in parallel is cheap and
+  // doesn't need the batching cronSyncAllArtists uses for larger fan-outs.
+  const upcoming = await Promise.all(
+    futureGroups.map(async (rg) => ({
+      sourceId: rg.id,
+      title: rg.title,
+      cover: await resolveCoverArtUrl(rg.id),
+      tracklist: await getReleaseGroupTracklist(rg.id),
+      releaseDate: rg["first-release-date"],
+      // Lowercased - MusicBrainz's own primary-type vocabulary is
+      // capitalized ("Album"/"Single"/"EP"), but every other recordType
+      // consumer in this app (Deezer/Spotify's record_type/album_type, the
+      // frontend's musicTypeLabel switch and calendar badge check) expects
+      // lowercase - left as-is this silently fell through to a generic
+      // "Release" label/icon for every MusicBrainz-sourced upcoming release.
+      recordType: rg["primary-type"] ? rg["primary-type"].toLowerCase() : null,
+    }))
+  );
+
+  await redis.safeSet(cacheKey, JSON.stringify(upcoming), "EX", UPCOMING_RELEASE_GROUPS_CACHE_TTL);
+  return upcoming;
+}
+
+module.exports = { getSoundtrack, resolveArtistMbid, getUpcomingReleaseGroups, getReleaseGroupTracklist };

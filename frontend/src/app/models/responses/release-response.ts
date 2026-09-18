@@ -41,6 +41,11 @@ export interface MusicCalendarEntry {
   // "compile"/"compilation") - null for past rows synced before this field
   // existed, or if the provider didn't supply one.
   recordType: string | null;
+  // Only ever non-empty for a MusicBrainz-sourced upcoming row - see
+  // backend/models/UpcomingRelease.js. Raw shape, not yet a full Song (no
+  // id/preview/etc) - calendar-page.component.ts maps it when opening the
+  // review page.
+  tracklist?: { title: string; artist: string | null; durationMs: number | null }[];
 }
 
 export interface MusicCalendarResponse {

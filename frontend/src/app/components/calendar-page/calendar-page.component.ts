@@ -9,6 +9,7 @@ import { InfiniteScrollDirective } from 'ngx-infinite-scroll';
 import { CalendarEntry, CalendarSubtitle, CalendarMonthGroup } from 'src/app/models/responses/cinema-response';
 import { CinemaItem } from 'src/app/models/responses/cinema-response';
 import { MusicCalendarEntry } from 'src/app/models/responses/release-response';
+import { Song } from 'src/app/models/responses/song-response';
 import { CinemaService } from 'src/app/services/cinema.service';
 import { SearchService } from 'src/app/services/search.service';
 import { CinemaReviewModalComponent } from '../cinema-review-page/cinema-review-modal.component';
@@ -450,12 +451,46 @@ export class CalendarPageComponent implements OnInit {
       releaseDate: entry.airDate,
       avgRating: 0,
       reviewCount: 0,
+      // entry.albumId is a Spotify/MusicBrainz sourceId for an upcoming
+      // release, not a real Deezer album id - review-page.component.ts uses
+      // this flag to skip API calls that can never succeed for it. tracklist
+      // is mapped from MusicBrainz's data when available (see
+      // mapUpcomingTracklist below), [] otherwise - never left undefined,
+      // since review-page's trackSummary getter indexes into it directly.
+      isUpcoming: this.range === 'upcoming',
+      tracklist: this.mapUpcomingTracklist(entry),
+      recordType: entry.recordType,
     };
 
     const modalRef = this.modal.open(ReviewPageComponent, modalOptions);
     modalRef.componentInstance.record = record;
     modalRef.componentInstance.recordList = [record];
     modalRef.componentInstance.currentIndex = 0;
+  }
+
+  // Raw {title, artist, durationMs}[] (see UpcomingRelease's model comments)
+  // -> the Song[] shape review-page.component.ts's Album.tracklist expects.
+  // preview is deliberately left '' - there's no Deezer preview for
+  // something that hasn't been released, and that's also what keeps each
+  // track's play button hidden (see review-page.component.html's `*ngIf
+  //="track.preview && track.preview.length > 1"`), consistent with the
+  // album-level player being shown disabled rather than functional.
+  private mapUpcomingTracklist(entry: MusicCalendarEntry): Song[] {
+    return (entry.tracklist || []).map((t, index) => ({
+      id: index + 1,
+      title: t.title,
+      artist: t.artist || entry.artistName,
+      album: entry.title,
+      cover: this.getHighQualityImage(entry.cover),
+      preview: '',
+      isExplicit: false,
+      genre: '',
+      releaseDate: entry.airDate,
+      contributors: [],
+      duration: t.durationMs ? Math.round(t.durationMs / 1000) : 0,
+      type: 'Song' as const,
+      isPlaying: false,
+    }));
   }
 
   private openCinemaEntry(entry: CalendarEntry): void {

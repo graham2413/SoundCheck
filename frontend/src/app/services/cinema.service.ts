@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 import { environment } from 'src/environments/environments';
 import { CinemaItem, CinemaReviewsResponse, CinemaSearchResult, ImdbStatsResponse, CalendarEntry, CalendarSubtitle, CalendarMonthGroup, CinemaDetailResponse, CinemaPersonDetailResponse, CinemaPopularActor, CinemaSeasonEpisodesResponse, EpisodeImdbRatingsResponse, EpisodeReviewsResponse, CinemaSoundtrackResponse, CinemaActivityFeedResponse } from '../models/responses/cinema-response';
 
@@ -85,13 +86,18 @@ export class CinemaService {
     });
   }
 
-  // Per-episode IMDb ratings for a whole show (all seasons in one call) - see
-  // backend/utils/imdbEpisodeMap.js for the cacheStatus hit/stale/miss/processing states.
-  getEpisodeImdbRatings(parentTconst: string, showStatus?: 'ended' | 'ongoing'): Observable<EpisodeImdbRatingsResponse> {
-    return this.http.get<EpisodeImdbRatingsResponse>(`${this.apiUrl}/tv/${parentTconst}/episodes/imdb-ratings`, {
-      headers: this.authHeaders(),
-      params: showStatus ? { showStatus } : {},
-    });
+  // Per-episode IMDb ratings for one season of a show - see
+  // backend/utils/episodeRatingLookup.js. A hung/slow backend TMDb call
+  // should surface as an error instead of leaving the caller waiting
+  // forever, so this times out client-side rather than relying on the
+  // (now-removed) poll loop to eventually give up.
+  private static readonly RATINGS_TIMEOUT_MS = 15000;
+  getEpisodeImdbRatings(parentTconst: string, seasonNumber: number): Observable<EpisodeImdbRatingsResponse> {
+    return this.http
+      .get<EpisodeImdbRatingsResponse>(`${this.apiUrl}/tv/${parentTconst}/season/${seasonNumber}/episodes/imdb-ratings`, {
+        headers: this.authHeaders(),
+      })
+      .pipe(timeout(CinemaService.RATINGS_TIMEOUT_MS));
   }
 
   // Everyone's reviews (rating + text) for one specific episode

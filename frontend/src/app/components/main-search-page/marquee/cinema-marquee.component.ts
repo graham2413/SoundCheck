@@ -89,9 +89,6 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
 
   onImageLoaded(index: number): void {
     this.marqueeImageLoaded[index % this.items.length] = true;
-    if (this.marqueeImageLoaded.every(Boolean)) {
-      this.startAutoScroll();
-    }
   }
 
   trackByIndex(index: number): number {
@@ -176,7 +173,6 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
     // its own change detection cycle) - force it so the view doesn't get
     // stuck showing the skeleton loader forever despite the data arriving.
     this.cdRef.markForCheck();
-    requestAnimationFrame(() => this.startAutoScroll());
   }
 
   ngOnDestroy(): void {
@@ -190,7 +186,7 @@ export class CinemaMarqueeComponent implements OnDestroy, OnInit, OnChanges {
   // the initial entrance stagger animation, is what read as stutter at the
   // start and small hitches throughout. Also caches the track element via
   // ViewChild instead of re-querying the DOM every frame.
-  private startAutoScroll(): void {
+  startAutoScroll(): void {
     if (this.isAutoScrolling || this.items.length === 0) return;
 
     this.isAutoScrolling = true;

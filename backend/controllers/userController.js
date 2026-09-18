@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const Review = require("../models/Review");
 const CinemaItem = require("../models/CinemaItem");
 const Release = require('../models/Release');
+const UpcomingRelease = require('../models/UpcomingRelease');
 const ArtistSyncState = require('../models/ArtistSyncState');
 const PushSubscription = require('../models/PushSubscription');
 const Notification = require('../models/Notification');
@@ -621,6 +622,9 @@ exports.removeFromArtistList = async (req, res) => {
     if (!otherUsersWithArtist) {
       const deleteResult = await Release.deleteMany({ artistId: id });
       console.log(`Deleted ${deleteResult.deletedCount} releases for artist ${id} as no users follow them.`);
+
+      const upcomingDeleteResult = await UpcomingRelease.deleteMany({ artistId: id });
+      console.log(`Deleted ${upcomingDeleteResult.deletedCount} upcoming releases for artist ${id} as no users follow them.`);
 
       // Sync bookkeeping doc (see mainSearchController.js's cronSyncAllArtists) -
       // cleared here too rather than left for the daily cron's own orphan

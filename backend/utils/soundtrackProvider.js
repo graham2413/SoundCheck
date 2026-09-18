@@ -23,9 +23,7 @@ const SETTLED_TTL = 14 * 24 * 60 * 60; // 2 weeks - a settled title's soundtrack
 // launch (confirmed directly - the same title's answer changed underneath us
 // within minutes during testing) - a much shorter TTL lets a recent title
 // naturally re-check and converge toward a stable answer instead of locking
-// in whatever happened to exist on day one for a full 2 weeks. Mirrors the
-// same "ongoing vs settled" adaptive-TTL idea utils/imdbEpisodeMap.js already
-// uses for episode maps.
+// in whatever happened to exist on day one for a full 2 weeks.
 const RECENT_RELEASE_TTL = 3 * 24 * 60 * 60; // 3 days
 const RECENT_RELEASE_WINDOW_DAYS = 60;
 

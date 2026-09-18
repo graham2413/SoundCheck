@@ -2,6 +2,7 @@ const webpush = require("web-push");
 const User = require("../models/User");
 const PushSubscription = require("../models/PushSubscription");
 const Notification = require("../models/Notification");
+const Release = require("../models/Release");
 const { getLocalDateString } = require("./calendarHelpers");
 
 let vapidConfigured = false;
@@ -108,25 +109,32 @@ function recordTypeLabel(recordType) {
   }
 }
 
-// Only a release dated TODAY (America/Chicago, matching notificationJobs.js's
-// scanMusicReleaseNotifications - the cron job that also calls this function)
-// triggers a push. syncArtistAlbums() inserts a Release doc the first time
-// OUR db sees it, which for a newly-followed (or re-synced) artist can
-// include albums that actually came out long ago - without this exact-day
-// check, that first sync reads as "new" and notifies everyone for the
-// artist's entire back catalog. Matching scanMusicReleaseNotifications's own
-// gate exactly (rather than a looser multi-day window) means the two call
-// sites can never disagree on what counts as "new today".
-function isReleasedToday(releaseDate) {
+// A release only qualifies for a push within a few days of its release date
+// (America/Chicago, matching notificationJobs.js's scanMusicReleaseNotifications
+// - the cron job that also calls this function). syncArtistAlbums() inserts a
+// Release doc the first time OUR db sees it, which for a newly-followed (or
+// re-synced) artist can include albums that actually came out long ago -
+// without this window, that first sync would read as "new" and notify
+// everyone for the artist's entire back catalog. The window is a few days
+// wide (not same-day-only) so a release Deezer itself was slow to list still
+// gets caught by the next day's sweep instead of being silently skipped
+// forever once its releaseDate is no longer "today". `notifiedAt` (set below
+// once a push actually goes out) is what actually prevents duplicates across
+// repeated sweeps of the same still-recent release - the window just bounds
+// how far back a sweep bothers looking at all.
+const NOTIFY_WINDOW_DAYS = 3;
+
+function isWithinNotifyWindow(releaseDate) {
   const todayStr = getLocalDateString();
-  const start = new Date(`${todayStr}T00:00:00.000Z`);
   const end = new Date(`${todayStr}T23:59:59.999Z`);
+  const start = new Date(end.getTime() - NOTIFY_WINDOW_DAYS * 24 * 60 * 60 * 1000);
   const releaseTime = new Date(releaseDate).getTime();
   return releaseTime >= start.getTime() && releaseTime <= end.getTime();
 }
 
 async function notifyUsersForNewMusicRelease(release) {
-  if (!isReleasedToday(release.releaseDate)) return;
+  if (release.notifiedAt) return;
+  if (!isWithinNotifyWindow(release.releaseDate)) return;
 
   const users = await User.find({
     "artistList.id": release.artistId,
@@ -156,6 +164,12 @@ async function notifyUsersForNewMusicRelease(release) {
       })
     )
   );
+
+  // Marks this release as handled regardless of _id shape (release can be a
+  // plain object from syncArtistAlbums's docsToInsert, which has no _id, or a
+  // lean Mongo doc from the sweep, which does) - matching on albumId instead
+  // works for both and is unique per Release anyway.
+  await Release.updateOne({ albumId: release.albumId }, { $set: { notifiedAt: new Date() } });
 }
 
 module.exports = {

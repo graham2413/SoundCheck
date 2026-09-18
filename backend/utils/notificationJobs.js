@@ -116,10 +116,22 @@ async function scanCinemaReleaseNotifications() {
   }));
 }
 
+// Sweeps a few days back (not just today) and skips anything already
+// notified, so a release Deezer was slow to list - and which therefore
+// missed the same-day notify call in syncArtistAlbums - still gets caught
+// once it does sync in, instead of permanently missing its push the moment
+// its releaseDate stops being "today". See pushNotifications.js's
+// NOTIFY_WINDOW_DAYS/notifiedAt for the matching gate on the actual send.
+const NOTIFY_SWEEP_WINDOW_DAYS = 3;
+
 async function scanMusicReleaseNotifications() {
   const today = getLocalDateString(TIMEZONE);
-  const { start, end } = dayBounds(today);
-  const releases = await Release.find({ releaseDate: { $gte: start, $lte: end } }).lean();
+  const { end } = dayBounds(today);
+  const start = new Date(end.getTime() - NOTIFY_SWEEP_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  const releases = await Release.find({
+    releaseDate: { $gte: start, $lte: end },
+    notifiedAt: null,
+  }).lean();
 
   await Promise.allSettled(releases.map((release) =>
     notifyUsersForNewMusicRelease(release)

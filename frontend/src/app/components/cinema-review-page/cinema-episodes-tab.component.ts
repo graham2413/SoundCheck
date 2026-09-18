@@ -5,16 +5,17 @@ import { CinemaService } from '../../services/cinema.service';
 import {
   CinemaSeasonEpisode,
   EpisodeImdbRating,
-  EpisodeImdbRatingsCacheStatus,
 } from '../../models/responses/cinema-response';
 
 // Display-only for now (per plan chunk 5) - no mark-watched/rate interaction
 // yet, that's a deliberate follow-up once this is confirmed working.
 // Episode metadata (TMDb) and IMDb ratings are fetched independently and
-// merged client-side by season+episode number - the ratings endpoint
-// returns the WHOLE show's episodes in one call (see imdbEpisodeMap.js),
-// so switching seasons here never re-fetches ratings, only TMDb metadata.
-type RatingsRequestState = 'loading' | 'processing' | 'loaded';
+// merged client-side by season+episode number - the ratings endpoint is
+// scoped to one season at a time (see episodeRatingLookup.js), so switching
+// seasons re-fetches ratings just like it re-fetches TMDb metadata. Results
+// for every season visited (or prefetched) stay cached in ratingsByKey for
+// the life of this component, so revisiting a season never re-fetches.
+type RatingsRequestState = 'loading' | 'loaded';
 
 @Component({
   selector: 'app-cinema-episodes-tab',
@@ -43,7 +44,6 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
   @Input() tmdbId: string | null = null;
   @Input() imdbId: string | null = null;
   @Input() numberOfSeasons: number | null = null;
-  @Input() showStatus: string | null = null; // TMDb's raw production status, e.g. "Ended", "Returning Series"
 
   // Fired right when a season switch is initiated (not tied to data load) -
   // lets the parent re-arm its scroll-to-top so switching seasons scrolls
@@ -85,19 +85,24 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
 
   ratingsRequestState: RatingsRequestState = 'loading';
   // The initial 'loading' state covers a round-trip that's almost always
-  // near-instant (backend already has it cached) - showing the card
-  // immediately for that made it look like ratings were "reloading every
-  // time" even on a cache hit. Only render it if that round-trip is still
-  // pending after a short delay, i.e. a genuinely slow/uncached fetch.
-  showRatingsLoadingCard = false;
+  // near-instant (per-episode TMDb lookups are individually cached) -
+  // showing a spinner immediately for that made every season switch look
+  // like it was "reloading ratings" even on a cache hit. Only render the
+  // per-episode spinners if the round-trip is still pending after a short
+  // delay, i.e. a genuinely slow/uncached fetch.
+  showRatingsLoadingIndicators = false;
   private ratingsLoadingDelayHandle: ReturnType<typeof setTimeout> | null = null;
   private static readonly RATINGS_LOADING_DELAY_MS = 400;
+  // Accumulates across every season visited (or prefetched) this component's
+  // lifetime - switching back to an already-fetched season is instant.
   private ratingsByKey = new Map<string, EpisodeImdbRating>();
-  private pollHandle: ReturnType<typeof setTimeout> | null = null;
-  // Bumped on every new fetch so a stale in-flight request (or its poll
-  // chain) can never clobber state after a newer one has already resolved.
+  // Dedupes concurrent fetches for the same season (a direct season switch
+  // landing on a season that's already being prefetched shares that same
+  // in-flight request instead of firing a second one).
+  private seasonRatingsFetch = new Map<number, Promise<void>>();
+  // Bumped on every new season switch so a stale in-flight request can never
+  // clobber state after a newer one has already resolved.
   private ratingsRequestToken = 0;
-  private readonly POLL_INTERVAL_MS = 4000;
 
   constructor(private cinemaService: CinemaService) {}
 
@@ -106,12 +111,11 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
       this.loadSeason(this.selectedSeason);
     }
     if (changes['imdbId'] && this.imdbId) {
-      this.loadRatings();
+      this.loadRatings(this.selectedSeason);
     }
   }
 
   ngOnDestroy(): void {
-    this.clearPoll();
     if (this.ratingsLoadingDelayHandle) clearTimeout(this.ratingsLoadingDelayHandle);
   }
 
@@ -145,6 +149,7 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
     this.selectedSeason = season;
     this.seasonChanging.emit();
     this.loadSeason(season);
+    this.loadRatings(season);
   }
 
   private loadSeason(season: number): void {
@@ -174,30 +179,73 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
     this.firstEpisodesLoaded.emit();
   }
 
-  private get mappedShowStatus(): 'ended' | 'ongoing' | undefined {
-    if (this.showStatus === 'Ended' || this.showStatus === 'Canceled') return 'ended';
-    return this.showStatus ? 'ongoing' : undefined;
-  }
-
-  private loadRatings(): void {
+  // Visible load for the season the user is actually looking at - shows the
+  // loading-card affordance (after the usual short delay) unless this season
+  // was already fetched (directly or via prefetch), then prefetches the next
+  // season in the background so switching forward feels instant.
+  private loadRatings(season: number): void {
     if (!this.imdbId) return;
-    this.clearPoll();
-    this.ratingsRequestState = 'loading';
-    this.showRatingsLoadingCard = false;
     if (this.ratingsLoadingDelayHandle) clearTimeout(this.ratingsLoadingDelayHandle);
-    this.ratingsLoadingDelayHandle = setTimeout(() => {
-      if (this.ratingsRequestState === 'loading') this.showRatingsLoadingCard = true;
-    }, CinemaEpisodesTabComponent.RATINGS_LOADING_DELAY_MS);
+
+    const alreadySettled = this.settledSeasons.has(season);
+    this.ratingsRequestState = alreadySettled ? 'loaded' : 'loading';
+    this.showRatingsLoadingIndicators = false;
+    if (!alreadySettled) {
+      this.ratingsLoadingDelayHandle = setTimeout(() => {
+        if (this.ratingsRequestState === 'loading') this.showRatingsLoadingIndicators = true;
+      }, CinemaEpisodesTabComponent.RATINGS_LOADING_DELAY_MS);
+    }
     const token = ++this.ratingsRequestToken;
 
-    this.cinemaService.getEpisodeImdbRatings(this.imdbId, this.mappedShowStatus).subscribe({
-      next: ({ data }) => this.handleRatingsResponse(token, data.cacheStatus, data.episodes),
-      error: () => {
-        if (token !== this.ratingsRequestToken) return;
-        this.clearRatingsLoadingDelay();
-        this.ratingsRequestState = 'loaded'; // treat a failed fetch the same as the "no data" fallback
-      },
+    this.fetchSeasonRatings(season).then(() => {
+      if (token !== this.ratingsRequestToken) return;
+      this.clearRatingsLoadingDelay();
+      this.ratingsRequestState = 'loaded';
+      this.prefetchNextSeason(season);
     });
+  }
+
+  // Every season a fetch has resolved for (success or failure) - lets a
+  // revisit skip the loading-card affordance instead of re-showing it for a
+  // season that's already in ratingsByKey (or genuinely has no ratings).
+  private settledSeasons = new Set<number>();
+
+  // Fetches (and caches) one season's ratings, deduping concurrent callers -
+  // a direct season switch that lands on an already-prefetching season
+  // shares that same in-flight request instead of firing a second one.
+  private fetchSeasonRatings(season: number): Promise<void> {
+    const existing = this.seasonRatingsFetch.get(season);
+    if (existing) return existing;
+
+    const fetchPromise = new Promise<void>((resolve) => {
+      this.cinemaService.getEpisodeImdbRatings(this.imdbId!, season).subscribe({
+        next: ({ data }) => {
+          for (const episode of data.episodes) {
+            this.ratingsByKey.set(`${episode.seasonNumber}-${episode.episodeNumber}`, episode);
+          }
+          this.settledSeasons.add(season);
+          resolve();
+        },
+        error: () => {
+          this.settledSeasons.add(season); // treat a failed fetch the same as the "no data" fallback
+          resolve();
+        },
+      });
+    });
+
+    this.seasonRatingsFetch.set(season, fetchPromise);
+    return fetchPromise;
+  }
+
+  // Fire-and-forget - never awaited, never bumps ratingsRequestToken (a
+  // prefetch completing after the user has already switched seasons again
+  // should still populate the cache, just not touch the currently-displayed
+  // loading state).
+  private prefetchNextSeason(season: number): void {
+    const nextSeason = season + 1;
+    if (nextSeason > (this.numberOfSeasons || 0)) return;
+    if (this.seasonRatingsFetch.has(nextSeason)) return;
+    this.fetchSeasonRatings(nextSeason);
   }
 
   private clearRatingsLoadingDelay(): void {
@@ -205,43 +253,7 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
       clearTimeout(this.ratingsLoadingDelayHandle);
       this.ratingsLoadingDelayHandle = null;
     }
-    this.showRatingsLoadingCard = false;
-  }
-
-  private handleRatingsResponse(
-    token: number,
-    cacheStatus: EpisodeImdbRatingsCacheStatus,
-    episodes: EpisodeImdbRating[] | undefined
-  ): void {
-    if (token !== this.ratingsRequestToken) return;
-    this.clearRatingsLoadingDelay();
-
-    if (cacheStatus === 'processing') {
-      this.ratingsRequestState = 'processing';
-      this.pollHandle = setTimeout(() => this.pollRatings(token), this.POLL_INTERVAL_MS);
-      return;
-    }
-
-    this.ratingsByKey = new Map((episodes || []).map((e) => [`${e.seasonNumber}-${e.episodeNumber}`, e]));
-    this.ratingsRequestState = 'loaded';
-  }
-
-  private pollRatings(token: number): void {
-    if (token !== this.ratingsRequestToken || !this.imdbId) return;
-    this.cinemaService.getEpisodeImdbRatings(this.imdbId, this.mappedShowStatus).subscribe({
-      next: ({ data }) => this.handleRatingsResponse(token, data.cacheStatus, data.episodes),
-      error: () => {
-        if (token !== this.ratingsRequestToken) return;
-        this.ratingsRequestState = 'loaded';
-      },
-    });
-  }
-
-  private clearPoll(): void {
-    if (this.pollHandle) {
-      clearTimeout(this.pollHandle);
-      this.pollHandle = null;
-    }
+    this.showRatingsLoadingIndicators = false;
   }
 
   ratingFor(episodeNumber: number): EpisodeImdbRating | null {
@@ -257,8 +269,17 @@ export class CinemaEpisodesTabComponent implements OnChanges, OnDestroy {
     });
   }
 
+  // Whether the CURRENTLY SELECTED season has any ratings - not global,
+  // since ratingsByKey now accumulates every season ever fetched (including
+  // prefetched ones the user hasn't looked at), so a global check would hide
+  // the "unavailable" card for a ratings-less season just because some other
+  // season happened to have data.
   get hasAnyRatingsData(): boolean {
-    return this.ratingsByKey.size > 0;
+    const prefix = `${this.selectedSeason}-`;
+    for (const key of this.ratingsByKey.keys()) {
+      if (key.startsWith(prefix)) return true;
+    }
+    return false;
   }
 
   formatAirDate(airDate: string | null): string | null {

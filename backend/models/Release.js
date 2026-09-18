@@ -13,6 +13,11 @@ const Release = new mongoose.Schema({
   // absent on rows synced before this field existed; those show a generic
   // label client-side rather than a guessed/wrong one. See syncArtistAlbums.
   recordType: { type: String, default: null },
+  // Set once notifyUsersForNewMusicRelease actually sends for this release -
+  // lets the notification sweep (notificationJobs.js) tell "already notified"
+  // apart from "not yet due", instead of the old exact-release-day-only gate
+  // permanently losing a release that Deezer synced a day or two late.
+  notifiedAt: { type: Date, default: null },
 }, {
   timestamps: true
 });

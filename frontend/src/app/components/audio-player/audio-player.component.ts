@@ -25,6 +25,13 @@ export class AudioPlayerComponent implements AfterViewInit {
 
   @Input() record!: Album | Artist | Song;
   @Input() showForwardAndBackwardButtons: boolean = true;
+  // Renders a visibly-disabled play button instead of either the normal
+  // clickable one or the invisible placeholder used when there's simply no
+  // preview available - for an upcoming release (see review-page.component's
+  // isUpcomingRecord) there's genuinely no preview yet, but the button
+  // staying visible (just non-functional) communicates that better than it
+  // silently vanishing.
+  @Input() disabled: boolean = false;
   @Input() currentIndex!: number;
   @Input() recordList: (Album | Artist | Song)[] = [];
   @Input() song: Song | null = null;

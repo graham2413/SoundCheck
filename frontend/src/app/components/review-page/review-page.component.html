@@ -325,8 +325,11 @@
               Album:
               <span class="text-white">{{ record.album }}</span>
             </div>
-            <div class="text-base sm:text-xl text-gray-400 pt-1">
+            <div *ngIf="!isUpcomingRecord" class="text-base sm:text-xl text-gray-400 pt-1">
               Genre: <span class="text-white">{{ record.genre }}</span>
+            </div>
+            <div *ngIf="isUpcomingRecord" class="text-base sm:text-xl text-gray-400 pt-1">
+              Type: <span class="text-white">{{ upcomingTypeLabel }}</span>
             </div>
 
             <div
@@ -340,7 +343,7 @@
             </div>
 
             <div
-              *ngIf="record.type === 'Album'"
+              *ngIf="record.type === 'Album' && !isUpcomingRecord"
               class="text-base text-gray-400 pt-1"
             >
               <div class="text-base sm:text-xl text-gray-400 pt-1">
@@ -754,6 +757,7 @@
             [record]="musicRecord"
             [hidden]="showSecondIpod"
             [showForwardAndBackwardButtons]="showForwardAndBackwardButtons"
+            [disabled]="isUpcomingRecord"
             #audioPlayerMobile
             [song]="currentSong"
             (next)="nextSong()"
@@ -1790,6 +1794,7 @@
                       [showForwardAndBackwardButtons]="
                         showForwardAndBackwardButtons
                       "
+                      [disabled]="isUpcomingRecord"
                       #audioPlayerDesktop
                       (next)="nextSong()"
                       [song]="currentSong"
@@ -2169,12 +2174,15 @@
                     Album:
                     <span class="text-white">{{ record.album }}</span>
                   </div>
-                  <div class="text-lg text-gray-400 pt-1">
+                  <div *ngIf="!isUpcomingRecord" class="text-lg text-gray-400 pt-1">
                     Genre: <span class="text-white">{{ record.genre }}</span>
+                  </div>
+                  <div *ngIf="isUpcomingRecord" class="text-lg text-gray-400 pt-1">
+                    Type: <span class="text-white">{{ upcomingTypeLabel }}</span>
                   </div>
 
                   <div
-                    *ngIf="record.type === 'Album'"
+                    *ngIf="record.type === 'Album' && !isUpcomingRecord"
                     class="text-lg text-gray-400 pt-1"
                   >
                     <div class="text-gray-400 pt-1">

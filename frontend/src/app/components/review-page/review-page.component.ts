@@ -852,6 +852,36 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     return this.record?.type === 'Cinema';
   }
 
+  // Set only by calendar-page.component.ts's openMusicEntry for a release
+  // sourced from UpcomingRelease (Spotify/MusicBrainz, not Deezer) - used to
+  // skip every API call below that depends on a real Deezer/catalog id
+  // (album details, smart link, preview playback), since none of them can
+  // succeed for something that hasn't been released yet.
+  get isUpcomingRecord(): boolean {
+    return this.record?.type === 'Album' && !!(this.record as Album).isUpcoming;
+  }
+
+  // Same mapping as calendar-page.component.ts's musicTypeLabel - shown here
+  // in place of Genre for an upcoming release, since genre is structurally
+  // unavailable pre-release (MusicBrainz genres are community tags, which
+  // don't exist yet for anything unreleased) but album-vs-single/EP
+  // classification is already known from the sync.
+  get upcomingTypeLabel(): string {
+    switch ((this.record as Album)?.recordType) {
+      case 'single':
+        return 'Single';
+      case 'ep':
+        return 'EP';
+      case 'compile':
+      case 'compilation':
+        return 'Compilation';
+      case 'album':
+        return 'Album';
+      default:
+        return 'Release';
+    }
+  }
+
   get cinemaRecord(): CinemaItem | null {
     return this.isCinemaRecord ? (this.record as CinemaItem) : null;
   }
@@ -1002,6 +1032,24 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     // cover, genres, rating) - no extra music-API fetch to do here.
     if (this.isCinemaRecord) {
       this.isLoadingExtraDetails = false;
+      return Promise.resolve();
+    }
+
+    // Upcoming releases have no real Deezer/Spotify/MusicBrainz catalog
+    // entry to fetch tracklist/genre/smart-link/preview from - skip every
+    // music-API call entirely rather than let them fail one by one. The
+    // record already carries title/artist/cover/releaseDate from the
+    // calendar, and tracklist was seeded to [] at creation time.
+    // isLoadingSmartUrl defaults to true and is otherwise only ever cleared
+    // inside fetchAlbumDetails/fetchSongDetails's callbacks (skipped here) -
+    // needs to be cleared explicitly or "Loading link..." spins forever. The
+    // audio player's own ring loader is handled separately via its
+    // `disabled` input (see audio-player.component.html) rather than a
+    // stopLoading() call here, since getExtraDetails runs from ngOnInit,
+    // before the #audioPlayerMobile/#audioPlayerDesktop ViewChilds exist.
+    if (this.isUpcomingRecord) {
+      this.isLoadingExtraDetails = false;
+      this.isLoadingSmartUrl = false;
       return Promise.resolve();
     }
 
@@ -1349,6 +1397,13 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
   }
 
   openSongOrAlbum(record: Song | Album) {
+    // A track from an upcoming album's MusicBrainz tracklist isn't a real,
+    // independently-openable catalog item yet (its `id` is just a synthetic
+    // index, not a real Deezer track id - see calendar-page.component.ts's
+    // mapUpcomingTracklist) - drilling into it would run the normal Song
+    // detail fetch against a fake id.
+    if (this.isUpcomingRecord) return;
+
     // Stop any currently playing audio
     this.audioPlayerMobile?.stop();
     this.audioPlayerDesktop?.stop();
@@ -2030,6 +2085,7 @@ export class ReviewPageComponent implements OnInit, OnDestroy {
     count: number;
     durationDisplay: string;
   } {
+    tracklist = tracklist || [];
     const totalTracks = tracklist.length;
     const totalSeconds = tracklist.reduce((sum, t) => sum + t.duration, 0);
 

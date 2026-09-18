@@ -31,7 +31,6 @@ const cron = require("node-cron");
 const spotifyController = require("./controllers/spotifyController");
 const { cronSyncAllArtists } = require('./controllers/mainSearchController');
 const { syncImdbRatings, logLastSyncedAt } = require('./utils/imdbRatingsSync');
-const { prewarmTrackedShowEpisodeMaps } = require('./utils/imdbEpisodeMap');
 const { cronRefreshCinemaMetadata, prewarmCalendarDetailsCache, getLocalDayOfWeek } = require('./controllers/cinemaController');
 const { scanCinemaReleaseNotifications, scanMusicReleaseNotifications, sendWeeklySummaries } = require('./utils/notificationJobs');
 
@@ -137,19 +136,21 @@ cron.schedule("0 6 * * 5", async () => {
 });
 
 // Sync IMDb's official daily ratings dataset (~1.7M rows, ~9MB compressed)
-// into MongoDB at 11 AM Central. NOT 2 AM (as it was before) - verified live
+// into MongoDB at 9 AM Central. NOT 2 AM (as it was before) - verified live
 // that IMDb doesn't actually publish that day's refreshed file until ~7:41 AM
 // Central, so the old 2 AM run was always grabbing the *previous* day's file,
-// making our data structurally always ~1 extra day stale. 11 AM gives a
-// ~3+ hour safety buffer past that observed publish time. IMDb only
+// making our data structurally always ~1 extra day stale. 9 AM gives a
+// ~1h20m safety buffer past that observed publish time (tightened from an
+// earlier 11 AM / ~3h buffer to keep morning ratings fresher, while still
+// covering reasonable day-to-day drift in IMDb's publish time). IMDb only
 // refreshes this dataset once/day, so running more than once/day here
 // wouldn't produce fresher data - it would just waste bandwidth/CPU for no
 // gain (the syncImdbRatings Last-Modified check already skips the
 // download/rewrite entirely on days nothing changed, so this costs nothing
 // extra in storage either - it's an upsert into the same collection, not an
 // additive one).
-cron.schedule('0 11 * * *', async () => {
-  console.log('🎥 Starting IMDb ratings dataset sync at 11 AM (local)');
+cron.schedule('0 9 * * *', async () => {
+  console.log('🎥 Starting IMDb ratings dataset sync at 9 AM (local)');
   await syncImdbRatings().catch((err) => console.error('IMDb ratings sync failed:', err));
 }, {
   timezone: 'America/Chicago'
@@ -194,19 +195,6 @@ cron.schedule('0 * * * *', async () => {
   await sendWeeklySummaries().catch((err) => console.error('Weekly notification summary failed:', err));
 }, {
   timezone: 'UTC'
-});
-
-// Bounded prewarm (see utils/imdbEpisodeMap.js) so opening Episodes for a
-// tracked TV show is a fast Redis hit instead of a multi-second cold scan -
-// runs at 4:30 AM, after the cinema metadata refresh above so imdbId/status
-// are current for anything just added. Untracked/brand-new shows still work
-// via the endpoint's own on-demand fallback - this is a warm-cache
-// optimization only, not a correctness requirement.
-cron.schedule('30 4 * * *', async () => {
-  console.log('🎥 Starting IMDb episode-map prewarm at 4:30 AM (local)');
-  await prewarmTrackedShowEpisodeMaps().catch((err) => console.error('IMDb episode-map prewarm failed:', err));
-}, {
-  timezone: 'America/Chicago'
 });
 
 // Below runs the sync every minute for testing purposes

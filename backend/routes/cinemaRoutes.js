@@ -39,9 +39,10 @@ router.get("/imdb-stats/:imdbId", getImdbStats);
 // level only for TV (Protected). See utils/callMusicBrainz.js for details.
 router.get("/soundtrack/:imdbId", authenticateUser, getCinemaSoundtrack);
 
-// Per-episode IMDb ratings for a TV show, by its IMDb ID (Protected) - see
-// utils/imdbEpisodeMap.js for the on-demand scan + Redis cache architecture.
-router.get("/tv/:parentTconst/episodes/imdb-ratings", authenticateUser, getEpisodeImdbRatings);
+// Per-episode IMDb ratings for one season of a TV show, by its IMDb ID
+// (Protected) - see utils/episodeRatingLookup.js for the per-episode TMDb
+// lookup architecture.
+router.get("/tv/:parentTconst/season/:seasonNumber/episodes/imdb-ratings", authenticateUser, getEpisodeImdbRatings);
 
 // Episode name/overview/air date/still image for one TV season, TMDb-sourced (Protected)
 router.get("/tv/:tmdbId/season/:seasonNumber", authenticateUser, getTvSeasonEpisodes);

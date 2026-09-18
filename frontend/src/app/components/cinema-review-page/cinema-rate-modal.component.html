@@ -7,9 +7,23 @@
   </div>
 
   <div class="rate-modal-subject">
-    <img *ngIf="cover" [src]="cover" [alt]="displayTitle" class="rate-modal-cover" />
-    <div *ngIf="!cover" class="rate-modal-cover rate-modal-cover-placeholder">
-      <i class="fas fa-clapperboard"></i>
+    <div class="rate-modal-cover-wrap">
+      <div *ngIf="cover && !isCoverLoaded" class="rate-modal-cover-spinner">
+        <div class="rate-modal-cover-spinner-ring"></div>
+      </div>
+      <img
+        *ngIf="cover"
+        [src]="cover"
+        [alt]="displayTitle"
+        loading="lazy"
+        (load)="isCoverLoaded = true"
+        (error)="isCoverLoaded = true"
+        [class.invisible]="!isCoverLoaded"
+        class="rate-modal-cover"
+      />
+      <div *ngIf="!cover" class="rate-modal-cover rate-modal-cover-placeholder">
+        <i class="fas fa-clapperboard"></i>
+      </div>
     </div>
 
     <div class="min-w-0">

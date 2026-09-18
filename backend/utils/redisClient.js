@@ -80,6 +80,7 @@ if (process.env.NODE_ENV === 'test') {
     safeSet: async () => null,
     safeDel: async () => null,
     safeMget: async (keys) => keys.map(() => null),
+    safeExpire: async () => null,
   };
 } else {
   const redis = new Redis(redisOptions);
@@ -121,6 +122,19 @@ if (process.env.NODE_ENV === 'test') {
       return await redis.del(...args);
     } catch (err) {
       console.error(`Redis DEL failed for key(s) "${args.join(', ')}":`, err.message);
+      return null;
+    }
+  };
+
+  // Refreshes a key's TTL without touching its value - used for sliding-
+  // expiration caches (e.g. the per-episode IMDb tconst cache), where every
+  // read should push the key's expiry back out rather than leaving it on a
+  // fixed countdown from when it was written.
+  redis.safeExpire = async (key, seconds) => {
+    try {
+      return await redis.expire(key, seconds);
+    } catch (err) {
+      console.error(`Redis EXPIRE failed for key "${key}":`, err.message);
       return null;
     }
   };

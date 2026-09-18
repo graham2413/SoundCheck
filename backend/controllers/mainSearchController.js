@@ -2,14 +2,17 @@ const redis = require("../utils/redisClient");
 const { callDeezer } = require("../utils/callDeezer");
 const { fetchWithRetry } = require("../utils/fetchWithRetry");
 const { findArtistId, getUpcomingAlbums, findSpotifyLink } = require("../utils/callSpotify");
+const { resolveArtistMbid, getUpcomingReleaseGroups } = require("../utils/callMusicBrainz");
 const { findAppleMusicLink, findYoutubeMusicLink } = require("../utils/smartLinkProviders");
 const {
   CALENDAR_CACHE_TIMEZONE,
   getLocalDateString,
   buildCalendarSubtitle,
   buildCalendarMonthGroups,
+  normalizeReleaseTitle,
 } = require("../utils/calendarHelpers");
 const Release = require("../models/Release");
+const UpcomingRelease = require("../models/UpcomingRelease");
 const User = require("../models/User");
 const ArtistSyncState = require("../models/ArtistSyncState");
 const { notifyUsersForNewMusicRelease } = require("../utils/pushNotifications");
@@ -729,6 +732,86 @@ async function syncArtistAlbums(artistId, artistName, fullSync = false) {
   }
 }
 
+// Fetches this artist's upcoming releases from both Spotify and MusicBrainz,
+// merges + dedupes via UpcomingRelease's compound key, and upserts. Each
+// source is fetched independently (Promise.allSettled) so a MusicBrainz
+// outage doesn't block Spotify's half from writing, and vice versa - both
+// clients already degrade to [] on their own failure (see callSpotify.js/
+// callMusicBrainz.js) rather than throwing. Called unconditionally from
+// cronSyncAllArtists's per-artist loop - NOT gated behind that loop's
+// Deezer-nb_album-unchanged short-circuit, since that count reflects only
+// Deezer's own catalog and says nothing about a fresh Spotify pre-save page
+// or MusicBrainz announcement appearing for an otherwise-quiet artist.
+async function syncUpcomingReleasesForArtist(artistId, artistName) {
+  const [spotifyResult, musicBrainzResult] = await Promise.allSettled([
+    (async () => {
+      const spotifyId = await findArtistId(artistName);
+      if (!spotifyId) return [];
+      const albums = await getUpcomingAlbums(spotifyId);
+      return albums.map((a) => ({
+        title: a.title,
+        cover: a.cover,
+        releaseDate: new Date(a.releaseDate),
+        recordType: a.recordType,
+        source: "spotify",
+        sourceId: a.albumId,
+        // Spotify's API has no pre-release tracklist endpoint - only
+        // MusicBrainz ever supplies one (see the other branch below).
+        tracklist: [],
+      }));
+    })(),
+    (async () => {
+      const mbid = await resolveArtistMbid(artistId, artistName);
+      if (!mbid) return [];
+      const releaseGroups = await getUpcomingReleaseGroups(mbid);
+      return releaseGroups.map((rg) => ({
+        title: rg.title,
+        cover: rg.cover,
+        releaseDate: new Date(rg.releaseDate),
+        recordType: rg.recordType,
+        source: "musicbrainz",
+        sourceId: rg.sourceId,
+        tracklist: rg.tracklist || [],
+      }));
+    })(),
+  ]);
+
+  const candidates = [
+    ...(spotifyResult.status === "fulfilled" ? spotifyResult.value : []),
+    ...(musicBrainzResult.status === "fulfilled" ? musicBrainzResult.value : []),
+  ];
+
+  for (const candidate of candidates) {
+    const normalizedTitle = normalizeReleaseTitle(candidate.title);
+    const setFields = {
+      title: candidate.title,
+      cover: candidate.cover,
+      releaseDate: candidate.releaseDate,
+      recordType: candidate.recordType,
+      source: candidate.source,
+      sourceId: candidate.sourceId,
+    };
+    // Only overwritten when this candidate actually has one - Spotify never
+    // supplies a tracklist at all, and even MusicBrainz can come back empty
+    // on a day its own tracklist lookup fails/is still unpopulated. Without
+    // this guard, whichever source runs second in `candidates` (MusicBrainz,
+    // always last - see above) would silently erase a tracklist a previous
+    // day's sync already found.
+    if (candidate.tracklist?.length) {
+      setFields.tracklist = candidate.tracklist;
+    }
+
+    await UpcomingRelease.findOneAndUpdate(
+      { artistId, releaseDate: candidate.releaseDate, normalizedTitle },
+      {
+        $setOnInsert: { artistId, artistName, normalizedTitle },
+        $set: setFields,
+      },
+      { upsert: true }
+    );
+  }
+}
+
 // When a user manually triggers album sync for an artist (following an artist)
 const getAndStoreArtistAlbums = async (req, res) => {
   if (!req.user || !req.user._id) {
@@ -794,6 +877,16 @@ async function cronSyncAllArtists(batchSize = 10, delayMs = 1000, forceFull = fa
             currentCount != null &&
             syncState.albumCount === currentCount;
 
+          // Runs unconditionally, even when the Deezer nb_album short-circuit
+          // below is about to skip the rest of this artist's sync - that
+          // count reflects only Deezer's own catalog and says nothing about
+          // a fresh Spotify pre-save page or MusicBrainz announcement
+          // appearing for an otherwise-quiet artist (see the function's own
+          // comment for the full reasoning).
+          await syncUpcomingReleasesForArtist(id, name).catch((err) =>
+            console.error(`Upcoming-release sync failed for ${name} (${id}):`, err.message || err)
+          );
+
           if (knownUnchanged) {
             await ArtistSyncState.updateOne({ artistId: id }, { $set: { lastCheckedAt: new Date() } });
             await redis.safeSet(redisKey, "1", "EX", 60 * 60 * 24 * 2);
@@ -801,6 +894,7 @@ async function cronSyncAllArtists(batchSize = 10, delayMs = 1000, forceFull = fa
           }
 
           await syncArtistAlbums(id, name);
+
           const newCount = forceFull ? await getArtistAlbumCount(id) : currentCount;
           await ArtistSyncState.updateOne(
             { artistId: id },
@@ -874,6 +968,13 @@ async function cleanupOrphanedArtistData(followedArtists) {
     await ArtistSyncState.deleteMany({ artistId: { $in: orphanedSyncStateIds } });
     console.log(`Cleaned up ${orphanedSyncStateIds.length} ArtistSyncState doc(s) for no-longer-followed artist(s).`);
   }
+
+  const upcomingArtistIds = await UpcomingRelease.distinct("artistId");
+  const orphanedUpcomingIds = upcomingArtistIds.filter((id) => !followedIds.has(id));
+  if (orphanedUpcomingIds.length > 0) {
+    const { deletedCount } = await UpcomingRelease.deleteMany({ artistId: { $in: orphanedUpcomingIds } });
+    console.log(`Cleaned up ${deletedCount} UpcomingRelease doc(s) for ${orphanedUpcomingIds.length} no-longer-followed artist(s).`);
+  }
 }
 
 // Helper function to get the list of followed artists from MongoDB
@@ -946,14 +1047,13 @@ const getReleasesByArtistIds = async (req, res) => {
 // total/subtitle/monthGroups), reusing the exact same subtitle-cascade/
 // month-group logic via utils/calendarHelpers.js.
 //
-// Past releases come from the locally-synced Release collection (Deezer's
-// catalog - accurate for what's already out). Upcoming releases come from
-// Spotify instead: Deezer's own catalog rarely carries a real pre-release
-// date (labels typically don't list an album there until at/near street
-// date), while Spotify commonly has pre-save pages live with a real future
-// release_date weeks/months out - see utils/callSpotify.js's
-// findArtistId/getUpcomingAlbums for the artist-name-based bridge and its
-// accepted fuzzy-match tradeoff.
+// Both past and upcoming releases now read from locally-synced Mongo
+// collections - Release (Deezer's catalog, accurate for what's already out)
+// and UpcomingRelease (merged Spotify + MusicBrainz, since Deezer's own
+// catalog rarely carries a real pre-release date). Both are populated by the
+// daily cron (cronSyncAllArtists / syncUpcomingReleasesForArtist), not live
+// per-request calls - keeps this handler fast and independent of any
+// third-party API's availability/rate limits at request time.
 const getMusicCalendar = async (req, res) => {
   try {
     const forceRefresh = req.query.refresh === "true";
@@ -987,7 +1087,6 @@ const getMusicCalendar = async (req, res) => {
     // user's followed artists into this one's calendar.
     const followedArtists = req.user.artistList || [];
     const artistIds = followedArtists.map((a) => a.id);
-    const artistNameById = new Map(followedArtists.map((a) => [a.id, a.name]));
 
     let calendar;
 
@@ -1013,45 +1112,32 @@ const getMusicCalendar = async (req, res) => {
         recordType: r.recordType || null,
       }));
     } else {
-      // One Spotify artist-id resolution + one albums fetch per followed
-      // artist (both independently Redis-cached in callSpotify.js, so only
-      // the FIRST load within each cache window actually calls Spotify).
-      // Chunked (not one big Promise.all) so a user following hundreds of
-      // artists can't burst hundreds of concurrent Spotify requests at once
-      // on a cold cache - bounded concurrency instead, same spirit as
-      // cronSyncAllArtists' batchSize.
-      const UPCOMING_FETCH_BATCH_SIZE = 10;
-      const UPCOMING_FETCH_BATCH_DELAY_MS = 250;
+      const releases = await UpcomingRelease.find({
+        artistId: { $in: artistIds },
+        releaseDate: { $gte: new Date(todayStr) },
+      })
+        .sort({ releaseDate: 1 })
+        .lean();
 
-      const perArtist = [];
-      for (let i = 0; i < followedArtists.length; i += UPCOMING_FETCH_BATCH_SIZE) {
-        const batch = followedArtists.slice(i, i + UPCOMING_FETCH_BATCH_SIZE);
-        const batchResults = await Promise.all(
-          batch.map(async (artist) => {
-            const spotifyId = await findArtistId(artist.name).catch(() => null);
-            if (!spotifyId) return [];
-            const albums = await getUpcomingAlbums(spotifyId).catch(() => []);
-            return albums.map((a) => ({
-              _id: `spotify-${a.albumId}`,
-              albumId: a.albumId,
-              artistId: artist.id,
-              artistName: artistNameById.get(artist.id) || artist.name,
-              title: a.title,
-              cover: a.cover,
-              airDate: a.releaseDate,
-              isExplicit: false,
-              recordType: a.recordType || null,
-            }));
-          })
-        );
-        perArtist.push(...batchResults);
-
-        if (i + UPCOMING_FETCH_BATCH_SIZE < followedArtists.length) {
-          await new Promise((resolve) => setTimeout(resolve, UPCOMING_FETCH_BATCH_DELAY_MS));
-        }
-      }
-
-      calendar = perArtist.flat().sort((a, b) => a.airDate.localeCompare(b.airDate));
+      calendar = releases.map((r) => ({
+        _id: r._id.toString(),
+        // No Deezer albumId exists for an upcoming release - sourceId
+        // (Spotify album id or MusicBrainz release-group id) fills the same
+        // per-row-identifier slot the frontend expects here.
+        albumId: r.sourceId,
+        artistId: r.artistId,
+        artistName: r.artistName,
+        title: r.title,
+        cover: r.cover,
+        airDate: r.releaseDate.toISOString().slice(0, 10),
+        // Neither source reliably exposes this pre-release - see
+        // UpcomingRelease's model comments.
+        isExplicit: false,
+        recordType: r.recordType || null,
+        // Only ever non-empty for a MusicBrainz-sourced row - see
+        // UpcomingRelease's model comments.
+        tracklist: r.tracklist || [],
+      }));
     }
 
     await redis.safeSet(cacheKey, JSON.stringify({ cachedDate: todayStr, data: calendar }), "EX", MUSIC_CALENDAR_CACHE_TTL);
@@ -1182,6 +1268,7 @@ module.exports = {
   callDeezer,
   getAndStoreArtistAlbums,
   cronSyncAllArtists,
+  syncUpcomingReleasesForArtist,
   getReleasesByArtistIds,
   getMusicCalendar,
   getDeezerArtistReleases,

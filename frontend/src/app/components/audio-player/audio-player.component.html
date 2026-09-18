@@ -1,7 +1,9 @@
 <div class="w-full flex justify-center paddingFix">
   <div class="w-full max-w-md flex items-center justify-center gap-6 p-3">
-<!-- Ring Loader -->
-<ng-container *ngIf="isLoading; else playerControls">
+<!-- Ring Loader - skipped when disabled (e.g. an upcoming release with no
+     preview to ever load) since nothing will call stopLoading() to end it;
+     go straight to the disabled play button instead. -->
+<ng-container *ngIf="isLoading && !disabled; else playerControls">
   <div class="w-full flex justify-center items-center">
     <div class="w-10 h-10 border-4 border-gray-600 border-t-white rounded-full animate-spinLoader"></div>
   </div>
@@ -20,15 +22,26 @@
         <i class="fas fa-backward"></i>
       </button>
 
-      <!-- Play/Pause Button or Placeholder -->
-      <ng-container *ngIf="record?.preview; else buttonPlaceholder">
+      <!-- Play/Pause Button, disabled state, or invisible Placeholder -->
+      <ng-container *ngIf="disabled; else availablePlayButton">
         <button
-          (click)="togglePlay()"
-          class="play-btn-sm bg-white text-black hover:bg-white hover:text-gray-800 w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md transition-colors duration-200"
+          disabled
+          class="play-btn-sm bg-white text-black w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md opacity-40 cursor-not-allowed"
         >
-          <i class="{{ isPlaying ? 'fas fa-pause' : 'fas fa-play ml-1' }} text-3xl"></i>
+          <i class="fas fa-play ml-1 text-3xl"></i>
         </button>
       </ng-container>
+
+      <ng-template #availablePlayButton>
+        <ng-container *ngIf="record?.preview; else buttonPlaceholder">
+          <button
+            (click)="togglePlay()"
+            class="play-btn-sm bg-white text-black hover:bg-white hover:text-gray-800 w-16 h-16 flex-none rounded-full flex items-center justify-center shadow-md transition-colors duration-200"
+          >
+            <i class="{{ isPlaying ? 'fas fa-pause' : 'fas fa-play ml-1' }} text-3xl"></i>
+          </button>
+        </ng-container>
+      </ng-template>
 
       <ng-template #buttonPlaceholder>
         <div

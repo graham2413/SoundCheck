@@ -421,10 +421,10 @@ async function getTmdbTrending(mediaType) {
 }
 
 // Cache-aware wrapper: GET /tv/{id}/season/{n} - episode name/overview/air
-// date/still image for one season. Neither IMDb dataset used by
-// imdbEpisodeMap.js has this metadata (only tconst/season/episode numbers),
-// so this is the only source for it. Trimmed to just the fields the
-// Episodes tab actually renders before caching.
+// date/still image for one season. IMDb's own datasets don't carry this
+// metadata (only tconst/season/episode numbers), so this is the only source
+// for it. Trimmed to just the fields the Episodes tab actually renders
+// before caching.
 async function getTmdbSeasonDetails(tvId, seasonNumber) {
   // v3: added season-level posterPath - bumped so entries cached before that
   // are refetched instead of served without it until their old TTL expires.
@@ -453,6 +453,56 @@ async function getTmdbSeasonDetails(tvId, seasonNumber) {
   return trimmed;
 }
 
+// Cache-aware wrapper: GET /find/{imdb_id}?external_source=imdb_id -> that
+// show's TMDb tv id. Resolves a show's IMDb parent tconst to the TMDb id
+// needed for the per-episode external_ids lookups below - this mapping never
+// changes, so it's cached for a long, fixed (non-sliding) TTL.
+const IMDB_TO_TMDB_ID_CACHE_TTL = 2592000; // 30 days
+async function getTmdbIdFromImdbId(imdbId) {
+  const cacheKey = `tmdb:tv-id-from-imdb-id:${imdbId}`;
+  const cached = await redis.safeGet(cacheKey);
+  if (cached) return cached === "null" ? null : cached;
+
+  const response = await callTmdb(`/find/${imdbId}`, { external_source: "imdb_id" });
+  const tvId = response.data?.tv_results?.[0]?.id ?? null;
+
+  await redis.safeSet(cacheKey, tvId === null ? "null" : String(tvId), "EX", IMDB_TO_TMDB_ID_CACHE_TTL);
+  return tvId;
+}
+
+// Cache-aware wrapper: GET /tv/{id}/season/{n}/episode/{n}/external_ids ->
+// just that one episode's imdb_id. Replaces the old approach of streaming
+// and scanning IMDb's full title.episode.tsv.gz (~9.87M unsorted rows) to
+// find one show's episode->tconst mapping - a live per-episode TMDb call is
+// fast enough to do on demand, with no download, no scan, and no risk of a
+// stalled multi-minute file download hanging the request.
+//
+// Sliding 7-day TTL: unlike this file's other caches, the TTL is reissued on
+// every cache HIT (not just on write) - a tconst<->episode mapping never
+// changes, but should still age out if the episode is never looked at again,
+// rather than either living forever or expiring under an actively-viewed show.
+const EPISODE_IMDB_ID_CACHE_TTL = 7 * 24 * 60 * 60; // 7 days
+function episodeImdbIdCacheKey(tvId, seasonNumber, episodeNumber) {
+  return `tmdb:episode-imdb-id:${tvId}:${seasonNumber}:${episodeNumber}`;
+}
+async function getEpisodeImdbId(tvId, seasonNumber, episodeNumber) {
+  const cacheKey = episodeImdbIdCacheKey(tvId, seasonNumber, episodeNumber);
+
+  const cached = await redis.safeGet(cacheKey);
+  if (cached) {
+    await redis.safeExpire(cacheKey, EPISODE_IMDB_ID_CACHE_TTL);
+    return cached;
+  }
+
+  const response = await callTmdb(`/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}/external_ids`);
+  const imdbId = response.data?.imdb_id || null;
+  if (imdbId) {
+    await redis.safeSet(cacheKey, imdbId, "EX", EPISODE_IMDB_ID_CACHE_TTL);
+  }
+
+  return imdbId;
+}
+
 module.exports = {
   callTmdb,
   getTmdbDetails,
@@ -464,4 +514,6 @@ module.exports = {
   getTmdbExternalIds,
   getTmdbTrending,
   getTmdbSeasonDetails,
+  getTmdbIdFromImdbId,
+  getEpisodeImdbId,
 };

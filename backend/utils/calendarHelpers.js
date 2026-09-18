@@ -92,6 +92,18 @@ function buildCalendarSubtitle(entries, range, todayStr) {
 // Per-month release counts the UI's month-group headers need, computed over
 // the full entry list for the same "true total, not just what's paged in"
 // reason as the subtitle above.
+// Cross-source dedupe key component for upcoming music releases (see
+// mainSearchController.js's syncUpcomingReleasesForArtist) - Spotify and
+// MusicBrainz have no shared exact release id, so the same real release
+// found via both must normalize to the same string here to collapse into
+// one UpcomingRelease row instead of showing twice on the calendar.
+const normalizeReleaseTitle = (title) =>
+  title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, " ");
+
 function buildCalendarMonthGroups(entries) {
   const counts = new Map();
   for (const e of entries) {
@@ -116,4 +128,5 @@ module.exports = {
   endOfYearStr,
   buildCalendarSubtitle,
   buildCalendarMonthGroups,
+  normalizeReleaseTitle,
 };
